@@ -57,6 +57,16 @@ Abrir http://localhost:5173. El dashboard muestra el resultado de `/api/v1/healt
 
 Scripts sueltos por si se necesitan: `npm run dev:api`, `npm run dev:web`, `npm run build`.
 
+### Cron jobs (producción)
+
+```cron
+*/15 * * * *  php /ruta/api/cron/sync_submissions.php     # sincroniza envíos desde Kobo
+0    7 * * *  php /ruta/api/cron/daily_summary.php         # resumen diario por email
+```
+
+El resumen diario requiere `RESEND_API_KEY` y `MAIL_FROM` configurados en `config.php`.
+Ambos scripts solo se ejecutan por CLI.
+
 ### 3. Crear el primer administrador
 
 La creación de usuarios vía API requiere ya estar autenticado como admin, así que el
@@ -74,5 +84,5 @@ php api/cli/create_user.php <email> <password> <nombre> admin
 - [x] **Fase 3** — Cron de envíos (`sync_submissions.php`), endpoints de viewer (lista de formularios, envíos paginados, detalle) y vistas de datos con búsqueda; registro de visualización en `audit_log`.
 - [x] **Fase 4** — Edición de envíos (escribe en Kobo vía bulk PATCH y luego en caché) y revisión interna (`POST /submissions/{id}/review`); UI de edición y panel de aprobación/rechazo según `can_edit`/`can_validate`.
 - [x] **Fase 5** — Endpoint `/forms/{id}/stats` (total, por día, distribución por estado) y `StatsView` con gráficos (Chart.js).
-- [ ] Fase 6 — Notificaciones por email.
+- [x] **Fase 6** — Notificaciones por email con Resend (`Mailer`), cron de resumen diario (`daily_summary.php`) y configuración por usuario en su perfil.
 - [ ] Fase 7 — Pulido y seguridad.

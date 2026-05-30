@@ -76,6 +76,12 @@ const linkActive = 'bg-blue-600 text-white'
     </nav>
 
     <div class="border-t border-slate-700/60 p-3">
+      <RouterLink
+        :to="{ name: 'profile' }"
+        :class="[linkBase, 'mb-2', $route.name === 'profile' ? linkActive : linkInactive]"
+      >
+        Mi perfil
+      </RouterLink>
       <div class="mb-2 flex items-center gap-3 px-1">
         <div class="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold">
           {{ initials }}
