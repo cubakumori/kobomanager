@@ -1,7 +1,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '../../services/api'
-import { apiError } from '../../stores/auth'
+import { useAuthStore, apiError } from '../../stores/auth'
+import Modal from '../../components/Modal.vue'
+
+const auth = useAuthStore()
 
 const users = ref([])
 const loading = ref(true)
@@ -10,6 +13,12 @@ const listError = ref('')
 const form = ref({ name: '', email: '', password: '', role: 'viewer' })
 const formError = ref('')
 const saving = ref(false)
+
+// Edición
+const editing = ref(null)
+const editForm = ref({ name: '', role: 'viewer', password: '' })
+const editError = ref('')
+const savingEdit = ref(false)
 
 async function load() {
   loading.value = true
@@ -35,6 +44,39 @@ async function onCreate() {
     formError.value = apiError(e, 'No se pudo crear el usuario')
   } finally {
     saving.value = false
+  }
+}
+
+function startEdit(u) {
+  editError.value = ''
+  editing.value = u
+  editForm.value = { name: u.name, role: u.role, password: '' }
+}
+
+async function saveEdit() {
+  savingEdit.value = true
+  editError.value = ''
+  try {
+    const payload = { name: editForm.value.name, role: editForm.value.role, active: editing.value.active }
+    if (editForm.value.password) payload.password = editForm.value.password
+    await api.put(`/admin/users/${editing.value.id}`, payload)
+    editing.value = null
+    await load()
+  } catch (e) {
+    editError.value = apiError(e, 'No se pudo guardar')
+  } finally {
+    savingEdit.value = false
+  }
+}
+
+async function toggleActive(u) {
+  const verb = u.active ? 'desactivar' : 'activar'
+  if (!confirm(`¿Seguro que quieres ${verb} a "${u.name}"?`)) return
+  try {
+    await api.put(`/admin/users/${u.id}`, { name: u.name, role: u.role, active: !u.active })
+    await load()
+  } catch (e) {
+    alert(apiError(e, 'No se pudo cambiar el estado'))
   }
 }
 
@@ -101,11 +143,15 @@ onMounted(load)
             <th class="px-4 py-3">Email</th>
             <th class="px-4 py-3">Rol</th>
             <th class="px-4 py-3">Estado</th>
+            <th class="px-4 py-3 text-right">Acciones</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
           <tr v-for="u in users" :key="u.id">
-            <td class="px-4 py-3 font-medium text-slate-900">{{ u.name }}</td>
+            <td class="px-4 py-3 font-medium text-slate-900">
+              {{ u.name }}
+              <span v-if="u.id === auth.user?.id" class="ml-1 text-xs text-slate-400">(tú)</span>
+            </td>
             <td class="px-4 py-3 text-slate-600">{{ u.email }}</td>
             <td class="px-4 py-3">
               <span
@@ -118,13 +164,73 @@ onMounted(load)
                 {{ u.active ? 'activo' : 'inactivo' }}
               </span>
             </td>
+            <td class="px-4 py-3">
+              <div class="flex items-center justify-end gap-3">
+                <button class="font-medium text-blue-600 hover:underline" @click="startEdit(u)">
+                  Editar
+                </button>
+                <button
+                  v-if="u.id !== auth.user?.id"
+                  class="font-medium hover:underline"
+                  :class="u.active ? 'text-red-600' : 'text-green-600'"
+                  @click="toggleActive(u)"
+                >
+                  {{ u.active ? 'Desactivar' : 'Activar' }}
+                </button>
+                <span v-else class="text-slate-300" title="No puedes desactivar tu propia cuenta">
+                  Desactivar
+                </span>
+              </div>
+            </td>
           </tr>
           <tr v-if="!users.length">
-            <td colspan="4" class="px-4 py-6 text-center text-slate-400">Sin usuarios.</td>
+            <td colspan="5" class="px-4 py-6 text-center text-slate-400">Sin usuarios.</td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <!-- Modal de edición -->
+    <Modal v-if="editing" :title="`Editar: ${editing.name}`" @close="editing = null">
+      <form class="space-y-4" @submit.prevent="saveEdit">
+        <div v-if="editError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          {{ editError }}
+        </div>
+        <label class="block space-y-1">
+          <span class="text-sm font-medium text-slate-700">Nombre</span>
+          <input v-model="editForm.name" required class="km-input" />
+        </label>
+        <label class="block space-y-1">
+          <span class="text-sm font-medium text-slate-700">Rol</span>
+          <select v-model="editForm.role" class="km-input">
+            <option value="viewer">viewer</option>
+            <option value="admin">admin</option>
+          </select>
+        </label>
+        <label class="block space-y-1">
+          <span class="text-sm font-medium text-slate-700">Nueva contraseña</span>
+          <input
+            v-model="editForm.password"
+            type="password"
+            placeholder="Dejar vacío para no cambiarla"
+            class="km-input"
+          />
+          <span class="text-xs text-slate-400">Mínimo 8 caracteres si la cambias.</span>
+        </label>
+        <div class="flex items-center gap-3 pt-1">
+          <button
+            type="submit"
+            :disabled="savingEdit"
+            class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+          >
+            {{ savingEdit ? 'Guardando…' : 'Guardar' }}
+          </button>
+          <button type="button" class="text-sm font-medium text-slate-500 hover:text-slate-700" @click="editing = null">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </Modal>
   </div>
 </template>
 

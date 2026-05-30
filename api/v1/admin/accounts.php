@@ -10,11 +10,15 @@ $admin = Auth::requireAdmin();
 
 if (Request::method() === 'GET') {
     $rows = DB::run(
-        'SELECT id, label, server_url, email, active, created_at FROM kobo_accounts ORDER BY created_at DESC'
+        'SELECT a.id, a.label, a.server_url, a.email, a.active, a.created_at,
+                (SELECT COUNT(*) FROM forms f WHERE f.kobo_account_id = a.id) AS forms_count
+         FROM kobo_accounts a
+         ORDER BY a.created_at DESC'
     )->fetchAll();
     foreach ($rows as &$r) {
-        $r['id']     = (int) $r['id'];
-        $r['active'] = (bool) $r['active'];
+        $r['id']          = (int) $r['id'];
+        $r['active']      = (bool) $r['active'];
+        $r['forms_count'] = (int) $r['forms_count'];
     }
     ErrorResponse::ok($rows);
 }

@@ -78,11 +78,10 @@ const linkActive = 'bg-blue-600 text-white'
     <div class="border-t border-slate-700/60 p-3">
       <RouterLink
         :to="{ name: 'profile' }"
-        :class="[linkBase, 'mb-2', $route.name === 'profile' ? linkActive : linkInactive]"
+        :title="'Ir a mi perfil'"
+        class="mb-2 flex items-center gap-3 rounded-lg px-1 py-2 transition-colors hover:bg-slate-700/60"
+        :class="{ 'bg-slate-700/60': $route.name === 'profile' }"
       >
-        Mi perfil
-      </RouterLink>
-      <div class="mb-2 flex items-center gap-3 px-1">
         <div class="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold">
           {{ initials }}
         </div>
@@ -90,7 +89,7 @@ const linkActive = 'bg-blue-600 text-white'
           <p class="truncate text-sm font-medium">{{ auth.user?.name }}</p>
           <p class="truncate text-xs text-slate-400">{{ auth.user?.role }}</p>
         </div>
-      </div>
+      </RouterLink>
       <button
         class="w-full rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white"
         @click="onLogout"

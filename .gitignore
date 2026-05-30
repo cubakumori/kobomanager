@@ -15,3 +15,6 @@ api/config.php
 # Editor
 .vscode/
 .idea/
+
+# Otros
+.claude
