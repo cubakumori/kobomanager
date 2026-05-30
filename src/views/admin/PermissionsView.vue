@@ -91,12 +91,12 @@ onMounted(loadUsers)
       {{ error }}
     </div>
 
-    <div class="flex flex-wrap gap-4 rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-      <label class="block space-y-1">
-        <span class="text-sm font-medium text-slate-700">Usuario</span>
+    <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-slate-600">Usuario:</label>
         <select
           v-model="selectedUserId"
-          class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+          class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
           @change="loadPerms"
         >
           <option value="">— Selecciona un usuario —</option>
@@ -104,17 +104,17 @@ onMounted(loadUsers)
             {{ u.name }} ({{ u.email }}) · {{ u.role }}
           </option>
         </select>
-      </label>
-      <label v-if="selectedUserId && accounts.length" class="block space-y-1">
-        <span class="text-sm font-medium text-slate-700">Cuenta Kobo</span>
+      </div>
+      <div v-if="selectedUserId && accounts.length" class="flex items-center gap-2">
+        <label class="text-sm text-slate-600">Cuenta:</label>
         <select
           v-model="selectedAccount"
-          class="w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+          class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
         >
           <option value="">Todas las cuentas</option>
           <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.label }}</option>
         </select>
-      </label>
+      </div>
     </div>
 
     <div

@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import api from '../../services/api'
 import { useAuthStore, apiError } from '../../stores/auth'
 import Modal from '../../components/Modal.vue'
+import { confirmDialog } from '../../composables/confirm'
 
 const auth = useAuthStore()
 
@@ -13,6 +14,7 @@ const listError = ref('')
 const form = ref({ name: '', email: '', password: '', role: 'viewer' })
 const formError = ref('')
 const saving = ref(false)
+const actionError = ref('')
 
 // Edición
 const editing = ref(null)
@@ -76,12 +78,20 @@ async function saveEdit() {
 
 async function toggleActive(u) {
   const verb = u.active ? 'desactivar' : 'activar'
-  if (!confirm(`¿Seguro que quieres ${verb} a "${u.name}"?`)) return
+  const ok = await confirmDialog({
+    title: u.active ? 'Desactivar usuario' : 'Activar usuario',
+    message: `¿Seguro que quieres ${verb} a «${u.name}»?` +
+      (u.active ? ' No podrá iniciar sesión y se cerrarán sus sesiones activas.' : ''),
+    confirmText: u.active ? 'Desactivar' : 'Activar',
+    danger: u.active,
+  })
+  if (!ok) return
+  actionError.value = ''
   try {
     await api.put(`/admin/users/${u.id}`, { name: u.name, email: u.email, role: u.role, active: !u.active })
     await load()
   } catch (e) {
-    alert(apiError(e, 'No se pudo cambiar el estado'))
+    actionError.value = apiError(e, 'No se pudo cambiar el estado')
   }
 }
 
@@ -94,6 +104,10 @@ onMounted(load)
       <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Usuarios</h1>
       <p class="mt-1 text-sm text-slate-500">Usuarios de la aplicación (no de KoboToolbox).</p>
     </header>
+
+    <div v-if="actionError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+      {{ actionError }}
+    </div>
 
     <!-- Alta -->
     <form

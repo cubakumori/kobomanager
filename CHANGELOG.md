@@ -17,9 +17,13 @@ Todos los cambios notables de KoboManager. El formato sigue
 - **Eliminar por formulario**: quita un formulario y su caché de KoboManager (no toca Kobo).
 - Edición de usuarios: el **email** ahora es editable (con validación de unicidad).
 
+- Acción **Ver** en *Formularios*: abre el formulario en KoboToolbox (solo desplegados).
+- Diálogos de **confirmación como modal** (componente `ConfirmDialog`) en lugar de `confirm()`/`alert()` del navegador.
+
 ### Cambiado
 
-- El filtro por cuenta en *Permisos* se muestra siempre que haya un usuario seleccionado.
+- El filtro por cuenta en *Permisos* se muestra siempre que haya un usuario seleccionado,
+  con el mismo estilo de cabecera y filtros que *Formularios*.
 - En el Dashboard, el card «Acerca de Kobo» se integra en la rejilla con el resto.
 
 ### Corregido

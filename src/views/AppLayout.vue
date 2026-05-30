@@ -1,6 +1,7 @@
 <script setup>
 import { RouterView } from 'vue-router'
 import AppSidebar from '../components/AppSidebar.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 </script>
 
 <template>
@@ -11,5 +12,6 @@ import AppSidebar from '../components/AppSidebar.vue'
         <RouterView />
       </div>
     </main>
+    <ConfirmDialog />
   </div>
 </template>

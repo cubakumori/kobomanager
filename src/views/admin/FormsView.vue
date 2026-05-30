@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import api from '../../services/api'
 import { apiError } from '../../stores/auth'
+import { confirmDialog } from '../../composables/confirm'
 
 const forms = ref([])
 const loading = ref(true)
@@ -60,7 +61,13 @@ async function onSync() {
 }
 
 async function removeForm(f) {
-  if (!confirm(`¿Eliminar «${f.name}» de KoboManager y su caché de envíos? No se borra nada en KoboToolbox; si sigue cumpliendo el filtro, volverá al sincronizar.`)) return
+  const ok = await confirmDialog({
+    title: 'Eliminar formulario',
+    message: `Se eliminará «${f.name}» y su caché de envíos de KoboManager. No se borra nada en KoboToolbox; si sigue cumpliendo el filtro, volverá al sincronizar.`,
+    confirmText: 'Eliminar',
+    danger: true,
+  })
+  if (!ok) return
   flash.value = ''
   syncError.value = ''
   try {
@@ -194,6 +201,16 @@ onMounted(load)
             <td class="px-4 py-3 text-slate-500">{{ f.last_synced_at ?? '—' }}</td>
             <td class="px-4 py-3">
               <div class="flex items-center justify-end gap-3">
+                <a
+                  v-if="f.deployment_status === 'deployed'"
+                  :href="`${f.server_url}/#/forms/${f.kobo_asset_uid}`"
+                  target="_blank"
+                  rel="noopener"
+                  class="font-medium text-blue-600 hover:underline"
+                  title="Abrir el formulario en KoboToolbox (requiere sesión en Kobo)"
+                >
+                  Ver
+                </a>
                 <button
                   :disabled="updatingId === f.id"
                   class="font-medium text-blue-600 hover:underline disabled:opacity-50"

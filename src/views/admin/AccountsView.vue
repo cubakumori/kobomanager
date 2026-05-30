@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 import Modal from '../../components/Modal.vue'
+import { confirmDialog } from '../../composables/confirm'
 
 const accounts = ref([])
 const loading = ref(true)
@@ -95,12 +96,21 @@ async function syncAccount(a) {
 }
 
 async function removeAccount(a) {
-  if (!confirm(`¿Eliminar la cuenta "${a.label}"? Esta acción no se puede deshacer.`)) return
+  const ok = await confirmDialog({
+    title: 'Eliminar cuenta',
+    message: `Se eliminará la cuenta «${a.label}». Esta acción no se puede deshacer.`,
+    confirmText: 'Eliminar',
+    danger: true,
+  })
+  if (!ok) return
+  syncError.value = ''
+  syncFlash.value = ''
   try {
     await api.delete(`/admin/accounts/${a.id}`)
+    syncFlash.value = `Cuenta «${a.label}» eliminada.`
     await load()
   } catch (e) {
-    alert(apiError(e, 'No se pudo eliminar'))
+    syncError.value = apiError(e, 'No se pudo eliminar la cuenta')
   }
 }
 
