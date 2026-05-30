@@ -1,8 +1,11 @@
 # KoboManager
 
 Capa intermedia entre cuentas de KoboToolbox y un grupo reducido de usuarios, para
-consultar, editar y validar envíos sin necesidad de cuenta en Kobo. Ver el plan
-completo en [`Kobo Manager v2.md`](./Kobo%20Manager%20v2.md).
+consultar, editar y validar envíos sin necesidad de cuenta en Kobo.
+
+- Historial de cambios: [`CHANGELOG.md`](./CHANGELOG.md)
+- Pendientes e ideas futuras: [`ROADMAP.md`](./ROADMAP.md)
+- Despliegue en producción: [`DEPLOY.md`](./DEPLOY.md)
 
 ## Estructura del repositorio
 
@@ -15,7 +18,7 @@ El frontend vive en la raíz (igual que en despliegue); el backend en `/api`.
 ```
 
 En despliegue, el build de `dist/` va a la raíz del servidor y `/api` se sube
-tal cual (ver sección 12 del plan).
+tal cual (ver [`DEPLOY.md`](./DEPLOY.md)).
 
 ## Requisitos
 
@@ -58,16 +61,6 @@ Abrir http://localhost:5173. El dashboard muestra el resultado de `/api/v1/healt
 
 Scripts sueltos por si se necesitan: `npm run dev:api`, `npm run dev:web`, `npm run build`.
 
-### Cron jobs (producción)
-
-```cron
-*/15 * * * *  php /ruta/api/cron/sync_submissions.php     # sincroniza envíos desde Kobo
-0    7 * * *  php /ruta/api/cron/daily_summary.php         # resumen diario por email
-```
-
-El resumen diario requiere `RESEND_API_KEY` y `MAIL_FROM` configurados en `config.php`.
-Ambos scripts solo se ejecutan por CLI.
-
 ### 3. Crear el primer administrador
 
 La creación de usuarios vía API requiere ya estar autenticado como admin, así que el
@@ -79,11 +72,5 @@ php api/cli/create_user.php <email> <password> <nombre> admin
 
 ## Estado
 
-- [x] **Fase 0** — Scaffolding, esquema SQL, config, `.htaccess`, health-check end-to-end.
-- [x] **Fase 1** — Autenticación (JWT + cookie HttpOnly), sesiones, CRUD de usuarios y cuentas Kobo (tokens cifrados con TokenVault), login y panel admin con Tailwind.
-- [x] **Fase 2** — KoboClient (`getAssets`), sincronización de formularios con estado, y permisos usuario-formulario.
-- [x] **Fase 3** — Cron de envíos (`sync_submissions.php`), endpoints de viewer (lista de formularios, envíos paginados, detalle) y vistas de datos con búsqueda; registro de visualización en `audit_log`.
-- [x] **Fase 4** — Edición de envíos (escribe en Kobo vía bulk PATCH y luego en caché) y revisión interna (`POST /submissions/{id}/review`); UI de edición y panel de aprobación/rechazo según `can_edit`/`can_validate`.
-- [x] **Fase 5** — Endpoint `/forms/{id}/stats` (total, por día, distribución por estado) y `StatsView` con gráficos (Chart.js).
-- [x] **Fase 6** — Notificaciones por email con Resend (`Mailer`), cron de resumen diario (`daily_summary.php`) y configuración por usuario en su perfil.
-- [x] **Fase 7** — Rate limiting en login (5/min por IP), auditoría de no-exposición de tokens, `.htaccess` endurecido (todo pasa por el front controller; `lib`/`cron`/`cli` denegados), y manejo de errores de Kobo por código en el frontend.
+Primera versión funcional completa. El detalle de lo entregado está en
+[`CHANGELOG.md`](./CHANGELOG.md) y lo pendiente en [`ROADMAP.md`](./ROADMAP.md).
