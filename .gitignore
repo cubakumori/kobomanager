@@ -2,8 +2,8 @@
 node_modules/
 vendor/
 
-# Builds
-frontend/dist/
+# Build del frontend
+dist/
 
 # Configuración con secretos (usar api/config.example.php como plantilla)
 api/config.php

@@ -4,15 +4,17 @@ Capa intermedia entre cuentas de KoboToolbox y un grupo reducido de usuarios, pa
 consultar, editar y validar envíos sin necesidad de cuenta en Kobo. Ver el plan
 completo en [`Kobo Manager v2.md`](./Kobo%20Manager%20v2.md).
 
-## Estructura del repositorio (monorepo de desarrollo)
+## Estructura del repositorio
+
+El frontend vive en la raíz (igual que en despliegue); el backend en `/api`.
 
 ```
-/frontend   Vue 3 + Vite (SPA)
-/api        Backend PHP 8 (API REST)
-/db         Migraciones SQL
+/            Vue 3 + Vite (SPA): index.html, src/, public/, vite.config.js
+/api         Backend PHP 8 (API REST)
+/db          Migraciones SQL
 ```
 
-En despliegue, el build de `frontend/dist/` va a la raíz del servidor y `/api` se sube
+En despliegue, el build de `dist/` va a la raíz del servidor y `/api` se sube
 tal cual (ver sección 12 del plan).
 
 ## Requisitos
@@ -30,29 +32,30 @@ mysql -e "CREATE DATABASE IF NOT EXISTS kobomanager CHARACTER SET utf8mb4 COLLAT
 mysql kobomanager < db/001_schema.sql
 ```
 
-### 2. Backend
-
-```bash
-cp api/config.example.php api/config.php   # y rellenar valores
-# Generar claves:
-php -r 'echo sodium_bin2hex(random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES));'   # CONFIG_TOKEN_KEY
-php -r 'echo bin2hex(random_bytes(32));'                                         # JWT_SECRET
-
-# Servidor de desarrollo (front controller):
-php -S 127.0.0.1:8787 api/index.php
-# Comprobar: curl http://127.0.0.1:8787/api/v1/health
-```
-
 > En este repo `api/config.php` ya está creado con claves de desarrollo. **No** versionar
-> ese archivo (está en `.gitignore`).
+> ese archivo (está en `.gitignore`). Para un entorno nuevo:
+>
+> ```bash
+> cp api/config.example.php api/config.php   # y rellenar valores
+> php -r 'echo sodium_bin2hex(random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES));'   # CONFIG_TOKEN_KEY
+> php -r 'echo bin2hex(random_bytes(32));'                                         # JWT_SECRET
+> ```
 
-### 3. Frontend
+### 2. Arrancar la app (un solo comando)
 
 ```bash
-cd frontend
 npm install
-npm run dev    # http://localhost:5173 (proxy /api -> 127.0.0.1:8787)
+npm run dev
 ```
+
+Esto levanta **a la vez** (con `concurrently`):
+
+- **api** → `php -S 127.0.0.1:8787 api/index.php` (backend)
+- **web** → `vite` en http://localhost:5173 (proxy `/api` → backend)
+
+Abrir http://localhost:5173. El dashboard muestra el resultado de `/api/v1/health`.
+
+Scripts sueltos por si se necesitan: `npm run dev:api`, `npm run dev:web`, `npm run build`.
 
 ## Estado
 
