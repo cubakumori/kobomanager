@@ -1,10 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
-// Rutas según la sección 5 del plan. En la Fase 0 sólo existen las vistas
-// base (Login/Dashboard); el resto se añade en fases posteriores.
+// Rutas según la sección 5 del plan. Las vistas de viewer (forms/submissions/stats)
+// se añaden en fases posteriores.
 const routes = [
-  { path: '/', redirect: '/dashboard' },
   {
     path: '/login',
     name: 'login',
@@ -12,10 +11,31 @@ const routes = [
     meta: { public: true },
   },
   {
-    path: '/dashboard',
-    name: 'dashboard',
-    component: () => import('../views/DashboardView.vue'),
+    // Layout autenticado (sidebar + contenido) para todo lo que requiere sesión.
+    path: '/',
+    component: () => import('../views/AppLayout.vue'),
+    children: [
+      { path: '', redirect: '/dashboard' },
+      {
+        path: 'dashboard',
+        name: 'dashboard',
+        component: () => import('../views/DashboardView.vue'),
+      },
+      {
+        path: 'admin/users',
+        name: 'admin-users',
+        component: () => import('../views/admin/UsersView.vue'),
+        meta: { requiresAdmin: true },
+      },
+      {
+        path: 'admin/accounts',
+        name: 'admin-accounts',
+        component: () => import('../views/admin/AccountsView.vue'),
+        meta: { requiresAdmin: true },
+      },
+    ],
   },
+  { path: '/:pathMatch(.*)*', redirect: '/dashboard' },
 ]
 
 const router = createRouter({
@@ -31,7 +51,6 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.public) {
-    // Si ya está autenticado, no tiene sentido ver el login.
     if (to.name === 'login' && auth.isAuthenticated) return { name: 'dashboard' }
     return true
   }

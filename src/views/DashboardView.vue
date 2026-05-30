@@ -1,40 +1,43 @@
 <script setup>
-// Dashboard — placeholder de la Fase 0.
-// Muestra el resultado del endpoint /health para confirmar conexión front↔back.
-import { ref, onMounted } from 'vue'
-import api from '../services/api'
+import { useAuthStore } from '../stores/auth'
+import { RouterLink } from 'vue-router'
 
-const health = ref(null)
-const error = ref(null)
-
-onMounted(async () => {
-  try {
-    const { data } = await api.get('/health')
-    health.value = data.data
-  } catch (e) {
-    error.value = e?.message ?? 'Error desconocido'
-  }
-})
+const auth = useAuthStore()
 </script>
 
 <template>
-  <main class="dashboard">
-    <h1>KoboManager</h1>
-    <p class="muted">Scaffolding de la Fase 0 — backend conectado.</p>
+  <div class="space-y-6">
+    <header>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">
+        Hola, {{ auth.user?.name }}
+      </h1>
+      <p class="mt-1 text-sm text-slate-500">
+        Sesión iniciada como <span class="font-medium">{{ auth.user?.email }}</span>
+        ({{ auth.user?.role }}).
+      </p>
+    </header>
 
-    <section class="card">
-      <h2>Estado del backend</h2>
-      <pre v-if="health">{{ JSON.stringify(health, null, 2) }}</pre>
-      <p v-else-if="error" class="error">No se pudo contactar con la API: {{ error }}</p>
-      <p v-else>Cargando…</p>
+    <section v-if="auth.isAdmin" class="grid gap-4 sm:grid-cols-2">
+      <RouterLink
+        :to="{ name: 'admin-users' }"
+        class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:ring-blue-300"
+      >
+        <h2 class="font-semibold text-slate-900">Usuarios</h2>
+        <p class="mt-1 text-sm text-slate-500">Gestiona los usuarios de la aplicación.</p>
+      </RouterLink>
+      <RouterLink
+        :to="{ name: 'admin-accounts' }"
+        class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:ring-blue-300"
+      >
+        <h2 class="font-semibold text-slate-900">Cuentas Kobo</h2>
+        <p class="mt-1 text-sm text-slate-500">Conecta y administra las cuentas de KoboToolbox.</p>
+      </RouterLink>
     </section>
-  </main>
-</template>
 
-<style scoped>
-.dashboard { max-width: 720px; margin: 3rem auto; padding: 0 1rem; }
-.muted { color: #666; }
-.card { border: 1px solid #e0e0e0; border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem; }
-pre { background: #f5f5f5; padding: 1rem; border-radius: 8px; overflow: auto; }
-.error { color: #dc2626; }
-</style>
+    <section v-else class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <p class="text-sm text-slate-500">
+        Las vistas de formularios y envíos estarán disponibles en próximas fases.
+      </p>
+    </section>
+  </div>
+</template>

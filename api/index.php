@@ -4,11 +4,6 @@
  *
  * Resuelve la ruta tras /api/v1/ y delega en el script correspondiente
  * dentro de /v1. Centraliza CORS, cabeceras JSON y manejo de errores.
- *
- * Layout de rutas (un archivo por recurso, parámetros vía query/segmento):
- *   /api/v1/health                  -> v1/health.php
- *   /api/v1/auth/login              -> v1/auth/login.php
- *   /api/v1/forms/{id}/submissions  -> v1/forms/submissions.php   (id en $ROUTE_PARAMS)
  */
 
 declare(strict_types=1);
@@ -16,6 +11,10 @@ declare(strict_types=1);
 require __DIR__ . '/config.php';
 require __DIR__ . '/lib/DB.php';
 require __DIR__ . '/lib/ErrorResponse.php';
+require __DIR__ . '/lib/Request.php';
+require __DIR__ . '/lib/TokenVault.php';
+require __DIR__ . '/lib/Auth.php';
+require __DIR__ . '/lib/Audit.php';
 
 // --- CORS (frontend en dev sobre otro origen) ---
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
@@ -35,19 +34,28 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
 // --- Resolver path de la API ---
 $uri  = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
 $path = preg_replace('#^.*/api/v1/?#', '', $uri);   // quita prefijo hasta /api/v1/
-$path = trim($path, '/');
-$segments = $path === '' ? [] : explode('/', $path);
+$route = trim($path, '/');
 
-// --- Enrutado mínimo de la Fase 0 ---
-// (Las rutas de auth/admin/forms se añaden en fases posteriores.)
+/**
+ * Tabla de rutas: "ruta" => archivo en /v1.
+ * Los parámetros dinámicos ({id}) y métodos se resuelven dentro de cada script.
+ * Para Fase 1, rutas estáticas son suficientes.
+ */
+$routes = [
+    ''                => 'health.php',
+    'health'          => 'health.php',
+    'auth/login'      => 'auth/login.php',
+    'auth/logout'     => 'auth/logout.php',
+    'auth/me'         => 'auth/me.php',
+    'admin/users'     => 'admin/users.php',
+    'admin/accounts'  => 'admin/accounts.php',
+];
+
 try {
-    switch (true) {
-        case $segments === [] || $segments === ['health']:
-            require __DIR__ . '/v1/health.php';
-            break;
-
-        default:
-            ErrorResponse::send('NOT_FOUND', 'Ruta no encontrada: /' . $path);
+    if (isset($routes[$route])) {
+        require __DIR__ . '/v1/' . $routes[$route];
+    } else {
+        ErrorResponse::send('NOT_FOUND', 'Ruta no encontrada: /' . $route);
     }
 } catch (Throwable $e) {
     $detail = APP_ENV === 'dev' ? $e->getMessage() : null;

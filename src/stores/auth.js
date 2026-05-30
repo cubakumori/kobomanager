@@ -1,8 +1,11 @@
 import { defineStore } from 'pinia'
 import api from '../services/api'
 
-// Store de autenticación. La lógica de login/logout se completa en la Fase 1;
-// aquí queda el esqueleto y el método me() que consulta la sesión actual.
+// Traduce un error de Axios a un mensaje legible usando el formato estándar del backend.
+export function apiError(e, fallback = 'Ha ocurrido un error') {
+  return e?.response?.data?.error?.message ?? fallback
+}
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,        // { id, name, email, role }
@@ -14,6 +17,19 @@ export const useAuthStore = defineStore('auth', {
     isAdmin: (s) => s.user?.role === 'admin',
   },
   actions: {
+    async login(email, password) {
+      const { data } = await api.post('/auth/login', { email, password })
+      this.user = data.data
+      this.checked = true
+      return this.user
+    },
+    async logout() {
+      try {
+        await api.post('/auth/logout')
+      } finally {
+        this.user = null
+      }
+    },
     async fetchMe() {
       this.loading = true
       try {

@@ -57,10 +57,19 @@ Abrir http://localhost:5173. El dashboard muestra el resultado de `/api/v1/healt
 
 Scripts sueltos por si se necesitan: `npm run dev:api`, `npm run dev:web`, `npm run build`.
 
+### 3. Crear el primer administrador
+
+La creación de usuarios vía API requiere ya estar autenticado como admin, así que el
+primer admin se crea por CLI:
+
+```bash
+php api/cli/create_user.php <email> <password> <nombre> admin
+```
+
 ## Estado
 
 - [x] **Fase 0** — Scaffolding, esquema SQL, config, `.htaccess`, health-check end-to-end.
-- [ ] Fase 1 — Autenticación (JWT + cookie HttpOnly) y panel admin.
+- [x] **Fase 1** — Autenticación (JWT + cookie HttpOnly), sesiones, CRUD de usuarios y cuentas Kobo (tokens cifrados con TokenVault), login y panel admin con Tailwind.
 - [ ] Fase 2 — Sincronización de formularios y permisos.
 - [ ] Fase 3 — Caché de envíos y vistas de datos.
 - [ ] Fase 4 — Edición y revisión interna.
