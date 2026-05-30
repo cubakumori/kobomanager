@@ -1,0 +1,17 @@
+# Dependencias
+node_modules/
+vendor/
+
+# Builds
+frontend/dist/
+
+# Configuración con secretos (usar api/config.example.php como plantilla)
+api/config.php
+
+# Logs y temporales
+*.log
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
