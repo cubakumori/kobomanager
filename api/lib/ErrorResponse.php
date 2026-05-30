@@ -13,6 +13,7 @@ class ErrorResponse {
         'KOBO_RATE_LIMIT'               => [429, 'Se alcanzó el límite de peticiones de la API de Kobo'],
         'AUTH_INVALID_TOKEN'            => [401, 'Sesión inválida o expirada'],
         'AUTH_INSUFFICIENT_PERMISSIONS' => [403, 'No tienes permisos suficientes'],
+        'AUTH_RATE_LIMITED'             => [429, 'Demasiados intentos. Espera un minuto e inténtalo de nuevo.'],
         'VALIDATION_ERROR'              => [422, 'Datos de entrada inválidos'],
         'NOT_FOUND'                     => [404, 'Recurso no encontrado'],
         'INTERNAL_ERROR'                => [500, 'Error interno del servidor'],

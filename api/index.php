@@ -15,6 +15,7 @@ require __DIR__ . '/lib/Request.php';
 require __DIR__ . '/lib/TokenVault.php';
 require __DIR__ . '/lib/Auth.php';
 require __DIR__ . '/lib/Audit.php';
+require __DIR__ . '/lib/RateLimit.php';
 require __DIR__ . '/lib/KoboClient.php';
 
 // --- CORS (frontend en dev sobre otro origen) ---

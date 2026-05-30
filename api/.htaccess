@@ -1,12 +1,16 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /api/
-  # Todo el tráfico de la API pasa por el front controller index.php
-  RewriteCond %{REQUEST_FILENAME} !-f
+  # index.php se sirve tal cual; TODO lo demás pasa por el front controller
+  # (no se sirven los .php sueltos directamente, evitando saltarse el bootstrap).
+  RewriteRule ^index\.php$ - [L]
   RewriteRule ^ index.php [QSA,L]
 </IfModule>
 
-# Nunca servir config.php ni archivos sensibles directamente
+# Nunca servir la configuración directamente.
 <FilesMatch "^(config|config\.example)\.php$">
   Require all denied
 </FilesMatch>
+
+# Defensa en profundidad: denegar acceso web directo a código interno.
+RedirectMatch 403 ^/api/(lib|cron|cli)/

@@ -29,7 +29,8 @@ tal cual (ver sección 12 del plan).
 
 ```bash
 mysql -e "CREATE DATABASE IF NOT EXISTS kobomanager CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql kobomanager < db/001_schema.sql
+# Aplicar todas las migraciones en orden
+for f in db/*.sql; do mysql kobomanager < "$f"; done
 ```
 
 > En este repo `api/config.php` ya está creado con claves de desarrollo. **No** versionar
@@ -85,4 +86,4 @@ php api/cli/create_user.php <email> <password> <nombre> admin
 - [x] **Fase 4** — Edición de envíos (escribe en Kobo vía bulk PATCH y luego en caché) y revisión interna (`POST /submissions/{id}/review`); UI de edición y panel de aprobación/rechazo según `can_edit`/`can_validate`.
 - [x] **Fase 5** — Endpoint `/forms/{id}/stats` (total, por día, distribución por estado) y `StatsView` con gráficos (Chart.js).
 - [x] **Fase 6** — Notificaciones por email con Resend (`Mailer`), cron de resumen diario (`daily_summary.php`) y configuración por usuario en su perfil.
-- [ ] Fase 7 — Pulido y seguridad.
+- [x] **Fase 7** — Rate limiting en login (5/min por IP), auditoría de no-exposición de tokens, `.htaccess` endurecido (todo pasa por el front controller; `lib`/`cron`/`cli` denegados), y manejo de errores de Kobo por código en el frontend.
