@@ -47,6 +47,11 @@ const routes = [
         component: () => import('../views/ProfileView.vue'),
       },
       {
+        path: 'about-kobo',
+        name: 'about-kobo',
+        component: () => import('../views/AboutKoboView.vue'),
+      },
+      {
         path: 'admin/users',
         name: 'admin-users',
         component: () => import('../views/admin/UsersView.vue'),

@@ -43,5 +43,15 @@ const auth = useAuthStore()
         <p class="mt-1 text-sm text-slate-500">Consulta los envíos de tus formularios.</p>
       </RouterLink>
     </section>
+
+    <RouterLink
+      :to="{ name: 'about-kobo' }"
+      class="block rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:ring-blue-300"
+    >
+      <h2 class="font-semibold text-slate-900">Acerca de Kobo</h2>
+      <p class="mt-1 text-sm text-slate-500">
+        Qué es KoboToolbox, cómo crear una cuenta y dónde obtener tu API token.
+      </p>
+    </RouterLink>
   </div>
 </template>

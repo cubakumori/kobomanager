@@ -116,6 +116,9 @@ onMounted(load)
         <label class="space-y-1">
           <span class="text-sm font-medium text-slate-700">API token</span>
           <input v-model="form.api_token" type="password" required class="km-input" />
+          <RouterLink :to="{ name: 'about-kobo' }" class="text-xs text-blue-600 hover:underline">
+            ¿Dónde obtengo el API token?
+          </RouterLink>
         </label>
       </div>
       <button
