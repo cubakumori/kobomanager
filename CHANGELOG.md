@@ -14,7 +14,13 @@ Todos los cambios notables de KoboManager. El formato sigue
 - **Sincronizar por cuenta** desde *Cuentas Kobo* y **filtro por cuenta** en *Formularios*
   y *Permisos* (con opción «Todas las cuentas»).
 - **Actualizar por formulario**: trae a la caché los envíos de un único formulario.
+- **Eliminar por formulario**: quita un formulario y su caché de KoboManager (no toca Kobo).
 - Edición de usuarios: el **email** ahora es editable (con validación de unicidad).
+
+### Cambiado
+
+- El filtro por cuenta en *Permisos* se muestra siempre que haya un usuario seleccionado.
+- En el Dashboard, el card «Acerca de Kobo» se integra en la rejilla con el resto.
 
 ### Corregido
 

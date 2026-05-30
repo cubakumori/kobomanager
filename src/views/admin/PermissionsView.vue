@@ -105,7 +105,7 @@ onMounted(loadUsers)
           </option>
         </select>
       </label>
-      <label v-if="selectedUserId && accounts.length > 1" class="block space-y-1">
+      <label v-if="selectedUserId && accounts.length" class="block space-y-1">
         <span class="text-sm font-medium text-slate-700">Cuenta Kobo</span>
         <select
           v-model="selectedAccount"

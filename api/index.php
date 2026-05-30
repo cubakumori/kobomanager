@@ -57,6 +57,7 @@ $routes = [
     'admin/accounts/:id'        => 'admin/account_item.php',
     'admin/forms'               => 'admin/forms.php',
     'admin/forms/sync'          => 'admin/forms_sync.php',
+    'admin/forms/:id'           => 'admin/form_item.php',
     'admin/forms/:id/sync'      => 'admin/form_sync_one.php',
     'admin/permissions'         => 'admin/permissions.php',
     'admin/settings'            => 'admin/settings.php',

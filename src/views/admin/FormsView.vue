@@ -59,6 +59,19 @@ async function onSync() {
   }
 }
 
+async function removeForm(f) {
+  if (!confirm(`¿Eliminar «${f.name}» de KoboManager y su caché de envíos? No se borra nada en KoboToolbox; si sigue cumpliendo el filtro, volverá al sincronizar.`)) return
+  flash.value = ''
+  syncError.value = ''
+  try {
+    await api.delete(`/admin/forms/${f.id}`)
+    flash.value = `«${f.name}» eliminado.`
+    await load()
+  } catch (e) {
+    syncError.value = `«${f.name}»: ${apiError(e, 'no se pudo eliminar')}`
+  }
+}
+
 async function onUpdateForm(f) {
   updatingId.value = f.id
   flash.value = ''
@@ -179,15 +192,24 @@ onMounted(load)
               </p>
             </td>
             <td class="px-4 py-3 text-slate-500">{{ f.last_synced_at ?? '—' }}</td>
-            <td class="px-4 py-3 text-right">
-              <button
-                :disabled="updatingId === f.id"
-                class="font-medium text-blue-600 hover:underline disabled:opacity-50"
-                title="Traer los envíos nuevos de este formulario"
-                @click="onUpdateForm(f)"
-              >
-                {{ updatingId === f.id ? 'Actualizando…' : 'Actualizar' }}
-              </button>
+            <td class="px-4 py-3">
+              <div class="flex items-center justify-end gap-3">
+                <button
+                  :disabled="updatingId === f.id"
+                  class="font-medium text-blue-600 hover:underline disabled:opacity-50"
+                  title="Traer los envíos nuevos de este formulario"
+                  @click="onUpdateForm(f)"
+                >
+                  {{ updatingId === f.id ? 'Actualizando…' : 'Actualizar' }}
+                </button>
+                <button
+                  class="font-medium text-red-600 hover:underline"
+                  title="Eliminar este formulario y su caché de KoboManager"
+                  @click="removeForm(f)"
+                >
+                  Eliminar
+                </button>
+              </div>
             </td>
           </tr>
           <tr v-if="!filteredForms.length">
