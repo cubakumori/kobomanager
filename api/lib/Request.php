@@ -5,6 +5,13 @@
 class Request {
     private static ?array $jsonCache = null;
 
+    /** Parámetros extraídos de la ruta dinámica (ej. {id}). Los fija el front controller. */
+    public static array $params = [];
+
+    public static function param(string $key, mixed $default = null): mixed {
+        return self::$params[$key] ?? $default;
+    }
+
     /** Cuerpo JSON de la petición como array asociativo. */
     public static function json(): array {
         if (self::$jsonCache === null) {

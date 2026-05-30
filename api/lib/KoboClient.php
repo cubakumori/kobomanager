@@ -35,11 +35,41 @@ class KoboClient {
         return array_values($surveys);
     }
 
-    /** Envíos de un formulario (se usará en la Fase 3). */
+    /** Una página de envíos de un formulario (resultados solamente). */
     public function getSubmissions(string $assetUid, array $query = []): array {
         $query += ['format' => 'json'];
         $data = $this->httpGet("/api/v2/assets/$assetUid/data/", $query);
         return $data['results'] ?? [];
+    }
+
+    /**
+     * Todos los envíos de un formulario, paginando. Si $sinceIso no es null,
+     * pide solo los enviados después de esa fecha (filtro Mongo sobre _submission_time).
+     */
+    public function getSubmissionsSince(
+        string $assetUid,
+        ?string $sinceIso = null,
+        int $pageSize = 2000,
+        int $maxPages = 100
+    ): array {
+        $base = ['format' => 'json', 'limit' => $pageSize, 'sort' => '{"_submission_time":1}'];
+        if ($sinceIso !== null) {
+            $base['query'] = json_encode(['_submission_time' => ['$gt' => $sinceIso]]);
+        }
+
+        $all   = [];
+        $start = 0;
+        for ($page = 0; $page < $maxPages; $page++) {
+            $data    = $this->httpGet("/api/v2/assets/$assetUid/data/", $base + ['start' => $start]);
+            $results = $data['results'] ?? [];
+            $all     = array_merge($all, $results);
+
+            $count = (int) ($data['count'] ?? 0);
+            if (count($results) < $pageSize) break;
+            $start += $pageSize;
+            if ($start >= $count) break;
+        }
+        return $all;
     }
 
     // ---------- HTTP ----------

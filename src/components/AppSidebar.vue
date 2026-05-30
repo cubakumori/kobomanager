@@ -37,6 +37,12 @@ const linkActive = 'bg-blue-600 text-white'
       >
         Dashboard
       </RouterLink>
+      <RouterLink
+        :to="{ name: 'forms' }"
+        :class="[linkBase, ['forms', 'submissions', 'submission-detail'].includes($route.name) ? linkActive : linkInactive]"
+      >
+        Mis formularios
+      </RouterLink>
 
       <template v-if="auth.isAdmin">
         <p class="px-3 pb-1 pt-4 text-xs font-semibold uppercase tracking-wider text-slate-500">

@@ -38,26 +38,53 @@ $path = preg_replace('#^.*/api/v1/?#', '', $uri);   // quita prefijo hasta /api/
 $route = trim($path, '/');
 
 /**
- * Tabla de rutas: "ruta" => archivo en /v1.
- * Los parámetros dinámicos ({id}) y métodos se resuelven dentro de cada script.
- * Para Fase 1, rutas estáticas son suficientes.
+ * Tabla de rutas: "patrón" => archivo en /v1.
+ * Un segmento ":nombre" captura un parámetro dinámico, accesible vía Request::param().
+ * El método HTTP se resuelve dentro de cada script.
  */
 $routes = [
-    ''                => 'health.php',
-    'health'          => 'health.php',
-    'auth/login'      => 'auth/login.php',
-    'auth/logout'     => 'auth/logout.php',
-    'auth/me'         => 'auth/me.php',
-    'admin/users'       => 'admin/users.php',
-    'admin/accounts'    => 'admin/accounts.php',
-    'admin/forms'       => 'admin/forms.php',
-    'admin/forms/sync'  => 'admin/forms_sync.php',
-    'admin/permissions' => 'admin/permissions.php',
+    ''                          => 'health.php',
+    'health'                    => 'health.php',
+    'auth/login'                => 'auth/login.php',
+    'auth/logout'               => 'auth/logout.php',
+    'auth/me'                   => 'auth/me.php',
+    'admin/users'               => 'admin/users.php',
+    'admin/accounts'            => 'admin/accounts.php',
+    'admin/forms'               => 'admin/forms.php',
+    'admin/forms/sync'          => 'admin/forms_sync.php',
+    'admin/permissions'         => 'admin/permissions.php',
+    'forms'                     => 'forms/index.php',
+    'forms/:id/submissions'     => 'forms/submissions.php',
+    'submissions/:id'           => 'submissions/detail.php',
 ];
 
+/** Empareja la ruta solicitada contra los patrones; devuelve [archivo, params] o [null, []]. */
+function match_route(string $route, array $routes): array {
+    $reqSegments = $route === '' ? [] : explode('/', $route);
+    foreach ($routes as $pattern => $file) {
+        $patSegments = $pattern === '' ? [] : explode('/', $pattern);
+        if (count($patSegments) !== count($reqSegments)) continue;
+
+        $params = [];
+        $ok = true;
+        foreach ($patSegments as $i => $seg) {
+            if (str_starts_with($seg, ':')) {
+                $params[substr($seg, 1)] = $reqSegments[$i];
+            } elseif ($seg !== $reqSegments[$i]) {
+                $ok = false;
+                break;
+            }
+        }
+        if ($ok) return [$file, $params];
+    }
+    return [null, []];
+}
+
 try {
-    if (isset($routes[$route])) {
-        require __DIR__ . '/v1/' . $routes[$route];
+    [$file, $params] = match_route($route, $routes);
+    if ($file !== null) {
+        Request::$params = $params;
+        require __DIR__ . '/v1/' . $file;
     } else {
         ErrorResponse::send('NOT_FOUND', 'Ruta no encontrada: /' . $route);
     }

@@ -22,6 +22,21 @@ const routes = [
         component: () => import('../views/DashboardView.vue'),
       },
       {
+        path: 'forms',
+        name: 'forms',
+        component: () => import('../views/MyFormsView.vue'),
+      },
+      {
+        path: 'forms/:id/submissions',
+        name: 'submissions',
+        component: () => import('../views/SubmissionsView.vue'),
+      },
+      {
+        path: 'forms/:id/submissions/:subId',
+        name: 'submission-detail',
+        component: () => import('../views/SubmissionDetailView.vue'),
+      },
+      {
         path: 'admin/users',
         name: 'admin-users',
         component: () => import('../views/admin/UsersView.vue'),

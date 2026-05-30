@@ -34,10 +34,14 @@ const auth = useAuthStore()
       </RouterLink>
     </section>
 
-    <section v-else class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-      <p class="text-sm text-slate-500">
-        Las vistas de formularios y envíos estarán disponibles en próximas fases.
-      </p>
+    <section v-else>
+      <RouterLink
+        :to="{ name: 'forms' }"
+        class="block rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:ring-blue-300"
+      >
+        <h2 class="font-semibold text-slate-900">Mis formularios</h2>
+        <p class="mt-1 text-sm text-slate-500">Consulta los envíos de tus formularios.</p>
+      </RouterLink>
     </section>
   </div>
 </template>

@@ -147,4 +147,34 @@ class Auth {
         }
         return $user;
     }
+
+    /**
+     * ¿El usuario tiene la capacidad ('view'|'edit'|'validate') sobre un formulario?
+     * Los admin tienen acceso total.
+     */
+    public static function canForm(array $user, int $formId, string $cap): bool {
+        if (($user['role'] ?? '') === 'admin') {
+            return true;
+        }
+        $col = match ($cap) {
+            'view'     => 'can_view',
+            'edit'     => 'can_edit',
+            'validate' => 'can_validate',
+            default    => null,
+        };
+        if ($col === null) return false;
+
+        $row = DB::run(
+            "SELECT $col AS c FROM user_form_permissions WHERE user_id = ? AND form_id = ?",
+            [$user['id'], $formId]
+        )->fetch();
+        return $row && (int) $row['c'] === 1;
+    }
+
+    /** Exige una capacidad sobre un formulario; corta con 403 si no la tiene. */
+    public static function requireForm(array $user, int $formId, string $cap): void {
+        if (!self::canForm($user, $formId, $cap)) {
+            ErrorResponse::send('AUTH_INSUFFICIENT_PERMISSIONS');
+        }
+    }
 }
