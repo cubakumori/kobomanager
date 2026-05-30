@@ -2,7 +2,7 @@
 /**
  * POST /api/v1/submissions/{id}/review   ({id} = submission_uid; requiere can_validate)
  * Body: { status: 'approved'|'rejected'|'pending', comment?: string }
- * Crea una revisión interna en submission_reviews (sección 8 del plan) y la audita.
+ * Crea una revisión interna en submission_reviews y la audita.
  */
 
 $user = Auth::require();

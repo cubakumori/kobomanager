@@ -1,6 +1,6 @@
 <?php
 /**
- * CRON: resumen diario por email (sección 9 del plan). Usa submissions_cache, NO Kobo.
+ * CRON: resumen diario por email. Usa submissions_cache, NO Kobo.
  *
  *   php api/cron/daily_summary.php [YYYY-MM-DD]
  *   crontab:  0 7 * * *  php /ruta/api/cron/daily_summary.php

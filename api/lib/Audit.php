@@ -1,6 +1,6 @@
 <?php
 /**
- * Registro de auditoría (tabla audit_log, sección 3.9).
+ * Registro de auditoría (tabla audit_log).
  */
 class Audit {
     public static function log(

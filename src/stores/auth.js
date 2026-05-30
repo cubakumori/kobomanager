@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import api from '../services/api'
 
-// Mensajes más claros para ciertos códigos de error (sección 4.5 del backend).
+// Mensajes más claros para ciertos códigos de error de la API.
 // Si el código no está aquí, se usa el mensaje que envía el backend.
 const ERROR_MESSAGES = {
   KOBO_TIMEOUT: 'No se pudo contactar con KoboToolbox. Inténtalo de nuevo en unos minutos.',

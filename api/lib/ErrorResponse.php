@@ -1,6 +1,6 @@
 <?php
 /**
- * Respuestas JSON estándar (éxito y error) según la sección 4.5 del plan.
+ * Respuestas JSON estándar (éxito y error) con códigos homogéneos.
  */
 class ErrorResponse {
     /** Catálogo código => [http status, mensaje por defecto]. */

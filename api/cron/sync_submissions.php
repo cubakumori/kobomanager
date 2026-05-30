@@ -1,6 +1,6 @@
 <?php
 /**
- * CRON: sincroniza los envíos desde Kobo hacia submissions_cache (sección 7 del plan).
+ * CRON: sincroniza los envíos desde Kobo hacia submissions_cache.
  *
  *   php api/cron/sync_submissions.php [account_id]
  *   crontab:  */15 * * * *  php /ruta/api/cron/sync_submissions.php

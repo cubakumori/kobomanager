@@ -1,6 +1,6 @@
 <?php
 /**
- * Autenticación y sesiones (sección 6 del plan).
+ * Autenticación y sesiones.
  *
  * - Login: email + contraseña → JWT (HS256) con `jti` único.
  * - El JWT viaja en cookie HttpOnly + SameSite (+ Secure en producción).

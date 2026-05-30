@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
-// Rutas según la sección 5 del plan. Las vistas de viewer (forms/submissions/stats)
+// Las vistas de viewer (forms/submissions/stats)
 // se añaden en fases posteriores.
 const routes = [
   {

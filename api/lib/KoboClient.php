@@ -1,7 +1,7 @@
 <?php
 /**
  * Excepción de la API de Kobo que transporta uno de los códigos de error
- * estándar (ver ErrorResponse::CODES, sección 4.5 del plan).
+ * estándar (ver ErrorResponse::CODES).
  */
 class KoboException extends RuntimeException {
     public string $errorCode;

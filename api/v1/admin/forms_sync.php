@@ -4,8 +4,8 @@
  * Body opcional: { account_id }   → si se indica, sincroniza solo esa cuenta.
  *
  * Para cada cuenta Kobo activa: descifra el token, pide los assets (formularios)
- * y hace upsert en `forms`. Actualiza sync_status / last_sync_error según el plan
- * (sección 7). Devuelve un resumen por cuenta.
+ * y hace upsert en `forms`. Actualiza sync_status / last_sync_error y devuelve un
+ * resumen por cuenta.
  */
 
 $admin = Auth::requireAdmin();
