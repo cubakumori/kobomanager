@@ -37,6 +37,11 @@ const routes = [
         component: () => import('../views/SubmissionDetailView.vue'),
       },
       {
+        path: 'forms/:id/stats',
+        name: 'stats',
+        component: () => import('../views/StatsView.vue'),
+      },
+      {
         path: 'admin/users',
         name: 'admin-users',
         component: () => import('../views/admin/UsersView.vue'),

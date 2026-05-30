@@ -55,6 +55,7 @@ $routes = [
     'admin/permissions'         => 'admin/permissions.php',
     'forms'                     => 'forms/index.php',
     'forms/:id/submissions'     => 'forms/submissions.php',
+    'forms/:id/stats'           => 'forms/stats.php',
     'submissions/:id'           => 'submissions/item.php',
     'submissions/:id/review'    => 'submissions/review.php',
 ];

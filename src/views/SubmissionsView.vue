@@ -67,7 +67,15 @@ onMounted(load)
       <RouterLink :to="{ name: 'forms' }" class="text-sm text-blue-600 hover:underline">
         ← Mis formularios
       </RouterLink>
-      <h1 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900">{{ formName || 'Envíos' }}</h1>
+      <div class="mt-1 flex items-center justify-between gap-4">
+        <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ formName || 'Envíos' }}</h1>
+        <RouterLink
+          :to="{ name: 'stats', params: { id: formId } }"
+          class="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Estadísticas
+        </RouterLink>
+      </div>
       <p class="mt-1 text-sm text-slate-500">{{ total }} envío(s) en total.</p>
     </header>
 
