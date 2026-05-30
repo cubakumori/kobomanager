@@ -10,6 +10,17 @@ const sub = ref(null)
 const loading = ref(true)
 const error = ref('')
 
+// --- edición ---
+const editing = ref(false)
+const editForm = ref({})
+const saving = ref(false)
+const editError = ref('')
+
+// --- revisión ---
+const comment = ref('')
+const reviewing = ref(false)
+const reviewError = ref('')
+
 // Campos del envío separados en "datos" y "metadatos de Kobo" (los que empiezan por _).
 const fields = computed(() => {
   const d = sub.value?.data ?? {}
@@ -34,6 +45,51 @@ async function load() {
     error.value = apiError(e, 'No se pudo cargar el envío')
   } finally {
     loading.value = false
+  }
+}
+
+function startEdit() {
+  editError.value = ''
+  // Copia editable solo de los campos de datos (no metadatos).
+  editForm.value = Object.fromEntries(fields.value.data.map(([k, v]) => [k, fmt(v)]))
+  editing.value = true
+}
+
+async function saveEdit() {
+  // Solo enviar los campos que cambiaron.
+  const original = Object.fromEntries(fields.value.data.map(([k, v]) => [k, fmt(v)]))
+  const changed = {}
+  for (const [k, v] of Object.entries(editForm.value)) {
+    if (v !== original[k]) changed[k] = v
+  }
+  if (Object.keys(changed).length === 0) {
+    editing.value = false
+    return
+  }
+  saving.value = true
+  editError.value = ''
+  try {
+    await api.put(`/submissions/${route.params.subId}`, { data: changed })
+    editing.value = false
+    await load()
+  } catch (e) {
+    editError.value = apiError(e, 'No se pudo guardar (¿la cuenta Kobo es válida?)')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function submitReview(status) {
+  reviewing.value = true
+  reviewError.value = ''
+  try {
+    await api.post(`/submissions/${route.params.subId}/review`, { status, comment: comment.value })
+    comment.value = ''
+    await load()
+  } catch (e) {
+    reviewError.value = apiError(e, 'No se pudo registrar la revisión')
+  } finally {
+    reviewing.value = false
   }
 }
 
@@ -64,16 +120,88 @@ onMounted(load)
     <div v-else-if="loading" class="text-sm text-slate-500">Cargando…</div>
 
     <template v-else-if="sub">
-      <!-- Datos -->
+      <!-- Datos (con edición opcional) -->
       <section class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-        <h2 class="border-b border-slate-100 px-5 py-3 font-semibold text-slate-900">Datos</h2>
-        <dl class="divide-y divide-slate-100">
+        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+          <h2 class="font-semibold text-slate-900">Datos</h2>
+          <button
+            v-if="sub.can_edit && !editing"
+            class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            @click="startEdit"
+          >
+            Editar
+          </button>
+        </div>
+
+        <div v-if="editError" class="bg-red-50 px-5 py-2 text-sm text-red-700">{{ editError }}</div>
+
+        <!-- Modo lectura -->
+        <dl v-if="!editing" class="divide-y divide-slate-100">
           <div v-for="[k, v] in fields.data" :key="k" class="grid grid-cols-3 gap-4 px-5 py-3">
             <dt class="text-sm font-medium text-slate-500">{{ k }}</dt>
             <dd class="col-span-2 text-sm text-slate-800">{{ fmt(v) }}</dd>
           </div>
           <div v-if="!fields.data.length" class="px-5 py-3 text-sm text-slate-400">Sin campos.</div>
         </dl>
+
+        <!-- Modo edición -->
+        <div v-else class="space-y-3 px-5 py-4">
+          <label v-for="[k] in fields.data" :key="k" class="grid grid-cols-3 items-center gap-4">
+            <span class="text-sm font-medium text-slate-500">{{ k }}</span>
+            <input
+              v-model="editForm[k]"
+              class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+            />
+          </label>
+          <div class="flex items-center gap-3 pt-2">
+            <button
+              :disabled="saving"
+              class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+              @click="saveEdit"
+            >
+              {{ saving ? 'Guardando…' : 'Guardar cambios' }}
+            </button>
+            <button
+              class="text-sm font-medium text-slate-500 hover:text-slate-700"
+              @click="editing = false"
+            >
+              Cancelar
+            </button>
+          </div>
+          <p class="text-xs text-slate-400">Los cambios se escriben en KoboToolbox y luego en la caché local.</p>
+        </div>
+      </section>
+
+      <!-- Panel de revisión -->
+      <section v-if="sub.can_validate" class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+        <h2 class="border-b border-slate-100 px-5 py-3 font-semibold text-slate-900">Revisar</h2>
+        <div class="space-y-3 px-5 py-4">
+          <div v-if="reviewError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            {{ reviewError }}
+          </div>
+          <textarea
+            v-model="comment"
+            rows="2"
+            placeholder="Comentario (opcional)"
+            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+          ></textarea>
+          <div class="flex gap-3">
+            <button
+              :disabled="reviewing"
+              class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+              @click="submitReview('approved')"
+            >
+              Aprobar
+            </button>
+            <button
+              :disabled="reviewing"
+              class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+              @click="submitReview('rejected')"
+            >
+              Rechazar
+            </button>
+          </div>
+        </div>
       </section>
 
       <!-- Metadatos -->

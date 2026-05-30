@@ -72,7 +72,7 @@ php api/cli/create_user.php <email> <password> <nombre> admin
 - [x] **Fase 1** — Autenticación (JWT + cookie HttpOnly), sesiones, CRUD de usuarios y cuentas Kobo (tokens cifrados con TokenVault), login y panel admin con Tailwind.
 - [x] **Fase 2** — KoboClient (`getAssets`), sincronización de formularios con estado, y permisos usuario-formulario.
 - [x] **Fase 3** — Cron de envíos (`sync_submissions.php`), endpoints de viewer (lista de formularios, envíos paginados, detalle) y vistas de datos con búsqueda; registro de visualización en `audit_log`.
-- [ ] Fase 4 — Edición y revisión interna.
+- [x] **Fase 4** — Edición de envíos (escribe en Kobo vía bulk PATCH y luego en caché) y revisión interna (`POST /submissions/{id}/review`); UI de edición y panel de aprobación/rechazo según `can_edit`/`can_validate`.
 - [ ] Fase 5 — Estadísticas.
 - [ ] Fase 6 — Notificaciones por email.
 - [ ] Fase 7 — Pulido y seguridad.

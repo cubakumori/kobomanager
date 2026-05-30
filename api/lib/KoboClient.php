@@ -72,31 +72,58 @@ class KoboClient {
         return $all;
     }
 
+    /**
+     * Edita un envío en Kobo mediante el endpoint de actualización masiva
+     * (PATCH /api/v2/assets/{uid}/data/bulk/). $submissionId es el _id numérico
+     * de Kobo (no el _uuid). $data mapea nombre de campo (con jerarquía de grupo) → valor.
+     * Devuelve true si Kobo aceptó el cambio; lanza KoboException en caso contrario.
+     */
+    public function editSubmission(string $assetUid, int $submissionId, array $data): bool {
+        $payload = [
+            'payload' => [
+                'submission_ids' => [(string) $submissionId],
+                'data'           => $data,
+            ],
+        ];
+        $this->request('PATCH', "/api/v2/assets/$assetUid/data/bulk/", [], $payload);
+        return true;
+    }
+
     // ---------- HTTP ----------
 
     private function httpGet(string $path, array $query = []): array {
+        return $this->request('GET', $path, $query);
+    }
+
+    /** Petición HTTP genérica a Kobo, con manejo de errores → KoboException. */
+    private function request(string $method, string $path, array $query = [], ?array $jsonBody = null): array {
         $url = $this->serverUrl . $path;
         if ($query) {
             $url .= '?' . http_build_query($query);
         }
 
+        $headers = [
+            'Authorization: Token ' . $this->apiToken,
+            'Accept: application/json',
+        ];
+
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER     => [
-                'Authorization: Token ' . $this->apiToken,
-                'Accept: application/json',
-            ],
+            CURLOPT_CUSTOMREQUEST  => $method,
             CURLOPT_TIMEOUT        => self::TIMEOUT,
             CURLOPT_CONNECTTIMEOUT => self::CONNECT_TIMEOUT,
         ]);
+        if ($jsonBody !== null) {
+            $headers[] = 'Content-Type: application/json';
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($jsonBody, JSON_UNESCAPED_UNICODE));
+        }
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
         $body   = curl_exec($ch);
         $errno  = curl_errno($ch);
         $errmsg = curl_error($ch);
         $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        // curl_close() es innecesario desde PHP 8.0 (y deprecado en 8.5): el recurso
-        // se libera solo al salir de ámbito.
 
         if ($errno === CURLE_OPERATION_TIMEDOUT) {
             throw new KoboException('KOBO_TIMEOUT', 'Timeout al contactar con el servidor de Kobo');
@@ -119,7 +146,8 @@ class KoboClient {
 
         $json = json_decode((string) $body, true);
         if (!is_array($json)) {
-            throw new KoboException('KOBO_TIMEOUT', 'Respuesta no válida de Kobo (no es JSON)');
+            // Algunas respuestas válidas (ej. 204) pueden venir vacías.
+            return [];
         }
         return $json;
     }

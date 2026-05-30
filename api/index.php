@@ -55,7 +55,8 @@ $routes = [
     'admin/permissions'         => 'admin/permissions.php',
     'forms'                     => 'forms/index.php',
     'forms/:id/submissions'     => 'forms/submissions.php',
-    'submissions/:id'           => 'submissions/detail.php',
+    'submissions/:id'           => 'submissions/item.php',
+    'submissions/:id/review'    => 'submissions/review.php',
 ];
 
 /** Empareja la ruta solicitada contra los patrones; devuelve [archivo, params] o [null, []]. */
