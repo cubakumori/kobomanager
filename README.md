@@ -70,7 +70,7 @@ php api/cli/create_user.php <email> <password> <nombre> admin
 
 - [x] **Fase 0** — Scaffolding, esquema SQL, config, `.htaccess`, health-check end-to-end.
 - [x] **Fase 1** — Autenticación (JWT + cookie HttpOnly), sesiones, CRUD de usuarios y cuentas Kobo (tokens cifrados con TokenVault), login y panel admin con Tailwind.
-- [ ] Fase 2 — Sincronización de formularios y permisos.
+- [x] **Fase 2** — KoboClient (`getAssets`), sincronización de formularios con estado, y permisos usuario-formulario.
 - [ ] Fase 3 — Caché de envíos y vistas de datos.
 - [ ] Fase 4 — Edición y revisión interna.
 - [ ] Fase 5 — Estadísticas.

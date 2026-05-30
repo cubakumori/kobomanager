@@ -33,6 +33,18 @@ const routes = [
         component: () => import('../views/admin/AccountsView.vue'),
         meta: { requiresAdmin: true },
       },
+      {
+        path: 'admin/forms',
+        name: 'admin-forms',
+        component: () => import('../views/admin/FormsView.vue'),
+        meta: { requiresAdmin: true },
+      },
+      {
+        path: 'admin/permissions',
+        name: 'admin-permissions',
+        component: () => import('../views/admin/PermissionsView.vue'),
+        meta: { requiresAdmin: true },
+      },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' },

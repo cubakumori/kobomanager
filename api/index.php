@@ -15,6 +15,7 @@ require __DIR__ . '/lib/Request.php';
 require __DIR__ . '/lib/TokenVault.php';
 require __DIR__ . '/lib/Auth.php';
 require __DIR__ . '/lib/Audit.php';
+require __DIR__ . '/lib/KoboClient.php';
 
 // --- CORS (frontend en dev sobre otro origen) ---
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
@@ -47,8 +48,11 @@ $routes = [
     'auth/login'      => 'auth/login.php',
     'auth/logout'     => 'auth/logout.php',
     'auth/me'         => 'auth/me.php',
-    'admin/users'     => 'admin/users.php',
-    'admin/accounts'  => 'admin/accounts.php',
+    'admin/users'       => 'admin/users.php',
+    'admin/accounts'    => 'admin/accounts.php',
+    'admin/forms'       => 'admin/forms.php',
+    'admin/forms/sync'  => 'admin/forms_sync.php',
+    'admin/permissions' => 'admin/permissions.php',
 ];
 
 try {

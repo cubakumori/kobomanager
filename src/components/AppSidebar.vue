@@ -54,6 +54,18 @@ const linkActive = 'bg-blue-600 text-white'
         >
           Cuentas Kobo
         </RouterLink>
+        <RouterLink
+          :to="{ name: 'admin-forms' }"
+          :class="[linkBase, $route.name === 'admin-forms' ? linkActive : linkInactive]"
+        >
+          Formularios
+        </RouterLink>
+        <RouterLink
+          :to="{ name: 'admin-permissions' }"
+          :class="[linkBase, $route.name === 'admin-permissions' ? linkActive : linkInactive]"
+        >
+          Permisos
+        </RouterLink>
       </template>
     </nav>
 
