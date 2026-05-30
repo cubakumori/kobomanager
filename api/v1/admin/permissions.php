@@ -22,7 +22,7 @@ if ($method === 'GET') {
     }
 
     $rows = DB::run(
-        'SELECT f.id AS form_id, f.name, a.label AS account_label,
+        'SELECT f.id AS form_id, f.name, a.id AS account_id, a.label AS account_label,
                 COALESCE(p.can_view, 0)     AS can_view,
                 COALESCE(p.can_edit, 0)     AS can_edit,
                 COALESCE(p.can_validate, 0) AS can_validate
@@ -36,6 +36,7 @@ if ($method === 'GET') {
 
     foreach ($rows as &$r) {
         $r['form_id']      = (int) $r['form_id'];
+        $r['account_id']   = (int) $r['account_id'];
         $r['can_view']     = (bool) $r['can_view'];
         $r['can_edit']     = (bool) $r['can_edit'];
         $r['can_validate'] = (bool) $r['can_validate'];

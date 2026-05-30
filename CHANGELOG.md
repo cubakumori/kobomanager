@@ -6,6 +6,22 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [Sin publicar]
 
+### Añadido
+
+- **Configuración global** (página + card en el Dashboard): elegir qué estados de
+  KoboToolbox se sincronizan (desplegados/borradores/archivados; por defecto solo
+  desplegados). Se guarda el `deployment_status` de cada formulario y se muestra su tipo.
+- **Sincronizar por cuenta** desde *Cuentas Kobo* y **filtro por cuenta** en *Formularios*
+  y *Permisos* (con opción «Todas las cuentas»).
+- **Actualizar por formulario**: trae a la caché los envíos de un único formulario.
+- Edición de usuarios: el **email** ahora es editable (con validación de unicidad).
+
+### Corregido
+
+- El primer sync de envíos no traía el histórico porque usaba `forms.last_synced_at`
+  (fijado también al descubrir formularios) como cursor. Ahora el cursor incremental
+  se deriva del envío más reciente ya en caché.
+
 Lo previsto a continuación se mantiene en [`ROADMAP.md`](./ROADMAP.md).
 
 ## [0.1.0] — 2026-05-30

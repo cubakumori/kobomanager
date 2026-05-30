@@ -11,7 +11,7 @@ if (Request::method() !== 'GET') {
 }
 
 $rows = DB::run(
-    'SELECT f.id, f.name, f.kobo_asset_uid, f.server_url, f.last_synced_at,
+    'SELECT f.id, f.name, f.kobo_asset_uid, f.server_url, f.deployment_status, f.last_synced_at,
             f.sync_status, f.last_sync_error, f.active,
             a.id AS account_id, a.label AS account_label
      FROM forms f

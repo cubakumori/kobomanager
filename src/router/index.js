@@ -75,6 +75,12 @@ const routes = [
         component: () => import('../views/admin/PermissionsView.vue'),
         meta: { requiresAdmin: true },
       },
+      {
+        path: 'admin/settings',
+        name: 'admin-settings',
+        component: () => import('../views/admin/SettingsView.vue'),
+        meta: { requiresAdmin: true },
+      },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' },

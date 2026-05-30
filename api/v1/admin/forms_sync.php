@@ -24,6 +24,9 @@ if ($accountId !== null) {
 }
 $accounts = DB::run($sql, $params)->fetchAll();
 
+// Estados de despliegue que el ajuste global indica sincronizar (p. ej. ['deployed']).
+$allowedStatuses = Settings::syncStatuses();
+
 $summary = [];
 
 foreach ($accounts as $acc) {
@@ -33,32 +36,44 @@ foreach ($accounts as $acc) {
         $client = new KoboClient($acc['server_url'], $token);
         $assets = $client->getAssets();
 
-        $count = 0;
+        $count   = 0;
+        $skipped = 0;
         foreach ($assets as $asset) {
             $uid  = $asset['uid'] ?? null;
             $name = $asset['name'] ?? '(sin nombre)';
             if (!$uid) continue;
 
+            // Estado de despliegue (deployed/draft/archived), normalizado a minúsculas.
+            $status = strtolower((string) ($asset['deployment_status'] ?? ''));
+
+            // Filtrar por el ajuste global de estados a sincronizar.
+            if (!in_array($status, $allowedStatuses, true)) {
+                $skipped++;
+                continue;
+            }
+
             DB::run(
-                'INSERT INTO forms (kobo_account_id, kobo_asset_uid, name, server_url, last_synced_at, sync_status, last_sync_error)
-                 VALUES (?, ?, ?, ?, NOW(), \'success\', NULL)
+                'INSERT INTO forms (kobo_account_id, kobo_asset_uid, name, server_url, deployment_status, last_synced_at, sync_status, last_sync_error)
+                 VALUES (?, ?, ?, ?, ?, NOW(), \'success\', NULL)
                  ON DUPLICATE KEY UPDATE
                     name = VALUES(name),
                     server_url = VALUES(server_url),
+                    deployment_status = VALUES(deployment_status),
                     last_synced_at = NOW(),
                     sync_status = \'success\',
                     last_sync_error = NULL',
-                [$accId, $uid, $name, rtrim($acc['server_url'], '/')]
+                [$accId, $uid, $name, rtrim($acc['server_url'], '/'), $status ?: null]
             );
             $count++;
         }
 
-        Audit::log($admin['id'], 'sync_forms', null, null, ['account_id' => $accId, 'forms' => $count]);
+        Audit::log($admin['id'], 'sync_forms', null, null, ['account_id' => $accId, 'forms' => $count, 'skipped' => $skipped]);
         $summary[] = [
             'account_id'    => $accId,
             'account_label' => $acc['label'],
             'status'        => 'success',
             'forms'         => $count,
+            'skipped'       => $skipped,
         ];
     } catch (KoboException $e) {
         // Marca como error los formularios ya conocidos de esta cuenta.

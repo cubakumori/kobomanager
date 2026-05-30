@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 
@@ -10,6 +10,24 @@ const listError = ref('')
 const syncing = ref(false)
 const syncResult = ref(null) // resumen por cuenta tras sincronizar
 const syncError = ref('')
+
+const updatingId = ref(null) // formulario que está actualizando sus envíos
+const flash = ref('')        // mensaje breve de resultado de "Actualizar"
+
+const selectedAccount = ref('') // '' = todas
+
+// Cuentas únicas presentes en los formularios, para el filtro.
+const accounts = computed(() => {
+  const map = new Map()
+  for (const f of forms.value) map.set(f.account_id, f.account_label)
+  return [...map].map(([id, label]) => ({ id, label }))
+})
+
+const filteredForms = computed(() =>
+  selectedAccount.value === ''
+    ? forms.value
+    : forms.value.filter((f) => f.account_id === Number(selectedAccount.value)),
+)
 
 async function load() {
   loading.value = true
@@ -29,7 +47,9 @@ async function onSync() {
   syncError.value = ''
   syncResult.value = null
   try {
-    const { data } = await api.post('/admin/forms/sync', {})
+    // Si hay una cuenta seleccionada, sincroniza solo esa.
+    const body = selectedAccount.value ? { account_id: Number(selectedAccount.value) } : {}
+    const { data } = await api.post('/admin/forms/sync', body)
     syncResult.value = data.data
     await load()
   } catch (e) {
@@ -39,11 +59,32 @@ async function onSync() {
   }
 }
 
+async function onUpdateForm(f) {
+  updatingId.value = f.id
+  flash.value = ''
+  syncError.value = ''
+  try {
+    const { data } = await api.post(`/admin/forms/${f.id}/sync`)
+    flash.value = `«${f.name}»: ${data.data.submissions} envío(s) actualizados.`
+    await load()
+  } catch (e) {
+    syncError.value = `«${f.name}»: ${apiError(e, 'no se pudo actualizar')}`
+  } finally {
+    updatingId.value = null
+  }
+}
+
 const badge = {
   success: 'bg-green-100 text-green-700',
   error: 'bg-red-100 text-red-700',
   pending: 'bg-amber-100 text-amber-700',
 }
+const statusBadge = {
+  deployed: 'bg-green-100 text-green-700',
+  draft: 'bg-amber-100 text-amber-700',
+  archived: 'bg-slate-200 text-slate-600',
+}
+const statusLabel = { deployed: 'desplegado', draft: 'borrador', archived: 'archivado' }
 
 onMounted(load)
 </script>
@@ -62,13 +103,28 @@ onMounted(load)
         class="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
         @click="onSync"
       >
-        {{ syncing ? 'Sincronizando…' : 'Sincronizar ahora' }}
+        {{ syncing ? 'Sincronizando…' : (selectedAccount ? 'Sincronizar esta cuenta' : 'Sincronizar todas') }}
       </button>
     </header>
 
-    <!-- Resultado del sync -->
+    <!-- Filtro por cuenta -->
+    <div class="flex items-center gap-2">
+      <label class="text-sm text-slate-600">Cuenta:</label>
+      <select
+        v-model="selectedAccount"
+        class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+      >
+        <option value="">Todas las cuentas</option>
+        <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.label }}</option>
+      </select>
+    </div>
+
+    <!-- Resultado del sync / flash -->
     <div v-if="syncError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
       {{ syncError }}
+    </div>
+    <div v-if="flash" class="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800 ring-1 ring-green-200">
+      {{ flash }}
     </div>
     <div v-if="syncResult" class="space-y-2">
       <div
@@ -80,7 +136,9 @@ onMounted(load)
           : 'bg-red-50 text-red-800 ring-red-200'"
       >
         <span class="font-medium">{{ r.account_label }}:</span>
-        <template v-if="r.status === 'success'">{{ r.forms }} formulario(s) sincronizado(s).</template>
+        <template v-if="r.status === 'success'">
+          {{ r.forms }} formulario(s) sincronizado(s)<template v-if="r.skipped"> · {{ r.skipped }} omitido(s) por estado</template>.
+        </template>
         <template v-else>error — {{ r.error }} ({{ r.error_code }})</template>
       </div>
     </div>
@@ -94,14 +152,24 @@ onMounted(load)
           <tr>
             <th class="px-4 py-3">Formulario</th>
             <th class="px-4 py-3">Cuenta</th>
-            <th class="px-4 py-3">Estado</th>
+            <th class="px-4 py-3">Tipo</th>
+            <th class="px-4 py-3">Sync</th>
             <th class="px-4 py-3">Última sync</th>
+            <th class="px-4 py-3 text-right">Acciones</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
-          <tr v-for="f in forms" :key="f.id">
+          <tr v-for="f in filteredForms" :key="f.id">
             <td class="px-4 py-3 font-medium text-slate-900">{{ f.name }}</td>
             <td class="px-4 py-3 text-slate-600">{{ f.account_label }}</td>
+            <td class="px-4 py-3">
+              <span
+                v-if="f.deployment_status"
+                class="rounded-full px-2 py-0.5 text-xs font-medium"
+                :class="statusBadge[f.deployment_status] || 'bg-slate-100 text-slate-600'"
+              >{{ statusLabel[f.deployment_status] || f.deployment_status }}</span>
+              <span v-else class="text-xs text-slate-300">—</span>
+            </td>
             <td class="px-4 py-3">
               <span class="rounded-full px-2 py-0.5 text-xs font-medium" :class="badge[f.sync_status]">
                 {{ f.sync_status }}
@@ -111,10 +179,20 @@ onMounted(load)
               </p>
             </td>
             <td class="px-4 py-3 text-slate-500">{{ f.last_synced_at ?? '—' }}</td>
+            <td class="px-4 py-3 text-right">
+              <button
+                :disabled="updatingId === f.id"
+                class="font-medium text-blue-600 hover:underline disabled:opacity-50"
+                title="Traer los envíos nuevos de este formulario"
+                @click="onUpdateForm(f)"
+              >
+                {{ updatingId === f.id ? 'Actualizando…' : 'Actualizar' }}
+              </button>
+            </td>
           </tr>
-          <tr v-if="!forms.length">
-            <td colspan="4" class="px-4 py-6 text-center text-slate-400">
-              Sin formularios. Pulsa «Sincronizar ahora».
+          <tr v-if="!filteredForms.length">
+            <td colspan="6" class="px-4 py-6 text-center text-slate-400">
+              Sin formularios. Pulsa «Sincronizar».
             </td>
           </tr>
         </tbody>

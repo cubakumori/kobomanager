@@ -16,7 +16,7 @@ const saving = ref(false)
 
 // Edición
 const editing = ref(null)
-const editForm = ref({ name: '', role: 'viewer', password: '' })
+const editForm = ref({ name: '', email: '', role: 'viewer', password: '' })
 const editError = ref('')
 const savingEdit = ref(false)
 
@@ -50,14 +50,19 @@ async function onCreate() {
 function startEdit(u) {
   editError.value = ''
   editing.value = u
-  editForm.value = { name: u.name, role: u.role, password: '' }
+  editForm.value = { name: u.name, email: u.email, role: u.role, password: '' }
 }
 
 async function saveEdit() {
   savingEdit.value = true
   editError.value = ''
   try {
-    const payload = { name: editForm.value.name, role: editForm.value.role, active: editing.value.active }
+    const payload = {
+      name: editForm.value.name,
+      email: editForm.value.email,
+      role: editForm.value.role,
+      active: editing.value.active,
+    }
     if (editForm.value.password) payload.password = editForm.value.password
     await api.put(`/admin/users/${editing.value.id}`, payload)
     editing.value = null
@@ -73,7 +78,7 @@ async function toggleActive(u) {
   const verb = u.active ? 'desactivar' : 'activar'
   if (!confirm(`¿Seguro que quieres ${verb} a "${u.name}"?`)) return
   try {
-    await api.put(`/admin/users/${u.id}`, { name: u.name, role: u.role, active: !u.active })
+    await api.put(`/admin/users/${u.id}`, { name: u.name, email: u.email, role: u.role, active: !u.active })
     await load()
   } catch (e) {
     alert(apiError(e, 'No se pudo cambiar el estado'))
@@ -199,6 +204,10 @@ onMounted(load)
         <label class="block space-y-1">
           <span class="text-sm font-medium text-slate-700">Nombre</span>
           <input v-model="editForm.name" required class="km-input" />
+        </label>
+        <label class="block space-y-1">
+          <span class="text-sm font-medium text-slate-700">Email</span>
+          <input v-model="editForm.email" type="email" required class="km-input" />
         </label>
         <label class="block space-y-1">
           <span class="text-sm font-medium text-slate-700">Rol</span>

@@ -13,8 +13,8 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 Implementado y probado con datos de ejemplo + manejo de errores, pero aún sin verificar
 contra una cuenta KoboToolbox real:
 
-- [ ] **Sincronización real de formularios** (`getAssets`) con un token válido.
-- [ ] **Sincronización real de envíos** (`cron/sync_submissions.php`) → `submissions_cache`.
+- [x] **Sincronización real de formularios** (`getAssets`) con un token válido. *(verificado)*
+- [x] **Sincronización real de envíos** → `submissions_cache` *(verificado: 1000 envíos de un formulario real)*.
 - [ ] **Edición real de un envío** (escritura en Kobo vía `PATCH .../data/bulk/` y refresco de caché).
   - Confirmar el formato de campos con jerarquía de grupo (`grupo/campo`).
 - [ ] **Envío real de email** con Resend (clave `RESEND_API_KEY` + dominio verificado).
@@ -23,6 +23,8 @@ contra una cuenta KoboToolbox real:
 
 - [ ] Paginación/orden configurable en la tabla de envíos (hoy: búsqueda + paginado básico).
 - [ ] Filtro de envíos por estado de revisión (pending/approved/rejected) en `SubmissionsView`.
+- [ ] Al re-sincronizar con un estado más restrictivo, desactivar los formularios que
+      dejan de cumplirlo (hoy se quedan como estaban).
 - [ ] Acción de **reseteo de contraseña** visible para el propio usuario en su perfil.
 - [ ] Indicador global en el panel admin del estado de sincronización de todas las cuentas.
 - [ ] Cierre de sesión remoto desde el admin (la tabla `user_sessions` ya lo permite).

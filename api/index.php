@@ -16,7 +16,9 @@ require __DIR__ . '/lib/TokenVault.php';
 require __DIR__ . '/lib/Auth.php';
 require __DIR__ . '/lib/Audit.php';
 require __DIR__ . '/lib/RateLimit.php';
+require __DIR__ . '/lib/Settings.php';
 require __DIR__ . '/lib/KoboClient.php';
+require __DIR__ . '/lib/SubmissionSync.php';
 
 // --- CORS (frontend en dev sobre otro origen) ---
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
@@ -55,7 +57,9 @@ $routes = [
     'admin/accounts/:id'        => 'admin/account_item.php',
     'admin/forms'               => 'admin/forms.php',
     'admin/forms/sync'          => 'admin/forms_sync.php',
+    'admin/forms/:id/sync'      => 'admin/form_sync_one.php',
     'admin/permissions'         => 'admin/permissions.php',
+    'admin/settings'            => 'admin/settings.php',
     'notifications'             => 'notifications.php',
     'forms'                     => 'forms/index.php',
     'forms/:id/submissions'     => 'forms/submissions.php',

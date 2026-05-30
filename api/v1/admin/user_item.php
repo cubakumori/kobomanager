@@ -20,14 +20,23 @@ if (!$user) {
     ErrorResponse::send('NOT_FOUND', 'Usuario no encontrado');
 }
 
-$in    = Request::required(['name', 'role']);
+$in    = Request::required(['name', 'email', 'role']);
 $body  = Request::json();
 $role  = $in['role'];
+$email = $in['email'];
 $active = array_key_exists('active', $body) ? (!empty($body['active']) ? 1 : 0) : (int) $user['active'];
 $pass  = isset($body['password']) ? (string) $body['password'] : '';
 
 if (!in_array($role, ['admin', 'viewer'], true)) {
     ErrorResponse::send('VALIDATION_ERROR', 'Rol no válido');
+}
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    ErrorResponse::send('VALIDATION_ERROR', 'Email no válido');
+}
+// Email único (excluyendo al propio usuario).
+$dup = DB::run('SELECT id FROM users WHERE email = ? AND id <> ?', [$email, $id])->fetch();
+if ($dup) {
+    ErrorResponse::send('VALIDATION_ERROR', 'Ya existe otro usuario con ese email');
 }
 
 $losesAdmin = ($role !== 'admin') || ($active === 0); // ¿este cambio le quita capacidad de admin?
@@ -52,13 +61,13 @@ if ($pass !== '') {
         ErrorResponse::send('VALIDATION_ERROR', 'La contraseña debe tener al menos 8 caracteres');
     }
     DB::run(
-        'UPDATE users SET name = ?, role = ?, active = ?, password_hash = ? WHERE id = ?',
-        [$in['name'], $role, $active, password_hash($pass, PASSWORD_DEFAULT), $id]
+        'UPDATE users SET name = ?, email = ?, role = ?, active = ?, password_hash = ? WHERE id = ?',
+        [$in['name'], $email, $role, $active, password_hash($pass, PASSWORD_DEFAULT), $id]
     );
 } else {
     DB::run(
-        'UPDATE users SET name = ?, role = ?, active = ? WHERE id = ?',
-        [$in['name'], $role, $active, $id]
+        'UPDATE users SET name = ?, email = ?, role = ?, active = ? WHERE id = ?',
+        [$in['name'], $email, $role, $active, $id]
     );
 }
 
@@ -77,7 +86,7 @@ Audit::log($admin['id'], 'edit_user', null, null, [
 ErrorResponse::ok([
     'id'     => $id,
     'name'   => $in['name'],
-    'email'  => $user['email'],
+    'email'  => $email,
     'role'   => $role,
     'active' => (bool) $active,
 ]);

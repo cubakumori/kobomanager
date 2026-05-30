@@ -18,6 +18,7 @@ require __DIR__ . '/../config.php';
 require __DIR__ . '/../lib/DB.php';
 require __DIR__ . '/../lib/TokenVault.php';
 require __DIR__ . '/../lib/KoboClient.php';
+require __DIR__ . '/../lib/SubmissionSync.php';
 
 $onlyAccount = isset($argv[1]) ? (int) $argv[1] : null;
 
@@ -33,10 +34,11 @@ $totalForms = 0;
 $totalSubs  = 0;
 
 foreach ($accounts as $acc) {
-    $token = TokenVault::decrypt($acc['api_token']);
+    $token  = TokenVault::decrypt($acc['api_token']);
+    $client = new KoboClient($acc['server_url'], $token);
 
     $forms = DB::run(
-        'SELECT id, kobo_asset_uid, last_synced_at FROM forms WHERE kobo_account_id = ? AND active = 1',
+        'SELECT id, kobo_asset_uid FROM forms WHERE kobo_account_id = ? AND active = 1',
         [$acc['id']]
     )->fetchAll();
 
@@ -44,45 +46,10 @@ foreach ($accounts as $acc) {
         $formId = (int) $form['id'];
         $totalForms++;
         try {
-            $client = new KoboClient($acc['server_url'], $token);
-            // Filtro incremental: solo lo enviado tras la última sync (ISO 8601).
-            $since = $form['last_synced_at']
-                ? date('c', strtotime($form['last_synced_at']))
-                : null;
-
-            $subs  = $client->getSubmissionsSince($form['kobo_asset_uid'], $since);
-            $count = 0;
-
-            foreach ($subs as $sub) {
-                $uid = $sub['_uuid'] ?? (isset($sub['_id']) ? (string) $sub['_id'] : null);
-                if (!$uid) continue;
-
-                $submittedRaw = $sub['_submission_time'] ?? null;
-                $submittedAt  = $submittedRaw ? date('Y-m-d H:i:s', strtotime($submittedRaw)) : null;
-
-                DB::run(
-                    'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, submitted_at, last_synced_at)
-                     VALUES (?, ?, ?, ?, NOW())
-                     ON DUPLICATE KEY UPDATE
-                        json_payload   = VALUES(json_payload),
-                        submitted_at   = VALUES(submitted_at),
-                        last_synced_at = NOW()',
-                    [$formId, $uid, json_encode($sub, JSON_UNESCAPED_UNICODE), $submittedAt]
-                );
-                $count++;
-            }
-
-            DB::run(
-                'UPDATE forms SET last_synced_at = NOW(), sync_status = \'success\', last_sync_error = NULL WHERE id = ?',
-                [$formId]
-            );
+            $count = SubmissionSync::syncForm($formId, $form['kobo_asset_uid'], $client);
             $totalSubs += $count;
             fwrite(STDOUT, sprintf("[OK] %s / form %d: %d envíos\n", $acc['label'], $formId, $count));
         } catch (KoboException $e) {
-            DB::run(
-                'UPDATE forms SET sync_status = \'error\', last_sync_error = ? WHERE id = ?',
-                [$e->getMessage(), $formId]
-            );
             fwrite(STDERR, sprintf("[ERR] %s / form %d: %s (%s)\n", $acc['label'], $formId, $e->getMessage(), $e->errorCode));
         }
     }

@@ -18,6 +18,11 @@ const editForm = ref({ label: '', server_url: '', email: '', api_token: '' })
 const editError = ref('')
 const savingEdit = ref(false)
 
+// Sincronización por cuenta
+const syncingId = ref(null)
+const syncFlash = ref('')
+const syncError = ref('')
+
 async function load() {
   loading.value = true
   listError.value = ''
@@ -65,6 +70,27 @@ async function saveEdit() {
     editError.value = apiError(e, 'No se pudo guardar')
   } finally {
     savingEdit.value = false
+  }
+}
+
+async function syncAccount(a) {
+  syncingId.value = a.id
+  syncFlash.value = ''
+  syncError.value = ''
+  try {
+    const { data } = await api.post('/admin/forms/sync', { account_id: a.id })
+    const r = data.data[0]
+    if (r && r.status === 'success') {
+      syncFlash.value = `«${a.label}»: ${r.forms} formulario(s) sincronizado(s)` +
+        (r.skipped ? ` · ${r.skipped} omitido(s) por estado.` : '.')
+      await load()
+    } else {
+      syncError.value = `«${a.label}»: ${r?.error ?? 'error de sincronización'}`
+    }
+  } catch (e) {
+    syncError.value = `«${a.label}»: ${apiError(e, 'no se pudo sincronizar')}`
+  } finally {
+    syncingId.value = null
   }
 }
 
@@ -130,6 +156,14 @@ onMounted(load)
       </button>
     </form>
 
+    <!-- Resultado de sincronización por cuenta -->
+    <div v-if="syncError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+      {{ syncError }}
+    </div>
+    <div v-if="syncFlash" class="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800 ring-1 ring-green-200">
+      {{ syncFlash }}
+    </div>
+
     <!-- Listado -->
     <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
       <div v-if="listError" class="p-4 text-sm text-red-700">{{ listError }}</div>
@@ -156,6 +190,14 @@ onMounted(load)
             </td>
             <td class="px-4 py-3">
               <div class="flex items-center justify-end gap-3">
+                <button
+                  :disabled="syncingId === a.id"
+                  class="font-medium text-blue-600 hover:underline disabled:opacity-50"
+                  title="Sincronizar los formularios de esta cuenta"
+                  @click="syncAccount(a)"
+                >
+                  {{ syncingId === a.id ? 'Sincronizando…' : 'Sincronizar' }}
+                </button>
                 <button class="font-medium text-blue-600 hover:underline" @click="startEdit(a)">
                   Editar
                 </button>

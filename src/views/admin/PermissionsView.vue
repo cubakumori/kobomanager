@@ -1,16 +1,29 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 
 const users = ref([])
 const selectedUserId = ref('')
-const perms = ref([]) // [{ form_id, name, account_label, can_view, can_edit, can_validate }]
+const perms = ref([]) // [{ form_id, name, account_id, account_label, can_view, can_edit, can_validate }]
 
 const loadingPerms = ref(false)
 const error = ref('')
 const saving = ref(false)
 const saved = ref(false)
+
+// Filtro por cuenta (solo afecta a lo mostrado; al guardar se envían todos).
+const selectedAccount = ref('')
+const accounts = computed(() => {
+  const map = new Map()
+  for (const p of perms.value) map.set(p.account_id, p.account_label)
+  return [...map].map(([id, label]) => ({ id, label }))
+})
+const visiblePerms = computed(() =>
+  selectedAccount.value === ''
+    ? perms.value
+    : perms.value.filter((p) => p.account_id === Number(selectedAccount.value)),
+)
 
 async function loadUsers() {
   try {
@@ -78,18 +91,28 @@ onMounted(loadUsers)
       {{ error }}
     </div>
 
-    <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+    <div class="flex flex-wrap gap-4 rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
       <label class="block space-y-1">
         <span class="text-sm font-medium text-slate-700">Usuario</span>
         <select
           v-model="selectedUserId"
-          class="w-full max-w-sm rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+          class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
           @change="loadPerms"
         >
           <option value="">— Selecciona un usuario —</option>
           <option v-for="u in users" :key="u.id" :value="u.id">
             {{ u.name }} ({{ u.email }}) · {{ u.role }}
           </option>
+        </select>
+      </label>
+      <label v-if="selectedUserId && accounts.length > 1" class="block space-y-1">
+        <span class="text-sm font-medium text-slate-700">Cuenta Kobo</span>
+        <select
+          v-model="selectedAccount"
+          class="w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+        >
+          <option value="">Todas las cuentas</option>
+          <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.label }}</option>
         </select>
       </label>
     </div>
@@ -110,7 +133,7 @@ onMounted(loadUsers)
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <tr v-for="p in perms" :key="p.form_id">
+            <tr v-for="p in visiblePerms" :key="p.form_id">
               <td class="px-4 py-3">
                 <p class="font-medium text-slate-900">{{ p.name }}</p>
                 <p class="text-xs text-slate-400">{{ p.account_label }}</p>
@@ -125,7 +148,7 @@ onMounted(loadUsers)
                 <input type="checkbox" v-model="p.can_validate" @change="onToggle(p)" />
               </td>
             </tr>
-            <tr v-if="!perms.length">
+            <tr v-if="!visiblePerms.length">
               <td colspan="4" class="px-4 py-6 text-center text-slate-400">
                 No hay formularios. Sincroniza primero en «Formularios».
               </td>

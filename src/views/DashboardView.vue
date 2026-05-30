@@ -32,6 +32,13 @@ const auth = useAuthStore()
         <h2 class="font-semibold text-slate-900">Cuentas Kobo</h2>
         <p class="mt-1 text-sm text-slate-500">Conecta y administra las cuentas de KoboToolbox.</p>
       </RouterLink>
+      <RouterLink
+        :to="{ name: 'admin-settings' }"
+        class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:ring-blue-300"
+      >
+        <h2 class="font-semibold text-slate-900">Configuración</h2>
+        <p class="mt-1 text-sm text-slate-500">Ajustes generales, como qué formularios sincronizar.</p>
+      </RouterLink>
     </section>
 
     <section v-else>

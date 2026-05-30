@@ -72,6 +72,12 @@ const linkActive = 'bg-blue-600 text-white'
         >
           Permisos
         </RouterLink>
+        <RouterLink
+          :to="{ name: 'admin-settings' }"
+          :class="[linkBase, $route.name === 'admin-settings' ? linkActive : linkInactive]"
+        >
+          Configuración
+        </RouterLink>
       </template>
     </nav>
 
