@@ -7,6 +7,14 @@ them view, edit and validate submissions without needing a KoboToolbox account.
 - Pending work and future ideas: [`ROADMAP.md`](./ROADMAP.md)
 - Production deployment: [`DEPLOY.md`](./DEPLOY.md)
 
+## Who it's for
+
+KoboManager is aimed at organizations that need to give reviewers or field staff scoped
+access to KoboToolbox submissions — view, edit and validate — **without spending Kobo
+licenses/seats for every user and without exposing the API token**. The administrator
+holds the Kobo credentials (stored encrypted); end users work through KoboManager with
+per-form permissions and an internal review workflow decoupled from Kobo.
+
 ## Repository layout
 
 The frontend lives at the repo root (same as in deployment); the backend in `/api`.
