@@ -21,7 +21,9 @@ Todos los cambios notables de KoboManager. El formato sigue
 - **Eliminar por formulario**: quita un formulario y su caché de KoboManager (no toca Kobo).
 - Edición de usuarios: el **email** ahora es editable (con validación de unicidad).
 
-- Acción **Ver** en *Formularios*: abre el formulario en KoboToolbox (solo desplegados).
+- *Formularios*: acción **Ver** abre el formulario público de **Enketo** (sin cuenta Kobo;
+  enlace resuelto vía `deployment__links`), y acción **Login** abre el formulario en
+  KoboToolbox (requiere iniciar sesión).
 - Diálogos de **confirmación como modal** (componente `ConfirmDialog`) en lugar de `confirm()`/`alert()` del navegador.
 
 ### Cambiado

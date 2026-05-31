@@ -16,6 +16,7 @@ const syncResult = ref(null) // resumen por cuenta tras sincronizar
 const syncError = ref('')
 
 const updatingId = ref(null) // formulario que está actualizando sus envíos
+const enketoId = ref(null)   // formulario cuyo enlace Enketo se está resolviendo
 const flash = ref('')        // mensaje breve de resultado de "Actualizar"
 
 const selectedAccount = ref('') // '' = todas
@@ -77,6 +78,23 @@ async function removeForm(f) {
     await load()
   } catch (e) {
     syncError.value = `«${f.name}»: ${apiError(e, t('forms.deleteErr'))}`
+  }
+}
+
+async function openEnketo(f) {
+  // Abrir la pestaña de forma síncrona evita el bloqueo de pop-ups.
+  const win = window.open('', '_blank')
+  enketoId.value = f.id
+  syncError.value = ''
+  try {
+    const { data } = await api.get(`/admin/forms/${f.id}/enketo`)
+    if (data.data.url && win) win.location = data.data.url
+    else if (win) win.close()
+  } catch (e) {
+    if (win) win.close()
+    syncError.value = `«${f.name}»: ${apiError(e, t('forms.enketoErr'))}`
+  } finally {
+    enketoId.value = null
   }
 }
 
@@ -200,15 +218,23 @@ onMounted(load)
             <td class="px-4 py-3 text-slate-500">{{ f.last_synced_at ?? '—' }}</td>
             <td class="px-4 py-3">
               <div class="flex items-center justify-end gap-3">
-                <a
+                <button
                   v-if="f.deployment_status === 'deployed'"
+                  :disabled="enketoId === f.id"
+                  class="font-medium text-blue-600 hover:underline disabled:opacity-50"
+                  :title="$t('forms.viewTitle')"
+                  @click="openEnketo(f)"
+                >
+                  {{ enketoId === f.id ? '…' : $t('forms.view') }}
+                </button>
+                <a
                   :href="`${f.server_url}/#/forms/${f.kobo_asset_uid}`"
                   target="_blank"
                   rel="noopener"
                   class="font-medium text-blue-600 hover:underline"
-                  :title="$t('forms.viewTitle')"
+                  :title="$t('forms.loginTitle')"
                 >
-                  {{ $t('forms.view') }}
+                  {{ $t('forms.login') }}
                 </a>
                 <button
                   :disabled="updatingId === f.id"

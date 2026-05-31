@@ -35,6 +35,22 @@ class KoboClient {
         return array_values($surveys);
     }
 
+    /**
+     * Enlace público de Enketo (formulario rellenable) de un asset desplegado.
+     * Vive en el DETALLE del asset (deployment__links), no en el listado.
+     * Devuelve la mejor URL disponible o null si no hay.
+     */
+    public function getEnketoUrl(string $assetUid): ?string {
+        $asset = $this->httpGet("/api/v2/assets/$assetUid/", ['format' => 'json']);
+        $links = $asset['deployment__links'] ?? [];
+        foreach (['url', 'offline_url', 'single_url', 'preview_url', 'iframe_url'] as $k) {
+            if (!empty($links[$k])) {
+                return $links[$k];
+            }
+        }
+        return null;
+    }
+
     /** Una página de envíos de un formulario (resultados solamente). */
     public function getSubmissions(string $assetUid, array $query = []): array {
         $query += ['format' => 'json'];

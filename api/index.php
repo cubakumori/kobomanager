@@ -59,6 +59,7 @@ $routes = [
     'admin/forms/sync'          => 'admin/forms_sync.php',
     'admin/forms/:id'           => 'admin/form_item.php',
     'admin/forms/:id/sync'      => 'admin/form_sync_one.php',
+    'admin/forms/:id/enketo'    => 'admin/form_enketo.php',
     'admin/permissions'         => 'admin/permissions.php',
     'admin/settings'            => 'admin/settings.php',
     'notifications'             => 'notifications.php',
