@@ -73,7 +73,6 @@ Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
 ### Operación y mantenimiento
 
 - [ ] **Docker / docker-compose** (paridad dev↔prod) y **CI** (lint + build).
-- [ ] **Tabla de migraciones versionada** (registro de qué `.sql` se aplicó) en vez del bucle.
 - [ ] **Índices/búsqueda**: columnas generadas o full-text para acelerar la búsqueda en
       `submissions_cache` cuando crezca.
 - [ ] `/health` ampliado: última ejecución de cada cron y estado de sincronización.
