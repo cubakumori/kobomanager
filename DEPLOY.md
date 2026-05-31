@@ -1,58 +1,58 @@
-# Despliegue — KoboManager
+# Deployment — KoboManager
 
-Guía para desplegar en un VPS o hosting con **Apache + PHP 8.1+ + MySQL/MariaDB**.
+Guide for deploying to a VPS or hosting with **Apache + PHP 8.1+ + MySQL/MariaDB**.
 
-## 1. Requisitos del servidor
+## 1. Server requirements
 
-- PHP 8.1 o superior con extensiones `sodium`, `pdo_mysql` y `curl`.
+- PHP 8.1 or higher with the `sodium`, `pdo_mysql` and `curl` extensions.
 - MySQL 5.7+ / MariaDB 10.4+.
-- Apache con `mod_rewrite` activado (o Nginx con reglas equivalentes).
-- HTTPS (Let's Encrypt). **Imprescindible**: la cookie de sesión usa `Secure`.
+- Apache with `mod_rewrite` enabled (or Nginx with equivalent rules).
+- HTTPS (Let's Encrypt). **Required**: the session cookie uses `Secure`.
 
-## 2. Estructura en el servidor
+## 2. Layout on the server
 
-El frontend compilado vive en la raíz pública y el backend en `/api`:
+The compiled frontend lives in the public root and the backend in `/api`:
 
 ```
-/public_html            (o /var/www/html)
-  index.html            ← build de Vue (dist/)
-  assets/               ← build de Vue (dist/assets)
-  .htaccess             ← rewrite del SPA (ver §6)
-  /api                  ← backend PHP (subir tal cual)
-    config.php          ← crear en el servidor, NO se versiona
+/public_html            (or /var/www/html)
+  index.html            ← Vue build (dist/)
+  assets/               ← Vue build (dist/assets)
+  .htaccess             ← SPA rewrite (see §6)
+  /api                  ← PHP backend (upload as-is)
+    config.php          ← create on the server, NOT committed
     .htaccess
     index.php, lib/, v1/, cron/, cli/
 ```
 
-## 3. Construir y subir
+## 3. Build and upload
 
-En local:
+Locally:
 
 ```bash
 npm install
-npm run build          # genera dist/
+npm run build          # generates dist/
 ```
 
-Subir al servidor:
+Upload to the server:
 
-1. El **contenido** de `dist/` → a la raíz pública (`index.html`, `assets/`, …).
-2. La carpeta `api/` completa → bajo la raíz pública (`/api`).
-3. La carpeta `db/` (migraciones) si vas a aplicarlas desde el servidor.
+1. The **contents** of `dist/` → to the public root (`index.html`, `assets/`, …).
+2. The whole `api/` folder → under the public root (`/api`).
+3. The `db/` folder (migrations) if you'll apply them from the server.
 
-> No subas `node_modules/`, `src/`, ni `api/config.php` de desarrollo.
+> Do not upload `node_modules/`, `src/`, or your development `api/config.php`.
 
-## 4. Base de datos
+## 4. Database
 
 ```bash
 mysql -e "CREATE DATABASE kobomanager CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 for f in db/*.sql; do mysql kobomanager < "$f"; done
 ```
 
-Crea un usuario MySQL dedicado con privilegios solo sobre `kobomanager`.
+Create a dedicated MySQL user with privileges only on `kobomanager`.
 
-## 5. Configuración (`api/config.php`)
+## 5. Configuration (`api/config.php`)
 
-Copia `api/config.example.php` a `api/config.php` y ajusta para **producción**:
+Copy `api/config.example.php` to `api/config.php` and adjust for **production**:
 
 ```php
 define('DB_HOST', '127.0.0.1');
@@ -60,66 +60,67 @@ define('DB_NAME', 'kobomanager');
 define('DB_USER', 'kobomanager');
 define('DB_PASS', '••••••');
 
-// Generar una vez y NO cambiar después (invalidaría tokens/sesiones):
+// Generate once and do NOT change later (would invalidate tokens/sessions):
 define('CONFIG_TOKEN_KEY', '<64 hex>'); // php -r 'echo sodium_bin2hex(random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES));'
 define('JWT_SECRET',       '<64 hex>'); // php -r 'echo bin2hex(random_bytes(32));'
 
-define('COOKIE_SECURE', true);          // ← true en producción (HTTPS)
-define('APP_ENV', 'prod');              // oculta detalles de error
-define('APP_URL', 'https://tudominio.com');
-define('CORS_ALLOWED_ORIGINS', ['https://tudominio.com']);
+define('COOKIE_SECURE', true);          // ← true in production (HTTPS)
+define('APP_ENV', 'prod');              // hides error details
+define('APP_URL', 'https://yourdomain.com');
+define('CORS_ALLOWED_ORIGINS', ['https://yourdomain.com']);
 
-define('RESEND_API_KEY', 're_••••••');  // para el resumen diario
-define('MAIL_FROM', 'KoboManager <noreply@tudominio.com>');
+define('RESEND_API_KEY', 're_••••••');  // for the daily summary
+define('MAIL_FROM', 'KoboManager <noreply@yourdomain.com>');
 ```
 
-> **Importante:** guarda `CONFIG_TOKEN_KEY` en un lugar seguro. Si se pierde o cambia,
-> los tokens de Kobo cifrados dejan de poder descifrarse.
+> **Important:** keep `CONFIG_TOKEN_KEY` somewhere safe. If it's lost or changed, the
+> encrypted Kobo tokens can no longer be decrypted.
 
-Crea el primer administrador (la creación vía API exige ya ser admin):
+Create the first administrator (creating users via the API requires being an admin):
 
 ```bash
-php api/cli/create_user.php admin@tudominio.com 'ContraseñaFuerte' 'Nombre Admin' admin
+php api/cli/create_user.php admin@yourdomain.com 'StrongPassword' 'Admin Name' admin
 ```
 
-## 6. Rewrite del SPA (`.htaccess` de la raíz)
+## 6. SPA rewrite (root `.htaccess`)
 
-Sirve la API y, para todo lo demás, devuelve `index.html` (rutas del SPA):
+Serve the API and, for everything else, return `index.html` (SPA routes):
 
 ```apache
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  # No tocar /api (tiene su propio .htaccess)
+  # Leave /api alone (it has its own .htaccess)
   RewriteRule ^api/ - [L]
-  # Si el fichero no existe, servir el SPA
+  # If the file doesn't exist, serve the SPA
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule ^ index.html [L]
 </IfModule>
 ```
 
-El `.htaccess` de `/api` ya viene en el repo (enruta por `index.php` y bloquea
-`lib/`, `cron/`, `cli/` y `config.php`).
+The `/api` `.htaccess` ships with the repo (routes through `index.php` and blocks
+`lib/`, `cron/`, `cli/` and `config.php`).
 
 ## 7. Cron jobs
 
 ```cron
-*/15 * * * *  php /ruta/api/cron/sync_submissions.php   # envíos Kobo → caché
-0    7 * * *  php /ruta/api/cron/daily_summary.php       # resumen diario por email
+*/15 * * * *  php /path/api/cron/sync_submissions.php   # Kobo submissions → cache
+0    7 * * *  php /path/api/cron/daily_summary.php       # daily email summary
 ```
 
-Ambos scripts solo se ejecutan por CLI (rechazan peticiones web). El resumen diario
-requiere `RESEND_API_KEY` y `MAIL_FROM` configurados.
+Both scripts run only from the CLI (they reject web requests). The daily summary
+requires `RESEND_API_KEY` and `MAIL_FROM` to be configured.
 
-## 8. Comprobaciones tras desplegar
+## 8. Post-deployment checks
 
-- `https://tudominio.com/api/v1/health` → `status: ok` (php, sodium, pdo_mysql, database).
-- Login con el admin creado; la cookie debe viajar como `Secure` + `HttpOnly`.
-- Añadir una cuenta Kobo real y pulsar **Sincronizar** en *Formularios*.
-- Lanzar `sync_submissions.php` manualmente una vez y revisar `submissions_cache`.
+- `https://yourdomain.com/api/v1/health` → `status: ok` (php, sodium, pdo_mysql, database).
+- Sign in with the admin you created; the cookie must travel as `Secure` + `HttpOnly`.
+- Add a real Kobo account and click **Sync** under *Forms*.
+- Run `sync_submissions.php` manually once and check `submissions_cache`.
 
-## 9. Actualizaciones posteriores
+## 9. Subsequent updates
 
-1. `npm run build` en local.
-2. Reemplazar `index.html` + `assets/` en la raíz y la carpeta `api/` (sin tocar `config.php`).
-3. Aplicar nuevas migraciones de `db/` si las hay.
+1. `npm run build` locally.
+2. Replace `index.html` + `assets/` in the root and the `api/` folder (without touching `config.php`).
+3. Apply any new `db/` migrations.
+```

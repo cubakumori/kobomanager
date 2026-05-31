@@ -6,6 +6,10 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [Sin publicar]
 
+Lo previsto a continuación se mantiene en [`ROADMAP.md`](./ROADMAP.md).
+
+## [0.2.0] — 2026-05-31
+
 ### Añadido
 
 - **Internacionalización (i18n)** español/inglés con Vue I18n. Idioma por defecto global
@@ -37,8 +41,6 @@ Todos los cambios notables de KoboManager. El formato sigue
 - El primer sync de envíos no traía el histórico porque usaba `forms.last_synced_at`
   (fijado también al descubrir formularios) como cursor. Ahora el cursor incremental
   se deriva del envío más reciente ya en caché.
-
-Lo previsto a continuación se mantiene en [`ROADMAP.md`](./ROADMAP.md).
 
 ## [0.1.0] — 2026-05-30
 
@@ -80,4 +82,5 @@ Primera versión funcional completa (fases 0–7 del plan de implementación).
 - Errores homogéneos con códigos estándar; mensajes claros por código en el frontend.
 
 [Sin publicar]: https://example.com
+[0.2.0]: https://example.com
 [0.1.0]: https://example.com
