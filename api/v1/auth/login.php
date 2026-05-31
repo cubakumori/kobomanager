@@ -19,7 +19,7 @@ if (RateLimit::tooMany($ip, 5, 60)) {
 $in = Request::required(['email', 'password']);
 
 $user = DB::run(
-    'SELECT id, name, email, role, password_hash, active FROM users WHERE email = ?',
+    'SELECT id, name, email, role, locale, password_hash, active FROM users WHERE email = ?',
     [$in['email']]
 )->fetch();
 
@@ -34,8 +34,10 @@ RateLimit::clear($ip);
 Auth::issue($user);
 
 ErrorResponse::ok([
-    'id'    => (int) $user['id'],
-    'name'  => $user['name'],
-    'email' => $user['email'],
-    'role'  => $user['role'],
+    'id'          => (int) $user['id'],
+    'name'        => $user['name'],
+    'email'       => $user['email'],
+    'role'        => $user['role'],
+    'locale_pref' => $user['locale'] ?? null,
+    'locale'      => ($user['locale'] ?? null) ?: Settings::defaultLocale(),
 ]);

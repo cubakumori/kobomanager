@@ -1,10 +1,12 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, RouterLink } from 'vue-router'
 import api from '../services/api'
 import { apiError } from '../stores/auth'
 import ReviewBadge from '../components/ReviewBadge.vue'
 
+const { t } = useI18n()
 const route = useRoute()
 const formId = computed(() => Number(route.params.id))
 
@@ -17,7 +19,6 @@ const search = ref('')
 const loading = ref(true)
 const error = ref('')
 
-// Columnas dinámicas: campos del primer envío que no son metadatos de Kobo (los que empiezan por _).
 const columns = computed(() => {
   const first = items.value[0]?.data
   if (!first) return []
@@ -37,7 +38,7 @@ async function load() {
     items.value = data.data.items
     total.value = data.data.total
   } catch (e) {
-    error.value = apiError(e, 'No se pudieron cargar los envíos')
+    error.value = apiError(e, t('submissions.loadError'))
   } finally {
     loading.value = false
   }
@@ -65,24 +66,24 @@ onMounted(load)
   <div class="space-y-6">
     <header>
       <RouterLink :to="{ name: 'forms' }" class="text-sm text-blue-600 hover:underline">
-        ← Mis formularios
+        {{ $t('submissions.back') }}
       </RouterLink>
       <div class="mt-1 flex items-center justify-between gap-4">
-        <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ formName || 'Envíos' }}</h1>
+        <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ formName || $t('submissions.title') }}</h1>
         <RouterLink
           :to="{ name: 'stats', params: { id: formId } }"
           class="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          Estadísticas
+          {{ $t('submissions.stats') }}
         </RouterLink>
       </div>
-      <p class="mt-1 text-sm text-slate-500">{{ total }} envío(s) en total.</p>
+      <p class="mt-1 text-sm text-slate-500">{{ $t('submissions.total', { n: total }) }}</p>
     </header>
 
     <input
       v-model="search"
       type="search"
-      placeholder="Buscar…"
+      :placeholder="$t('submissions.search')"
       class="w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
     />
 
@@ -91,13 +92,13 @@ onMounted(load)
     </div>
 
     <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-      <div v-if="loading" class="p-4 text-sm text-slate-500">Cargando…</div>
+      <div v-if="loading" class="p-4 text-sm text-slate-500">{{ $t('common.loading') }}</div>
       <table v-else class="w-full text-left text-sm">
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
           <tr>
-            <th class="px-4 py-3">Fecha</th>
+            <th class="px-4 py-3">{{ $t('submissions.colSubmitted') }}</th>
             <th v-for="c in columns" :key="c" class="px-4 py-3">{{ c }}</th>
-            <th class="px-4 py-3">Revisión</th>
+            <th class="px-4 py-3">{{ $t('submissions.colReview') }}</th>
             <th class="px-4 py-3"></th>
           </tr>
         </thead>
@@ -111,13 +112,13 @@ onMounted(load)
                 :to="{ name: 'submission-detail', params: { id: formId, subId: s.submission_uid } }"
                 class="text-sm font-medium text-blue-600 hover:underline"
               >
-                Ver
+                {{ $t('forms.view') }}
               </RouterLink>
             </td>
           </tr>
           <tr v-if="!items.length">
             <td :colspan="columns.length + 3" class="px-4 py-6 text-center text-slate-400">
-              No hay envíos.
+              {{ $t('submissions.empty') }}
             </td>
           </tr>
         </tbody>
@@ -131,15 +132,15 @@ onMounted(load)
         :disabled="page <= 1"
         @click="go(page - 1)"
       >
-        Anterior
+        {{ $t('submissions.prev') }}
       </button>
-      <span class="text-slate-500">Página {{ page }} de {{ totalPages }}</span>
+      <span class="text-slate-500">{{ $t('submissions.page', { page, pages: totalPages }) }}</span>
       <button
         class="rounded-lg border border-slate-300 px-3 py-1.5 disabled:opacity-50"
         :disabled="page >= totalPages"
         @click="go(page + 1)"
       >
-        Siguiente
+        {{ $t('submissions.next') }}
       </button>
     </div>
   </div>

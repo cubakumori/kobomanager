@@ -1,11 +1,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 
+const { t } = useI18n()
+
 const users = ref([])
 const selectedUserId = ref('')
-const perms = ref([]) // [{ form_id, name, account_id, account_label, can_view, can_edit, can_validate }]
+const perms = ref([])
 
 const loadingPerms = ref(false)
 const error = ref('')
@@ -30,7 +33,7 @@ async function loadUsers() {
     const { data } = await api.get('/admin/users')
     users.value = data.data
   } catch (e) {
-    error.value = apiError(e, 'No se pudieron cargar los usuarios')
+    error.value = apiError(e, t('permissions.loadUsersError'))
   }
 }
 
@@ -46,7 +49,7 @@ async function loadPerms() {
     const { data } = await api.get('/admin/permissions', { params: { user_id: selectedUserId.value } })
     perms.value = data.data
   } catch (e) {
-    error.value = apiError(e, 'No se pudieron cargar los permisos')
+    error.value = apiError(e, t('permissions.loadError'))
   } finally {
     loadingPerms.value = false
   }
@@ -63,13 +66,12 @@ async function onSave() {
     })
     saved.value = true
   } catch (e) {
-    error.value = apiError(e, 'No se pudieron guardar los permisos')
+    error.value = apiError(e, t('permissions.saveError'))
   } finally {
     saving.value = false
   }
 }
 
-// Marcar can_view automáticamente si se concede edit o validate (no tiene sentido editar sin ver).
 function onToggle(p) {
   if (p.can_edit || p.can_validate) p.can_view = true
   saved.value = false
@@ -81,10 +83,8 @@ onMounted(loadUsers)
 <template>
   <div class="space-y-6">
     <header>
-      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Permisos</h1>
-      <p class="mt-1 text-sm text-slate-500">
-        Asigna qué formularios puede ver, editar o validar cada usuario.
-      </p>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ $t('permissions.title') }}</h1>
+      <p class="mt-1 text-sm text-slate-500">{{ $t('permissions.subtitle') }}</p>
     </header>
 
     <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
@@ -93,25 +93,25 @@ onMounted(loadUsers)
 
     <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
       <div class="flex items-center gap-2">
-        <label class="text-sm text-slate-600">Usuario:</label>
+        <label class="text-sm text-slate-600">{{ $t('permissions.userFilter') }}</label>
         <select
           v-model="selectedUserId"
           class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
           @change="loadPerms"
         >
-          <option value="">— Selecciona un usuario —</option>
+          <option value="">{{ $t('permissions.selectUser') }}</option>
           <option v-for="u in users" :key="u.id" :value="u.id">
             {{ u.name }} ({{ u.email }}) · {{ u.role }}
           </option>
         </select>
       </div>
       <div v-if="selectedUserId && accounts.length" class="flex items-center gap-2">
-        <label class="text-sm text-slate-600">Cuenta:</label>
+        <label class="text-sm text-slate-600">{{ $t('permissions.accountFilter') }}</label>
         <select
           v-model="selectedAccount"
           class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
         >
-          <option value="">Todas las cuentas</option>
+          <option value="">{{ $t('permissions.allAccounts') }}</option>
           <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.label }}</option>
         </select>
       </div>
@@ -121,15 +121,15 @@ onMounted(loadUsers)
       v-if="selectedUserId"
       class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200"
     >
-      <div v-if="loadingPerms" class="p-4 text-sm text-slate-500">Cargando…</div>
+      <div v-if="loadingPerms" class="p-4 text-sm text-slate-500">{{ $t('common.loading') }}</div>
       <template v-else>
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
             <tr>
-              <th class="px-4 py-3">Formulario</th>
-              <th class="px-4 py-3 text-center">Ver</th>
-              <th class="px-4 py-3 text-center">Editar</th>
-              <th class="px-4 py-3 text-center">Validar</th>
+              <th class="px-4 py-3">{{ $t('permissions.colForm') }}</th>
+              <th class="px-4 py-3 text-center">{{ $t('permissions.colView') }}</th>
+              <th class="px-4 py-3 text-center">{{ $t('permissions.colEdit') }}</th>
+              <th class="px-4 py-3 text-center">{{ $t('permissions.colValidate') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -149,9 +149,7 @@ onMounted(loadUsers)
               </td>
             </tr>
             <tr v-if="!visiblePerms.length">
-              <td colspan="4" class="px-4 py-6 text-center text-slate-400">
-                No hay formularios. Sincroniza primero en «Formularios».
-              </td>
+              <td colspan="4" class="px-4 py-6 text-center text-slate-400">{{ $t('permissions.empty') }}</td>
             </tr>
           </tbody>
         </table>
@@ -162,9 +160,9 @@ onMounted(loadUsers)
             class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
             @click="onSave"
           >
-            {{ saving ? 'Guardando…' : 'Guardar permisos' }}
+            {{ saving ? $t('common.saving') : $t('permissions.save') }}
           </button>
-          <span v-if="saved" class="text-sm text-green-600">Guardado ✓</span>
+          <span v-if="saved" class="text-sm text-green-600">{{ $t('common.saved') }}</span>
         </div>
       </template>
     </div>

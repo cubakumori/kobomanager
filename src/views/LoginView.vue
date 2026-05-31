@@ -1,8 +1,10 @@
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore, apiError } from '../stores/auth'
 
+const { t } = useI18n()
 const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
@@ -20,7 +22,7 @@ async function onSubmit() {
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
     router.push(redirect)
   } catch (e) {
-    error.value = apiError(e, 'No se pudo iniciar sesión')
+    error.value = apiError(e, t('login.failed'))
   } finally {
     loading.value = false
   }
@@ -35,7 +37,7 @@ async function onSubmit() {
     >
       <div>
         <h1 class="text-2xl font-semibold tracking-tight text-slate-900">KoboManager</h1>
-        <p class="mt-1 text-sm text-slate-500">Inicia sesión para continuar</p>
+        <p class="mt-1 text-sm text-slate-500">{{ $t('login.subtitle') }}</p>
       </div>
 
       <div
@@ -46,7 +48,7 @@ async function onSubmit() {
       </div>
 
       <div class="space-y-1">
-        <label class="text-sm font-medium text-slate-700" for="email">Email</label>
+        <label class="text-sm font-medium text-slate-700" for="email">{{ $t('common.email') }}</label>
         <input
           id="email"
           v-model="email"
@@ -58,7 +60,7 @@ async function onSubmit() {
       </div>
 
       <div class="space-y-1">
-        <label class="text-sm font-medium text-slate-700" for="password">Contraseña</label>
+        <label class="text-sm font-medium text-slate-700" for="password">{{ $t('login.password') }}</label>
         <input
           id="password"
           v-model="password"
@@ -74,7 +76,7 @@ async function onSubmit() {
         :disabled="loading"
         class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
       >
-        {{ loading ? 'Entrando…' : 'Entrar' }}
+        {{ loading ? $t('login.submitting') : $t('login.submit') }}
       </button>
     </form>
   </div>

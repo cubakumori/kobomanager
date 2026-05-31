@@ -35,48 +35,48 @@ const linkActive = 'bg-blue-600 text-white'
         :to="{ name: 'dashboard' }"
         :class="[linkBase, $route.name === 'dashboard' ? linkActive : linkInactive]"
       >
-        Dashboard
+        {{ $t('nav.dashboard') }}
       </RouterLink>
       <RouterLink
         :to="{ name: 'forms' }"
-        :class="[linkBase, ['forms', 'submissions', 'submission-detail'].includes($route.name) ? linkActive : linkInactive]"
+        :class="[linkBase, ['forms', 'submissions', 'submission-detail', 'stats'].includes($route.name) ? linkActive : linkInactive]"
       >
-        Mis formularios
+        {{ $t('nav.myForms') }}
       </RouterLink>
 
       <template v-if="auth.isAdmin">
         <p class="px-3 pb-1 pt-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Administración
+          {{ $t('nav.admin') }}
         </p>
         <RouterLink
           :to="{ name: 'admin-users' }"
           :class="[linkBase, $route.name === 'admin-users' ? linkActive : linkInactive]"
         >
-          Usuarios
+          {{ $t('nav.users') }}
         </RouterLink>
         <RouterLink
           :to="{ name: 'admin-accounts' }"
           :class="[linkBase, $route.name === 'admin-accounts' ? linkActive : linkInactive]"
         >
-          Cuentas Kobo
+          {{ $t('nav.accounts') }}
         </RouterLink>
         <RouterLink
           :to="{ name: 'admin-forms' }"
           :class="[linkBase, $route.name === 'admin-forms' ? linkActive : linkInactive]"
         >
-          Formularios
+          {{ $t('nav.forms') }}
         </RouterLink>
         <RouterLink
           :to="{ name: 'admin-permissions' }"
           :class="[linkBase, $route.name === 'admin-permissions' ? linkActive : linkInactive]"
         >
-          Permisos
+          {{ $t('nav.permissions') }}
         </RouterLink>
         <RouterLink
           :to="{ name: 'admin-settings' }"
           :class="[linkBase, $route.name === 'admin-settings' ? linkActive : linkInactive]"
         >
-          Configuración
+          {{ $t('nav.settings') }}
         </RouterLink>
       </template>
     </nav>
@@ -84,7 +84,7 @@ const linkActive = 'bg-blue-600 text-white'
     <div class="border-t border-slate-700/60 p-3">
       <RouterLink
         :to="{ name: 'profile' }"
-        :title="'Ir a mi perfil'"
+        :title="$t('nav.goToProfile')"
         class="mb-2 flex items-center gap-3 rounded-lg px-1 py-2 transition-colors hover:bg-slate-700/60"
         :class="{ 'bg-slate-700/60': $route.name === 'profile' }"
       >
@@ -100,7 +100,7 @@ const linkActive = 'bg-blue-600 text-white'
         class="w-full rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white"
         @click="onLogout"
       >
-        Cerrar sesión
+        {{ $t('nav.logout') }}
       </button>
     </div>
   </aside>

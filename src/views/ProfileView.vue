@@ -1,8 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import api from '../services/api'
 import { useAuthStore, apiError } from '../stores/auth'
+import { setLocale } from '../i18n'
 
+const { t } = useI18n()
 const auth = useAuthStore()
 
 const forms = ref([]) // [{ form_id, name, account_label, daily_summary }]
@@ -11,14 +14,26 @@ const error = ref('')
 const saving = ref(false)
 const saved = ref(false)
 
+// Idioma personal
+const localePref = ref('')      // '' = seguir el predeterminado del sistema
+const defaultLocale = ref('es')
+const validLocales = ref(['es', 'en'])
+const langSaving = ref(false)
+
 async function load() {
   loading.value = true
   error.value = ''
   try {
-    const { data } = await api.get('/notifications')
-    forms.value = data.data
+    const [notif, profile] = await Promise.all([
+      api.get('/notifications'),
+      api.get('/profile'),
+    ])
+    forms.value = notif.data.data
+    localePref.value = profile.data.data.locale_pref ?? ''
+    defaultLocale.value = profile.data.data.default_locale
+    validLocales.value = profile.data.data.valid_locales
   } catch (e) {
-    error.value = apiError(e, 'No se pudo cargar la configuración')
+    error.value = apiError(e, t('profile.loadError'))
   } finally {
     loading.value = false
   }
@@ -33,9 +48,26 @@ async function save() {
     await api.put('/notifications', { enabled })
     saved.value = true
   } catch (e) {
-    error.value = apiError(e, 'No se pudo guardar')
+    error.value = apiError(e, t('profile.saveError'))
   } finally {
     saving.value = false
+  }
+}
+
+async function changeLocale() {
+  langSaving.value = true
+  error.value = ''
+  try {
+    const { data } = await api.put('/profile', { locale: localePref.value || null })
+    if (auth.user) {
+      auth.user.locale_pref = data.data.locale_pref
+      auth.user.locale = data.data.locale
+    }
+    setLocale(data.data.locale)
+  } catch (e) {
+    error.value = apiError(e, t('profile.saveError'))
+  } finally {
+    langSaving.value = false
   }
 }
 
@@ -45,20 +77,39 @@ onMounted(load)
 <template>
   <div class="space-y-6">
     <header>
-      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Mi perfil</h1>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ $t('profile.title') }}</h1>
       <p class="mt-1 text-sm text-slate-500">{{ auth.user?.name }} · {{ auth.user?.email }}</p>
     </header>
 
+    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+      {{ error }}
+    </div>
+
+    <!-- Idioma -->
+    <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 space-y-3">
+      <div>
+        <h2 class="font-semibold text-slate-900">{{ $t('profile.language') }}</h2>
+        <p class="mt-0.5 text-sm text-slate-500">{{ $t('profile.languageDesc') }}</p>
+      </div>
+      <select
+        v-model="localePref"
+        :disabled="langSaving"
+        class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+        @change="changeLocale"
+      >
+        <option value="">{{ $t('profile.systemDefault', { locale: $t('lang.' + defaultLocale) }) }}</option>
+        <option v-for="l in validLocales" :key="l" :value="l">{{ $t('lang.' + l) }}</option>
+      </select>
+    </section>
+
+    <!-- Notificaciones -->
     <section class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
       <div class="border-b border-slate-100 px-5 py-3">
-        <h2 class="font-semibold text-slate-900">Resumen diario por email</h2>
-        <p class="mt-0.5 text-sm text-slate-500">
-          Recibe cada mañana un correo con los nuevos envíos de los formularios elegidos.
-        </p>
+        <h2 class="font-semibold text-slate-900">{{ $t('profile.notifications') }}</h2>
+        <p class="mt-0.5 text-sm text-slate-500">{{ $t('profile.notificationsDesc') }}</p>
       </div>
 
-      <div v-if="error" class="bg-red-50 px-5 py-2 text-sm text-red-700">{{ error }}</div>
-      <div v-if="loading" class="px-5 py-4 text-sm text-slate-500">Cargando…</div>
+      <div v-if="loading" class="px-5 py-4 text-sm text-slate-500">{{ $t('common.loading') }}</div>
 
       <template v-else>
         <ul class="divide-y divide-slate-100">
@@ -70,7 +121,7 @@ onMounted(load)
             <input v-model="f.daily_summary" type="checkbox" class="h-4 w-4" @change="saved = false" />
           </li>
           <li v-if="!forms.length" class="px-5 py-6 text-center text-sm text-slate-400">
-            No tienes formularios asignados.
+            {{ $t('profile.noForms') }}
           </li>
         </ul>
 
@@ -80,9 +131,9 @@ onMounted(load)
             class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
             @click="save"
           >
-            {{ saving ? 'Guardando…' : 'Guardar preferencias' }}
+            {{ saving ? $t('common.saving') : $t('profile.savePrefs') }}
           </button>
-          <span v-if="saved" class="text-sm text-green-600">Guardado ✓</span>
+          <span v-if="saved" class="text-sm text-green-600">{{ $t('common.saved') }}</span>
         </div>
       </template>
     </section>

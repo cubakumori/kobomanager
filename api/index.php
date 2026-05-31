@@ -62,6 +62,7 @@ $routes = [
     'admin/permissions'         => 'admin/permissions.php',
     'admin/settings'            => 'admin/settings.php',
     'notifications'             => 'notifications.php',
+    'profile'                   => 'profile.php',
     'forms'                     => 'forms/index.php',
     'forms/:id/submissions'     => 'forms/submissions.php',
     'forms/:id/stats'           => 'forms/stats.php',

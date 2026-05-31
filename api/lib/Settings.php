@@ -7,6 +7,10 @@ class Settings {
     public const VALID_STATUSES = ['deployed', 'draft', 'archived'];
     private const DEFAULT_SYNC_STATUSES = ['deployed'];
 
+    /** Idiomas soportados por la interfaz. */
+    public const VALID_LOCALES = ['es', 'en'];
+    private const FALLBACK_LOCALE = 'es';
+
     public static function get(string $key, mixed $default = null): mixed {
         $row = DB::run('SELECT `value` FROM settings WHERE `key` = ?', [$key])->fetch();
         if (!$row) return $default;
@@ -28,5 +32,11 @@ class Settings {
         if (!is_array($v)) $v = self::DEFAULT_SYNC_STATUSES;
         $v = array_values(array_intersect($v, self::VALID_STATUSES));
         return $v ?: self::DEFAULT_SYNC_STATUSES;
+    }
+
+    /** Idioma por defecto del sistema ('es'|'en'). */
+    public static function defaultLocale(): string {
+        $v = self::get('default_locale', self::FALLBACK_LOCALE);
+        return in_array($v, self::VALID_LOCALES, true) ? $v : self::FALLBACK_LOCALE;
     }
 }

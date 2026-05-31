@@ -11,24 +11,42 @@ if (Request::method() === 'GET') {
     ErrorResponse::ok([
         'sync_deployment_statuses' => Settings::syncStatuses(),
         'valid_statuses'           => Settings::VALID_STATUSES,
+        'default_locale'           => Settings::defaultLocale(),
+        'valid_locales'            => Settings::VALID_LOCALES,
     ]);
 }
 
 if (Request::method() === 'PUT') {
-    $in = Request::json()['sync_deployment_statuses'] ?? null;
-    if (!is_array($in)) {
-        ErrorResponse::send('VALIDATION_ERROR', 'sync_deployment_statuses debe ser una lista');
+    $body = Request::json();
+    $out  = [];
+
+    if (array_key_exists('sync_deployment_statuses', $body)) {
+        $in = $body['sync_deployment_statuses'];
+        if (!is_array($in)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'sync_deployment_statuses debe ser una lista');
+        }
+        $clean = array_values(array_intersect(
+            array_map('strtolower', array_map('strval', $in)),
+            Settings::VALID_STATUSES
+        ));
+        if (!$clean) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Debe seleccionarse al menos un estado válido');
+        }
+        Settings::set('sync_deployment_statuses', $clean);
+        $out['sync_deployment_statuses'] = $clean;
     }
-    $clean = array_values(array_intersect(
-        array_map('strtolower', array_map('strval', $in)),
-        Settings::VALID_STATUSES
-    ));
-    if (!$clean) {
-        ErrorResponse::send('VALIDATION_ERROR', 'Debe seleccionarse al menos un estado válido');
+
+    if (array_key_exists('default_locale', $body)) {
+        $loc = (string) $body['default_locale'];
+        if (!in_array($loc, Settings::VALID_LOCALES, true)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Idioma no válido');
+        }
+        Settings::set('default_locale', $loc);
+        $out['default_locale'] = $loc;
     }
-    Settings::set('sync_deployment_statuses', $clean);
-    Audit::log($admin['id'], 'update_settings', null, null, ['sync_deployment_statuses' => $clean]);
-    ErrorResponse::ok(['sync_deployment_statuses' => $clean]);
+
+    Audit::log($admin['id'], 'update_settings', null, null, $out);
+    ErrorResponse::ok($out);
 }
 
 ErrorResponse::send('VALIDATION_ERROR', 'Método no permitido', 405);

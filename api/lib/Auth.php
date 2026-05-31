@@ -104,7 +104,7 @@ class Auth {
         if (!$session) return null;
 
         $user = DB::run(
-            'SELECT id, name, email, role, active FROM users WHERE id = ? AND active = 1',
+            'SELECT id, name, email, role, locale, active FROM users WHERE id = ? AND active = 1',
             [$payload['sub']]
         )->fetch();
         if (!$user) return null;
@@ -112,7 +112,9 @@ class Auth {
         DB::run('UPDATE user_sessions SET last_activity = NOW() WHERE id = ?', [$session['id']]);
 
         unset($user['active']);
-        $user['id']   = (int) $user['id'];
+        $user['id']          = (int) $user['id'];
+        $user['locale_pref'] = $user['locale'];                                  // elección explícita (o null)
+        $user['locale']      = $user['locale'] ?: Settings::defaultLocale();     // idioma efectivo
         return $user;
     }
 

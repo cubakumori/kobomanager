@@ -1,10 +1,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, RouterLink } from 'vue-router'
 import api from '../services/api'
 import { apiError } from '../stores/auth'
 import ReviewBadge from '../components/ReviewBadge.vue'
 
+const { t } = useI18n()
 const route = useRoute()
 const sub = ref(null)
 const loading = ref(true)
@@ -21,7 +23,6 @@ const comment = ref('')
 const reviewing = ref(false)
 const reviewError = ref('')
 
-// Campos del envío separados en "datos" y "metadatos de Kobo" (los que empiezan por _).
 const fields = computed(() => {
   const d = sub.value?.data ?? {}
   const data = [], meta = []
@@ -42,7 +43,7 @@ async function load() {
     const { data } = await api.get(`/submissions/${route.params.subId}`)
     sub.value = data.data
   } catch (e) {
-    error.value = apiError(e, 'No se pudo cargar el envío')
+    error.value = apiError(e, t('detail.loadError'))
   } finally {
     loading.value = false
   }
@@ -50,13 +51,11 @@ async function load() {
 
 function startEdit() {
   editError.value = ''
-  // Copia editable solo de los campos de datos (no metadatos).
   editForm.value = Object.fromEntries(fields.value.data.map(([k, v]) => [k, fmt(v)]))
   editing.value = true
 }
 
 async function saveEdit() {
-  // Solo enviar los campos que cambiaron.
   const original = Object.fromEntries(fields.value.data.map(([k, v]) => [k, fmt(v)]))
   const changed = {}
   for (const [k, v] of Object.entries(editForm.value)) {
@@ -73,7 +72,7 @@ async function saveEdit() {
     editing.value = false
     await load()
   } catch (e) {
-    editError.value = apiError(e, 'No se pudo guardar (¿la cuenta Kobo es válida?)')
+    editError.value = apiError(e, t('detail.saveError'))
   } finally {
     saving.value = false
   }
@@ -87,7 +86,7 @@ async function submitReview(status) {
     comment.value = ''
     await load()
   } catch (e) {
-    reviewError.value = apiError(e, 'No se pudo registrar la revisión')
+    reviewError.value = apiError(e, t('detail.reviewError'))
   } finally {
     reviewing.value = false
   }
@@ -103,33 +102,33 @@ onMounted(load)
         :to="{ name: 'submissions', params: { id: route.params.id } }"
         class="text-sm text-blue-600 hover:underline"
       >
-        ← Volver a los envíos
+        {{ $t('detail.back') }}
       </RouterLink>
       <div class="mt-1 flex items-center gap-3">
-        <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Detalle del envío</h1>
+        <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ $t('detail.title') }}</h1>
         <ReviewBadge v-if="sub" :status="sub.review_status" />
       </div>
       <p v-if="sub" class="mt-1 text-sm text-slate-500">
-        {{ sub.form.name }} · enviado {{ sub.submitted_at }}
+        {{ $t('detail.submittedAt', { form: sub.form.name, date: sub.submitted_at }) }}
       </p>
     </header>
 
     <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
       {{ error }}
     </div>
-    <div v-else-if="loading" class="text-sm text-slate-500">Cargando…</div>
+    <div v-else-if="loading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
 
     <template v-else-if="sub">
       <!-- Datos (con edición opcional) -->
       <section class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
         <div class="flex items-center justify-between border-b border-slate-100 px-5 py-3">
-          <h2 class="font-semibold text-slate-900">Datos</h2>
+          <h2 class="font-semibold text-slate-900">{{ $t('detail.data') }}</h2>
           <button
             v-if="sub.can_edit && !editing"
             class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
             @click="startEdit"
           >
-            Editar
+            {{ $t('common.edit') }}
           </button>
         </div>
 
@@ -141,7 +140,7 @@ onMounted(load)
             <dt class="text-sm font-medium text-slate-500">{{ k }}</dt>
             <dd class="col-span-2 text-sm text-slate-800">{{ fmt(v) }}</dd>
           </div>
-          <div v-if="!fields.data.length" class="px-5 py-3 text-sm text-slate-400">Sin campos.</div>
+          <div v-if="!fields.data.length" class="px-5 py-3 text-sm text-slate-400">{{ $t('detail.noFields') }}</div>
         </dl>
 
         <!-- Modo edición -->
@@ -159,22 +158,22 @@ onMounted(load)
               class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
               @click="saveEdit"
             >
-              {{ saving ? 'Guardando…' : 'Guardar cambios' }}
+              {{ saving ? $t('common.saving') : $t('detail.saveChanges') }}
             </button>
             <button
               class="text-sm font-medium text-slate-500 hover:text-slate-700"
               @click="editing = false"
             >
-              Cancelar
+              {{ $t('common.cancel') }}
             </button>
           </div>
-          <p class="text-xs text-slate-400">Los cambios se escriben en KoboToolbox y luego en la caché local.</p>
+          <p class="text-xs text-slate-400">{{ $t('detail.editHint') }}</p>
         </div>
       </section>
 
       <!-- Panel de revisión -->
       <section v-if="sub.can_validate" class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-        <h2 class="border-b border-slate-100 px-5 py-3 font-semibold text-slate-900">Revisar</h2>
+        <h2 class="border-b border-slate-100 px-5 py-3 font-semibold text-slate-900">{{ $t('detail.review') }}</h2>
         <div class="space-y-3 px-5 py-4">
           <div v-if="reviewError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
             {{ reviewError }}
@@ -182,7 +181,7 @@ onMounted(load)
           <textarea
             v-model="comment"
             rows="2"
-            placeholder="Comentario (opcional)"
+            :placeholder="$t('detail.comment')"
             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
           ></textarea>
           <div class="flex gap-3">
@@ -191,14 +190,14 @@ onMounted(load)
               class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
               @click="submitReview('approved')"
             >
-              Aprobar
+              {{ $t('detail.approve') }}
             </button>
             <button
               :disabled="reviewing"
               class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
               @click="submitReview('rejected')"
             >
-              Rechazar
+              {{ $t('detail.reject') }}
             </button>
           </div>
         </div>
@@ -207,7 +206,7 @@ onMounted(load)
       <!-- Metadatos -->
       <details class="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
         <summary class="cursor-pointer px-5 py-3 font-semibold text-slate-900">
-          Metadatos de Kobo ({{ fields.meta.length }})
+          {{ $t('detail.metadata', { n: fields.meta.length }) }}
         </summary>
         <dl class="divide-y divide-slate-100 border-t border-slate-100">
           <div v-for="[k, v] in fields.meta" :key="k" class="grid grid-cols-3 gap-4 px-5 py-2">
@@ -219,9 +218,7 @@ onMounted(load)
 
       <!-- Historial de revisiones -->
       <section class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-        <h2 class="border-b border-slate-100 px-5 py-3 font-semibold text-slate-900">
-          Historial de revisión
-        </h2>
+        <h2 class="border-b border-slate-100 px-5 py-3 font-semibold text-slate-900">{{ $t('detail.history') }}</h2>
         <ul v-if="sub.reviews.length" class="divide-y divide-slate-100">
           <li v-for="r in sub.reviews" :key="r.id" class="flex items-start gap-3 px-5 py-3">
             <ReviewBadge :status="r.status" />
@@ -231,7 +228,7 @@ onMounted(load)
             </div>
           </li>
         </ul>
-        <p v-else class="px-5 py-3 text-sm text-slate-400">Aún no hay revisiones.</p>
+        <p v-else class="px-5 py-3 text-sm text-slate-400">{{ $t('detail.noReviews') }}</p>
       </section>
     </template>
   </div>

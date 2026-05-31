@@ -1,15 +1,19 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import api from '../../services/api'
 import { apiError } from '../../stores/auth'
+import { useAuthStore } from '../../stores/auth'
+import { setLocale } from '../../i18n'
 
-const ALL = [
-  { value: 'deployed', label: 'Desplegados', hint: 'Formularios publicados y activos.' },
-  { value: 'draft', label: 'Borradores', hint: 'Aún no desplegados.' },
-  { value: 'archived', label: 'Archivados', hint: 'Desplegados pero archivados.' },
-]
+const { t } = useI18n()
+const auth = useAuthStore()
+
+const STATUS_KEYS = ['deployed', 'draft', 'archived']
 
 const selected = ref([])
+const defaultLocale = ref('es')
+const validLocales = ref(['es', 'en'])
 const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
@@ -21,8 +25,10 @@ async function load() {
   try {
     const { data } = await api.get('/admin/settings')
     selected.value = data.data.sync_deployment_statuses
+    defaultLocale.value = data.data.default_locale
+    validLocales.value = data.data.valid_locales
   } catch (e) {
-    error.value = apiError(e, 'No se pudo cargar la configuración')
+    error.value = apiError(e, t('settings.loadError'))
   } finally {
     loading.value = false
   }
@@ -37,18 +43,24 @@ function toggle(value) {
 
 async function save() {
   if (!selected.value.length) {
-    error.value = 'Selecciona al menos un estado.'
+    error.value = t('settings.selectOne')
     return
   }
   saving.value = true
   error.value = ''
   saved.value = false
   try {
-    const { data } = await api.put('/admin/settings', { sync_deployment_statuses: selected.value })
+    const { data } = await api.put('/admin/settings', {
+      sync_deployment_statuses: selected.value,
+      default_locale: defaultLocale.value,
+    })
     selected.value = data.data.sync_deployment_statuses
+    defaultLocale.value = data.data.default_locale
     saved.value = true
+    // Si el usuario sigue el idioma por defecto, refleja el cambio al instante.
+    if (!auth.user?.locale_pref) setLocale(defaultLocale.value)
   } catch (e) {
-    error.value = apiError(e, 'No se pudo guardar')
+    error.value = apiError(e, t('settings.saveError'))
   } finally {
     saving.value = false
   }
@@ -60,55 +72,66 @@ onMounted(load)
 <template>
   <div class="space-y-6">
     <header>
-      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Configuración</h1>
-      <p class="mt-1 text-sm text-slate-500">Ajustes generales, aplicables a todas las cuentas Kobo.</p>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ $t('settings.title') }}</h1>
+      <p class="mt-1 text-sm text-slate-500">{{ $t('settings.subtitle') }}</p>
     </header>
 
-    <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
-      <div>
-        <h2 class="font-semibold text-slate-900">Tipos de formulario a sincronizar</h2>
-        <p class="mt-0.5 text-sm text-slate-500">
-          Al sincronizar una cuenta, solo se traerán los formularios en los estados marcados.
-        </p>
-      </div>
+    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+      {{ error }}
+    </div>
+    <div v-if="loading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
 
-      <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
-        {{ error }}
-      </div>
-      <div v-if="loading" class="text-sm text-slate-500">Cargando…</div>
-
-      <template v-else>
+    <template v-else>
+      <!-- Tipos a sincronizar -->
+      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.syncTypes') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.syncTypesDesc') }}</p>
+        </div>
         <label
-          v-for="opt in ALL"
-          :key="opt.value"
+          v-for="key in STATUS_KEYS"
+          :key="key"
           class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50"
         >
           <input
             type="checkbox"
             class="mt-0.5 h-4 w-4"
-            :checked="selected.includes(opt.value)"
-            @change="toggle(opt.value)"
+            :checked="selected.includes(key)"
+            @change="toggle(key)"
           />
           <span>
-            <span class="block text-sm font-medium text-slate-800">{{ opt.label }}</span>
-            <span class="block text-xs text-slate-400">{{ opt.hint }}</span>
+            <span class="block text-sm font-medium text-slate-800">{{ $t('settings.' + key) }}</span>
+            <span class="block text-xs text-slate-400">{{ $t('settings.' + key + 'Hint') }}</span>
           </span>
         </label>
+        <p class="text-xs text-slate-400">{{ $t('settings.syncDefault') }}</p>
+      </section>
 
-        <div class="flex items-center gap-3 pt-1">
-          <button
-            :disabled="saving"
-            class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-            @click="save"
-          >
-            {{ saving ? 'Guardando…' : 'Guardar' }}
-          </button>
-          <span v-if="saved" class="text-sm text-green-600">Guardado ✓</span>
+      <!-- Idioma por defecto -->
+      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.language') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.languageDesc') }}</p>
         </div>
-        <p class="text-xs text-slate-400">
-          Por defecto: solo «Desplegados». El cambio se aplica en la próxima sincronización.
-        </p>
-      </template>
-    </section>
+        <select
+          v-model="defaultLocale"
+          class="w-56 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+          @change="saved = false"
+        >
+          <option v-for="l in validLocales" :key="l" :value="l">{{ $t('lang.' + l) }}</option>
+        </select>
+      </section>
+
+      <div class="flex items-center gap-3">
+        <button
+          :disabled="saving"
+          class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+          @click="save"
+        >
+          {{ saving ? $t('common.saving') : $t('common.save') }}
+        </button>
+        <span v-if="saved" class="text-sm text-green-600">{{ $t('common.saved') }}</span>
+      </div>
+    </template>
   </div>
 </template>

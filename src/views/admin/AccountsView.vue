@@ -1,9 +1,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 import Modal from '../../components/Modal.vue'
 import { confirmDialog } from '../../composables/confirm'
+
+const { t } = useI18n()
 
 const accounts = ref([])
 const loading = ref(true)
@@ -14,7 +17,7 @@ const formError = ref('')
 const saving = ref(false)
 
 // Edición
-const editing = ref(null) // cuenta en edición (o null)
+const editing = ref(null)
 const editForm = ref({ label: '', server_url: '', email: '', api_token: '' })
 const editError = ref('')
 const savingEdit = ref(false)
@@ -31,7 +34,7 @@ async function load() {
     const { data } = await api.get('/admin/accounts')
     accounts.value = data.data
   } catch (e) {
-    listError.value = apiError(e, 'No se pudieron cargar las cuentas')
+    listError.value = apiError(e, t('accounts.loadError'))
   } finally {
     loading.value = false
   }
@@ -45,7 +48,7 @@ async function onCreate() {
     form.value = { label: '', server_url: 'https://eu.kobotoolbox.org', email: '', api_token: '' }
     await load()
   } catch (e) {
-    formError.value = apiError(e, 'No se pudo crear la cuenta')
+    formError.value = apiError(e, t('accounts.createError'))
   } finally {
     saving.value = false
   }
@@ -54,7 +57,6 @@ async function onCreate() {
 function startEdit(a) {
   editError.value = ''
   editing.value = a
-  // El token nunca se muestra; se deja vacío y solo se envía si el admin escribe uno nuevo.
   editForm.value = { label: a.label, server_url: a.server_url, email: a.email, api_token: '' }
 }
 
@@ -68,7 +70,7 @@ async function saveEdit() {
     editing.value = null
     await load()
   } catch (e) {
-    editError.value = apiError(e, 'No se pudo guardar')
+    editError.value = apiError(e, t('accounts.createError'))
   } finally {
     savingEdit.value = false
   }
@@ -82,14 +84,14 @@ async function syncAccount(a) {
     const { data } = await api.post('/admin/forms/sync', { account_id: a.id })
     const r = data.data[0]
     if (r && r.status === 'success') {
-      syncFlash.value = `«${a.label}»: ${r.forms} formulario(s) sincronizado(s)` +
-        (r.skipped ? ` · ${r.skipped} omitido(s) por estado.` : '.')
+      syncFlash.value = t('accounts.syncOk', { label: a.label, forms: r.forms }) +
+        (r.skipped ? t('accounts.syncSkipped', { n: r.skipped }) : '.')
       await load()
     } else {
-      syncError.value = `«${a.label}»: ${r?.error ?? 'error de sincronización'}`
+      syncError.value = `«${a.label}»: ${r?.error ?? t('accounts.syncError')}`
     }
   } catch (e) {
-    syncError.value = `«${a.label}»: ${apiError(e, 'no se pudo sincronizar')}`
+    syncError.value = `«${a.label}»: ${apiError(e, t('accounts.syncError'))}`
   } finally {
     syncingId.value = null
   }
@@ -97,9 +99,9 @@ async function syncAccount(a) {
 
 async function removeAccount(a) {
   const ok = await confirmDialog({
-    title: 'Eliminar cuenta',
-    message: `Se eliminará la cuenta «${a.label}». Esta acción no se puede deshacer.`,
-    confirmText: 'Eliminar',
+    title: t('accounts.confirmDeleteTitle'),
+    message: t('accounts.confirmDelete', { label: a.label }),
+    confirmText: t('common.delete'),
     danger: true,
   })
   if (!ok) return
@@ -107,10 +109,10 @@ async function removeAccount(a) {
   syncFlash.value = ''
   try {
     await api.delete(`/admin/accounts/${a.id}`)
-    syncFlash.value = `Cuenta «${a.label}» eliminada.`
+    syncFlash.value = t('accounts.deleted', { label: a.label })
     await load()
   } catch (e) {
-    syncError.value = apiError(e, 'No se pudo eliminar la cuenta')
+    syncError.value = apiError(e, t('accounts.deleteError'))
   }
 }
 
@@ -120,16 +122,13 @@ onMounted(load)
 <template>
   <div class="space-y-6">
     <header>
-      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Cuentas Kobo</h1>
-      <p class="mt-1 text-sm text-slate-500">
-        Credenciales del administrador en cada servidor de KoboToolbox. El token se almacena
-        cifrado y nunca se muestra.
-      </p>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ $t('accounts.title') }}</h1>
+      <p class="mt-1 text-sm text-slate-500">{{ $t('accounts.subtitle') }}</p>
     </header>
 
     <!-- Alta -->
     <form class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200" @submit.prevent="onCreate">
-      <h2 class="mb-4 font-semibold text-slate-900">Nueva cuenta</h2>
+      <h2 class="mb-4 font-semibold text-slate-900">{{ $t('accounts.newAccount') }}</h2>
       <div
         v-if="formError"
         class="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200"
@@ -138,22 +137,22 @@ onMounted(load)
       </div>
       <div class="grid gap-4 sm:grid-cols-2">
         <label class="space-y-1">
-          <span class="text-sm font-medium text-slate-700">Etiqueta</span>
-          <input v-model="form.label" required placeholder="Cuenta HQ Europa" class="km-input" />
+          <span class="text-sm font-medium text-slate-700">{{ $t('accounts.label') }}</span>
+          <input v-model="form.label" required class="km-input" />
         </label>
         <label class="space-y-1">
-          <span class="text-sm font-medium text-slate-700">URL del servidor</span>
+          <span class="text-sm font-medium text-slate-700">{{ $t('accounts.serverUrl') }}</span>
           <input v-model="form.server_url" type="url" required class="km-input" />
         </label>
         <label class="space-y-1">
-          <span class="text-sm font-medium text-slate-700">Email de la cuenta</span>
+          <span class="text-sm font-medium text-slate-700">{{ $t('accounts.accountEmail') }}</span>
           <input v-model="form.email" type="email" required class="km-input" />
         </label>
         <label class="space-y-1">
-          <span class="text-sm font-medium text-slate-700">API token</span>
+          <span class="text-sm font-medium text-slate-700">{{ $t('accounts.apiToken') }}</span>
           <input v-model="form.api_token" type="password" required class="km-input" />
           <RouterLink :to="{ name: 'about-kobo' }" class="text-xs text-blue-600 hover:underline">
-            ¿Dónde obtengo el API token?
+            {{ $t('accounts.tokenHelp') }}
           </RouterLink>
         </label>
       </div>
@@ -162,7 +161,7 @@ onMounted(load)
         :disabled="saving"
         class="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
       >
-        {{ saving ? 'Guardando…' : 'Añadir cuenta' }}
+        {{ saving ? $t('common.saving') : $t('accounts.addAccount') }}
       </button>
     </form>
 
@@ -177,15 +176,15 @@ onMounted(load)
     <!-- Listado -->
     <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
       <div v-if="listError" class="p-4 text-sm text-red-700">{{ listError }}</div>
-      <div v-else-if="loading" class="p-4 text-sm text-slate-500">Cargando…</div>
+      <div v-else-if="loading" class="p-4 text-sm text-slate-500">{{ $t('common.loading') }}</div>
       <table v-else class="w-full text-left text-sm">
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
           <tr>
-            <th class="px-4 py-3">Etiqueta</th>
-            <th class="px-4 py-3">Servidor</th>
-            <th class="px-4 py-3">Email</th>
-            <th class="px-4 py-3">Estado</th>
-            <th class="px-4 py-3 text-right">Acciones</th>
+            <th class="px-4 py-3">{{ $t('accounts.label') }}</th>
+            <th class="px-4 py-3">{{ $t('accounts.serverUrl') }}</th>
+            <th class="px-4 py-3">{{ $t('common.email') }}</th>
+            <th class="px-4 py-3">{{ $t('common.status') }}</th>
+            <th class="px-4 py-3 text-right">{{ $t('common.actions') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
@@ -195,7 +194,7 @@ onMounted(load)
             <td class="px-4 py-3 text-slate-600">{{ a.email }}</td>
             <td class="px-4 py-3">
               <span :class="a.active ? 'text-green-600' : 'text-slate-400'">
-                {{ a.active ? 'activa' : 'inactiva' }}
+                {{ a.active ? $t('accounts.active') : $t('accounts.inactive') }}
               </span>
             </td>
             <td class="px-4 py-3">
@@ -203,65 +202,64 @@ onMounted(load)
                 <button
                   :disabled="syncingId === a.id"
                   class="font-medium text-blue-600 hover:underline disabled:opacity-50"
-                  title="Sincronizar los formularios de esta cuenta"
                   @click="syncAccount(a)"
                 >
-                  {{ syncingId === a.id ? 'Sincronizando…' : 'Sincronizar' }}
+                  {{ syncingId === a.id ? $t('accounts.syncing') : $t('accounts.sync') }}
                 </button>
                 <button class="font-medium text-blue-600 hover:underline" @click="startEdit(a)">
-                  Editar
+                  {{ $t('common.edit') }}
                 </button>
                 <button
                   v-if="a.forms_count === 0"
                   class="font-medium text-red-600 hover:underline"
                   @click="removeAccount(a)"
                 >
-                  Eliminar
+                  {{ $t('common.delete') }}
                 </button>
                 <span
                   v-else
                   class="cursor-help text-slate-300"
-                  :title="`No se puede eliminar: tiene ${a.forms_count} formulario(s) sincronizado(s)`"
+                  :title="$t('accounts.cantDeleteTooltip', { n: a.forms_count })"
                 >
-                  Eliminar
+                  {{ $t('common.delete') }}
                 </span>
               </div>
             </td>
           </tr>
           <tr v-if="!accounts.length">
-            <td colspan="5" class="px-4 py-6 text-center text-slate-400">Sin cuentas todavía.</td>
+            <td colspan="5" class="px-4 py-6 text-center text-slate-400">{{ $t('accounts.empty') }}</td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <!-- Modal de edición -->
-    <Modal v-if="editing" :title="`Editar: ${editing.label}`" @close="editing = null">
+    <Modal v-if="editing" :title="$t('accounts.editTitle', { label: editing.label })" @close="editing = null">
       <form class="space-y-4" @submit.prevent="saveEdit">
         <div v-if="editError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
           {{ editError }}
         </div>
         <label class="block space-y-1">
-          <span class="text-sm font-medium text-slate-700">Etiqueta</span>
+          <span class="text-sm font-medium text-slate-700">{{ $t('accounts.label') }}</span>
           <input v-model="editForm.label" required class="km-input" />
         </label>
         <label class="block space-y-1">
-          <span class="text-sm font-medium text-slate-700">URL del servidor</span>
+          <span class="text-sm font-medium text-slate-700">{{ $t('accounts.serverUrl') }}</span>
           <input v-model="editForm.server_url" type="url" required class="km-input" />
         </label>
         <label class="block space-y-1">
-          <span class="text-sm font-medium text-slate-700">Email de la cuenta</span>
+          <span class="text-sm font-medium text-slate-700">{{ $t('accounts.accountEmail') }}</span>
           <input v-model="editForm.email" type="email" required class="km-input" />
         </label>
         <label class="block space-y-1">
-          <span class="text-sm font-medium text-slate-700">API token</span>
+          <span class="text-sm font-medium text-slate-700">{{ $t('accounts.apiToken') }}</span>
           <input
             v-model="editForm.api_token"
             type="password"
-            placeholder="Dejar vacío para no cambiarlo"
+            :placeholder="$t('accounts.tokenKeepPlaceholder')"
             class="km-input"
           />
-          <span class="text-xs text-slate-400">Solo escríbelo si quieres reemplazar el token actual.</span>
+          <span class="text-xs text-slate-400">{{ $t('accounts.tokenKeepHint') }}</span>
         </label>
         <div class="flex items-center gap-3 pt-1">
           <button
@@ -269,10 +267,10 @@ onMounted(load)
             :disabled="savingEdit"
             class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
           >
-            {{ savingEdit ? 'Guardando…' : 'Guardar' }}
+            {{ savingEdit ? $t('common.saving') : $t('common.save') }}
           </button>
           <button type="button" class="text-sm font-medium text-slate-500 hover:text-slate-700" @click="editing = null">
-            Cancelar
+            {{ $t('common.cancel') }}
           </button>
         </div>
       </form>

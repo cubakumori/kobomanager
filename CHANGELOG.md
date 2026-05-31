@@ -8,6 +8,10 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Internacionalización (i18n)** español/inglés con Vue I18n. Idioma por defecto global
+  (configurable por el admin en *Configuración*, por defecto español) y override por
+  usuario en *Mi perfil*. Resolución: usuario → defecto → español.
+
 - **Configuración global** (página + card en el Dashboard): elegir qué estados de
   KoboToolbox se sincronizan (desplegados/borradores/archivados; por defecto solo
   desplegados). Se guarda el `deployment_status` de cada formulario y se muestra su tipo.
