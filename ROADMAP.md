@@ -30,6 +30,54 @@ contra una cuenta KoboToolbox real:
 - [ ] Cierre de sesión remoto desde el admin (la tabla `user_sessions` ya lo permite).
 - [ ] Tests automatizados del backend (PHPUnit) para auth, permisos y rate limiting.
 
+## Del análisis de la Comunidad de Kobo (ideas a copiar)
+
+Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
+
+- [ ] **Scoping por filas**: que un viewer vea solo ciertos envíos (p. ej. los de
+      determinados enumeradores o por valor de un campo), no solo por formulario.
+- [ ] **Enlaces de solo lectura compartibles** (públicos o con token), útil porque Kobo
+      está retirando su «compartir sin login».
+- [ ] **Historial de edición visible** por envío en la UI (ya se guarda en `audit_log`).
+- [ ] Exportación CSV/Excel y notificaciones por otros canales (ya listadas abajo).
+
+## Optimización y mejora (otras ideas)
+
+### Datos de Kobo (alta prioridad para uso real)
+
+- [ ] **Etiquetas legibles**: mostrar las *labels* del formulario y de las opciones
+      (descargando el contenido XLSForm del asset) en lugar de nombres de campo y códigos
+      crudos (`satisfaccion` → «Satisfacción», `1` → «Muy alta»).
+- [ ] **Adjuntos/medios**: mostrar y enlazar fotos y archivos (`_attachments`) de cada envío.
+- [ ] **Sincronizar ediciones y borrados de Kobo**: hoy el cursor incremental usa
+      `_submission_time`, así que las **ediciones** posteriores en Kobo no se reflejan y los
+      envíos **borrados** en Kobo permanecen en caché. Considerar sincronización por fecha de
+      modificación y un barrido de bajas.
+- [ ] **Vista de mapa** para preguntas tipo geopoint/geoshape.
+
+### UX
+
+- [ ] **Revisión en lote** (aprobar/rechazar varios envíos a la vez).
+- [ ] **Visor de `audit_log`** en el panel admin (quién hizo qué y cuándo).
+- [ ] Columnas configurables y filtros avanzados en la tabla de envíos.
+- [ ] Modo oscuro y mejores estados de carga/vacío.
+
+### Seguridad y sesiones
+
+- [ ] **Recuperar contraseña** por email (flujo «olvidé mi contraseña» con token temporal).
+- [ ] **Sesión deslizante / refresh** y opción «cerrar todas mis sesiones».
+- [ ] **Protección CSRF** en peticiones que modifican (verificar `Origin`/token; la cookie
+      es `SameSite=Lax`, conviene reforzar).
+- [ ] Rotación documentada de `CONFIG_TOKEN_KEY` (re-cifrado de tokens) y copias de seguridad.
+
+### Operación y mantenimiento
+
+- [ ] **Docker / docker-compose** (paridad dev↔prod) y **CI** (lint + build).
+- [ ] **Tabla de migraciones versionada** (registro de qué `.sql` se aplicó) en vez del bucle.
+- [ ] **Índices/búsqueda**: columnas generadas o full-text para acelerar la búsqueda en
+      `submissions_cache` cuando crezca.
+- [ ] `/health` ampliado: última ejecución de cada cron y estado de sincronización.
+
 ## Ampliaciones futuras (del plan original)
 
 - [ ] **Versión de escritorio** con Tauri (envuelve el mismo frontend Vue).
@@ -38,7 +86,6 @@ contra una cuenta KoboToolbox real:
 - [ ] **Exportación de datos** (CSV, Excel) desde la app.
 - [ ] **Permiso `can_delete`** — añadir vía migración cuando exista la funcionalidad de borrado de envíos.
 - [ ] **Permisos más granulares** (por grupo de formularios, por período de tiempo).
-- [ ] **Internacionalización** (i18n con Vue I18n).
 - [ ] **2FA** — la tabla `user_sessions` ya está preparada para soportarlo.
 
 ---
