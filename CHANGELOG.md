@@ -8,6 +8,12 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Adjuntos en los envíos**. El detalle de cada envío muestra sus `_attachments`
+  (fotos, audio, vídeo o archivos) con vista previa según el tipo, y en los campos el
+  adjunto se enlaza por su nombre legible. Las descargas pasan por un **proxy
+  autenticado** del backend (`GET /submissions/{id}/attachments/{attId}`), de modo que el
+  navegador nunca maneja la URL ni el token de Kobo; las redirecciones a almacenamiento
+  externo se siguen sin reenviar el token.
 - **Etiquetas legibles** de formularios. Al sincronizar se descarga el contenido XLSForm
   del asset (`content.survey` / `content.choices`) y se cachea un esquema normalizado en
   `forms.schema_json` (con soporte multi-idioma y rutas de grupo), refrescándolo en cada
