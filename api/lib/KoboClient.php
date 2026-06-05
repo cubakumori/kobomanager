@@ -51,6 +51,16 @@ class KoboClient {
         return null;
     }
 
+    /**
+     * Contenido XLSForm de un asset (survey, choices, translations, settings),
+     * tal como vive en el DETALLE del asset (`content`). Se usa para cachear el
+     * esquema y mostrar etiquetas legibles. Devuelve [] si el asset no trae contenido.
+     */
+    public function getAssetContent(string $assetUid): array {
+        $asset = $this->httpGet("/api/v2/assets/$assetUid/", ['format' => 'json']);
+        return $asset['content'] ?? [];
+    }
+
     /** Una página de envíos de un formulario (resultados solamente). */
     public function getSubmissions(string $assetUid, array $query = []): array {
         $query += ['format' => 'json'];

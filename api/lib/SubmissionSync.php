@@ -12,6 +12,10 @@ class SubmissionSync {
      */
     public static function syncForm(int $formId, string $assetUid, KoboClient $client): int {
         try {
+            // Refrescar el esquema legible (labels) junto con los envíos. Es a prueba
+            // de fallos: no interrumpe la sincronización si el contenido no se puede leer.
+            FormSchema::fetchAndStore($formId, $assetUid, $client);
+
             // Cursor incremental: el envío más reciente que ya tenemos en caché.
             // Así el primer sync (caché vacía) trae todo el histórico, y los
             // siguientes solo lo nuevo. No depende de forms.last_synced_at (que

@@ -3,7 +3,7 @@
  * CRON: sincroniza los envíos desde Kobo hacia submissions_cache.
  *
  *   php api/cron/sync_submissions.php [account_id]
- *   crontab:  */15 * * * *  php /ruta/api/cron/sync_submissions.php
+ *   crontab (cada 15 min):  0,15,30,45 * * * *  php /ruta/api/cron/sync_submissions.php
  *
  * Para cada formulario activo: pide a Kobo los envíos nuevos/modificados desde
  * last_synced_at y hace upsert en submissions_cache. Actualiza sync_status.
@@ -18,6 +18,7 @@ require __DIR__ . '/../config.php';
 require __DIR__ . '/../lib/DB.php';
 require __DIR__ . '/../lib/TokenVault.php';
 require __DIR__ . '/../lib/KoboClient.php';
+require __DIR__ . '/../lib/FormSchema.php';
 require __DIR__ . '/../lib/SubmissionSync.php';
 
 $onlyAccount = isset($argv[1]) ? (int) $argv[1] : null;

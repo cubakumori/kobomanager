@@ -67,6 +67,16 @@ foreach ($accounts as $acc) {
                 [$accId, $uid, $name, rtrim($acc['server_url'], '/'), $status ?: null]
             );
             $count++;
+
+            // Cachear/refrescar el esquema legible (labels de preguntas y opciones).
+            // No interrumpe la sincronización si el contenido del asset no se puede leer.
+            $formRow = DB::run(
+                'SELECT id FROM forms WHERE kobo_account_id = ? AND kobo_asset_uid = ?',
+                [$accId, $uid]
+            )->fetch();
+            if ($formRow) {
+                FormSchema::fetchAndStore((int) $formRow['id'], $uid, $client);
+            }
         }
 
         // Reconciliar bajas: borrar los formularios locales cuyo asset ya no existe en
