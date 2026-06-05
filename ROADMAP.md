@@ -43,10 +43,6 @@ Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
 
 ## Optimización y mejora (otras ideas)
 
-### Datos de Kobo (alta prioridad para uso real)
-
-- [ ] **Vista de mapa** (PRÓXIMA TAREA) para preguntas tipo geopoint/geoshape.
-
 ### UX
 
 - [ ] **Revisión en lote** (aprobar/rechazar varios envíos a la vez).

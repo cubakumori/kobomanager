@@ -8,6 +8,11 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Vista de mapa** para preguntas de ubicación (`geopoint`/`geoshape`/`geotrace`). El
+  detalle de un envío muestra una sección «Ubicación» con su punto, línea o polígono, y
+  cada formulario tiene una vista «Mapa» (`/forms/{id}/map`) que pinta todos los envíos con
+  coordenadas; al pulsar un marcador se abre el envío. Usa Leaflet + OpenStreetMap (sin
+  clave de API).
 - **Sincronización de ediciones y borrados de Kobo**. Cada sincronización incremental
   (cron y «Actualizar») hace además un **barrido de bajas**: pide a Kobo solo los `_id`
   vigentes y elimina de la caché los envíos borrados. Nueva acción **«Resync»** por
