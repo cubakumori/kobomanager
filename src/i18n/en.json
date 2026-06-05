@@ -219,6 +219,12 @@
     "syncDefault": "Default: only “Deployed”. The change applies on the next sync.",
     "language": "Default language",
     "languageDesc": "Interface language for users who haven't chosen their own.",
+    "labels": "Labels in table and details",
+    "labelsDesc": "How questions and options are shown in submissions.",
+    "labelMode_labels": "Form labels",
+    "labelMode_labelsHint": "Show the form's text (e.g. “Satisfaction”, “Very high”). Fetched on sync.",
+    "labelMode_raw": "Field names and codes",
+    "labelMode_rawHint": "Show internal names and raw codes (e.g. “satisfaccion”, “1”).",
     "loadError": "Could not load the configuration",
     "saveError": "Could not save"
   },

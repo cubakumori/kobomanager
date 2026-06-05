@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, RouterLink } from 'vue-router'
 import api from '../services/api'
 import { apiError } from '../stores/auth'
+import { makeLabeler } from '../composables/labels'
 import ReviewBadge from '../components/ReviewBadge.vue'
 
 const { t } = useI18n()
@@ -11,6 +12,10 @@ const route = useRoute()
 const sub = ref(null)
 const loading = ref(true)
 const error = ref('')
+const schema = ref(null)
+const labelMode = ref('raw')
+
+const labeler = computed(() => makeLabeler(schema.value, labelMode.value))
 
 // --- edición ---
 const editing = ref(false)
@@ -42,6 +47,8 @@ async function load() {
   try {
     const { data } = await api.get(`/submissions/${route.params.subId}`)
     sub.value = data.data
+    schema.value = data.data.schema ?? null
+    labelMode.value = data.data.label_mode ?? 'raw'
   } catch (e) {
     error.value = apiError(e, t('detail.loadError'))
   } finally {
@@ -137,8 +144,8 @@ onMounted(load)
         <!-- Modo lectura -->
         <dl v-if="!editing" class="divide-y divide-slate-100">
           <div v-for="[k, v] in fields.data" :key="k" class="grid grid-cols-3 gap-4 px-5 py-3">
-            <dt class="text-sm font-medium text-slate-500">{{ k }}</dt>
-            <dd class="col-span-2 text-sm text-slate-800">{{ fmt(v) }}</dd>
+            <dt class="text-sm font-medium text-slate-500">{{ labeler.label(k) }}</dt>
+            <dd class="col-span-2 text-sm text-slate-800">{{ labeler.value(k, v) }}</dd>
           </div>
           <div v-if="!fields.data.length" class="px-5 py-3 text-sm text-slate-400">{{ $t('detail.noFields') }}</div>
         </dl>
@@ -146,8 +153,22 @@ onMounted(load)
         <!-- Modo edición -->
         <div v-else class="space-y-3 px-5 py-4">
           <label v-for="[k] in fields.data" :key="k" class="grid grid-cols-3 items-center gap-4">
-            <span class="text-sm font-medium text-slate-500">{{ k }}</span>
+            <span class="text-sm font-medium text-slate-500">{{ labeler.label(k) }}</span>
+            <!-- Desplegable con etiquetas para preguntas de opción única -->
+            <select
+              v-if="labeler.on && labeler.optionsFor(k) && !labeler.isMulti(k)"
+              v-model="editForm[k]"
+              class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+            >
+              <option value="">—</option>
+              <option
+                v-if="editForm[k] && !(editForm[k] in labeler.optionsFor(k))"
+                :value="editForm[k]"
+              >{{ editForm[k] }}</option>
+              <option v-for="(lbl, code) in labeler.optionsFor(k)" :key="code" :value="code">{{ lbl }}</option>
+            </select>
             <input
+              v-else
               v-model="editForm[k]"
               class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
             />

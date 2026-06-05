@@ -219,6 +219,12 @@
     "syncDefault": "Por defecto: solo «Desplegados». El cambio se aplica en la próxima sincronización.",
     "language": "Idioma por defecto",
     "languageDesc": "Idioma de la interfaz para los usuarios que no hayan elegido uno propio.",
+    "labels": "Etiquetas en tabla y detalles",
+    "labelsDesc": "Cómo se muestran las preguntas y las opciones de los envíos.",
+    "labelMode_labels": "Labels del formulario",
+    "labelMode_labelsHint": "Muestra los textos del formulario (p. ej. «Satisfacción», «Muy alta»). Se toman al sincronizar.",
+    "labelMode_raw": "Nombres de campo y código",
+    "labelMode_rawHint": "Muestra los nombres internos y los códigos crudos (p. ej. «satisfaccion», «1»).",
     "loadError": "No se pudo cargar la configuración",
     "saveError": "No se pudo guardar"
   },

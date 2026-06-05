@@ -14,6 +14,8 @@ const STATUS_KEYS = ['deployed', 'draft', 'archived']
 const selected = ref([])
 const defaultLocale = ref('es')
 const validLocales = ref(['es', 'en'])
+const labelMode = ref('labels')
+const validLabelModes = ref(['labels', 'raw'])
 const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
@@ -27,6 +29,8 @@ async function load() {
     selected.value = data.data.sync_deployment_statuses
     defaultLocale.value = data.data.default_locale
     validLocales.value = data.data.valid_locales
+    labelMode.value = data.data.label_mode
+    validLabelModes.value = data.data.valid_label_modes
   } catch (e) {
     error.value = apiError(e, t('settings.loadError'))
   } finally {
@@ -53,9 +57,11 @@ async function save() {
     const { data } = await api.put('/admin/settings', {
       sync_deployment_statuses: selected.value,
       default_locale: defaultLocale.value,
+      label_mode: labelMode.value,
     })
     selected.value = data.data.sync_deployment_statuses
     defaultLocale.value = data.data.default_locale
+    labelMode.value = data.data.label_mode
     saved.value = true
     // Si el usuario sigue el idioma por defecto, refleja el cambio al instante.
     if (!auth.user?.locale_pref) setLocale(defaultLocale.value)
@@ -120,6 +126,32 @@ onMounted(load)
         >
           <option v-for="l in validLocales" :key="l" :value="l">{{ $t('lang.' + l) }}</option>
         </select>
+      </section>
+
+      <!-- Etiquetas en tabla y detalles -->
+      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.labels') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.labelsDesc') }}</p>
+        </div>
+        <label
+          v-for="mode in validLabelModes"
+          :key="mode"
+          class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50"
+        >
+          <input
+            type="radio"
+            class="mt-0.5 h-4 w-4"
+            name="label_mode"
+            :value="mode"
+            :checked="labelMode === mode"
+            @change="labelMode = mode; saved = false"
+          />
+          <span>
+            <span class="block text-sm font-medium text-slate-800">{{ $t('settings.labelMode_' + mode) }}</span>
+            <span class="block text-xs text-slate-400">{{ $t('settings.labelMode_' + mode + 'Hint') }}</span>
+          </span>
+        </label>
       </section>
 
       <div class="flex items-center gap-3">

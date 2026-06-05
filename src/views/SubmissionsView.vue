@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, RouterLink } from 'vue-router'
 import api from '../services/api'
 import { apiError } from '../stores/auth'
+import { makeLabeler } from '../composables/labels'
 import ReviewBadge from '../components/ReviewBadge.vue'
 
 const { t } = useI18n()
@@ -18,11 +19,23 @@ const perPage = 25
 const search = ref('')
 const loading = ref(true)
 const error = ref('')
+const schema = ref(null)
+const labelMode = ref('raw')
+
+const labeler = computed(() => makeLabeler(schema.value, labelMode.value))
 
 const columns = computed(() => {
   const first = items.value[0]?.data
   if (!first) return []
-  return Object.keys(first).filter((k) => !k.startsWith('_')).slice(0, 4)
+  const keys = Object.keys(first).filter((k) => !k.startsWith('_'))
+  // En modo etiquetas, prioriza las preguntas reales (con label) y deja fuera los
+  // metadatos sin etiqueta (formhub/uuid, start, end…). Si no hay ninguna, cae al
+  // comportamiento previo.
+  if (labeler.value.on) {
+    const labeled = keys.filter((k) => labeler.value.hasLabel(k))
+    if (labeled.length) return labeled.slice(0, 4)
+  }
+  return keys.slice(0, 4)
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / perPage)))
@@ -37,6 +50,8 @@ async function load() {
     formName.value = data.data.form.name
     items.value = data.data.items
     total.value = data.data.total
+    schema.value = data.data.schema ?? null
+    labelMode.value = data.data.label_mode ?? 'raw'
   } catch (e) {
     error.value = apiError(e, t('submissions.loadError'))
   } finally {
@@ -97,7 +112,7 @@ onMounted(load)
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
           <tr>
             <th class="px-4 py-3">{{ $t('submissions.colSubmitted') }}</th>
-            <th v-for="c in columns" :key="c" class="px-4 py-3">{{ c }}</th>
+            <th v-for="c in columns" :key="c" class="px-4 py-3">{{ labeler.label(c) }}</th>
             <th class="px-4 py-3">{{ $t('submissions.colReview') }}</th>
             <th class="px-4 py-3"></th>
           </tr>
@@ -105,7 +120,7 @@ onMounted(load)
         <tbody class="divide-y divide-slate-100">
           <tr v-for="s in items" :key="s.submission_uid" class="hover:bg-slate-50">
             <td class="whitespace-nowrap px-4 py-3 text-slate-600">{{ s.submitted_at }}</td>
-            <td v-for="c in columns" :key="c" class="px-4 py-3 text-slate-700">{{ s.data[c] }}</td>
+            <td v-for="c in columns" :key="c" class="px-4 py-3 text-slate-700">{{ labeler.value(c, s.data[c]) }}</td>
             <td class="px-4 py-3"><ReviewBadge :status="s.review_status" /></td>
             <td class="px-4 py-3 text-right">
               <RouterLink
