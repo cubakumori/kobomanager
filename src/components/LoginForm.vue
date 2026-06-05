@@ -1,0 +1,70 @@
+<script setup>
+import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useAuthStore, apiError } from '../stores/auth'
+
+const emit = defineEmits(['success'])
+const { t } = useI18n()
+const auth = useAuthStore()
+
+const email = ref('')
+const password = ref('')
+const error = ref('')
+const loading = ref(false)
+
+async function onSubmit() {
+  error.value = ''
+  loading.value = true
+  try {
+    const user = await auth.login(email.value, password.value)
+    emit('success', user)
+  } catch (e) {
+    error.value = apiError(e, t('login.failed'))
+  } finally {
+    loading.value = false
+  }
+}
+</script>
+
+<template>
+  <form class="space-y-5" @submit.prevent="onSubmit">
+    <div
+      v-if="error"
+      class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200"
+    >
+      {{ error }}
+    </div>
+
+    <div class="space-y-1">
+      <label class="text-sm font-medium text-slate-700" for="lf-email">{{ $t('common.email') }}</label>
+      <input
+        id="lf-email"
+        v-model="email"
+        type="email"
+        autocomplete="username"
+        required
+        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+      />
+    </div>
+
+    <div class="space-y-1">
+      <label class="text-sm font-medium text-slate-700" for="lf-password">{{ $t('login.password') }}</label>
+      <input
+        id="lf-password"
+        v-model="password"
+        type="password"
+        autocomplete="current-password"
+        required
+        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+      />
+    </div>
+
+    <button
+      type="submit"
+      :disabled="loading"
+      class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
+    >
+      {{ loading ? $t('login.submitting') : $t('login.submit') }}
+    </button>
+  </form>
+</template>

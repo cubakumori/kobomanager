@@ -1,5 +1,4 @@
 <script setup>
-import { RouterView } from 'vue-router'
 import AppSidebar from '../components/AppSidebar.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 </script>
@@ -9,7 +8,7 @@ import ConfirmDialog from '../components/ConfirmDialog.vue'
     <AppSidebar />
     <main class="flex-1 overflow-y-auto">
       <div class="mx-auto max-w-5xl px-8 py-8">
-        <RouterView />
+        <slot />
       </div>
     </main>
     <ConfirmDialog />

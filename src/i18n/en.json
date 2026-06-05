@@ -32,6 +32,24 @@
     "logout": "Log out",
     "goToProfile": "Go to my profile"
   },
+  "landing": {
+    "tagline": "Manage your KoboToolbox data and give your team access",
+    "subtitle": "KoboManager is the middle layer that lets your team view, edit and validate submissions — without a Kobo account and without exposing your API token.",
+    "cta": "Sign in",
+    "goDashboard": "Go to dashboard",
+    "navKobo": "Go to Kobo",
+    "navTutorials": "Tutorials",
+    "navDonate": "Donate",
+    "soon": "Coming soon",
+    "loginTitle": "Sign in",
+    "feat1Title": "No Kobo accounts",
+    "feat1Desc": "Your team signs in with app users; they don't need a KoboToolbox account.",
+    "feat2Title": "Internal review",
+    "feat2Desc": "Approve or reject submissions with your own validation flow, decoupled from Kobo.",
+    "feat3Title": "Secure token",
+    "feat3Desc": "The Kobo token is stored encrypted on the server and never exposed to the browser.",
+    "footer": "KoboManager — a management layer for KoboToolbox"
+  },
   "login": {
     "subtitle": "Sign in to continue",
     "password": "Password",

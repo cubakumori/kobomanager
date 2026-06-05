@@ -1,89 +1,29 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
-// Las vistas de viewer (forms/submissions/stats)
-// se añaden en fases posteriores.
+// Rutas planas. Las públicas llevan meta.public; las del área autenticada llevan
+// meta.shell (App.vue las envuelve en el layout con sidebar).
+const shell = (extra = {}) => ({ shell: true, ...extra })
+
 const routes = [
-  {
-    path: '/login',
-    name: 'login',
-    component: () => import('../views/LoginView.vue'),
-    meta: { public: true },
-  },
-  {
-    // Layout autenticado (sidebar + contenido) para todo lo que requiere sesión.
-    path: '/',
-    component: () => import('../views/AppLayout.vue'),
-    children: [
-      { path: '', redirect: '/dashboard' },
-      {
-        path: 'dashboard',
-        name: 'dashboard',
-        component: () => import('../views/DashboardView.vue'),
-      },
-      {
-        path: 'forms',
-        name: 'forms',
-        component: () => import('../views/MyFormsView.vue'),
-      },
-      {
-        path: 'forms/:id/submissions',
-        name: 'submissions',
-        component: () => import('../views/SubmissionsView.vue'),
-      },
-      {
-        path: 'forms/:id/submissions/:subId',
-        name: 'submission-detail',
-        component: () => import('../views/SubmissionDetailView.vue'),
-      },
-      {
-        path: 'forms/:id/stats',
-        name: 'stats',
-        component: () => import('../views/StatsView.vue'),
-      },
-      {
-        path: 'profile',
-        name: 'profile',
-        component: () => import('../views/ProfileView.vue'),
-      },
-      {
-        path: 'about-kobo',
-        name: 'about-kobo',
-        component: () => import('../views/AboutKoboView.vue'),
-      },
-      {
-        path: 'admin/users',
-        name: 'admin-users',
-        component: () => import('../views/admin/UsersView.vue'),
-        meta: { requiresAdmin: true },
-      },
-      {
-        path: 'admin/accounts',
-        name: 'admin-accounts',
-        component: () => import('../views/admin/AccountsView.vue'),
-        meta: { requiresAdmin: true },
-      },
-      {
-        path: 'admin/forms',
-        name: 'admin-forms',
-        component: () => import('../views/admin/FormsView.vue'),
-        meta: { requiresAdmin: true },
-      },
-      {
-        path: 'admin/permissions',
-        name: 'admin-permissions',
-        component: () => import('../views/admin/PermissionsView.vue'),
-        meta: { requiresAdmin: true },
-      },
-      {
-        path: 'admin/settings',
-        name: 'admin-settings',
-        component: () => import('../views/admin/SettingsView.vue'),
-        meta: { requiresAdmin: true },
-      },
-    ],
-  },
-  { path: '/:pathMatch(.*)*', redirect: '/dashboard' },
+  { path: '/', name: 'landing', component: () => import('../views/LandingView.vue'), meta: { public: true } },
+  { path: '/login', name: 'login', component: () => import('../views/LoginView.vue'), meta: { public: true } },
+
+  { path: '/dashboard', name: 'dashboard', component: () => import('../views/DashboardView.vue'), meta: shell() },
+  { path: '/forms', name: 'forms', component: () => import('../views/MyFormsView.vue'), meta: shell() },
+  { path: '/forms/:id/submissions', name: 'submissions', component: () => import('../views/SubmissionsView.vue'), meta: shell() },
+  { path: '/forms/:id/submissions/:subId', name: 'submission-detail', component: () => import('../views/SubmissionDetailView.vue'), meta: shell() },
+  { path: '/forms/:id/stats', name: 'stats', component: () => import('../views/StatsView.vue'), meta: shell() },
+  { path: '/profile', name: 'profile', component: () => import('../views/ProfileView.vue'), meta: shell() },
+  { path: '/about-kobo', name: 'about-kobo', component: () => import('../views/AboutKoboView.vue'), meta: shell() },
+
+  { path: '/admin/users', name: 'admin-users', component: () => import('../views/admin/UsersView.vue'), meta: shell({ requiresAdmin: true }) },
+  { path: '/admin/accounts', name: 'admin-accounts', component: () => import('../views/admin/AccountsView.vue'), meta: shell({ requiresAdmin: true }) },
+  { path: '/admin/forms', name: 'admin-forms', component: () => import('../views/admin/FormsView.vue'), meta: shell({ requiresAdmin: true }) },
+  { path: '/admin/permissions', name: 'admin-permissions', component: () => import('../views/admin/PermissionsView.vue'), meta: shell({ requiresAdmin: true }) },
+  { path: '/admin/settings', name: 'admin-settings', component: () => import('../views/admin/SettingsView.vue'), meta: shell({ requiresAdmin: true }) },
+
+  { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
 const router = createRouter({
@@ -98,6 +38,8 @@ router.beforeEach(async (to) => {
     await auth.fetchMe()
   }
 
+  // Públicas (landing, login): accesibles siempre. Si ya hay sesión, el login
+  // redirige al panel (la landing se deja ver, con CTA "Ir al panel").
   if (to.meta.public) {
     if (to.name === 'login' && auth.isAuthenticated) return { name: 'dashboard' }
     return true
