@@ -17,6 +17,10 @@ Todos los cambios notables de KoboManager. El formato sigue
 ### Cambiado
 
 - El botón «Cerrar sesión» del sidebar se alinea a la izquierda como el resto.
+- Al cerrar sesión en el panel se vuelve a la **portada** (`/`) en lugar de a `/login`.
+- En la portada, el encabezado deja solo el texto «KoboManager» (sin icono) y las tarjetas
+  de características adoptan el estilo verde (sin iconos); el encabezado móvil del panel
+  iguala al de la portada (marca a la izquierda, botón a la derecha).
 
 ### Corregido
 
