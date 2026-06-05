@@ -174,7 +174,7 @@ onMounted(load)
       >
         <span class="font-medium">{{ r.account_label }}:</span>
         <template v-if="r.status === 'success'">
-          {{ $t('forms.syncResultOk', { forms: r.forms }) }}<template v-if="r.skipped">{{ $t('forms.syncResultSkipped', { n: r.skipped }) }}</template>.
+          {{ $t('forms.syncResultOk', { forms: r.forms }) }}<template v-if="r.skipped">{{ $t('forms.syncResultSkipped', { n: r.skipped }) }}</template><template v-if="r.removed">{{ $t('forms.syncResultRemoved', { n: r.removed }) }}</template>.
         </template>
         <template v-else>{{ $t('forms.syncResultError', { error: r.error, code: r.error_code }) }}</template>
       </div>

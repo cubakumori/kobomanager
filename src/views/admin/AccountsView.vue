@@ -85,7 +85,8 @@ async function syncAccount(a) {
     const r = data.data[0]
     if (r && r.status === 'success') {
       syncFlash.value = t('accounts.syncOk', { label: a.label, forms: r.forms }) +
-        (r.skipped ? t('accounts.syncSkipped', { n: r.skipped }) : '.')
+        (r.skipped ? t('accounts.syncSkipped', { n: r.skipped }) : '') +
+        (r.removed ? t('accounts.syncRemoved', { n: r.removed }) : '') + '.'
       await load()
     } else {
       syncError.value = `«${a.label}»: ${r?.error ?? t('accounts.syncError')}`

@@ -97,7 +97,7 @@ const linkActive = 'bg-blue-600 text-white'
         </div>
       </RouterLink>
       <button
-        class="w-full rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white"
+        class="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white"
         @click="onLogout"
       >
         {{ $t('nav.logout') }}
