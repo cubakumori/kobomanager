@@ -10,6 +10,9 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 - **Landing page pública** en `/` con banner de marca, *features* y login en **modal**
   (formulario de login reutilizable); idioma ES/EN conmutable desde la propia portada.
+- **Diseño responsive**: en pantallas pequeñas, tanto la portada como el panel usan un
+  menú hamburguesa con *drawer* lateral (el sidebar del panel se repliega a favor del
+  contenido). Login con el logo centrado y más grande sobre el recuadro.
 
 ### Cambiado
 
