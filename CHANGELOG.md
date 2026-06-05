@@ -8,6 +8,15 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Etiquetas legibles** de formularios. Al sincronizar se descarga el contenido XLSForm
+  del asset (`content.survey` / `content.choices`) y se cachea un esquema normalizado en
+  `forms.schema_json` (con soporte multi-idioma y rutas de grupo), refrescándolo en cada
+  sincronización. En la **tabla** y el **detalle** de envíos se muestran las *labels* de las
+  preguntas y de las opciones (`satisfaccion` → «Satisfacción», `1` → «Muy alta», incluida
+  selección múltiple) en lugar de nombres de campo y códigos crudos. La edición de campos de
+  opción única usa un desplegable con esas etiquetas. Nuevo ajuste global en *Configuración*
+  «Etiquetas en tabla y detalles»: *Labels del formulario* (por defecto) / *Nombres de campo
+  y código*.
 - **Landing page pública** en `/` con banner de marca, *features* y login en **modal**
   (formulario de login reutilizable); idioma ES/EN conmutable desde la propia portada.
 - **Diseño responsive**: en pantallas pequeñas, tanto la portada como el panel usan un
