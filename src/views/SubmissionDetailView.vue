@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, RouterLink } from 'vue-router'
 import api from '../services/api'
@@ -19,6 +19,14 @@ const attachments = ref([])
 const geo = ref([])
 
 const labeler = computed(() => makeLabeler(schema.value, labelMode.value))
+
+// Navegación al envío anterior/siguiente (mismo orden que la lista).
+const toPrev = computed(() =>
+  sub.value?.prev ? { name: 'submission-detail', params: { id: route.params.id, subId: sub.value.prev } } : null,
+)
+const toNext = computed(() =>
+  sub.value?.next ? { name: 'submission-detail', params: { id: route.params.id, subId: sub.value.next } } : null,
+)
 
 // Adjunto indexado por la clave del campo que lo originó (question_xpath).
 const attByField = computed(() => {
@@ -116,18 +124,42 @@ async function submitReview(status) {
   }
 }
 
+// Al cambiar de envío (prev/siguiente) recargar y volver arriba; salir de edición.
+watch(() => route.params.subId, () => {
+  editing.value = false
+  window.scrollTo({ top: 0 })
+  load()
+})
+
 onMounted(load)
 </script>
 
 <template>
   <div class="space-y-6">
     <header>
-      <RouterLink
-        :to="{ name: 'submissions', params: { id: route.params.id } }"
-        class="text-sm text-blue-600 hover:underline"
-      >
-        {{ $t('detail.back') }}
-      </RouterLink>
+      <div class="flex items-center justify-between gap-3">
+        <RouterLink
+          :to="{ name: 'submissions', params: { id: route.params.id } }"
+          class="text-sm text-blue-600 hover:underline"
+        >
+          {{ $t('detail.back') }}
+        </RouterLink>
+        <!-- Navegación entre envíos -->
+        <div class="flex items-center gap-1">
+          <component
+            :is="toPrev ? 'RouterLink' : 'span'"
+            :to="toPrev || undefined"
+            class="rounded-lg border px-2.5 py-1 text-sm font-medium"
+            :class="toPrev ? 'border-slate-300 text-slate-700 hover:bg-slate-50' : 'cursor-not-allowed border-slate-200 text-slate-300'"
+          >{{ $t('detail.prev') }}</component>
+          <component
+            :is="toNext ? 'RouterLink' : 'span'"
+            :to="toNext || undefined"
+            class="rounded-lg border px-2.5 py-1 text-sm font-medium"
+            :class="toNext ? 'border-slate-300 text-slate-700 hover:bg-slate-50' : 'cursor-not-allowed border-slate-200 text-slate-300'"
+          >{{ $t('detail.next') }}</component>
+        </div>
+      </div>
       <div class="mt-1 flex items-center gap-3">
         <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ $t('detail.title') }}</h1>
         <ReviewBadge v-if="sub" :status="sub.review_status" />
@@ -309,6 +341,30 @@ onMounted(load)
         </ul>
         <p v-else class="px-5 py-3 text-sm text-slate-400">{{ $t('detail.noReviews') }}</p>
       </section>
+
+      <!-- Navegación entre envíos (repetida al final) -->
+      <div class="flex items-center justify-between gap-3">
+        <RouterLink
+          :to="{ name: 'submissions', params: { id: route.params.id } }"
+          class="text-sm text-blue-600 hover:underline"
+        >
+          {{ $t('detail.back') }}
+        </RouterLink>
+        <div class="flex items-center gap-1">
+          <component
+            :is="toPrev ? 'RouterLink' : 'span'"
+            :to="toPrev || undefined"
+            class="rounded-lg border px-2.5 py-1 text-sm font-medium"
+            :class="toPrev ? 'border-slate-300 text-slate-700 hover:bg-slate-50' : 'cursor-not-allowed border-slate-200 text-slate-300'"
+          >{{ $t('detail.prev') }}</component>
+          <component
+            :is="toNext ? 'RouterLink' : 'span'"
+            :to="toNext || undefined"
+            class="rounded-lg border px-2.5 py-1 text-sm font-medium"
+            :class="toNext ? 'border-slate-300 text-slate-700 hover:bg-slate-50' : 'cursor-not-allowed border-slate-200 text-slate-300'"
+          >{{ $t('detail.next') }}</component>
+        </div>
+      </div>
     </template>
   </div>
 </template>

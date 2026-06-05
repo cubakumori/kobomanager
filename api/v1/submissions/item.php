@@ -63,9 +63,28 @@ if ($method === 'GET') {
         ];
     }
 
+    // Envío anterior/siguiente, en el mismo orden que la lista (submitted_at DESC, id DESC).
+    // "Siguiente" = el inmediatamente más abajo (más antiguo); "anterior" = más arriba (más nuevo).
+    $curTime = $sub['submitted_at'];
+    $curId   = (int) $sub['id'];
+    $next = DB::run(
+        'SELECT submission_uid FROM submissions_cache
+         WHERE form_id = ? AND (submitted_at < ? OR (submitted_at = ? AND id < ?))
+         ORDER BY submitted_at DESC, id DESC LIMIT 1',
+        [$formId, $curTime, $curTime, $curId]
+    )->fetch();
+    $prev = DB::run(
+        'SELECT submission_uid FROM submissions_cache
+         WHERE form_id = ? AND (submitted_at > ? OR (submitted_at = ? AND id > ?))
+         ORDER BY submitted_at ASC, id ASC LIMIT 1',
+        [$formId, $curTime, $curTime, $curId]
+    )->fetch();
+
     ErrorResponse::ok([
         'submission_uid' => $sub['submission_uid'],
         'form'           => ['id' => $formId, 'name' => $sub['form_name']],
+        'prev'           => $prev['submission_uid'] ?? null,
+        'next'           => $next['submission_uid'] ?? null,
         'submitted_at'   => $sub['submitted_at'],
         'last_synced_at' => $sub['last_synced_at'],
         'data'           => $payload,

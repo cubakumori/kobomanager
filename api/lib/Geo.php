@@ -78,6 +78,15 @@ class Geo {
         return $features;
     }
 
+    /** Rutas de los campos de tipo geográfico (geopoint/geoshape/geotrace) del esquema. */
+    public static function geoFieldPaths(?array $schema): array {
+        $paths = [];
+        foreach (($schema['fields'] ?? []) as $path => $fd) {
+            if (in_array($fd['type'] ?? '', self::GEO_TYPES, true)) $paths[] = $path;
+        }
+        return $paths;
+    }
+
     /** Punto principal [lat,lng] de un envío (primer geopoint o _geolocation), o null. */
     public static function primaryPoint(array $payload, ?array $schema): ?array {
         foreach (($schema['fields'] ?? []) as $path => $fd) {

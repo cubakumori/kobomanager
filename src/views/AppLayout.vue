@@ -20,9 +20,10 @@ watch(() => route.fullPath, () => { open.value = false })
       <div v-if="open" class="fixed inset-0 z-30 bg-black/40 lg:hidden" @click="open = false"></div>
     </Transition>
 
-    <!-- Sidebar: estático en pantallas grandes, off-canvas (desde la izquierda) en pequeñas -->
+    <!-- Sidebar: fijo (sticky) en pantallas grandes para que acompañe el scroll y no
+         deje hueco con contenidos largos; off-canvas (desde la izquierda) en pequeñas. -->
     <div
-      class="fixed inset-y-0 left-0 z-40 transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0"
+      class="fixed inset-y-0 left-0 z-40 transition-transform duration-200 lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:translate-x-0 lg:self-start"
       :class="open ? 'translate-x-0' : '-translate-x-full'"
     >
       <AppSidebar @navigate="open = false" />

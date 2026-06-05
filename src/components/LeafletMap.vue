@@ -71,5 +71,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="el" :style="{ height }" class="w-full overflow-hidden rounded-lg ring-1 ring-slate-200"></div>
+  <!-- relative z-0 crea un contexto de apilamiento propio: los z-index altos internos
+       de Leaflet (controles ~1000) quedan confinados y nunca tapan el drawer de la app. -->
+  <div ref="el" :style="{ height }" class="relative z-0 w-full overflow-hidden rounded-lg ring-1 ring-slate-200"></div>
 </template>

@@ -77,6 +77,18 @@ $items = array_map(function ($r) use ($reviewByUid) {
 // Etiquetas legibles: esquema del formulario resuelto al idioma del usuario.
 $schema = $form['schema_json'] ? json_decode($form['schema_json'], true) : null;
 
+// ¿Algún envío tiene coordenadas? (para habilitar/deshabilitar la vista de mapa).
+$geoConds  = ['JSON_TYPE(JSON_EXTRACT(json_payload, \'$._geolocation[0]\')) IN (\'DOUBLE\',\'INTEGER\',\'DECIMAL\')'];
+$geoParams = [$formId];
+foreach (Geo::geoFieldPaths($schema) as $gp) {
+    $geoConds[]  = 'COALESCE(JSON_UNQUOTE(JSON_EXTRACT(json_payload, ?)), \'\') <> \'\'';
+    $geoParams[] = '$."' . str_replace(['"', '\\'], '', $gp) . '"';
+}
+$hasGeo = (bool) DB::run(
+    'SELECT 1 FROM submissions_cache WHERE form_id = ? AND (' . implode(' OR ', $geoConds) . ') LIMIT 1',
+    $geoParams
+)->fetch();
+
 ErrorResponse::ok([
     'form'       => ['id' => (int) $form['id'], 'name' => $form['name']],
     'items'      => $items,
@@ -85,4 +97,5 @@ ErrorResponse::ok([
     'total'      => $total,
     'label_mode' => Settings::labelMode(),
     'schema'     => FormSchema::resolve($schema, $user['locale']),
+    'has_geo'    => $hasGeo,
 ]);
