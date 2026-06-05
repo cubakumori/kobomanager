@@ -39,21 +39,42 @@ if ($method === 'GET') {
 
     Audit::log($user['id'], 'view', $formId, $uid);
 
+    $payload = json_decode($sub['json_payload'], true) ?: [];
+
     // Etiquetas legibles: esquema del formulario resuelto al idioma del usuario.
     $schema = $sub['schema_json'] ? json_decode($sub['schema_json'], true) : null;
+
+    // Adjuntos (fotos/audio/archivos): se descargan vía el proxy autenticado del
+    // backend, nunca con la download_url cruda de Kobo (que exige token).
+    $attachments = [];
+    foreach (($payload['_attachments'] ?? []) as $a) {
+        $attUid = $a['uid'] ?? null;
+        if (!$attUid) continue;
+        $mime = (string) ($a['mimetype'] ?? '');
+        $attachments[] = [
+            'uid'      => $attUid,
+            'name'     => $a['media_file_basename'] ?? basename((string) ($a['filename'] ?? $attUid)),
+            'mimetype' => $mime ?: null,
+            'field'    => $a['question_xpath'] ?? null,
+            'kind'     => str_starts_with($mime, 'image/') ? 'image'
+                       : (str_starts_with($mime, 'audio/') ? 'audio'
+                       : (str_starts_with($mime, 'video/') ? 'video' : 'file')),
+        ];
+    }
 
     ErrorResponse::ok([
         'submission_uid' => $sub['submission_uid'],
         'form'           => ['id' => $formId, 'name' => $sub['form_name']],
         'submitted_at'   => $sub['submitted_at'],
         'last_synced_at' => $sub['last_synced_at'],
-        'data'           => json_decode($sub['json_payload'], true),
+        'data'           => $payload,
         'review_status'  => $reviews[0]['status'] ?? 'pending',
         'reviews'        => $reviews,
         'can_edit'       => Auth::canForm($user, $formId, 'edit'),
         'can_validate'   => Auth::canForm($user, $formId, 'validate'),
         'label_mode'     => Settings::labelMode(),
         'schema'         => FormSchema::resolve($schema, $user['locale']),
+        'attachments'    => $attachments,
     ]);
 }
 

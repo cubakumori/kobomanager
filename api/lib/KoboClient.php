@@ -115,6 +115,70 @@ class KoboClient {
         return true;
     }
 
+    /**
+     * Descarga un adjunto (foto, audio, archivo) de un envío y lo devuelve en
+     * memoria como ['body' => bytes, 'mimetype' => tipo]. $url es la `download_url`
+     * del adjunto (absoluta) o una ruta relativa al servidor.
+     *
+     * Seguridad: la primera petición lleva el token, pero las redirecciones a un
+     * almacenamiento externo (p. ej. S3 con URL firmada) se siguen MANUALMENTE y
+     * SIN el token, para no filtrar la credencial a otro dominio.
+     */
+    public function getAttachment(string $url): array {
+        if (!preg_match('#^https?://#', $url)) {
+            $url = $this->serverUrl . '/' . ltrim($url, '/');
+        }
+
+        // 1) Petición autenticada, sin seguir redirecciones.
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_TIMEOUT        => 60,
+            CURLOPT_CONNECTTIMEOUT => self::CONNECT_TIMEOUT,
+            CURLOPT_HTTPHEADER     => ['Authorization: Token ' . $this->apiToken],
+        ]);
+        $body     = curl_exec($ch);
+        $errno    = curl_errno($ch);
+        $status   = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $ctype    = (string) curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        $redirect = (string) curl_getinfo($ch, CURLINFO_REDIRECT_URL);
+
+        if ($errno !== 0) {
+            throw new KoboException('KOBO_TIMEOUT', 'No se pudo descargar el adjunto');
+        }
+
+        // 2) Redirección a almacenamiento firmado: seguirla sin el token.
+        if (in_array($status, [301, 302, 303, 307, 308], true) && $redirect !== '') {
+            $ch2 = curl_init($redirect);
+            curl_setopt_array($ch2, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_TIMEOUT        => 60,
+                CURLOPT_CONNECTTIMEOUT => self::CONNECT_TIMEOUT,
+            ]);
+            $body   = curl_exec($ch2);
+            $errno  = curl_errno($ch2);
+            $status = (int) curl_getinfo($ch2, CURLINFO_HTTP_CODE);
+            $ctype  = (string) curl_getinfo($ch2, CURLINFO_CONTENT_TYPE);
+            if ($errno !== 0) {
+                throw new KoboException('KOBO_TIMEOUT', 'No se pudo descargar el adjunto');
+            }
+        }
+
+        if ($status === 401 || $status === 403) {
+            throw new KoboException('KOBO_UNAUTHORIZED', 'Token de Kobo expirado o inválido');
+        }
+        if ($status === 404) {
+            throw new KoboException('KOBO_FORM_NOT_FOUND', 'Adjunto no encontrado en Kobo');
+        }
+        if ($status >= 400) {
+            throw new KoboException('KOBO_TIMEOUT', "Kobo respondió con estado $status");
+        }
+
+        return ['body' => (string) $body, 'mimetype' => $ctype ?: 'application/octet-stream'];
+    }
+
     // ---------- HTTP ----------
 
     private function httpGet(string $path, array $query = []): array {

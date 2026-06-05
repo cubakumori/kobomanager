@@ -70,6 +70,7 @@ $routes = [
     'forms/:id/stats'           => 'forms/stats.php',
     'submissions/:id'           => 'submissions/item.php',
     'submissions/:id/review'    => 'submissions/review.php',
+    'submissions/:id/attachments/:attId' => 'submissions/attachment.php',
 ];
 
 /** Empareja la ruta solicitada contra los patrones; devuelve [archivo, params] o [null, []]. */
