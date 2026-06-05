@@ -47,9 +47,13 @@ foreach ($accounts as $acc) {
         $formId = (int) $form['id'];
         $totalForms++;
         try {
-            $count = SubmissionSync::syncForm($formId, $form['kobo_asset_uid'], $client);
-            $totalSubs += $count;
-            fwrite(STDOUT, sprintf("[OK] %s / form %d: %d envíos\n", $acc['label'], $formId, $count));
+            $res = SubmissionSync::syncForm($formId, $form['kobo_asset_uid'], $client);
+            $totalSubs += $res['upserted'];
+            fwrite(STDOUT, sprintf(
+                "[OK] %s / form %d: %d envíos%s\n",
+                $acc['label'], $formId, $res['upserted'],
+                $res['removed'] ? sprintf(', %d eliminados', $res['removed']) : ''
+            ));
         } catch (KoboException $e) {
             fwrite(STDERR, sprintf("[ERR] %s / form %d: %s (%s)\n", $acc['label'], $formId, $e->getMessage(), $e->errorCode));
         }

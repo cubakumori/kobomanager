@@ -15,7 +15,8 @@ const syncing = ref(false)
 const syncResult = ref(null) // resumen por cuenta tras sincronizar
 const syncError = ref('')
 
-const updatingId = ref(null) // formulario que está actualizando sus envíos
+const updatingId = ref(null)     // formulario que está actualizando sus envíos
+const fullSyncId = ref(null)     // formulario en resincronización completa
 const enketoId = ref(null)   // formulario cuyo enlace Enketo se está resolviendo
 const flash = ref('')        // mensaje breve de resultado de "Actualizar"
 
@@ -98,18 +99,45 @@ async function openEnketo(f) {
   }
 }
 
+function syncFlash(name, d) {
+  let msg = t('forms.updatedFlash', { name, n: d.submissions })
+  if (d.removed) msg += t('forms.removedFlash', { n: d.removed })
+  return msg
+}
+
 async function onUpdateForm(f) {
   updatingId.value = f.id
   flash.value = ''
   syncError.value = ''
   try {
     const { data } = await api.post(`/admin/forms/${f.id}/sync`)
-    flash.value = t('forms.updatedFlash', { name: f.name, n: data.data.submissions })
+    flash.value = syncFlash(f.name, data.data)
     await load()
   } catch (e) {
     syncError.value = `«${f.name}»: ${apiError(e, t('forms.updateErr'))}`
   } finally {
     updatingId.value = null
+  }
+}
+
+async function onFullResync(f) {
+  const ok = await confirmDialog({
+    title: t('forms.confirmResyncTitle'),
+    message: t('forms.confirmResync', { name: f.name }),
+    confirmText: t('forms.resync'),
+  })
+  if (!ok) return
+  fullSyncId.value = f.id
+  flash.value = ''
+  syncError.value = ''
+  try {
+    const { data } = await api.post(`/admin/forms/${f.id}/sync`, { full: true })
+    flash.value = syncFlash(f.name, data.data)
+    await load()
+  } catch (e) {
+    syncError.value = `«${f.name}»: ${apiError(e, t('forms.updateErr'))}`
+  } finally {
+    fullSyncId.value = null
   }
 }
 
@@ -243,6 +271,14 @@ onMounted(load)
                   @click="onUpdateForm(f)"
                 >
                   {{ updatingId === f.id ? $t('forms.updating') : $t('forms.update') }}
+                </button>
+                <button
+                  :disabled="fullSyncId === f.id"
+                  class="font-medium text-blue-600 hover:underline disabled:opacity-50"
+                  :title="$t('forms.resyncTitle')"
+                  @click="onFullResync(f)"
+                >
+                  {{ fullSyncId === f.id ? $t('forms.resyncing') : $t('forms.resync') }}
                 </button>
                 <button
                   class="font-medium text-red-600 hover:underline"

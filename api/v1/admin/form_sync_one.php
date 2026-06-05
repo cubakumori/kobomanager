@@ -24,11 +24,20 @@ if (!$form) {
     ErrorResponse::send('NOT_FOUND', 'Formulario no encontrado');
 }
 
+// Modo completo (?full=1 o body {full:true}): re-descarga todo y refleja también
+// las ediciones hechas directamente en Kobo, además de eliminar las bajas.
+$full = !empty($_GET['full']) || !empty(Request::json()['full']);
+
 try {
     $client = new KoboClient($form['server_url'], TokenVault::decrypt($form['api_token']));
-    $count  = SubmissionSync::syncForm($formId, $form['kobo_asset_uid'], $client);
-    Audit::log($admin['id'], 'sync_submissions', $formId, null, ['count' => $count]);
-    ErrorResponse::ok(['form_id' => $formId, 'submissions' => $count]);
+    $res    = SubmissionSync::syncForm($formId, $form['kobo_asset_uid'], $client, $full);
+    Audit::log($admin['id'], 'sync_submissions', $formId, null, $res + ['full' => $full]);
+    ErrorResponse::ok([
+        'form_id'     => $formId,
+        'submissions' => $res['upserted'],
+        'removed'     => $res['removed'],
+        'full'        => $full,
+    ]);
 } catch (KoboException $e) {
     ErrorResponse::send($e->errorCode, $e->getMessage());
 }

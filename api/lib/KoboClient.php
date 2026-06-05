@@ -99,6 +99,30 @@ class KoboClient {
     }
 
     /**
+     * Lista ligera de todos los `_id` (numéricos) de los envíos de un formulario,
+     * paginando. Pide solo el campo `_id` (`fields=["_id"]`) para que sea barato y
+     * sirva de referencia al barrido de bajas (envíos borrados en Kobo).
+     */
+    public function getAllSubmissionIds(string $assetUid, int $pageSize = 10000, int $maxPages = 100): array {
+        $base = ['format' => 'json', 'limit' => $pageSize, 'fields' => '["_id"]', 'sort' => '{"_id":1}'];
+
+        $ids   = [];
+        $start = 0;
+        for ($page = 0; $page < $maxPages; $page++) {
+            $data    = $this->httpGet("/api/v2/assets/$assetUid/data/", $base + ['start' => $start]);
+            $results = $data['results'] ?? [];
+            foreach ($results as $r) {
+                if (isset($r['_id'])) $ids[] = (int) $r['_id'];
+            }
+            $count = (int) ($data['count'] ?? 0);
+            if (count($results) < $pageSize) break;
+            $start += $pageSize;
+            if ($start >= $count) break;
+        }
+        return $ids;
+    }
+
+    /**
      * Edita un envío en Kobo mediante el endpoint de actualización masiva
      * (PATCH /api/v2/assets/{uid}/data/bulk/). $submissionId es el _id numérico
      * de Kobo (no el _uuid). $data mapea nombre de campo (con jerarquía de grupo) → valor.
