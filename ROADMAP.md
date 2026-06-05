@@ -45,9 +45,15 @@ Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
 
 ### Datos de Kobo (alta prioridad para uso real)
 
-- [ ] **Etiquetas legibles**: mostrar las *labels* del formulario y de las opciones
-      (descargando el contenido XLSForm del asset) en lugar de nombres de campo y códigos
-      crudos (`satisfaccion` → «Satisfacción», `1` → «Muy alta»).
+- [ ] **Etiquetas legibles** (PRÓXIMA TAREA): mostrar las *labels* del formulario y de las
+      opciones (descargando el contenido XLSForm del asset: `content.survey` y `content.choices`)
+      en lugar de nombres de campo y códigos crudos (`satisfaccion` → «Satisfacción», `1` → «Muy alta»).
+      - Mapear `name` → `label` de cada pregunta y `value` → `label` de cada opción; cachear el
+        esquema del formulario (p. ej. columna JSON en `forms` o tabla aparte), refrescándolo al sincronizar.
+      - Soporte de idioma del label (los formularios Kobo pueden ser multi-idioma).
+      - **Ajuste en Configuración** «Etiquetas en tabla y detalles» con opciones:
+        *Labels del formulario* (por defecto) / *Nombres de campo y código*. Aplica a
+        `SubmissionsView` y `SubmissionDetailView`.
 - [ ] **Adjuntos/medios**: mostrar y enlazar fotos y archivos (`_attachments`) de cada envío.
 - [ ] **Sincronizar ediciones y borrados de Kobo**: hoy el cursor incremental usa
       `_submission_time`, así que las **ediciones** posteriores en Kobo no se reflejan y los
