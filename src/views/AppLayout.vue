@@ -30,10 +30,12 @@ watch(() => route.fullPath, () => { open.value = false })
 
     <!-- Columna de contenido -->
     <div class="flex min-w-0 flex-1 flex-col">
-      <!-- Barra superior (solo móvil) con la hamburguesa -->
-      <header class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
+      <!-- Barra superior (solo móvil) — mismo estilo que la portada: marca a la
+           izquierda y hamburguesa azul a la derecha (el sidebar se abre desde la izquierda). -->
+      <header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
+        <span class="text-lg font-semibold tracking-tight text-slate-900">KoboManager</span>
         <button
-          class="rounded-lg p-2 text-slate-600 hover:bg-slate-100"
+          class="rounded-lg bg-blue-600 p-2 text-white shadow-sm hover:bg-blue-700"
           aria-label="Menu"
           @click="open = true"
         >
@@ -41,7 +43,6 @@ watch(() => route.fullPath, () => { open.value = false })
             <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <span class="font-semibold tracking-tight text-slate-900">KoboManager</span>
       </header>
 
       <main class="flex-1 overflow-y-auto">
