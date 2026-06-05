@@ -19,7 +19,10 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const code = error?.response?.data?.error?.code
-    if (error?.response?.status === 401 || code === 'AUTH_INVALID_TOKEN') {
+    const is401 = error?.response?.status === 401 || code === 'AUTH_INVALID_TOKEN'
+    // `skipAuthRedirect` permite probar la sesión (p. ej. /auth/me) sin forzar
+    // un redirect global a /login cuando el 401 es esperado (visitante anónimo).
+    if (is401 && !error?.config?.skipAuthRedirect) {
       if (onUnauthorized) onUnauthorized()
     }
     return Promise.reject(error)

@@ -39,7 +39,7 @@ export const useAuthStore = defineStore('auth', {
     async fetchMe() {
       this.loading = true
       try {
-        const { data } = await api.get('/auth/me')
+        const { data } = await api.get('/auth/me', { skipAuthRedirect: true })
         this.user = data.data
         setLocale(this.user?.locale)
       } catch {
