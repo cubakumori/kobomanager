@@ -6,6 +6,20 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [Sin publicar]
 
+### Añadido
+
+- **Landing page pública** en `/` con banner de marca, *features* y login en **modal**
+  (formulario de login reutilizable); idioma ES/EN conmutable desde la propia portada.
+
+### Cambiado
+
+- El botón «Cerrar sesión» del sidebar se alinea a la izquierda como el resto.
+
+### Corregido
+
+- Al sincronizar, los formularios **borrados en Kobo** ahora se eliminan de la app
+  (antes seguían listados); el resumen indica cuántos se eliminaron.
+
 Lo previsto a continuación se mantiene en [`ROADMAP.md`](./ROADMAP.md).
 
 ## [0.2.0] — 2026-05-31
