@@ -14,8 +14,21 @@ const loading = ref(true)
 const error = ref('')
 const schema = ref(null)
 const labelMode = ref('raw')
+const attachments = ref([])
 
 const labeler = computed(() => makeLabeler(schema.value, labelMode.value))
+
+// Adjunto indexado por la clave del campo que lo originó (question_xpath).
+const attByField = computed(() => {
+  const m = {}
+  for (const a of attachments.value) if (a.field && !(a.field in m)) m[a.field] = a
+  return m
+})
+
+// URL del proxy autenticado del backend (mismo origen → la cookie viaja sola).
+function attUrl(att) {
+  return `/api/v1/submissions/${route.params.subId}/attachments/${att.uid}`
+}
 
 // --- edición ---
 const editing = ref(false)
@@ -49,6 +62,7 @@ async function load() {
     sub.value = data.data
     schema.value = data.data.schema ?? null
     labelMode.value = data.data.label_mode ?? 'raw'
+    attachments.value = data.data.attachments ?? []
   } catch (e) {
     error.value = apiError(e, t('detail.loadError'))
   } finally {
@@ -145,7 +159,16 @@ onMounted(load)
         <dl v-if="!editing" class="divide-y divide-slate-100">
           <div v-for="[k, v] in fields.data" :key="k" class="grid grid-cols-3 gap-4 px-5 py-3">
             <dt class="text-sm font-medium text-slate-500">{{ labeler.label(k) }}</dt>
-            <dd class="col-span-2 text-sm text-slate-800">{{ labeler.value(k, v) }}</dd>
+            <dd class="col-span-2 text-sm text-slate-800">
+              <a
+                v-if="attByField[k]"
+                :href="attUrl(attByField[k])"
+                target="_blank"
+                rel="noopener"
+                class="inline-flex items-center gap-1 text-blue-600 hover:underline"
+              >📎 {{ attByField[k].name }}</a>
+              <template v-else>{{ labeler.value(k, v) }}</template>
+            </dd>
           </div>
           <div v-if="!fields.data.length" class="px-5 py-3 text-sm text-slate-400">{{ $t('detail.noFields') }}</div>
         </dl>
@@ -190,6 +213,30 @@ onMounted(load)
           </div>
           <p class="text-xs text-slate-400">{{ $t('detail.editHint') }}</p>
         </div>
+      </section>
+
+      <!-- Adjuntos (fotos, audio, archivos) -->
+      <section v-if="attachments.length" class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+        <h2 class="border-b border-slate-100 px-5 py-3 font-semibold text-slate-900">
+          {{ $t('detail.attachments', { n: attachments.length }) }}
+        </h2>
+        <ul class="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
+          <li v-for="a in attachments" :key="a.uid" class="space-y-2">
+            <a v-if="a.kind === 'image'" :href="attUrl(a)" target="_blank" rel="noopener" class="block">
+              <img :src="attUrl(a)" :alt="a.name" class="max-h-48 w-full rounded-lg object-contain ring-1 ring-slate-200" />
+            </a>
+            <audio v-else-if="a.kind === 'audio'" :src="attUrl(a)" controls class="w-full"></audio>
+            <video v-else-if="a.kind === 'video'" :src="attUrl(a)" controls class="max-h-64 w-full rounded-lg ring-1 ring-slate-200"></video>
+            <a
+              v-else
+              :href="attUrl(a)"
+              target="_blank"
+              rel="noopener"
+              class="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline"
+            >⬇ {{ a.name }}</a>
+            <p class="truncate text-xs text-slate-400" :title="a.name">{{ a.name }}</p>
+          </li>
+        </ul>
       </section>
 
       <!-- Panel de revisión -->

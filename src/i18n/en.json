@@ -286,6 +286,7 @@
     "title": "Submission detail",
     "submittedAt": "{form} · submitted {date}",
     "data": "Data",
+    "attachments": "Attachments ({n})",
     "noFields": "No fields.",
     "editHint": "Changes are written to KoboToolbox and then to the local cache.",
     "saveChanges": "Save changes",

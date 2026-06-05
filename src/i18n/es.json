@@ -286,6 +286,7 @@
     "title": "Detalle del envío",
     "submittedAt": "{form} · enviado {date}",
     "data": "Datos",
+    "attachments": "Adjuntos ({n})",
     "noFields": "Sin campos.",
     "editHint": "Los cambios se escriben en KoboToolbox y luego en la caché local.",
     "saveChanges": "Guardar cambios",
