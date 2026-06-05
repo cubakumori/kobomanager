@@ -17,7 +17,7 @@ const initials = computed(() =>
 
 async function onLogout() {
   await auth.logout()
-  router.push({ name: 'login' })
+  router.push('/')
 }
 
 const linkBase =

@@ -6,21 +6,29 @@ import { i18n, setLocale } from '../i18n'
 import Modal from '../components/Modal.vue'
 import LoginForm from '../components/LoginForm.vue'
 import banner from '../assets/kobomanager.png'
-import logo from '../assets/km_logo.png'
 
 const router = useRouter()
 const auth = useAuthStore()
 
 const showLogin = ref(false)
+const showMenu = ref(false) // drawer móvil
 
 function onLoginSuccess() {
   showLogin.value = false
   router.push('/dashboard')
 }
 
+function openLogin() {
+  showMenu.value = false
+  showLogin.value = true
+}
+
 function toggleLocale() {
   setLocale(i18n.global.locale.value === 'es' ? 'en' : 'es')
 }
+
+const drawerLink =
+  'block rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white'
 </script>
 
 <template>
@@ -34,12 +42,10 @@ function toggleLocale() {
     <!-- Barra superior -->
     <header class="sticky top-0 z-30 border-b border-slate-200/60 bg-white/70 backdrop-blur">
       <div class="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-3">
-        <div class="flex items-center gap-2">
-          <img :src="logo" alt="" class="h-9 w-9" />
-          <span class="text-lg font-semibold tracking-tight text-slate-900">KoboManager</span>
-        </div>
+        <span class="text-lg font-semibold tracking-tight text-slate-900">KoboManager</span>
 
-        <nav class="flex items-center gap-1 sm:gap-2">
+        <!-- Nav escritorio -->
+        <nav class="hidden items-center gap-2 md:flex">
           <a
             href="https://www.kobotoolbox.org"
             target="_blank"
@@ -49,14 +55,13 @@ function toggleLocale() {
             {{ $t('landing.navKobo') }}
           </a>
           <span
-            class="hidden cursor-not-allowed whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-slate-400 md:inline"
+            class="cursor-not-allowed whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-slate-400"
             :title="$t('landing.soon')"
           >{{ $t('landing.navTutorials') }}</span>
           <span
-            class="hidden cursor-not-allowed whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-slate-400 md:inline"
+            class="cursor-not-allowed whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-slate-400"
             :title="$t('landing.soon')"
           >{{ $t('landing.navDonate') }}</span>
-
           <button
             class="rounded-lg px-2 py-2 text-sm font-semibold text-slate-500 hover:text-slate-900"
             title="ES / EN"
@@ -64,7 +69,6 @@ function toggleLocale() {
           >
             {{ $i18n.locale === 'es' ? 'EN' : 'ES' }}
           </button>
-
           <button
             v-if="auth.isAuthenticated"
             class="whitespace-nowrap rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
@@ -80,6 +84,17 @@ function toggleLocale() {
             {{ $t('landing.cta') }}
           </button>
         </nav>
+
+        <!-- Botón hamburguesa (móvil) -->
+        <button
+          class="rounded-lg bg-blue-600 p-2 text-white shadow-sm hover:bg-blue-700 md:hidden"
+          aria-label="Menu"
+          @click="showMenu = true"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
+            <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
       </div>
     </header>
 
@@ -132,35 +147,18 @@ function toggleLocale() {
       </div>
     </main>
 
-    <!-- Features -->
+    <!-- Features (estilo "pill" verde, sin iconos) -->
     <section class="mx-auto grid w-full max-w-6xl gap-4 px-6 pb-6 sm:grid-cols-3">
-      <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition hover:shadow-md">
-        <div class="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-6 w-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.5a3 3 0 00-6 0M12 11a3 3 0 100-6 3 3 0 000 6zM5.5 21a2.5 2.5 0 015 0M3 13.5a2 2 0 113-1.7M21 21a2.5 2.5 0 00-5 0M21 13.5a2 2 0 10-3-1.7" />
-          </svg>
-        </div>
-        <h3 class="font-semibold text-slate-900">{{ $t('landing.feat1Title') }}</h3>
-        <p class="mt-1 text-sm text-slate-600">{{ $t('landing.feat1Desc') }}</p>
-      </div>
-      <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition hover:shadow-md">
-        <div class="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-6 w-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75l2 2 4-4.5M12 3l2.5 1.5L17.5 4 18 7l2.5 2L19 12l1.5 3L18 16l-.5 3-3-.5L12 21l-2.5-2.5L6.5 19 6 16l-2.5-1L5 12 3.5 9 6 8l.5-3 3 .5L12 3z" />
-          </svg>
-        </div>
-        <h3 class="font-semibold text-slate-900">{{ $t('landing.feat2Title') }}</h3>
-        <p class="mt-1 text-sm text-slate-600">{{ $t('landing.feat2Desc') }}</p>
-      </div>
-      <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition hover:shadow-md">
-        <div class="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-6 w-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 11v3m0-3a1.5 1.5 0 10-1.5-1.5" />
-          </svg>
-        </div>
-        <h3 class="font-semibold text-slate-900">{{ $t('landing.feat3Title') }}</h3>
-        <p class="mt-1 text-sm text-slate-600">{{ $t('landing.feat3Desc') }}</p>
+      <div
+        v-for="n in 3"
+        :key="n"
+        class="rounded-2xl bg-emerald-50 p-6 ring-1 ring-emerald-200"
+      >
+        <h3 class="flex items-center gap-2 font-semibold text-emerald-800">
+          <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+          {{ $t('landing.feat' + n + 'Title') }}
+        </h3>
+        <p class="mt-2 text-sm text-emerald-900/70">{{ $t('landing.feat' + n + 'Desc') }}</p>
       </div>
     </section>
 
@@ -182,6 +180,62 @@ function toggleLocale() {
     <footer class="mt-auto border-t border-slate-200/70 px-6 py-6 text-center text-xs text-slate-400">
       {{ $t('landing.footer') }}
     </footer>
+
+    <!-- Drawer móvil (desde la derecha), estilo coherente con el sidebar del backend -->
+    <Transition
+      enter-active-class="transition-opacity duration-200"
+      enter-from-class="opacity-0" leave-active-class="transition-opacity duration-200" leave-to-class="opacity-0"
+    >
+      <div v-if="showMenu" class="fixed inset-0 z-40 bg-black/40 md:hidden" @click="showMenu = false"></div>
+    </Transition>
+    <Transition
+      enter-active-class="transition-transform duration-200" enter-from-class="translate-x-full"
+      leave-active-class="transition-transform duration-200" leave-to-class="translate-x-full"
+    >
+      <aside
+        v-if="showMenu"
+        class="fixed right-0 top-0 z-50 flex h-screen w-64 flex-col bg-slate-900 p-3 text-white md:hidden"
+      >
+        <div class="flex items-center justify-between px-2 py-2">
+          <span class="text-lg font-semibold tracking-tight">KoboManager</span>
+          <button class="rounded-lg p-1 text-slate-300 hover:bg-slate-700/60 hover:text-white" aria-label="Cerrar" @click="showMenu = false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
+              <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
+
+        <nav class="mt-2 flex-1 space-y-1">
+          <a href="https://www.kobotoolbox.org" target="_blank" rel="noopener" :class="drawerLink" @click="showMenu = false">
+            {{ $t('landing.navKobo') }}
+          </a>
+          <span :class="[drawerLink, 'cursor-not-allowed text-slate-500 hover:bg-transparent hover:text-slate-500']">
+            {{ $t('landing.navTutorials') }}
+          </span>
+          <span :class="[drawerLink, 'cursor-not-allowed text-slate-500 hover:bg-transparent hover:text-slate-500']">
+            {{ $t('landing.navDonate') }}
+          </span>
+          <button :class="[drawerLink, 'w-full text-left']" @click="toggleLocale">
+            {{ $i18n.locale === 'es' ? 'English' : 'Español' }}
+          </button>
+        </nav>
+
+        <button
+          v-if="auth.isAuthenticated"
+          class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+          @click="router.push('/dashboard')"
+        >
+          {{ $t('landing.goDashboard') }}
+        </button>
+        <button
+          v-else
+          class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+          @click="openLogin"
+        >
+          {{ $t('landing.cta') }}
+        </button>
+      </aside>
+    </Transition>
 
     <!-- Modal de login -->
     <Modal v-if="showLogin" :title="$t('landing.loginTitle')" @close="showLogin = false">
