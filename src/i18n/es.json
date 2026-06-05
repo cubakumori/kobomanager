@@ -270,6 +270,7 @@
     "title": "Envíos",
     "total": "{n} envío(s) en total.",
     "stats": "Estadísticas",
+    "map": "Mapa",
     "search": "Buscar…",
     "colReview": "Revisión",
     "colSubmitted": "Enviado",
@@ -278,6 +279,13 @@
     "prev": "Anterior",
     "next": "Siguiente",
     "page": "Página {page} de {pages}"
+  },
+  "map": {
+    "back": "← Volver a los envíos",
+    "title": "Mapa",
+    "count": "{shown} de {total} envío(s) con ubicación.",
+    "empty": "Ningún envío tiene coordenadas.",
+    "loadError": "No se pudo cargar el mapa"
   },
   "myForms": {
     "title": "Mis formularios",
@@ -292,6 +300,7 @@
     "title": "Detalle del envío",
     "submittedAt": "{form} · enviado {date}",
     "data": "Datos",
+    "location": "Ubicación",
     "attachments": "Adjuntos ({n})",
     "noFields": "Sin campos.",
     "editHint": "Los cambios se escriben en KoboToolbox y luego en la caché local.",

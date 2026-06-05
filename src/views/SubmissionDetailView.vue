@@ -6,6 +6,7 @@ import api from '../services/api'
 import { apiError } from '../stores/auth'
 import { makeLabeler } from '../composables/labels'
 import ReviewBadge from '../components/ReviewBadge.vue'
+import LeafletMap from '../components/LeafletMap.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -15,6 +16,7 @@ const error = ref('')
 const schema = ref(null)
 const labelMode = ref('raw')
 const attachments = ref([])
+const geo = ref([])
 
 const labeler = computed(() => makeLabeler(schema.value, labelMode.value))
 
@@ -63,6 +65,7 @@ async function load() {
     schema.value = data.data.schema ?? null
     labelMode.value = data.data.label_mode ?? 'raw'
     attachments.value = data.data.attachments ?? []
+    geo.value = data.data.geo ?? []
   } catch (e) {
     error.value = apiError(e, t('detail.loadError'))
   } finally {
@@ -212,6 +215,14 @@ onMounted(load)
             </button>
           </div>
           <p class="text-xs text-slate-400">{{ $t('detail.editHint') }}</p>
+        </div>
+      </section>
+
+      <!-- Ubicación (geopoint/geoshape/geotrace) -->
+      <section v-if="geo.length" class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+        <h2 class="border-b border-slate-100 px-5 py-3 font-semibold text-slate-900">{{ $t('detail.location') }}</h2>
+        <div class="p-5">
+          <LeafletMap :features="geo" height="320px" />
         </div>
       </section>
 

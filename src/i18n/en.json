@@ -270,6 +270,7 @@
     "title": "Submissions",
     "total": "{n} submission(s) in total.",
     "stats": "Statistics",
+    "map": "Map",
     "search": "Search…",
     "colReview": "Review",
     "colSubmitted": "Submitted",
@@ -278,6 +279,13 @@
     "prev": "Previous",
     "next": "Next",
     "page": "Page {page} of {pages}"
+  },
+  "map": {
+    "back": "← Back to submissions",
+    "title": "Map",
+    "count": "{shown} of {total} submission(s) with a location.",
+    "empty": "No submission has coordinates.",
+    "loadError": "Could not load the map"
   },
   "myForms": {
     "title": "My forms",
@@ -292,6 +300,7 @@
     "title": "Submission detail",
     "submittedAt": "{form} · submitted {date}",
     "data": "Data",
+    "location": "Location",
     "attachments": "Attachments ({n})",
     "noFields": "No fields.",
     "editHint": "Changes are written to KoboToolbox and then to the local cache.",

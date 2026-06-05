@@ -85,12 +85,20 @@ onMounted(load)
       </RouterLink>
       <div class="mt-1 flex items-center justify-between gap-4">
         <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ formName || $t('submissions.title') }}</h1>
-        <RouterLink
-          :to="{ name: 'stats', params: { id: formId } }"
-          class="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          {{ $t('submissions.stats') }}
-        </RouterLink>
+        <div class="flex shrink-0 items-center gap-2">
+          <RouterLink
+            :to="{ name: 'form-map', params: { id: formId } }"
+            class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            {{ $t('submissions.map') }}
+          </RouterLink>
+          <RouterLink
+            :to="{ name: 'stats', params: { id: formId } }"
+            class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            {{ $t('submissions.stats') }}
+          </RouterLink>
+        </div>
       </div>
       <p class="mt-1 text-sm text-slate-500">{{ $t('submissions.total', { n: total }) }}</p>
     </header>
