@@ -75,6 +75,7 @@ class FormSchema {
             $full = $stack ? implode('/', $stack) . '/' . $name : $name;
             $fields[$full] = [
                 'leaf'  => $name,
+                'type'  => $type,
                 'list'  => $list,
                 'multi' => str_starts_with($type, 'select_multiple'),
                 'label' => self::labelMap($row['label'] ?? null, $translations),

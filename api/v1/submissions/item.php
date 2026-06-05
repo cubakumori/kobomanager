@@ -42,7 +42,8 @@ if ($method === 'GET') {
     $payload = json_decode($sub['json_payload'], true) ?: [];
 
     // Etiquetas legibles: esquema del formulario resuelto al idioma del usuario.
-    $schema = $sub['schema_json'] ? json_decode($sub['schema_json'], true) : null;
+    $schema   = $sub['schema_json'] ? json_decode($sub['schema_json'], true) : null;
+    $resolved = FormSchema::resolve($schema, $user['locale']);
 
     // Adjuntos (fotos/audio/archivos): se descargan vía el proxy autenticado del
     // backend, nunca con la download_url cruda de Kobo (que exige token).
@@ -73,8 +74,9 @@ if ($method === 'GET') {
         'can_edit'       => Auth::canForm($user, $formId, 'edit'),
         'can_validate'   => Auth::canForm($user, $formId, 'validate'),
         'label_mode'     => Settings::labelMode(),
-        'schema'         => FormSchema::resolve($schema, $user['locale']),
+        'schema'         => $resolved,
         'attachments'    => $attachments,
+        'geo'            => Geo::features($payload, $schema, $resolved['labels']),
     ]);
 }
 
