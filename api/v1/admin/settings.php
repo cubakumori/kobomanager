@@ -13,6 +13,8 @@ if (Request::method() === 'GET') {
         'valid_statuses'           => Settings::VALID_STATUSES,
         'default_locale'           => Settings::defaultLocale(),
         'valid_locales'            => Settings::VALID_LOCALES,
+        'label_mode'               => Settings::labelMode(),
+        'valid_label_modes'        => Settings::VALID_LABEL_MODES,
     ]);
 }
 
@@ -43,6 +45,15 @@ if (Request::method() === 'PUT') {
         }
         Settings::set('default_locale', $loc);
         $out['default_locale'] = $loc;
+    }
+
+    if (array_key_exists('label_mode', $body)) {
+        $mode = (string) $body['label_mode'];
+        if (!in_array($mode, Settings::VALID_LABEL_MODES, true)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Modo de etiquetas no válido');
+        }
+        Settings::set('label_mode', $mode);
+        $out['label_mode'] = $mode;
     }
 
     Audit::log($admin['id'], 'update_settings', null, null, $out);

@@ -13,7 +13,7 @@ if (Request::method() !== 'GET') {
     ErrorResponse::send('VALIDATION_ERROR', 'Método no permitido', 405);
 }
 
-$form = DB::run('SELECT id, name FROM forms WHERE id = ? AND active = 1', [$formId])->fetch();
+$form = DB::run('SELECT id, name, schema_json FROM forms WHERE id = ? AND active = 1', [$formId])->fetch();
 if (!$form) {
     ErrorResponse::send('NOT_FOUND', 'Formulario no encontrado');
 }
@@ -74,10 +74,15 @@ $items = array_map(function ($r) use ($reviewByUid) {
     ];
 }, $rows);
 
+// Etiquetas legibles: esquema del formulario resuelto al idioma del usuario.
+$schema = $form['schema_json'] ? json_decode($form['schema_json'], true) : null;
+
 ErrorResponse::ok([
-    'form'     => ['id' => (int) $form['id'], 'name' => $form['name']],
-    'items'    => $items,
-    'page'     => $page,
-    'per_page' => $perPage,
-    'total'    => $total,
+    'form'       => ['id' => (int) $form['id'], 'name' => $form['name']],
+    'items'      => $items,
+    'page'       => $page,
+    'per_page'   => $perPage,
+    'total'      => $total,
+    'label_mode' => Settings::labelMode(),
+    'schema'     => FormSchema::resolve($schema, $user['locale']),
 ]);

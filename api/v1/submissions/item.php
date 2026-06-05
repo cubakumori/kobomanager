@@ -12,7 +12,7 @@ $method = Request::method();
 
 $sub = DB::run(
     'SELECT sc.id, sc.submission_uid, sc.json_payload, sc.submitted_at, sc.last_synced_at,
-            f.id AS form_id, f.name AS form_name, f.kobo_asset_uid, f.kobo_account_id
+            f.id AS form_id, f.name AS form_name, f.kobo_asset_uid, f.kobo_account_id, f.schema_json
      FROM submissions_cache sc
      JOIN forms f ON f.id = sc.form_id
      WHERE sc.submission_uid = ?',
@@ -39,6 +39,9 @@ if ($method === 'GET') {
 
     Audit::log($user['id'], 'view', $formId, $uid);
 
+    // Etiquetas legibles: esquema del formulario resuelto al idioma del usuario.
+    $schema = $sub['schema_json'] ? json_decode($sub['schema_json'], true) : null;
+
     ErrorResponse::ok([
         'submission_uid' => $sub['submission_uid'],
         'form'           => ['id' => $formId, 'name' => $sub['form_name']],
@@ -49,6 +52,8 @@ if ($method === 'GET') {
         'reviews'        => $reviews,
         'can_edit'       => Auth::canForm($user, $formId, 'edit'),
         'can_validate'   => Auth::canForm($user, $formId, 'validate'),
+        'label_mode'     => Settings::labelMode(),
+        'schema'         => FormSchema::resolve($schema, $user['locale']),
     ]);
 }
 

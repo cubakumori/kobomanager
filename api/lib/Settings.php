@@ -11,6 +11,14 @@ class Settings {
     public const VALID_LOCALES = ['es', 'en'];
     private const FALLBACK_LOCALE = 'es';
 
+    /**
+     * Cómo se muestran preguntas y opciones en tabla y detalles:
+     *   'labels' → labels legibles del formulario (por defecto)
+     *   'raw'    → nombres de campo y códigos crudos
+     */
+    public const VALID_LABEL_MODES = ['labels', 'raw'];
+    private const DEFAULT_LABEL_MODE = 'labels';
+
     public static function get(string $key, mixed $default = null): mixed {
         $row = DB::run('SELECT `value` FROM settings WHERE `key` = ?', [$key])->fetch();
         if (!$row) return $default;
@@ -38,5 +46,11 @@ class Settings {
     public static function defaultLocale(): string {
         $v = self::get('default_locale', self::FALLBACK_LOCALE);
         return in_array($v, self::VALID_LOCALES, true) ? $v : self::FALLBACK_LOCALE;
+    }
+
+    /** Modo de etiquetas en tabla y detalles ('labels'|'raw'). */
+    public static function labelMode(): string {
+        $v = self::get('label_mode', self::DEFAULT_LABEL_MODE);
+        return in_array($v, self::VALID_LABEL_MODES, true) ? $v : self::DEFAULT_LABEL_MODE;
     }
 }
