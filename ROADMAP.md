@@ -45,11 +45,7 @@ Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
 
 ### Datos de Kobo (alta prioridad para uso real)
 
-- [ ] **Sincronizar ediciones y borrados de Kobo** (PRÓXIMA TAREA): hoy el cursor incremental usa
-      `_submission_time`, así que las **ediciones** posteriores en Kobo no se reflejan y los
-      envíos **borrados** en Kobo permanecen en caché. Considerar sincronización por fecha de
-      modificación y un barrido de bajas.
-- [ ] **Vista de mapa** para preguntas tipo geopoint/geoshape.
+- [ ] **Vista de mapa** (PRÓXIMA TAREA) para preguntas tipo geopoint/geoshape.
 
 ### UX
 

@@ -8,6 +8,12 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Sincronización de ediciones y borrados de Kobo**. Cada sincronización incremental
+  (cron y «Actualizar») hace además un **barrido de bajas**: pide a Kobo solo los `_id`
+  vigentes y elimina de la caché los envíos borrados. Nueva acción **«Resync»** por
+  formulario que re-descarga todos los envíos y reconcilia por `_uuid`, reflejando también
+  las **ediciones hechas directamente en Kobo** (que conservan el `_id` pero cambian el
+  `_uuid`). Los resúmenes de sincronización informan de cuántos envíos se eliminaron.
 - **Adjuntos en los envíos**. El detalle de cada envío muestra sus `_attachments`
   (fotos, audio, vídeo o archivos) con vista previa según el tipo, y en los campos el
   adjunto se enlaza por su nombre legible. Las descargas pasan por un **proxy
