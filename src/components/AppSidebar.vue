@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
+const emit = defineEmits(['navigate'])
 const auth = useAuthStore()
 const router = useRouter()
 
@@ -28,7 +29,18 @@ const linkActive = 'bg-blue-600 text-white'
 
 <template>
   <aside class="flex h-screen w-60 flex-col bg-slate-900 text-white">
-    <div class="px-5 py-5 text-lg font-semibold tracking-tight">KoboManager</div>
+    <div class="flex items-center justify-between px-5 py-5">
+      <span class="text-lg font-semibold tracking-tight">KoboManager</span>
+      <button
+        class="rounded-lg p-1 text-slate-300 hover:bg-slate-700/60 hover:text-white lg:hidden"
+        aria-label="Cerrar menú"
+        @click="emit('navigate')"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
+          <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
+    </div>
 
     <nav class="flex-1 space-y-1 px-3">
       <RouterLink
