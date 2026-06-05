@@ -33,6 +33,14 @@
     "goToProfile": "Ir a mi perfil"
   },
   "landing": {
+    "eyebrow": "Capa de gestión para KoboToolbox",
+    "how": "Cómo funciona",
+    "step1Title": "Conecta tu cuenta de Kobo",
+    "step1Desc": "Añade el servidor y el API token; se guarda cifrado en el servidor.",
+    "step2Title": "Sincroniza y asigna permisos",
+    "step2Desc": "Trae tus formularios y decide quién puede ver, editar o validar cada uno.",
+    "step3Title": "Tu equipo revisa los envíos",
+    "step3Desc": "Consultan, editan y aprueban/rechazan, con un flujo de revisión propio.",
     "tagline": "Gestiona tus datos de KoboToolbox y da acceso a tu equipo",
     "subtitle": "KoboManager es la capa intermedia que deja a tu equipo consultar, editar y validar envíos —sin necesidad de cuenta en Kobo y sin exponer tu API token.",
     "cta": "Entrar",

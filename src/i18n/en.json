@@ -33,6 +33,14 @@
     "goToProfile": "Go to my profile"
   },
   "landing": {
+    "eyebrow": "A management layer for KoboToolbox",
+    "how": "How it works",
+    "step1Title": "Connect your Kobo account",
+    "step1Desc": "Add the server and API token; it's stored encrypted on the server.",
+    "step2Title": "Sync and assign permissions",
+    "step2Desc": "Pull your forms and decide who can view, edit or validate each one.",
+    "step3Title": "Your team reviews submissions",
+    "step3Desc": "They view, edit and approve/reject, with their own review flow.",
     "tagline": "Manage your KoboToolbox data and give your team access",
     "subtitle": "KoboManager is the middle layer that lets your team view, edit and validate submissions — without a Kobo account and without exposing your API token.",
     "cta": "Sign in",
