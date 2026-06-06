@@ -95,6 +95,7 @@ $routes = [
     'admin/forms/:id/sync'      => 'admin/form_sync_one.php',
     'admin/forms/:id/enketo'    => 'admin/form_enketo.php',
     'admin/permissions'         => 'admin/permissions.php',
+    'admin/forms/:id/scope-fields' => 'admin/scope_fields.php',
     'admin/settings'            => 'admin/settings.php',
     'notifications'             => 'notifications.php',
     'profile'                   => 'profile.php',
