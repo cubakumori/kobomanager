@@ -42,6 +42,9 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
+- La tabla de envíos permite **filtrar por estado de revisión** (pendiente/aprobado/
+  rechazado), **ordenar** por fecha (más recientes/antiguos) y elegir el **tamaño de
+  página** (10/25/50/100).
 - En la tabla de envíos se puede **elegir qué columnas mostrar y reordenarlas**
   (arrastrando), con «Enviado» siempre visible; la preferencia se guarda por formulario.
 - El **detalle de un envío** incluye navegación **Anterior/Siguiente** (arriba y al final).

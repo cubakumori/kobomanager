@@ -21,8 +21,6 @@ contra una cuenta KoboToolbox real:
 
 ## Mejoras a corto plazo (ideas propias)
 
-- [ ] Paginación/orden configurable en la tabla de envíos (hoy: búsqueda + paginado básico).
-- [ ] Filtro de envíos por estado de revisión (pending/approved/rejected) en `SubmissionsView`.
 - [ ] Al re-sincronizar con un estado más restrictivo, desactivar los formularios que
       dejan de cumplirlo (hoy se quedan como estaban).
 - [ ] Acción de **reseteo de contraseña** visible para el propio usuario en su perfil.
