@@ -8,6 +8,9 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Página «Guía de uso»** (`/guide`, pública): explica los roles, el flujo de trabajo,
+  la diferencia entre **Actualizar y Resync**, las contraseñas y el trabajo con los datos.
+  Enlazada desde «Tutoriales» en la portada y desde una tarjeta en el *Dashboard*. i18n es/en.
 - **Acciones de formulario para *viewers*** (configurables por el admin). Desde *Mis
   formularios*, cada usuario puede ahora —si el administrador lo habilita en *Configuración*—
   abrir el formulario público (Enketo), abrirlo en KoboToolbox, **Actualizar** (sync
