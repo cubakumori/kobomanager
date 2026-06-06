@@ -56,6 +56,9 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
+- El **«Resumen diario por email»** se traslada de *Mi perfil* a una **página propia
+  «Notificaciones»** (enlace en el menú lateral, bajo «Mis formularios»). *Mi perfil*
+  queda centrado en la cuenta: idioma y contraseña.
 - La tabla de envíos permite **filtrar por estado de revisión** (pendiente/aprobado/
   rechazado), **ordenar** por fecha (más recientes/antiguos) y elegir el **tamaño de
   página** (10/25/50/100).
