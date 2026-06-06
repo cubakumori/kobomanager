@@ -19,6 +19,9 @@ class Settings {
     public const VALID_LABEL_MODES = ['labels', 'raw'];
     private const DEFAULT_LABEL_MODE = 'labels';
 
+    /** ¿Está habilitado el flujo público «olvidé mi contraseña»? (desactivado por defecto) */
+    private const DEFAULT_PASSWORD_RESET = false;
+
     public static function get(string $key, mixed $default = null): mixed {
         $row = DB::run('SELECT `value` FROM settings WHERE `key` = ?', [$key])->fetch();
         if (!$row) return $default;
@@ -52,5 +55,18 @@ class Settings {
     public static function labelMode(): string {
         $v = self::get('label_mode', self::DEFAULT_LABEL_MODE);
         return in_array($v, self::VALID_LABEL_MODES, true) ? $v : self::DEFAULT_LABEL_MODE;
+    }
+
+    /** ¿Habilitado el flujo público de recuperación de contraseña? */
+    public static function passwordResetEnabled(): bool {
+        return (bool) self::get('password_reset_enabled', self::DEFAULT_PASSWORD_RESET);
+    }
+
+    /**
+     * ¿Hay un transporte de email configurado? (clave de Resend presente).
+     * Es un secreto de config.php, no un ajuste de BD; útil para avisar en la UI.
+     */
+    public static function mailConfigured(): bool {
+        return defined('RESEND_API_KEY') && RESEND_API_KEY !== '';
     }
 }

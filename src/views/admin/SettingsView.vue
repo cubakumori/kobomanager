@@ -16,6 +16,8 @@ const defaultLocale = ref('es')
 const validLocales = ref(['es', 'en'])
 const labelMode = ref('labels')
 const validLabelModes = ref(['labels', 'raw'])
+const passwordResetEnabled = ref(false)
+const mailConfigured = ref(false)
 const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
@@ -31,6 +33,8 @@ async function load() {
     validLocales.value = data.data.valid_locales
     labelMode.value = data.data.label_mode
     validLabelModes.value = data.data.valid_label_modes
+    passwordResetEnabled.value = data.data.password_reset_enabled
+    mailConfigured.value = data.data.mail_configured
   } catch (e) {
     error.value = apiError(e, t('settings.loadError'))
   } finally {
@@ -58,10 +62,12 @@ async function save() {
       sync_deployment_statuses: selected.value,
       default_locale: defaultLocale.value,
       label_mode: labelMode.value,
+      password_reset_enabled: passwordResetEnabled.value,
     })
     selected.value = data.data.sync_deployment_statuses
     defaultLocale.value = data.data.default_locale
     labelMode.value = data.data.label_mode
+    passwordResetEnabled.value = data.data.password_reset_enabled
     saved.value = true
     // Si el usuario sigue el idioma por defecto, refleja el cambio al instante.
     if (!auth.user?.locale_pref) setLocale(defaultLocale.value)
@@ -152,6 +158,32 @@ onMounted(load)
             <span class="block text-xs text-slate-400">{{ $t('settings.labelMode_' + mode + 'Hint') }}</span>
           </span>
         </label>
+      </section>
+
+      <!-- Recuperación de contraseña -->
+      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.passwordReset') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.passwordResetDesc') }}</p>
+        </div>
+        <label class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+          <input
+            type="checkbox"
+            class="mt-0.5 h-4 w-4"
+            :checked="passwordResetEnabled"
+            @change="passwordResetEnabled = !passwordResetEnabled; saved = false"
+          />
+          <span>
+            <span class="block text-sm font-medium text-slate-800">{{ $t('settings.passwordResetToggle') }}</span>
+            <span class="block text-xs text-slate-400">{{ $t('settings.passwordResetHint') }}</span>
+          </span>
+        </label>
+        <p
+          v-if="passwordResetEnabled && !mailConfigured"
+          class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200"
+        >
+          {{ $t('settings.passwordResetNoMail') }}
+        </p>
       </section>
 
       <div class="flex items-center gap-3">

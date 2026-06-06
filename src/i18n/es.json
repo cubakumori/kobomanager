@@ -231,6 +231,11 @@
     "labelMode_labelsHint": "Muestra los textos del formulario (p. ej. «Satisfacción», «Muy alta»). Se toman al sincronizar.",
     "labelMode_raw": "Nombres de campo y código",
     "labelMode_rawHint": "Muestra los nombres internos y los códigos crudos (p. ej. «satisfaccion», «1»).",
+    "passwordReset": "Recuperación de contraseña",
+    "passwordResetDesc": "Permite a los usuarios restablecer su contraseña por email desde la pantalla de inicio de sesión.",
+    "passwordResetToggle": "Permitir recuperar contraseña",
+    "passwordResetHint": "Si está activo, aparece el enlace «¿Olvidaste tu contraseña?» en el login. El enlace de recuperación caduca en 1 hora y solo puede usarse una vez.",
+    "passwordResetNoMail": "El envío de email no está configurado (falta la clave de Resend en config.php). Los usuarios verán el enlace, pero no recibirán el correo de recuperación.",
     "loadError": "No se pudo cargar la configuración",
     "saveError": "No se pudo guardar"
   },

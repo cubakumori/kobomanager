@@ -15,6 +15,8 @@ if (Request::method() === 'GET') {
         'valid_locales'            => Settings::VALID_LOCALES,
         'label_mode'               => Settings::labelMode(),
         'valid_label_modes'        => Settings::VALID_LABEL_MODES,
+        'password_reset_enabled'   => Settings::passwordResetEnabled(),
+        'mail_configured'          => Settings::mailConfigured(),
     ]);
 }
 
@@ -54,6 +56,12 @@ if (Request::method() === 'PUT') {
         }
         Settings::set('label_mode', $mode);
         $out['label_mode'] = $mode;
+    }
+
+    if (array_key_exists('password_reset_enabled', $body)) {
+        $enabled = (bool) $body['password_reset_enabled'];
+        Settings::set('password_reset_enabled', $enabled);
+        $out['password_reset_enabled'] = $enabled;
     }
 
     Audit::log($admin['id'], 'update_settings', null, null, $out);

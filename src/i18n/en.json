@@ -231,6 +231,11 @@
     "labelMode_labelsHint": "Show the form's text (e.g. “Satisfaction”, “Very high”). Fetched on sync.",
     "labelMode_raw": "Field names and codes",
     "labelMode_rawHint": "Show internal names and raw codes (e.g. “satisfaccion”, “1”).",
+    "passwordReset": "Password recovery",
+    "passwordResetDesc": "Let users reset their password by email from the sign-in screen.",
+    "passwordResetToggle": "Allow password recovery",
+    "passwordResetHint": "When enabled, a “Forgot your password?” link appears on the login screen. The recovery link expires in 1 hour and can only be used once.",
+    "passwordResetNoMail": "Email sending is not configured (the Resend key is missing in config.php). Users will see the link but won't receive the recovery email.",
     "loadError": "Could not load the configuration",
     "saveError": "Could not save"
   },
