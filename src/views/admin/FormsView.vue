@@ -8,6 +8,7 @@ import { confirmDialog } from '../../composables/confirm'
 const { t } = useI18n()
 
 const forms = ref([])
+const accountsList = ref([])
 const loading = ref(true)
 const listError = ref('')
 
@@ -38,14 +39,37 @@ async function load() {
   loading.value = true
   listError.value = ''
   try {
-    const { data } = await api.get('/admin/forms')
-    forms.value = data.data
+    const [formsRes, accRes] = await Promise.all([
+      api.get('/admin/forms'),
+      api.get('/admin/accounts'),
+    ])
+    forms.value = formsRes.data.data
+    accountsList.value = accRes.data.data
   } catch (e) {
     listError.value = apiError(e, t('forms.loadError'))
   } finally {
     loading.value = false
   }
 }
+
+// Indicador global: estado de sincronización agregado por cuenta (a partir de los
+// formularios ya cargados). Una cuenta con algún formulario en error → error;
+// si no tiene formularios sincronizados → "nunca".
+const syncStatus = computed(() =>
+  accountsList.value.map((a) => {
+    const fs = forms.value.filter((f) => f.account_id === a.id)
+    const lastSync = fs.reduce((max, f) => (f.last_synced_at && f.last_synced_at > max ? f.last_synced_at : max), '')
+    return {
+      id: a.id,
+      label: a.label,
+      active: a.active,
+      total: fs.length,
+      inactive: fs.filter((f) => !f.active).length,
+      hasError: fs.some((f) => f.sync_status === 'error'),
+      lastSync,
+    }
+  }),
+)
 
 async function onSync() {
   syncing.value = true
@@ -202,11 +226,36 @@ onMounted(load)
       >
         <span class="font-medium">{{ r.account_label }}:</span>
         <template v-if="r.status === 'success'">
-          {{ $t('forms.syncResultOk', { forms: r.forms }) }}<template v-if="r.skipped">{{ $t('forms.syncResultSkipped', { n: r.skipped }) }}</template><template v-if="r.removed">{{ $t('forms.syncResultRemoved', { n: r.removed }) }}</template>.
+          {{ $t('forms.syncResultOk', { forms: r.forms }) }}<template v-if="r.skipped">{{ $t('forms.syncResultSkipped', { n: r.skipped }) }}</template><template v-if="r.deactivated">{{ $t('forms.syncResultDeactivated', { n: r.deactivated }) }}</template><template v-if="r.removed">{{ $t('forms.syncResultRemoved', { n: r.removed }) }}</template>.
         </template>
         <template v-else>{{ $t('forms.syncResultError', { error: r.error, code: r.error_code }) }}</template>
       </div>
     </div>
+
+    <!-- Indicador global del estado de sincronización por cuenta -->
+    <section v-if="!loading && syncStatus.length" class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+      <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{{ $t('forms.syncStatusTitle') }}</h2>
+      <ul class="grid gap-2 sm:grid-cols-2">
+        <li
+          v-for="s in syncStatus"
+          :key="s.id"
+          class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2"
+        >
+          <div class="flex min-w-0 items-center gap-2">
+            <span
+              class="h-2 w-2 shrink-0 rounded-full"
+              :class="s.hasError ? 'bg-red-500' : (s.lastSync ? 'bg-green-500' : 'bg-slate-300')"
+              :title="s.hasError ? $t('forms.syncStateError') : (s.lastSync ? $t('forms.syncStateOk') : $t('forms.syncStateNever'))"
+            ></span>
+            <span class="truncate text-sm font-medium text-slate-800">{{ s.label }}</span>
+          </div>
+          <div class="shrink-0 text-right text-xs text-slate-500">
+            <span>{{ s.lastSync || $t('forms.lastSyncNever') }}</span>
+            <span class="ml-2 text-slate-400">{{ $t('forms.formsSummary', { n: s.total, inactive: s.inactive }) }}</span>
+          </div>
+        </li>
+      </ul>
+    </section>
 
     <!-- Listado -->
     <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -224,8 +273,15 @@ onMounted(load)
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
-          <tr v-for="f in filteredForms" :key="f.id">
-            <td class="px-4 py-3 font-medium text-slate-900">{{ f.name }}</td>
+          <tr v-for="f in filteredForms" :key="f.id" :class="{ 'bg-slate-50/60': !f.active }">
+            <td class="px-4 py-3 font-medium text-slate-900">
+              {{ f.name }}
+              <span
+                v-if="!f.active"
+                class="ml-1 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600"
+                :title="$t('forms.inactiveTitle')"
+              >{{ $t('forms.inactive') }}</span>
+            </td>
             <td class="px-4 py-3 text-slate-600">{{ f.account_label }}</td>
             <td class="px-4 py-3">
               <span

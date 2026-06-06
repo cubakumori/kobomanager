@@ -36,9 +36,10 @@ foreach ($accounts as $acc) {
         $client = new KoboClient($acc['server_url'], $token);
         $assets = $client->getAssets();
 
-        $count    = 0;
-        $skipped  = 0;
-        $seenUids = []; // todos los assets (survey) presentes en Kobo, para reconciliar bajas
+        $count       = 0;
+        $skipped     = 0;
+        $seenUids    = []; // todos los assets (survey) presentes en Kobo, para reconciliar bajas
+        $skippedUids = []; // assets presentes pero fuera del filtro de estados → desactivar si existen
         foreach ($assets as $asset) {
             $uid  = $asset['uid'] ?? null;
             $name = $asset['name'] ?? '(sin nombre)';
@@ -51,16 +52,20 @@ foreach ($accounts as $acc) {
             // Filtrar por el ajuste global de estados a sincronizar.
             if (!in_array($status, $allowedStatuses, true)) {
                 $skipped++;
+                $skippedUids[] = $uid;
                 continue;
             }
 
+            // Upsert; `active = 1` reactiva un formulario que hubiera quedado fuera del
+            // filtro en una sincronización anterior y ahora vuelve a cumplirlo.
             DB::run(
-                'INSERT INTO forms (kobo_account_id, kobo_asset_uid, name, server_url, deployment_status, last_synced_at, sync_status, last_sync_error)
-                 VALUES (?, ?, ?, ?, ?, NOW(), \'success\', NULL)
+                'INSERT INTO forms (kobo_account_id, kobo_asset_uid, name, server_url, deployment_status, active, last_synced_at, sync_status, last_sync_error)
+                 VALUES (?, ?, ?, ?, ?, 1, NOW(), \'success\', NULL)
                  ON DUPLICATE KEY UPDATE
                     name = VALUES(name),
                     server_url = VALUES(server_url),
                     deployment_status = VALUES(deployment_status),
+                    active = 1,
                     last_synced_at = NOW(),
                     sync_status = \'success\',
                     last_sync_error = NULL',
@@ -79,6 +84,18 @@ foreach ($accounts as $acc) {
             }
         }
 
+        // Desactivar (sin borrar) los formularios que siguen en Kobo pero ya no cumplen
+        // el filtro de estados: se ocultan a usuarios y al cron, pero se conserva su caché
+        // y sus revisiones. Si más adelante vuelven a cumplir el filtro, el upsert los reactiva.
+        $deactivated = 0;
+        if ($skippedUids) {
+            $ph = implode(',', array_fill(0, count($skippedUids), '?'));
+            $deactivated = DB::run(
+                "UPDATE forms SET active = 0 WHERE kobo_account_id = ? AND active = 1 AND kobo_asset_uid IN ($ph)",
+                array_merge([$accId], $skippedUids)
+            )->rowCount();
+        }
+
         // Reconciliar bajas: borrar los formularios locales cuyo asset ya no existe en
         // Kobo (no aparece en el listado, sea cual sea su estado). Cascade limpia su caché.
         if ($seenUids) {
@@ -92,13 +109,14 @@ foreach ($accounts as $acc) {
             $removed = DB::run('DELETE FROM forms WHERE kobo_account_id = ?', [$accId])->rowCount();
         }
 
-        Audit::log($admin['id'], 'sync_forms', null, null, ['account_id' => $accId, 'forms' => $count, 'skipped' => $skipped, 'removed' => $removed]);
+        Audit::log($admin['id'], 'sync_forms', null, null, ['account_id' => $accId, 'forms' => $count, 'skipped' => $skipped, 'deactivated' => $deactivated, 'removed' => $removed]);
         $summary[] = [
             'account_id'    => $accId,
             'account_label' => $acc['label'],
             'status'        => 'success',
             'forms'         => $count,
             'skipped'       => $skipped,
+            'deactivated'   => $deactivated,
             'removed'       => $removed,
         ];
     } catch (KoboException $e) {
