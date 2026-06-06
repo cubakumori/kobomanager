@@ -8,6 +8,12 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Cierre de sesión remoto desde el admin**. La lista de usuarios muestra el número de
+  sesiones activas y permite **cerrar todas las sesiones** de un usuario (revoca sus tokens;
+  tendrá que volver a iniciar sesión), sin necesidad de desactivarlo. Acción auditada.
+- **Protección CSRF**: las peticiones que modifican estado (POST/PUT/DELETE) se rechazan si
+  su `Origin`/`Referer` no coincide con un origen permitido, reforzando la cookie de sesión
+  `SameSite=Lax`.
 - **Cambio de contraseña desde el propio perfil**. Sección «Contraseña» en *Mi perfil*
   donde el usuario, ya autenticado, cambia su contraseña indicando la actual y la nueva
   (con confirmación; mínimo 8 caracteres). `POST /profile/password` verifica la contraseña

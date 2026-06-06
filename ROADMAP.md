@@ -24,7 +24,6 @@ contra una cuenta KoboToolbox real:
 - [ ] Al re-sincronizar con un estado más restrictivo, desactivar los formularios que
       dejan de cumplirlo (hoy se quedan como estaban).
 - [ ] Indicador global en el panel admin del estado de sincronización de todas las cuentas.
-- [ ] Cierre de sesión remoto desde el admin (la tabla `user_sessions` ya lo permite).
 - [ ] Tests automatizados del backend (PHPUnit) para auth, permisos y rate limiting.
 
 ## Del análisis de la Comunidad de Kobo (ideas a copiar)
@@ -50,9 +49,7 @@ Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
 
 ### Seguridad y sesiones
 
-- [ ] **Sesión deslizante / refresh** y opción «cerrar todas mis sesiones».
-- [ ] **Protección CSRF** en peticiones que modifican (verificar `Origin`/token; la cookie
-      es `SameSite=Lax`, conviene reforzar).
+- [ ] **Sesión deslizante / refresh** y opción «cerrar todas mis sesiones» (autoservicio).
 - [ ] Rotación documentada de `CONFIG_TOKEN_KEY` (re-cifrado de tokens) y copias de seguridad.
 
 ### Operación y mantenimiento
