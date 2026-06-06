@@ -47,11 +47,11 @@ onMounted(load)
         v-for="f in forms"
         :key="f.id"
         :to="{ name: 'submissions', params: { id: f.id } }"
-        class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:ring-blue-300"
+        class="rounded-xl bg-emerald-50 p-5 shadow-sm ring-1 ring-emerald-200 transition hover:ring-emerald-400"
       >
-        <p class="text-xs uppercase tracking-wider text-slate-400">{{ f.account_label }}</p>
-        <h2 class="mt-1 font-semibold text-slate-900">{{ f.name }}</h2>
-        <p class="mt-2 text-sm text-slate-500">{{ $t('myForms.count', { n: f.submission_count }) }}</p>
+        <p class="text-xs uppercase tracking-wider text-emerald-600">{{ f.account_label }}</p>
+        <h2 class="mt-1 font-semibold text-emerald-900">{{ f.name }}</h2>
+        <p class="mt-2 text-sm text-emerald-900/70">{{ $t('myForms.count', { n: f.submission_count }) }}</p>
       </RouterLink>
     </div>
   </div>

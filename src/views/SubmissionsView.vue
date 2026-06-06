@@ -298,7 +298,7 @@ onMounted(load)
     <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
       <div v-if="loading" class="p-4 text-sm text-slate-500">{{ $t('common.loading') }}</div>
       <table v-else class="w-full text-left text-sm">
-        <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+        <thead class="bg-emerald-50 text-xs uppercase tracking-wider text-emerald-700">
           <tr>
             <th class="px-4 py-3">{{ $t('submissions.colSubmitted') }}</th>
             <th v-for="c in shownColumns" :key="c" class="px-4 py-3">{{ labeler.label(c) }}</th>
