@@ -19,10 +19,6 @@ contra una cuenta KoboToolbox real:
   - Confirmar el formato de campos con jerarquía de grupo (`grupo/campo`).
 - [ ] **Envío real de email** con Resend (clave `RESEND_API_KEY` + dominio verificado).
 
-## Mejoras a corto plazo (ideas propias)
-
-- [ ] Tests automatizados del backend (PHPUnit) para auth, permisos y rate limiting.
-
 ## Del análisis de la Comunidad de Kobo (ideas a copiar)
 
 Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:

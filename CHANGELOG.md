@@ -8,6 +8,10 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Tests automatizados del backend** (PHPUnit): cobertura de autenticación y permisos,
+  ciclo de sesión JWT (emisión, validación, revocación, logout), *rate limiting*, ajustes,
+  cifrado de tokens y el parser geográfico. Se ejecutan contra una base de datos de test
+  separada; PHPUnit es la única dependencia de desarrollo (el runtime sigue sin dependencias).
 - **Página «Guía de uso»** (`/guide`, pública): explica los roles, el flujo de trabajo,
   la diferencia entre **Actualizar y Resync**, las contraseñas y el trabajo con los datos.
   Enlazada desde «Tutoriales» en la portada y desde una tarjeta en el *Dashboard*. i18n es/en.
