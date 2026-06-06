@@ -16,6 +16,7 @@ if (Request::method() !== 'GET') {
 if ($user['role'] === 'admin') {
     $rows = DB::run(
         'SELECT f.id, f.name, a.label AS account_label, f.last_synced_at, f.sync_status,
+                f.server_url, f.kobo_asset_uid, f.deployment_status,
                 1 AS can_edit, 1 AS can_validate,
                 (SELECT COUNT(*) FROM submissions_cache sc WHERE sc.form_id = f.id) AS submission_count
          FROM forms f
@@ -26,6 +27,7 @@ if ($user['role'] === 'admin') {
 } else {
     $rows = DB::run(
         'SELECT f.id, f.name, a.label AS account_label, f.last_synced_at, f.sync_status,
+                f.server_url, f.kobo_asset_uid, f.deployment_status,
                 p.can_edit, p.can_validate,
                 (SELECT COUNT(*) FROM submissions_cache sc WHERE sc.form_id = f.id) AS submission_count
          FROM forms f

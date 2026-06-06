@@ -18,6 +18,8 @@ const labelMode = ref('labels')
 const validLabelModes = ref(['labels', 'raw'])
 const passwordResetEnabled = ref(false)
 const mailConfigured = ref(false)
+const viewerActions = ref({ enketo: false, update: false, resync: false, login: false })
+const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login']
 const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
@@ -35,6 +37,7 @@ async function load() {
     validLabelModes.value = data.data.valid_label_modes
     passwordResetEnabled.value = data.data.password_reset_enabled
     mailConfigured.value = data.data.mail_configured
+    if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
   } catch (e) {
     error.value = apiError(e, t('settings.loadError'))
   } finally {
@@ -63,11 +66,13 @@ async function save() {
       default_locale: defaultLocale.value,
       label_mode: labelMode.value,
       password_reset_enabled: passwordResetEnabled.value,
+      viewer_actions: viewerActions.value,
     })
     selected.value = data.data.sync_deployment_statuses
     defaultLocale.value = data.data.default_locale
     labelMode.value = data.data.label_mode
     passwordResetEnabled.value = data.data.password_reset_enabled
+    if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     saved.value = true
     // Si el usuario sigue el idioma por defecto, refleja el cambio al instante.
     if (!auth.user?.locale_pref) setLocale(defaultLocale.value)
@@ -184,6 +189,30 @@ onMounted(load)
         >
           {{ $t('settings.passwordResetNoMail') }}
         </p>
+      </section>
+
+      <!-- Acciones de los viewers sobre formularios -->
+      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.viewerActions') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.viewerActionsDesc') }}</p>
+        </div>
+        <label
+          v-for="key in VIEWER_ACTION_KEYS"
+          :key="key"
+          class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50"
+        >
+          <input
+            type="checkbox"
+            class="mt-0.5 h-4 w-4"
+            :checked="viewerActions[key]"
+            @change="viewerActions[key] = !viewerActions[key]; saved = false"
+          />
+          <span>
+            <span class="block text-sm font-medium text-slate-800">{{ $t('settings.viewerAction_' + key) }}</span>
+            <span class="block text-xs text-slate-400">{{ $t('settings.viewerAction_' + key + 'Hint') }}</span>
+          </span>
+        </label>
       </section>
 
       <div class="flex items-center gap-3">

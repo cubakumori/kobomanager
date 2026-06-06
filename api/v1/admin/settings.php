@@ -17,6 +17,7 @@ if (Request::method() === 'GET') {
         'valid_label_modes'        => Settings::VALID_LABEL_MODES,
         'password_reset_enabled'   => Settings::passwordResetEnabled(),
         'mail_configured'          => Settings::mailConfigured(),
+        'viewer_actions'           => Settings::viewerActions(),
     ]);
 }
 
@@ -62,6 +63,18 @@ if (Request::method() === 'PUT') {
         $enabled = (bool) $body['password_reset_enabled'];
         Settings::set('password_reset_enabled', $enabled);
         $out['password_reset_enabled'] = $enabled;
+    }
+
+    if (array_key_exists('viewer_actions', $body) && is_array($body['viewer_actions'])) {
+        $va = [];
+        foreach (Settings::VIEWER_ACTION_KEYS as $k) {
+            if (array_key_exists($k, $body['viewer_actions'])) {
+                $val = (bool) $body['viewer_actions'][$k];
+                Settings::set('viewer_can_' . $k, $val);
+                $va[$k] = $val;
+            }
+        }
+        if ($va) $out['viewer_actions'] = $va;
     }
 
     Audit::log($admin['id'], 'update_settings', null, null, $out);

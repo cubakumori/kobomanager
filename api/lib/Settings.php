@@ -69,4 +69,20 @@ class Settings {
     public static function mailConfigured(): bool {
         return defined('RESEND_API_KEY') && RESEND_API_KEY !== '';
     }
+
+    public const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login'];
+
+    /**
+     * Acciones sobre formularios que un viewer puede ejecutar desde «Mis
+     * formularios», si el admin las habilita (todas desactivadas por defecto).
+     * Los admin las tienen siempre.
+     */
+    public static function viewerActions(): array {
+        return [
+            'enketo' => (bool) self::get('viewer_can_enketo', false), // abrir formulario público (Enketo)
+            'update' => (bool) self::get('viewer_can_update', false), // sincronización incremental
+            'resync' => (bool) self::get('viewer_can_resync', false), // sincronización completa
+            'login'  => (bool) self::get('viewer_can_login', false),  // abrir en KoboToolbox
+        ];
+    }
 }
