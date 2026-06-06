@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/auth'
 import { i18n, setLocale } from '../i18n'
 import Modal from '../components/Modal.vue'
 import LoginForm from '../components/LoginForm.vue'
+import { useDialogA11y } from '../composables/dialogA11y'
 import banner from '../assets/kobomanager.png'
 
 const router = useRouter()
@@ -12,6 +13,10 @@ const auth = useAuthStore()
 
 const showLogin = ref(false)
 const showMenu = ref(false) // drawer móvil
+
+// Accesibilidad del drawer móvil (Escape, focus trap y foco).
+const drawer = ref(null)
+useDialogA11y(drawer, () => { showMenu.value = false }, showMenu)
 
 function onLoginSuccess() {
   showLogin.value = false
@@ -194,7 +199,10 @@ const drawerLink =
     >
       <aside
         v-if="showMenu"
+        ref="drawer"
         class="fixed right-0 top-0 z-50 flex h-screen w-64 flex-col bg-slate-900 p-3 text-white md:hidden"
+        role="dialog"
+        aria-modal="true"
       >
         <div class="flex items-center justify-between px-2 py-2">
           <span class="text-lg font-semibold tracking-tight">KoboManager</span>

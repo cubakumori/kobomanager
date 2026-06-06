@@ -3,11 +3,16 @@ import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AppSidebar from '../components/AppSidebar.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
+import { useDialogA11y } from '../composables/dialogA11y'
 
 const open = ref(false)
 const route = useRoute()
 // Al navegar, cerrar el sidebar móvil.
 watch(() => route.fullPath, () => { open.value = false })
+
+// Accesibilidad del drawer móvil (Escape, focus trap y foco) — solo cuando está abierto.
+const drawer = ref(null)
+useDialogA11y(drawer, () => { open.value = false }, open)
 </script>
 
 <template>
@@ -23,8 +28,11 @@ watch(() => route.fullPath, () => { open.value = false })
     <!-- Sidebar: fijo (sticky) en pantallas grandes para que acompañe el scroll y no
          deje hueco con contenidos largos; off-canvas (desde la izquierda) en pequeñas. -->
     <div
+      ref="drawer"
       class="fixed inset-y-0 left-0 z-40 transition-transform duration-200 lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:translate-x-0 lg:self-start"
       :class="open ? 'translate-x-0' : '-translate-x-full'"
+      :role="open ? 'dialog' : null"
+      :aria-modal="open ? 'true' : null"
     >
       <AppSidebar @navigate="open = false" />
     </div>
