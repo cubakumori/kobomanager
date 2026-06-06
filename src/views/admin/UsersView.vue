@@ -13,10 +13,17 @@ const users = ref([])
 const loading = ref(true)
 const listError = ref('')
 
+const creating = ref(false)
 const form = ref({ name: '', email: '', password: '', role: 'viewer' })
 const formError = ref('')
 const saving = ref(false)
 const actionError = ref('')
+
+function startCreate() {
+  formError.value = ''
+  form.value = { name: '', email: '', password: '', role: 'viewer' }
+  creating.value = true
+}
 
 // Edición
 const editing = ref(null)
@@ -43,6 +50,7 @@ async function onCreate() {
   try {
     await api.post('/admin/users', form.value)
     form.value = { name: '', email: '', password: '', role: 'viewer' }
+    creating.value = false
     await load()
   } catch (e) {
     formError.value = apiError(e, t('users.createError'))
@@ -123,56 +131,65 @@ onMounted(load)
 
 <template>
   <div class="space-y-6">
-    <header>
-      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ $t('users.title') }}</h1>
-      <p class="mt-1 text-sm text-slate-500">{{ $t('users.subtitle') }}</p>
+    <header class="flex items-start justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ $t('users.title') }}</h1>
+        <p class="mt-1 text-sm text-slate-500">{{ $t('users.subtitle') }}</p>
+      </div>
+      <button
+        class="shrink-0 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+        @click="startCreate"
+      >
+        {{ $t('users.newUser') }}
+      </button>
     </header>
 
     <div v-if="actionError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
       {{ actionError }}
     </div>
 
-    <!-- Alta -->
-    <form
-      class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200"
-      @submit.prevent="onCreate"
-    >
-      <h2 class="mb-4 font-semibold text-slate-900">{{ $t('users.newUser') }}</h2>
-      <div
-        v-if="formError"
-        class="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200"
-      >
-        {{ formError }}
-      </div>
-      <div class="grid gap-4 sm:grid-cols-2">
-        <label class="space-y-1">
+    <!-- Alta (modal) -->
+    <Modal v-if="creating" :title="$t('users.newUser')" @close="creating = false">
+      <form class="space-y-4" @submit.prevent="onCreate">
+        <div
+          v-if="formError"
+          class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200"
+        >
+          {{ formError }}
+        </div>
+        <label class="block space-y-1">
           <span class="block text-sm font-medium text-slate-700">{{ $t('common.name') }}</span>
           <input v-model="form.name" required class="km-input" />
         </label>
-        <label class="space-y-1">
+        <label class="block space-y-1">
           <span class="block text-sm font-medium text-slate-700">{{ $t('common.email') }}</span>
           <input v-model="form.email" type="email" required class="km-input" />
         </label>
-        <label class="space-y-1">
+        <label class="block space-y-1">
           <span class="block text-sm font-medium text-slate-700">{{ $t('users.password') }}</span>
           <input v-model="form.password" type="password" required minlength="8" class="km-input" />
         </label>
-        <label class="space-y-1">
+        <label class="block space-y-1">
           <span class="block text-sm font-medium text-slate-700">{{ $t('common.role') }}</span>
           <select v-model="form.role" class="km-input">
             <option value="viewer">viewer</option>
             <option value="admin">admin</option>
           </select>
         </label>
-      </div>
-      <button
-        type="submit"
-        :disabled="saving"
-        class="mt-4 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
-      >
-        {{ saving ? $t('users.creating') : $t('users.createUser') }}
-      </button>
-    </form>
+        <div class="flex items-center gap-3 pt-1">
+          <button
+            type="submit"
+            :disabled="saving"
+            class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+          >
+            {{ saving ? $t('users.creating') : $t('users.createUser') }}
+          </button>
+          <button type="button" class="text-sm font-medium text-slate-500 hover:text-slate-700" @click="creating = false">
+            {{ $t('common.cancel') }}
+          </button>
+        </div>
+      </form>
+    </Modal>
 
     <!-- Listado -->
     <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">

@@ -12,9 +12,16 @@ const accounts = ref([])
 const loading = ref(true)
 const listError = ref('')
 
+const creating = ref(false)
 const form = ref({ label: '', server_url: 'https://eu.kobotoolbox.org', email: '', api_token: '' })
 const formError = ref('')
 const saving = ref(false)
+
+function startCreate() {
+  formError.value = ''
+  form.value = { label: '', server_url: 'https://eu.kobotoolbox.org', email: '', api_token: '' }
+  creating.value = true
+}
 
 // Edición
 const editing = ref(null)
@@ -46,6 +53,7 @@ async function onCreate() {
   try {
     await api.post('/admin/accounts', form.value)
     form.value = { label: '', server_url: 'https://eu.kobotoolbox.org', email: '', api_token: '' }
+    creating.value = false
     await load()
   } catch (e) {
     formError.value = apiError(e, t('accounts.createError'))
@@ -122,49 +130,61 @@ onMounted(load)
 
 <template>
   <div class="space-y-6">
-    <header>
-      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ $t('accounts.title') }}</h1>
-      <p class="mt-1 text-sm text-slate-500">{{ $t('accounts.subtitle') }}</p>
+    <header class="flex items-start justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ $t('accounts.title') }}</h1>
+        <p class="mt-1 text-sm text-slate-500">{{ $t('accounts.subtitle') }}</p>
+      </div>
+      <button
+        class="shrink-0 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+        @click="startCreate"
+      >
+        {{ $t('accounts.newAccount') }}
+      </button>
     </header>
 
-    <!-- Alta -->
-    <form class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200" @submit.prevent="onCreate">
-      <h2 class="mb-4 font-semibold text-slate-900">{{ $t('accounts.newAccount') }}</h2>
-      <div
-        v-if="formError"
-        class="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200"
-      >
-        {{ formError }}
-      </div>
-      <div class="grid gap-4 sm:grid-cols-2">
-        <label class="space-y-1">
+    <!-- Alta (modal) -->
+    <Modal v-if="creating" :title="$t('accounts.newAccount')" @close="creating = false">
+      <form class="space-y-4" @submit.prevent="onCreate">
+        <div
+          v-if="formError"
+          class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200"
+        >
+          {{ formError }}
+        </div>
+        <label class="block space-y-1">
           <span class="block text-sm font-medium text-slate-700">{{ $t('accounts.label') }}</span>
           <input v-model="form.label" required class="km-input" />
         </label>
-        <label class="space-y-1">
+        <label class="block space-y-1">
           <span class="block text-sm font-medium text-slate-700">{{ $t('accounts.serverUrl') }}</span>
           <input v-model="form.server_url" type="url" required class="km-input" />
         </label>
-        <label class="space-y-1">
+        <label class="block space-y-1">
           <span class="block text-sm font-medium text-slate-700">{{ $t('accounts.accountEmail') }}</span>
           <input v-model="form.email" type="email" required class="km-input" />
         </label>
-        <label class="space-y-1">
+        <label class="block space-y-1">
           <span class="block text-sm font-medium text-slate-700">{{ $t('accounts.apiToken') }}</span>
           <input v-model="form.api_token" type="password" required class="km-input" />
           <RouterLink :to="{ name: 'about-kobo' }" class="text-xs text-primary-600 hover:underline">
             {{ $t('accounts.tokenHelp') }}
           </RouterLink>
         </label>
-      </div>
-      <button
-        type="submit"
-        :disabled="saving"
-        class="mt-4 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
-      >
-        {{ saving ? $t('common.saving') : $t('accounts.addAccount') }}
-      </button>
-    </form>
+        <div class="flex items-center gap-3 pt-1">
+          <button
+            type="submit"
+            :disabled="saving"
+            class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+          >
+            {{ saving ? $t('common.saving') : $t('accounts.addAccount') }}
+          </button>
+          <button type="button" class="text-sm font-medium text-slate-500 hover:text-slate-700" @click="creating = false">
+            {{ $t('common.cancel') }}
+          </button>
+        </div>
+      </form>
+    </Modal>
 
     <!-- Resultado de sincronización por cuenta -->
     <div v-if="syncError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">

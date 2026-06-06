@@ -232,31 +232,6 @@ onMounted(load)
       </div>
     </div>
 
-    <!-- Indicador global del estado de sincronización por cuenta -->
-    <section v-if="!loading && syncStatus.length" class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-      <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{{ $t('forms.syncStatusTitle') }}</h2>
-      <ul class="grid gap-2 sm:grid-cols-2">
-        <li
-          v-for="s in syncStatus"
-          :key="s.id"
-          class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2"
-        >
-          <div class="flex min-w-0 items-center gap-2">
-            <span
-              class="h-2 w-2 shrink-0 rounded-full"
-              :class="s.hasError ? 'bg-red-500' : (s.lastSync ? 'bg-green-500' : 'bg-slate-300')"
-              :title="s.hasError ? $t('forms.syncStateError') : (s.lastSync ? $t('forms.syncStateOk') : $t('forms.syncStateNever'))"
-            ></span>
-            <span class="truncate text-sm font-medium text-slate-800">{{ s.label }}</span>
-          </div>
-          <div class="shrink-0 text-right text-xs text-slate-500">
-            <span>{{ s.lastSync || $t('forms.lastSyncNever') }}</span>
-            <span class="ml-2 text-slate-400">{{ $t('forms.formsSummary', { n: s.total, inactive: s.inactive }) }}</span>
-          </div>
-        </li>
-      </ul>
-    </section>
-
     <!-- Listado -->
     <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
       <div v-if="listError" class="p-4 text-sm text-red-700">{{ listError }}</div>
@@ -352,5 +327,30 @@ onMounted(load)
         </tbody>
       </table>
     </div>
+
+    <!-- Indicador global del estado de sincronización por cuenta -->
+    <section v-if="!loading && syncStatus.length" class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+      <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{{ $t('forms.syncStatusTitle') }}</h2>
+      <ul class="grid gap-2 sm:grid-cols-2">
+        <li
+          v-for="s in syncStatus"
+          :key="s.id"
+          class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2"
+        >
+          <div class="flex min-w-0 items-center gap-2">
+            <span
+              class="h-2 w-2 shrink-0 rounded-full"
+              :class="s.hasError ? 'bg-red-500' : (s.lastSync ? 'bg-green-500' : 'bg-slate-300')"
+              :title="s.hasError ? $t('forms.syncStateError') : (s.lastSync ? $t('forms.syncStateOk') : $t('forms.syncStateNever'))"
+            ></span>
+            <span class="truncate text-sm font-medium text-slate-800">{{ s.label }}</span>
+          </div>
+          <div class="shrink-0 text-right text-xs text-slate-500">
+            <span>{{ s.lastSync || $t('forms.lastSyncNever') }}</span>
+            <span class="ml-2 text-slate-400">{{ $t('forms.formsSummary', { n: s.total, inactive: s.inactive }) }}</span>
+          </div>
+        </li>
+      </ul>
+    </section>
   </div>
 </template>
