@@ -1,13 +1,20 @@
 <script setup>
 import { RouterView } from 'vue-router'
 import AppLayout from './views/AppLayout.vue'
+import { useAuthStore } from './stores/auth'
+
+const auth = useAuthStore()
+
+// Una ruta usa el shell autenticado si lo declara (meta.shell) o si es una página
+// que vive en ambos contextos (meta.shellWhenAuthed) y hay sesión iniciada — p. ej.
+// la Guía: pública con encabezado propio, pero dentro del panel cuando hay sesión.
+const useShell = (route) =>
+  route.meta.shell || (route.meta.shellWhenAuthed && auth.isAuthenticated)
 </script>
 
 <template>
-  <!-- Las rutas con meta.shell se envuelven en el layout autenticado (sidebar);
-       las públicas (landing, login) se renderizan sin él. -->
   <RouterView v-slot="{ Component, route }">
-    <AppLayout v-if="route.meta.shell">
+    <AppLayout v-if="useShell(route)">
       <component :is="Component" />
     </AppLayout>
     <component :is="Component" v-else />

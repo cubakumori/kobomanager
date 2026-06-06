@@ -57,7 +57,9 @@
     "feat2Desc": "Approve or reject submissions with your own validation flow, decoupled from Kobo.",
     "feat3Title": "Secure token",
     "feat3Desc": "The Kobo token is stored encrypted on the server and never exposed to the browser.",
-    "footer": "KoboManager — a management layer for KoboToolbox"
+    "footer": "KoboManager — a management layer for KoboToolbox",
+    "feat4Title": "Row-level access",
+    "feat4Desc": "Decide which submissions each user sees —by a field value or by who submitted them—, not just which forms."
   },
   "login": {
     "subtitle": "Sign in to continue",
@@ -142,7 +144,9 @@
     "dataMapBody": "Submissions with a location (point, line or polygon) are shown on a map.",
     "dataReview": "Review",
     "dataReviewBody": "Approve or reject submissions with comments; the status is internal to KoboManager, independent of Kobo.",
-    "footer": "KoboManager — user guide"
+    "footer": "KoboManager — user guide",
+    "dataScope": "Row-level access",
+    "dataScopeBody": "Admins can limit, per user and form, which submissions are visible (e.g. by a region or the enumerator who sent them); the rest stays hidden when editing or validating too."
   },
   "profile": {
     "title": "My profile",
