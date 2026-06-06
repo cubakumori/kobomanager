@@ -8,6 +8,12 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Acciones de formulario para *viewers*** (configurables por el admin). Desde *Mis
+  formularios*, cada usuario puede ahora —si el administrador lo habilita en *Configuración*—
+  abrir el formulario público (Enketo), abrirlo en KoboToolbox, **Actualizar** (sync
+  incremental) o **Resync** (sync completo) de sus formularios. Cuatro interruptores nuevos
+  («Ver/Actualizar/Resync/Login»), desactivados por defecto; los administradores las tienen
+  siempre. El backend valida tanto el permiso `can_view` del usuario como el interruptor.
 - **Accesibilidad de ventanas y menús**: los modales y los menús laterales (drawers) se
   cierran con **Escape**, atrapan el foco mientras están abiertos (Tab/Shift+Tab circulan
   dentro), llevan el foco al abrirse y lo devuelven al control que los abrió al cerrarse;
@@ -69,6 +75,9 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
+- En *Usuarios* y *Cuentas Kobo* (admin), el alta deja de ocupar un bloque fijo: ahora hay
+  un botón **«Nuevo»** que abre el formulario en una ventana modal, dejando la lista visible
+  de inmediato. En *Formularios*, el panel de estado de sincronización pasa al final.
 - **Al re-sincronizar con un filtro de estados más restrictivo**, los formularios que dejan
   de cumplirlo ahora se **desactivan** (se ocultan a los usuarios y al cron, conservando su
   caché y revisiones) en lugar de quedarse visibles; vuelven a activarse solos si más adelante
