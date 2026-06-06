@@ -49,7 +49,7 @@ async function onSubmit() {
     </div>
 
     <div class="space-y-1">
-      <label class="text-sm font-medium text-slate-700" for="lf-email">{{ $t('common.email') }}</label>
+      <label class="block text-sm font-medium text-slate-700" for="lf-email">{{ $t('common.email') }}</label>
       <input
         id="lf-email"
         v-model="email"
@@ -61,7 +61,7 @@ async function onSubmit() {
     </div>
 
     <div class="space-y-1">
-      <label class="text-sm font-medium text-slate-700" for="lf-password">{{ $t('login.password') }}</label>
+      <label class="block text-sm font-medium text-slate-700" for="lf-password">{{ $t('login.password') }}</label>
       <input
         id="lf-password"
         v-model="password"

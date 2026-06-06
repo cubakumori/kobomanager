@@ -58,7 +58,7 @@ async function onSubmit() {
           </div>
 
           <div class="space-y-1">
-            <label class="text-sm font-medium text-slate-700" for="fp-email">{{ $t('common.email') }}</label>
+            <label class="block text-sm font-medium text-slate-700" for="fp-email">{{ $t('common.email') }}</label>
             <input
               id="fp-email"
               v-model="email"

@@ -108,7 +108,7 @@ async function onSubmit() {
           </div>
 
           <div class="space-y-1">
-            <label class="text-sm font-medium text-slate-700" for="rp-pass">{{ $t('reset.newPassword') }}</label>
+            <label class="block text-sm font-medium text-slate-700" for="rp-pass">{{ $t('reset.newPassword') }}</label>
             <input
               id="rp-pass"
               v-model="password"
@@ -121,7 +121,7 @@ async function onSubmit() {
           </div>
 
           <div class="space-y-1">
-            <label class="text-sm font-medium text-slate-700" for="rp-confirm">{{ $t('reset.confirm') }}</label>
+            <label class="block text-sm font-medium text-slate-700" for="rp-confirm">{{ $t('reset.confirm') }}</label>
             <input
               id="rp-confirm"
               v-model="confirm"

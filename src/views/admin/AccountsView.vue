@@ -138,19 +138,19 @@ onMounted(load)
       </div>
       <div class="grid gap-4 sm:grid-cols-2">
         <label class="space-y-1">
-          <span class="text-sm font-medium text-slate-700">{{ $t('accounts.label') }}</span>
+          <span class="block text-sm font-medium text-slate-700">{{ $t('accounts.label') }}</span>
           <input v-model="form.label" required class="km-input" />
         </label>
         <label class="space-y-1">
-          <span class="text-sm font-medium text-slate-700">{{ $t('accounts.serverUrl') }}</span>
+          <span class="block text-sm font-medium text-slate-700">{{ $t('accounts.serverUrl') }}</span>
           <input v-model="form.server_url" type="url" required class="km-input" />
         </label>
         <label class="space-y-1">
-          <span class="text-sm font-medium text-slate-700">{{ $t('accounts.accountEmail') }}</span>
+          <span class="block text-sm font-medium text-slate-700">{{ $t('accounts.accountEmail') }}</span>
           <input v-model="form.email" type="email" required class="km-input" />
         </label>
         <label class="space-y-1">
-          <span class="text-sm font-medium text-slate-700">{{ $t('accounts.apiToken') }}</span>
+          <span class="block text-sm font-medium text-slate-700">{{ $t('accounts.apiToken') }}</span>
           <input v-model="form.api_token" type="password" required class="km-input" />
           <RouterLink :to="{ name: 'about-kobo' }" class="text-xs text-blue-600 hover:underline">
             {{ $t('accounts.tokenHelp') }}
@@ -241,19 +241,19 @@ onMounted(load)
           {{ editError }}
         </div>
         <label class="block space-y-1">
-          <span class="text-sm font-medium text-slate-700">{{ $t('accounts.label') }}</span>
+          <span class="block text-sm font-medium text-slate-700">{{ $t('accounts.label') }}</span>
           <input v-model="editForm.label" required class="km-input" />
         </label>
         <label class="block space-y-1">
-          <span class="text-sm font-medium text-slate-700">{{ $t('accounts.serverUrl') }}</span>
+          <span class="block text-sm font-medium text-slate-700">{{ $t('accounts.serverUrl') }}</span>
           <input v-model="editForm.server_url" type="url" required class="km-input" />
         </label>
         <label class="block space-y-1">
-          <span class="text-sm font-medium text-slate-700">{{ $t('accounts.accountEmail') }}</span>
+          <span class="block text-sm font-medium text-slate-700">{{ $t('accounts.accountEmail') }}</span>
           <input v-model="editForm.email" type="email" required class="km-input" />
         </label>
         <label class="block space-y-1">
-          <span class="text-sm font-medium text-slate-700">{{ $t('accounts.apiToken') }}</span>
+          <span class="block text-sm font-medium text-slate-700">{{ $t('accounts.apiToken') }}</span>
           <input
             v-model="editForm.api_token"
             type="password"

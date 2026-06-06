@@ -123,19 +123,19 @@ onMounted(load)
       </div>
       <div class="grid gap-4 sm:grid-cols-2">
         <label class="space-y-1">
-          <span class="text-sm font-medium text-slate-700">{{ $t('common.name') }}</span>
+          <span class="block text-sm font-medium text-slate-700">{{ $t('common.name') }}</span>
           <input v-model="form.name" required class="km-input" />
         </label>
         <label class="space-y-1">
-          <span class="text-sm font-medium text-slate-700">{{ $t('common.email') }}</span>
+          <span class="block text-sm font-medium text-slate-700">{{ $t('common.email') }}</span>
           <input v-model="form.email" type="email" required class="km-input" />
         </label>
         <label class="space-y-1">
-          <span class="text-sm font-medium text-slate-700">{{ $t('users.password') }}</span>
+          <span class="block text-sm font-medium text-slate-700">{{ $t('users.password') }}</span>
           <input v-model="form.password" type="password" required minlength="8" class="km-input" />
         </label>
         <label class="space-y-1">
-          <span class="text-sm font-medium text-slate-700">{{ $t('common.role') }}</span>
+          <span class="block text-sm font-medium text-slate-700">{{ $t('common.role') }}</span>
           <select v-model="form.role" class="km-input">
             <option value="viewer">viewer</option>
             <option value="admin">admin</option>
@@ -216,22 +216,22 @@ onMounted(load)
           {{ editError }}
         </div>
         <label class="block space-y-1">
-          <span class="text-sm font-medium text-slate-700">{{ $t('common.name') }}</span>
+          <span class="block text-sm font-medium text-slate-700">{{ $t('common.name') }}</span>
           <input v-model="editForm.name" required class="km-input" />
         </label>
         <label class="block space-y-1">
-          <span class="text-sm font-medium text-slate-700">{{ $t('common.email') }}</span>
+          <span class="block text-sm font-medium text-slate-700">{{ $t('common.email') }}</span>
           <input v-model="editForm.email" type="email" required class="km-input" />
         </label>
         <label class="block space-y-1">
-          <span class="text-sm font-medium text-slate-700">{{ $t('common.role') }}</span>
+          <span class="block text-sm font-medium text-slate-700">{{ $t('common.role') }}</span>
           <select v-model="editForm.role" class="km-input">
             <option value="viewer">viewer</option>
             <option value="admin">admin</option>
           </select>
         </label>
         <label class="block space-y-1">
-          <span class="text-sm font-medium text-slate-700">{{ $t('users.newPassword') }}</span>
+          <span class="block text-sm font-medium text-slate-700">{{ $t('users.newPassword') }}</span>
           <input
             v-model="editForm.password"
             type="password"
