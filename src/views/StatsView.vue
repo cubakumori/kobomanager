@@ -72,7 +72,7 @@ onMounted(load)
     <header>
       <RouterLink
         :to="{ name: 'submissions', params: { id: formId } }"
-        class="text-sm text-blue-600 hover:underline"
+        class="text-sm text-primary-600 hover:underline"
       >
         {{ $t('stats.back') }}
       </RouterLink>

@@ -173,7 +173,7 @@ onMounted(load)
 <template>
   <div class="space-y-6">
     <header>
-      <RouterLink :to="{ name: 'forms' }" class="text-sm text-blue-600 hover:underline">
+      <RouterLink :to="{ name: 'forms' }" class="text-sm text-primary-600 hover:underline">
         {{ $t('submissions.back') }}
       </RouterLink>
       <div class="mt-1 flex items-center justify-between gap-4">
@@ -193,7 +193,7 @@ onMounted(load)
               <div class="absolute right-0 z-20 mt-1 w-72 rounded-lg border border-slate-200 bg-white p-2 shadow-lg">
                 <div class="flex items-center justify-between px-2 py-1">
                   <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">{{ $t('submissions.columnsTitle') }}</span>
-                  <button class="text-xs font-medium text-blue-600 hover:underline" @click="resetCols">
+                  <button class="text-xs font-medium text-primary-600 hover:underline" @click="resetCols">
                     {{ $t('submissions.columnsReset') }}
                   </button>
                 </div>
@@ -256,13 +256,13 @@ onMounted(load)
         v-model="search"
         type="search"
         :placeholder="$t('submissions.search')"
-        class="w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+        class="w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
       />
       <label class="flex items-center gap-1.5 text-sm text-slate-600">
         {{ $t('submissions.filterReview') }}
         <select
           v-model="reviewFilter"
-          class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+          class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
         >
           <option value="">{{ $t('submissions.reviewAll') }}</option>
           <option value="pending">{{ $t('review.pending') }}</option>
@@ -274,7 +274,7 @@ onMounted(load)
         {{ $t('submissions.sort') }}
         <select
           v-model="sort"
-          class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+          class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
         >
           <option value="date_desc">{{ $t('submissions.sortNewest') }}</option>
           <option value="date_asc">{{ $t('submissions.sortOldest') }}</option>
@@ -284,7 +284,7 @@ onMounted(load)
         {{ $t('submissions.perPage') }}
         <select
           v-model.number="perPage"
-          class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+          class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
         >
           <option v-for="n in perPageOptions" :key="n" :value="n">{{ n }}</option>
         </select>
@@ -298,7 +298,7 @@ onMounted(load)
     <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
       <div v-if="loading" class="p-4 text-sm text-slate-500">{{ $t('common.loading') }}</div>
       <table v-else class="w-full text-left text-sm">
-        <thead class="bg-emerald-50 text-xs uppercase tracking-wider text-emerald-700">
+        <thead class="bg-accent-50 text-xs uppercase tracking-wider text-accent-700">
           <tr>
             <th class="px-4 py-3">{{ $t('submissions.colSubmitted') }}</th>
             <th v-for="c in shownColumns" :key="c" class="px-4 py-3">{{ labeler.label(c) }}</th>
@@ -314,7 +314,7 @@ onMounted(load)
             <td class="px-4 py-3 text-right">
               <RouterLink
                 :to="{ name: 'submission-detail', params: { id: formId, subId: s.submission_uid } }"
-                class="text-sm font-medium text-blue-600 hover:underline"
+                class="text-sm font-medium text-primary-600 hover:underline"
               >
                 {{ $t('forms.view') }}
               </RouterLink>

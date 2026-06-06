@@ -24,7 +24,7 @@ async function onLogout() {
 const linkBase =
   'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors'
 const linkInactive = 'text-slate-300 hover:bg-slate-700/60 hover:text-white'
-const linkActive = 'bg-blue-600 text-white'
+const linkActive = 'bg-primary-600 text-white'
 </script>
 
 <template>
@@ -106,7 +106,7 @@ const linkActive = 'bg-blue-600 text-white'
         class="mb-2 flex items-center gap-3 rounded-lg px-1 py-2 transition-colors hover:bg-slate-700/60"
         :class="{ 'bg-slate-700/60': $route.name === 'profile' }"
       >
-        <div class="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold">
+        <div class="flex h-9 w-9 items-center justify-center rounded-full bg-primary-600 text-sm font-semibold">
           {{ initials }}
         </div>
         <div class="min-w-0">

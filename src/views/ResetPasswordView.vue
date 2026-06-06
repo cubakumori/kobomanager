@@ -84,7 +84,7 @@ async function onSubmit() {
             {{ $t('reset.invalid') }}
           </div>
           <p class="text-center text-sm">
-            <RouterLink to="/forgot-password" class="text-blue-600 hover:underline">{{ $t('reset.requestNew') }}</RouterLink>
+            <RouterLink to="/forgot-password" class="text-primary-600 hover:underline">{{ $t('reset.requestNew') }}</RouterLink>
           </p>
         </template>
 
@@ -115,7 +115,7 @@ async function onSubmit() {
               type="password"
               autocomplete="new-password"
               required
-              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
             />
             <p class="text-xs text-slate-400">{{ $t('reset.hint') }}</p>
           </div>
@@ -128,14 +128,14 @@ async function onSubmit() {
               type="password"
               autocomplete="new-password"
               required
-              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
             />
           </div>
 
           <button
             type="submit"
             :disabled="saving"
-            class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
+            class="w-full rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-700 disabled:opacity-60"
           >
             {{ saving ? $t('common.saving') : $t('reset.submit') }}
           </button>

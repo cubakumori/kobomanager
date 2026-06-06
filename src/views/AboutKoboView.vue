@@ -23,7 +23,7 @@ const auth = useAuthStore()
       <h2 class="font-semibold text-slate-900">{{ $t('about.createTitle') }}</h2>
       <i18n-t keypath="about.createBody" tag="p" class="text-sm text-slate-600" scope="global">
         <template #link>
-          <a href="https://www.kobotoolbox.org" target="_blank" rel="noopener" class="text-blue-600 hover:underline">kobotoolbox.org</a>
+          <a href="https://www.kobotoolbox.org" target="_blank" rel="noopener" class="text-primary-600 hover:underline">kobotoolbox.org</a>
         </template>
       </i18n-t>
       <p class="text-sm text-slate-600">{{ $t('about.serversIntro') }}</p>
@@ -81,7 +81,7 @@ const auth = useAuthStore()
       <div v-if="auth.isAdmin" class="pt-1">
         <RouterLink
           :to="{ name: 'admin-accounts' }"
-          class="inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          class="inline-block rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
         >
           {{ $t('about.goToAccounts') }}
         </RouterLink>

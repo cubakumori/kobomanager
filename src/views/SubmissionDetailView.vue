@@ -140,7 +140,7 @@ onMounted(load)
       <div class="flex items-center justify-between gap-3">
         <RouterLink
           :to="{ name: 'submissions', params: { id: route.params.id } }"
-          class="text-sm text-blue-600 hover:underline"
+          class="text-sm text-primary-600 hover:underline"
         >
           {{ $t('detail.back') }}
         </RouterLink>
@@ -200,7 +200,7 @@ onMounted(load)
                 :href="attUrl(attByField[k])"
                 target="_blank"
                 rel="noopener"
-                class="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                class="inline-flex items-center gap-1 text-primary-600 hover:underline"
               >📎 {{ attByField[k].name }}</a>
               <template v-else>{{ labeler.value(k, v) }}</template>
             </dd>
@@ -216,7 +216,7 @@ onMounted(load)
             <select
               v-if="labeler.on && labeler.optionsFor(k) && !labeler.isMulti(k)"
               v-model="editForm[k]"
-              class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+              class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
             >
               <option value="">—</option>
               <option
@@ -228,13 +228,13 @@ onMounted(load)
             <input
               v-else
               v-model="editForm[k]"
-              class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+              class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
             />
           </label>
           <div class="flex items-center gap-3 pt-2">
             <button
               :disabled="saving"
-              class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+              class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
               @click="saveEdit"
             >
               {{ saving ? $t('common.saving') : $t('detail.saveChanges') }}
@@ -275,7 +275,7 @@ onMounted(load)
               :href="attUrl(a)"
               target="_blank"
               rel="noopener"
-              class="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline"
+              class="inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:underline"
             >⬇ {{ a.name }}</a>
             <p class="truncate text-xs text-slate-400" :title="a.name">{{ a.name }}</p>
           </li>
@@ -293,7 +293,7 @@ onMounted(load)
             v-model="comment"
             rows="2"
             :placeholder="$t('detail.comment')"
-            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
           ></textarea>
           <div class="flex gap-3">
             <button
@@ -346,7 +346,7 @@ onMounted(load)
       <div class="flex items-center justify-between gap-3">
         <RouterLink
           :to="{ name: 'submissions', params: { id: route.params.id } }"
-          class="text-sm text-blue-600 hover:underline"
+          class="text-sm text-primary-600 hover:underline"
         >
           {{ $t('detail.back') }}
         </RouterLink>

@@ -52,7 +52,7 @@ onMounted(load)
 <template>
   <div class="space-y-6">
     <header>
-      <RouterLink :to="{ name: 'submissions', params: { id: formId } }" class="text-sm text-blue-600 hover:underline">
+      <RouterLink :to="{ name: 'submissions', params: { id: formId } }" class="text-sm text-primary-600 hover:underline">
         {{ $t('map.back') }}
       </RouterLink>
       <h1 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900">{{ formName || $t('map.title') }}</h1>

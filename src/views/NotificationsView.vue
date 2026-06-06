@@ -80,7 +80,7 @@ onMounted(load)
         <div v-if="forms.length" class="flex items-center gap-3 border-t border-slate-100 px-5 py-4">
           <button
             :disabled="saving"
-            class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+            class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
             @click="save"
           >
             {{ saving ? $t('common.saving') : $t('notifications.save') }}

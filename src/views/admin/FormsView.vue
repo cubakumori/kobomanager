@@ -165,7 +165,7 @@ onMounted(load)
       </div>
       <button
         :disabled="syncing"
-        class="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+        class="shrink-0 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
         @click="onSync"
       >
         {{ syncing ? $t('forms.syncing') : (selectedAccount ? $t('forms.syncAccount') : $t('forms.syncAll')) }}
@@ -177,7 +177,7 @@ onMounted(load)
       <label class="text-sm text-slate-600">{{ $t('forms.accountFilter') }}</label>
       <select
         v-model="selectedAccount"
-        class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+        class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
       >
         <option value="">{{ $t('forms.allAccounts') }}</option>
         <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.label }}</option>
@@ -249,7 +249,7 @@ onMounted(load)
                 <button
                   v-if="f.deployment_status === 'deployed'"
                   :disabled="enketoId === f.id"
-                  class="font-medium text-blue-600 hover:underline disabled:opacity-50"
+                  class="font-medium text-primary-600 hover:underline disabled:opacity-50"
                   :title="$t('forms.viewTitle')"
                   @click="openEnketo(f)"
                 >
@@ -259,14 +259,14 @@ onMounted(load)
                   :href="`${f.server_url}/#/forms/${f.kobo_asset_uid}`"
                   target="_blank"
                   rel="noopener"
-                  class="font-medium text-blue-600 hover:underline"
+                  class="font-medium text-primary-600 hover:underline"
                   :title="$t('forms.loginTitle')"
                 >
                   {{ $t('forms.login') }}
                 </a>
                 <button
                   :disabled="updatingId === f.id"
-                  class="font-medium text-blue-600 hover:underline disabled:opacity-50"
+                  class="font-medium text-primary-600 hover:underline disabled:opacity-50"
                   :title="$t('forms.updateTitle')"
                   @click="onUpdateForm(f)"
                 >
@@ -274,7 +274,7 @@ onMounted(load)
                 </button>
                 <button
                   :disabled="fullSyncId === f.id"
-                  class="font-medium text-blue-600 hover:underline disabled:opacity-50"
+                  class="font-medium text-primary-600 hover:underline disabled:opacity-50"
                   :title="$t('forms.resyncTitle')"
                   @click="onFullResync(f)"
                 >

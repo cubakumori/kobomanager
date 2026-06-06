@@ -35,8 +35,8 @@ const drawerLink =
   <div class="relative flex min-h-screen flex-col overflow-hidden bg-white text-slate-800">
     <!-- Fondos decorativos -->
     <div class="pointer-events-none absolute inset-0 -z-10">
-      <div class="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-blue-400/20 blur-3xl"></div>
-      <div class="absolute -bottom-40 -left-32 h-96 w-96 rounded-full bg-emerald-400/20 blur-3xl"></div>
+      <div class="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-primary-400/20 blur-3xl"></div>
+      <div class="absolute -bottom-40 -left-32 h-96 w-96 rounded-full bg-accent-400/20 blur-3xl"></div>
     </div>
 
     <!-- Barra superior -->
@@ -71,14 +71,14 @@ const drawerLink =
           </button>
           <button
             v-if="auth.isAuthenticated"
-            class="whitespace-nowrap rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+            class="whitespace-nowrap rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700"
             @click="router.push('/dashboard')"
           >
             {{ $t('landing.goDashboard') }}
           </button>
           <button
             v-else
-            class="whitespace-nowrap rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+            class="whitespace-nowrap rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700"
             @click="showLogin = true"
           >
             {{ $t('landing.cta') }}
@@ -87,7 +87,7 @@ const drawerLink =
 
         <!-- Botón hamburguesa (móvil) -->
         <button
-          class="rounded-lg bg-blue-600 p-2 text-white shadow-sm hover:bg-blue-700 md:hidden"
+          class="rounded-lg bg-primary-600 p-2 text-white shadow-sm hover:bg-primary-700 md:hidden"
           aria-label="Menu"
           @click="showMenu = true"
         >
@@ -102,9 +102,9 @@ const drawerLink =
     <main class="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center gap-10 px-6 py-12 lg:flex-row lg:py-20">
       <div class="flex-1 text-center lg:text-left">
         <span
-          class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200"
+          class="inline-flex items-center gap-2 rounded-full bg-accent-50 px-3 py-1 text-xs font-semibold text-accent-700 ring-1 ring-accent-200"
         >
-          <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+          <span class="h-1.5 w-1.5 rounded-full bg-accent-500"></span>
           {{ $t('landing.eyebrow') }}
         </span>
 
@@ -118,14 +118,14 @@ const drawerLink =
         <div class="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
           <button
             v-if="!auth.isAuthenticated"
-            class="rounded-xl bg-blue-600 px-7 py-3 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-700"
+            class="rounded-xl bg-primary-600 px-7 py-3 text-sm font-semibold text-white shadow-md shadow-primary-600/20 transition hover:bg-primary-700"
             @click="showLogin = true"
           >
             {{ $t('landing.cta') }}
           </button>
           <button
             v-else
-            class="rounded-xl bg-blue-600 px-7 py-3 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-700"
+            class="rounded-xl bg-primary-600 px-7 py-3 text-sm font-semibold text-white shadow-md shadow-primary-600/20 transition hover:bg-primary-700"
             @click="router.push('/dashboard')"
           >
             {{ $t('landing.goDashboard') }}
@@ -142,7 +142,7 @@ const drawerLink =
       </div>
 
       <div class="relative flex-1">
-        <div class="absolute inset-0 -z-10 mx-auto h-72 w-72 self-center rounded-full bg-gradient-to-tr from-blue-400/30 to-emerald-400/30 blur-3xl"></div>
+        <div class="absolute inset-0 -z-10 mx-auto h-72 w-72 self-center rounded-full bg-gradient-to-tr from-primary-400/30 to-accent-400/30 blur-3xl"></div>
         <img :src="banner" alt="KoboManager" class="mx-auto w-full max-w-md drop-shadow-2xl" />
       </div>
     </main>
@@ -152,13 +152,13 @@ const drawerLink =
       <div
         v-for="n in 3"
         :key="n"
-        class="rounded-2xl bg-emerald-50 p-6 ring-1 ring-emerald-200"
+        class="rounded-2xl bg-accent-50 p-6 ring-1 ring-accent-200"
       >
-        <h3 class="flex items-center gap-2 font-semibold text-emerald-800">
-          <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+        <h3 class="flex items-center gap-2 font-semibold text-accent-800">
+          <span class="h-1.5 w-1.5 rounded-full bg-accent-500"></span>
           {{ $t('landing.feat' + n + 'Title') }}
         </h3>
-        <p class="mt-2 text-sm text-emerald-900/70">{{ $t('landing.feat' + n + 'Desc') }}</p>
+        <p class="mt-2 text-sm text-accent-900/70">{{ $t('landing.feat' + n + 'Desc') }}</p>
       </div>
     </section>
 
@@ -167,7 +167,7 @@ const drawerLink =
       <h2 class="text-center text-2xl font-bold tracking-tight text-slate-900">{{ $t('landing.how') }}</h2>
       <div class="mt-8 grid gap-6 sm:grid-cols-3">
         <div v-for="n in 3" :key="n" class="relative rounded-2xl bg-slate-50 p-6 ring-1 ring-slate-200">
-          <div class="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+          <div class="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">
             {{ n }}
           </div>
           <h3 class="font-semibold text-slate-900">{{ $t('landing.step' + n + 'Title') }}</h3>
@@ -222,14 +222,14 @@ const drawerLink =
 
         <button
           v-if="auth.isAuthenticated"
-          class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+          class="rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-700"
           @click="router.push('/dashboard')"
         >
           {{ $t('landing.goDashboard') }}
         </button>
         <button
           v-else
-          class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+          class="rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-700"
           @click="openLogin"
         >
           {{ $t('landing.cta') }}

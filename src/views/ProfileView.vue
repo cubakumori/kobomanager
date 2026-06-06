@@ -104,7 +104,7 @@ onMounted(load)
       <select
         v-model="localePref"
         :disabled="langSaving"
-        class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+        class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
         @change="changeLocale"
       >
         <option value="">{{ $t('profile.systemDefault', { locale: $t('lang.' + defaultLocale) }) }}</option>
@@ -132,7 +132,7 @@ onMounted(load)
             type="password"
             autocomplete="current-password"
             required
-            class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+            class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
           />
         </div>
         <div class="space-y-1.5">
@@ -143,7 +143,7 @@ onMounted(load)
             type="password"
             autocomplete="new-password"
             required
-            class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+            class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
           />
           <p class="text-xs text-slate-400">{{ $t('profile.pwHint') }}</p>
         </div>
@@ -155,14 +155,14 @@ onMounted(load)
             type="password"
             autocomplete="new-password"
             required
-            class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+            class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
           />
         </div>
         <div class="flex items-center gap-3 pt-1">
           <button
             type="submit"
             :disabled="pwSaving"
-            class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+            class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
           >
             {{ pwSaving ? $t('common.saving') : $t('profile.changePassword') }}
           </button>

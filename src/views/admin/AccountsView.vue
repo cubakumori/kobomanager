@@ -152,7 +152,7 @@ onMounted(load)
         <label class="space-y-1">
           <span class="block text-sm font-medium text-slate-700">{{ $t('accounts.apiToken') }}</span>
           <input v-model="form.api_token" type="password" required class="km-input" />
-          <RouterLink :to="{ name: 'about-kobo' }" class="text-xs text-blue-600 hover:underline">
+          <RouterLink :to="{ name: 'about-kobo' }" class="text-xs text-primary-600 hover:underline">
             {{ $t('accounts.tokenHelp') }}
           </RouterLink>
         </label>
@@ -160,7 +160,7 @@ onMounted(load)
       <button
         type="submit"
         :disabled="saving"
-        class="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+        class="mt-4 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
       >
         {{ saving ? $t('common.saving') : $t('accounts.addAccount') }}
       </button>
@@ -202,12 +202,12 @@ onMounted(load)
               <div class="flex items-center justify-end gap-3">
                 <button
                   :disabled="syncingId === a.id"
-                  class="font-medium text-blue-600 hover:underline disabled:opacity-50"
+                  class="font-medium text-primary-600 hover:underline disabled:opacity-50"
                   @click="syncAccount(a)"
                 >
                   {{ syncingId === a.id ? $t('accounts.syncing') : $t('accounts.sync') }}
                 </button>
-                <button class="font-medium text-blue-600 hover:underline" @click="startEdit(a)">
+                <button class="font-medium text-primary-600 hover:underline" @click="startEdit(a)">
                   {{ $t('common.edit') }}
                 </button>
                 <button
@@ -266,7 +266,7 @@ onMounted(load)
           <button
             type="submit"
             :disabled="savingEdit"
-            class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+            class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
           >
             {{ savingEdit ? $t('common.saving') : $t('common.save') }}
           </button>
@@ -280,8 +280,8 @@ onMounted(load)
 </template>
 
 <style scoped>
-@reference "tailwindcss";
+@reference "../../style.css";
 .km-input {
-  @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30;
+  @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30;
 }
 </style>

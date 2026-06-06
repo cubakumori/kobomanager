@@ -96,7 +96,7 @@ onMounted(loadUsers)
         <label class="text-sm text-slate-600">{{ $t('permissions.userFilter') }}</label>
         <select
           v-model="selectedUserId"
-          class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+          class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
           @change="loadPerms"
         >
           <option value="">{{ $t('permissions.selectUser') }}</option>
@@ -109,7 +109,7 @@ onMounted(loadUsers)
         <label class="text-sm text-slate-600">{{ $t('permissions.accountFilter') }}</label>
         <select
           v-model="selectedAccount"
-          class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+          class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
         >
           <option value="">{{ $t('permissions.allAccounts') }}</option>
           <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.label }}</option>
@@ -157,7 +157,7 @@ onMounted(loadUsers)
         <div v-if="perms.length" class="flex items-center gap-3 border-t border-slate-100 p-4">
           <button
             :disabled="saving"
-            class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+            class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
             @click="onSave"
           >
             {{ saving ? $t('common.saving') : $t('permissions.save') }}

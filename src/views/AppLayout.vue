@@ -36,7 +36,7 @@ watch(() => route.fullPath, () => { open.value = false })
       <header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
         <span class="text-lg font-semibold tracking-tight text-slate-900">KoboManager</span>
         <button
-          class="rounded-lg bg-blue-600 p-2 text-white shadow-sm hover:bg-blue-700"
+          class="rounded-lg bg-primary-600 p-2 text-white shadow-sm hover:bg-primary-700"
           aria-label="Menu"
           @click="open = true"
         >

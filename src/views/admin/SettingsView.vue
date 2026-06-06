@@ -127,7 +127,7 @@ onMounted(load)
         </div>
         <select
           v-model="defaultLocale"
-          class="w-56 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+          class="w-56 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
           @change="saved = false"
         >
           <option v-for="l in validLocales" :key="l" :value="l">{{ $t('lang.' + l) }}</option>
@@ -189,7 +189,7 @@ onMounted(load)
       <div class="flex items-center gap-3">
         <button
           :disabled="saving"
-          class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
           @click="save"
         >
           {{ saving ? $t('common.saving') : $t('common.save') }}
