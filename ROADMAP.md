@@ -8,6 +8,35 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 
 ---
 
+## Prioridad: camino a la primera versión pública (v1)
+
+Lista priorizada acordada (se hace **en este orden**, no en el lugar que ocupa cada idea
+más abajo). Cada hito = **una sesión propia** (verificación contra datos reales + commits
+por hito + actualización de CHANGELOG/ROADMAP/memoria). Tras M5 se hace un repaso de
+fortalecimiento y se etiqueta **1.0.0**. Lo no listado aquí queda para futuras versiones.
+
+- [ ] **M1 · Compartir — enlaces de solo lectura** *(siguiente; flagship)*. Públicos o con
+      token, porque Kobo está retirando su «compartir sin login». Reutiliza `RowScope` (un
+      enlace puede llevar un filtro de filas). Tabla nueva `share_links` (`db/NNN_*.sql`).
+      Decisiones a cerrar al arrancar: público vs. token; qué se expone (lista / detalle /
+      adjuntos / mapa); caducidad y revocación; rate-limit del endpoint público; vista
+      pública sin shell.
+- [ ] **M2 · Productividad de datos**: **revisión en lote** (aprobar/rechazar varios envíos)
+      + **exportación CSV** (UTF-8 con BOM; XLSX nativo se difiere por la filosofía
+      sin-dependencias). Respetan permisos y scoping por filas.
+- [ ] **M3 · Observabilidad/ops**: **visor de `audit_log`** (admin, paginado y con filtros)
+      + **`/health` ampliado** (última ejecución de cada cron y estado de sincronización).
+- [ ] **M4 · Rendimiento y seguridad** *(puede partirse)*:
+  - [ ] **M4a · Índices/búsqueda** en `submissions_cache` (columnas generadas o FULLTEXT;
+        hoy la búsqueda es `LIKE` sobre el JSON completo).
+  - [ ] **M4b · Seguridad/operación**: **sesión deslizante / refresh** + **«cerrar todas mis
+        sesiones»** (autoservicio); **rotación documentada de `CONFIG_TOKEN_KEY`** (re-cifrado
+        de tokens vía CLI) y **copias de seguridad**.
+- [ ] **M5 · Repaso y fortalecimiento** → tag **1.0.0** (primera pública). Posibles releases
+      intermedias (`0.4.0`/`0.5.0`) por hito si se desea.
+
+---
+
 ## Pendiente de validar con datos reales
 
 Implementado y probado con datos de ejemplo + manejo de errores, pero aún sin verificar
