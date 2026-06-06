@@ -56,6 +56,11 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
+- **Tematización por variables CSS**: el color primario (azul) y el secundario/de marca
+  (verde) se centralizan como *tokens* de tema en `src/style.css` (`@theme` de Tailwind v4,
+  escalas `primary` y `accent` expuestas como variables `--color-primary-*`/`--color-accent-*`).
+  Recolorear toda la aplicación es cambiar esas dos escalas en un solo sitio; las clases
+  usan `primary`/`accent` en vez de `blue`/`emerald`. El verde de «éxito» se mantiene aparte.
 - **Diferenciación visual por color**: las tarjetas de *Mis formularios* usan ahora un
   fondo verde claro (emerald, el color de marca) para distinguirse de las tarjetas blancas
   del *Dashboard*, y el encabezado de la tabla de envíos de un formulario va en verde, de
