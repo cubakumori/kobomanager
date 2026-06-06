@@ -22,6 +22,10 @@ if (!$form) {
 }
 Auth::requireForm($user, $formId, 'view');
 
+// Scoping por filas: el viewer puede tener un filtro que limita qué envíos ve.
+$scope               = RowScope::ruleForUser($user, $formId);
+[$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'sc.json_payload');
+
 $page    = max(1, (int) ($_GET['page'] ?? 1));
 $perPage = min(100, max(1, (int) ($_GET['per_page'] ?? 25)));
 $offset  = ($page - 1) * $perPage;
@@ -37,8 +41,8 @@ $join = 'LEFT JOIN (
           ON m.max_id = r.id
     ) lr ON lr.submission_uid = sc.submission_uid';
 
-$where  = 'WHERE sc.form_id = ?';
-$params = [$formId];
+$where  = 'WHERE sc.form_id = ? AND ' . $scopeSql;
+$params = array_merge([$formId], $scopeP);
 if ($search !== '') {
     $where    .= ' AND CAST(sc.json_payload AS CHAR) LIKE ?';
     $params[]  = '%' . $search . '%';
@@ -80,9 +84,11 @@ foreach (Geo::geoFieldPaths($schema) as $gp) {
     $geoConds[]  = 'COALESCE(JSON_UNQUOTE(JSON_EXTRACT(json_payload, ?)), \'\') <> \'\'';
     $geoParams[] = '$."' . str_replace(['"', '\\'], '', $gp) . '"';
 }
+[$scopeSqlNa, $scopePNa] = RowScope::sqlCondition($scope, 'json_payload');
 $hasGeo = (bool) DB::run(
-    'SELECT 1 FROM submissions_cache WHERE form_id = ? AND (' . implode(' OR ', $geoConds) . ') LIMIT 1',
-    $geoParams
+    'SELECT 1 FROM submissions_cache WHERE form_id = ? AND (' . implode(' OR ', $geoConds) . ')'
+        . ' AND ' . $scopeSqlNa . ' LIMIT 1',
+    array_merge($geoParams, $scopePNa)
 )->fetch();
 
 ErrorResponse::ok([

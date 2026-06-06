@@ -13,7 +13,7 @@ if (Request::method() !== 'POST') {
 }
 
 $sub = DB::run(
-    'SELECT sc.submission_uid, sc.form_id FROM submissions_cache sc WHERE sc.submission_uid = ?',
+    'SELECT sc.submission_uid, sc.form_id, sc.json_payload FROM submissions_cache sc WHERE sc.submission_uid = ?',
     [$uid]
 )->fetch();
 if (!$sub) {
@@ -21,6 +21,12 @@ if (!$sub) {
 }
 $formId = (int) $sub['form_id'];
 Auth::requireForm($user, $formId, 'validate');
+
+// Scoping por filas: un envío fuera de alcance se comporta como inexistente (404).
+$scopeRule = RowScope::ruleForUser($user, $formId);
+if (!RowScope::matches($scopeRule, json_decode($sub['json_payload'], true) ?: [])) {
+    ErrorResponse::send('NOT_FOUND', 'Envío no encontrado');
+}
 
 $body    = Request::json();
 $status  = $body['status'] ?? '';

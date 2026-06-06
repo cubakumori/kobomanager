@@ -28,7 +28,7 @@ if ($user['role'] === 'admin') {
     $rows = DB::run(
         'SELECT f.id, f.name, a.label AS account_label, f.last_synced_at, f.sync_status,
                 f.server_url, f.kobo_asset_uid, f.deployment_status,
-                p.can_edit, p.can_validate,
+                p.can_edit, p.can_validate, p.row_filter,
                 (SELECT COUNT(*) FROM submissions_cache sc WHERE sc.form_id = f.id) AS submission_count
          FROM forms f
          JOIN kobo_accounts a ON a.id = f.kobo_account_id
@@ -37,6 +37,22 @@ if ($user['role'] === 'admin') {
          ORDER BY a.label, f.name',
         [$user['id']]
     )->fetchAll();
+
+    // Conteo en alcance: solo recalcula los formularios con filtro por filas.
+    foreach ($rows as &$rf) {
+        $scope = RowScope::normalize(
+            $rf['row_filter'] ? json_decode($rf['row_filter'], true) : null
+        );
+        if ($scope !== null) {
+            [$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'json_payload');
+            $rf['submission_count'] = (int) DB::run(
+                "SELECT COUNT(*) AS c FROM submissions_cache WHERE form_id = ? AND $scopeSql",
+                array_merge([$rf['id']], $scopeP)
+            )->fetch()['c'];
+        }
+        unset($rf['row_filter']);
+    }
+    unset($rf);
 }
 
 foreach ($rows as &$r) {

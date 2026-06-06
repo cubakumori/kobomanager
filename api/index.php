@@ -20,6 +20,7 @@ require __DIR__ . '/lib/Settings.php';
 require __DIR__ . '/lib/KoboClient.php';
 require __DIR__ . '/lib/FormSchema.php';
 require __DIR__ . '/lib/Geo.php';
+require __DIR__ . '/lib/RowScope.php';
 require __DIR__ . '/lib/SubmissionSync.php';
 
 // --- CORS (frontend en dev sobre otro origen) ---

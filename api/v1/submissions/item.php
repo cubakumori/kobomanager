@@ -24,9 +24,17 @@ if (!$sub) {
 }
 $formId = (int) $sub['form_id'];
 
+// Scoping por filas: con filtro activo, un envío fuera de alcance se comporta como
+// inexistente (404), sea cual sea la capacidad. Se comprueba tras requireForm.
+$scopeRule    = RowScope::ruleForUser($user, $formId);
+$scopePayload = json_decode($sub['json_payload'], true) ?: [];
+
 // ---------- GET: detalle ----------
 if ($method === 'GET') {
     Auth::requireForm($user, $formId, 'view');
+    if (!RowScope::matches($scopeRule, $scopePayload)) {
+        ErrorResponse::send('NOT_FOUND', 'Envío no encontrado');
+    }
 
     $reviews = DB::run(
         'SELECT r.id, r.status, r.comment, r.created_at, u.name AS user_name
@@ -67,17 +75,18 @@ if ($method === 'GET') {
     // "Siguiente" = el inmediatamente más abajo (más antiguo); "anterior" = más arriba (más nuevo).
     $curTime = $sub['submitted_at'];
     $curId   = (int) $sub['id'];
+    [$navSql, $navP] = RowScope::sqlCondition($scopeRule, 'json_payload');
     $next = DB::run(
-        'SELECT submission_uid FROM submissions_cache
-         WHERE form_id = ? AND (submitted_at < ? OR (submitted_at = ? AND id < ?))
-         ORDER BY submitted_at DESC, id DESC LIMIT 1',
-        [$formId, $curTime, $curTime, $curId]
+        "SELECT submission_uid FROM submissions_cache
+         WHERE form_id = ? AND (submitted_at < ? OR (submitted_at = ? AND id < ?)) AND $navSql
+         ORDER BY submitted_at DESC, id DESC LIMIT 1",
+        array_merge([$formId, $curTime, $curTime, $curId], $navP)
     )->fetch();
     $prev = DB::run(
-        'SELECT submission_uid FROM submissions_cache
-         WHERE form_id = ? AND (submitted_at > ? OR (submitted_at = ? AND id > ?))
-         ORDER BY submitted_at ASC, id ASC LIMIT 1',
-        [$formId, $curTime, $curTime, $curId]
+        "SELECT submission_uid FROM submissions_cache
+         WHERE form_id = ? AND (submitted_at > ? OR (submitted_at = ? AND id > ?)) AND $navSql
+         ORDER BY submitted_at ASC, id ASC LIMIT 1",
+        array_merge([$formId, $curTime, $curTime, $curId], $navP)
     )->fetch();
 
     ErrorResponse::ok([
@@ -102,6 +111,9 @@ if ($method === 'GET') {
 // ---------- PUT: edición ----------
 if ($method === 'PUT') {
     Auth::requireForm($user, $formId, 'edit');
+    if (!RowScope::matches($scopeRule, $scopePayload)) {
+        ErrorResponse::send('NOT_FOUND', 'Envío no encontrado');
+    }
 
     $data = Request::json()['data'] ?? null;
     if (!is_array($data) || $data === []) {

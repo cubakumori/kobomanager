@@ -20,12 +20,16 @@ Auth::requireForm($user, $formId, 'view');
 
 $schema = $form['schema_json'] ? json_decode($form['schema_json'], true) : null;
 
+// Scoping por filas: el viewer puede tener un filtro que limita qué envíos ve.
+$scope               = RowScope::ruleForUser($user, $formId);
+[$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'json_payload');
+
 $rows = DB::run(
-    'SELECT submission_uid, json_payload, submitted_at
+    "SELECT submission_uid, json_payload, submitted_at
      FROM submissions_cache
-     WHERE form_id = ?
-     ORDER BY submitted_at DESC, id DESC',
-    [$formId]
+     WHERE form_id = ? AND $scopeSql
+     ORDER BY submitted_at DESC, id DESC",
+    array_merge([$formId], $scopeP)
 )->fetchAll();
 
 $points = [];

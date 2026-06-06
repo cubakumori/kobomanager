@@ -20,32 +20,37 @@ if (!$form) {
 }
 Auth::requireForm($user, $formId, 'view');
 
+// Scoping por filas: el viewer puede tener un filtro que limita qué envíos cuenta.
+$scope               = RowScope::ruleForUser($user, $formId);
+[$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'json_payload');
+
 $total = (int) DB::run(
-    'SELECT COUNT(*) AS c FROM submissions_cache WHERE form_id = ?',
-    [$formId]
+    "SELECT COUNT(*) AS c FROM submissions_cache WHERE form_id = ? AND $scopeSql",
+    array_merge([$formId], $scopeP)
 )->fetch()['c'];
 
 // Envíos por día.
 $byDay = DB::run(
-    'SELECT DATE(submitted_at) AS day, COUNT(*) AS count
+    "SELECT DATE(submitted_at) AS day, COUNT(*) AS count
      FROM submissions_cache
-     WHERE form_id = ? AND submitted_at IS NOT NULL
+     WHERE form_id = ? AND submitted_at IS NOT NULL AND $scopeSql
      GROUP BY DATE(submitted_at)
-     ORDER BY day',
-    [$formId]
+     ORDER BY day",
+    array_merge([$formId], $scopeP)
 )->fetchAll();
 $byDay = array_map(fn($r) => ['date' => $r['day'], 'count' => (int) $r['count']], $byDay);
 
 // Distribución por estado de revisión: la revisión más reciente de cada envío de este formulario.
 $reviewed = DB::run(
-    'SELECT r.status, COUNT(*) AS count
+    "SELECT r.status, COUNT(*) AS count
      FROM submission_reviews r
      JOIN (
         SELECT submission_uid, MAX(id) AS max_id FROM submission_reviews GROUP BY submission_uid
      ) latest ON latest.max_id = r.id
      JOIN submissions_cache sc ON sc.submission_uid = r.submission_uid AND sc.form_id = ?
-     GROUP BY r.status',
-    [$formId]
+        AND $scopeSql
+     GROUP BY r.status",
+    array_merge([$formId], $scopeP)
 )->fetchAll();
 
 $byStatus = ['pending' => 0, 'approved' => 0, 'rejected' => 0];

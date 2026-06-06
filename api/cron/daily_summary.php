@@ -18,32 +18,45 @@ if (PHP_SAPI !== 'cli') {
 require __DIR__ . '/../config.php';
 require __DIR__ . '/../lib/DB.php';
 require __DIR__ . '/../lib/Mailer.php';
+require __DIR__ . '/../lib/RowScope.php';
 
 // Día a resumir (el de ayer salvo que se pase uno por argumento).
 $day   = $argv[1] ?? date('Y-m-d', strtotime('yesterday'));
 $start = $day . ' 00:00:00';
 $end   = date('Y-m-d', strtotime($day . ' +1 day')) . ' 00:00:00';
 
-$rows = DB::run(
-    'SELECT u.id AS user_id, u.name, u.email, f.name AS form_name, COUNT(sc.id) AS cnt
+// Candidatos (usuario × formulario con resumen activo). El conteo se calcula aparte
+// porque cada (usuario, formulario) puede tener un filtro por filas distinto.
+$candidates = DB::run(
+    'SELECT u.id AS user_id, u.name, u.email, u.role,
+            f.id AS form_id, f.name AS form_name, p.row_filter
      FROM notification_config nc
      JOIN users u ON u.id = nc.user_id AND u.active = 1
      JOIN forms f ON f.id = nc.form_id
-     JOIN submissions_cache sc ON sc.form_id = f.id
-          AND sc.submitted_at >= ? AND sc.submitted_at < ?
+     LEFT JOIN user_form_permissions p ON p.user_id = u.id AND p.form_id = f.id
      WHERE nc.daily_summary = 1
-     GROUP BY u.id, f.id
-     HAVING cnt > 0
      ORDER BY u.id, f.name',
-    [$start, $end]
+    []
 )->fetchAll();
 
-// Agrupar por usuario.
+// Agrupar por usuario, contando solo los envíos en alcance.
 $byUser = [];
-foreach ($rows as $r) {
+foreach ($candidates as $r) {
+    $scope = $r['role'] === 'admin'
+        ? null
+        : RowScope::normalize($r['row_filter'] ? json_decode($r['row_filter'], true) : null);
+    [$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'json_payload');
+
+    $cnt = (int) DB::run(
+        "SELECT COUNT(*) AS c FROM submissions_cache
+         WHERE form_id = ? AND submitted_at >= ? AND submitted_at < ? AND $scopeSql",
+        array_merge([$r['form_id'], $start, $end], $scopeP)
+    )->fetch()['c'];
+    if ($cnt <= 0) continue;
+
     $byUser[$r['user_id']]['name']  = $r['name'];
     $byUser[$r['user_id']]['email'] = $r['email'];
-    $byUser[$r['user_id']]['forms'][] = ['name' => $r['form_name'], 'count' => (int) $r['cnt']];
+    $byUser[$r['user_id']]['forms'][] = ['name' => $r['form_name'], 'count' => $cnt];
 }
 
 if (!$byUser) {
