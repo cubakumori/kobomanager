@@ -15,6 +15,7 @@ class ErrorResponse {
         'AUTH_INSUFFICIENT_PERMISSIONS' => [403, 'No tienes permisos suficientes'],
         'AUTH_RATE_LIMITED'             => [429, 'Demasiados intentos. Espera un minuto e inténtalo de nuevo.'],
         'VALIDATION_ERROR'              => [422, 'Datos de entrada inválidos'],
+        'RESET_TOKEN_INVALID'           => [400, 'El enlace de recuperación no es válido o ha caducado'],
         'NOT_FOUND'                     => [404, 'Recurso no encontrado'],
         'INTERNAL_ERROR'                => [500, 'Error interno del servidor'],
     ];
