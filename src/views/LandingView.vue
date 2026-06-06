@@ -90,9 +90,9 @@ const drawerLink =
           </button>
         </nav>
 
-        <!-- Botón hamburguesa (móvil) -->
+        <!-- Botón hamburguesa (móvil) — neutro; el azul se reserva para las acciones -->
         <button
-          class="rounded-lg bg-primary-600 p-2 text-white shadow-sm hover:bg-primary-700 md:hidden"
+          class="rounded-lg border border-slate-300 bg-white p-2 text-slate-600 shadow-sm hover:bg-slate-50 md:hidden"
           aria-label="Menu"
           @click="showMenu = true"
         >

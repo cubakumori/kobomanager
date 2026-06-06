@@ -39,12 +39,12 @@ useDialogA11y(drawer, () => { open.value = false }, open)
 
     <!-- Columna de contenido -->
     <div class="flex min-w-0 flex-1 flex-col">
-      <!-- Barra superior (solo móvil) — mismo estilo que la portada: marca a la
-           izquierda y hamburguesa azul a la derecha (el sidebar se abre desde la izquierda). -->
+      <!-- Barra superior (solo móvil) — marca a la izquierda y hamburguesa neutra a la
+           derecha (control de navegación; el azul se reserva para las acciones). -->
       <header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
         <span class="text-lg font-semibold tracking-tight text-slate-900">KoboManager</span>
         <button
-          class="rounded-lg bg-primary-600 p-2 text-white shadow-sm hover:bg-primary-700"
+          class="rounded-lg border border-slate-300 bg-white p-2 text-slate-600 shadow-sm hover:bg-slate-50"
           aria-label="Menu"
           @click="open = true"
         >

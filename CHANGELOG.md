@@ -78,6 +78,8 @@ Todos los cambios notables de KoboManager. El formato sigue
 - En *Usuarios* y *Cuentas Kobo* (admin), el alta deja de ocupar un bloque fijo: ahora hay
   un botón **«Nuevo»** que abre el formulario en una ventana modal, dejando la lista visible
   de inmediato. En *Formularios*, el panel de estado de sincronización pasa al final.
+- El botón de menú (hamburguesa) en móvil pasa a un estilo **neutro**, reservando el color de
+  marca para los botones de acción y reduciendo la acumulación visual de azul.
 - **Al re-sincronizar con un filtro de estados más restrictivo**, los formularios que dejan
   de cumplirlo ahora se **desactivan** (se ocultan a los usuarios y al cron, conservando su
   caché y revisiones) en lugar de quedarse visibles; vuelven a activarse solos si más adelante
