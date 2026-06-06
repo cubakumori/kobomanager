@@ -112,6 +112,17 @@
     "notificationsDesc": "Get a morning email with the new submissions of the selected forms.",
     "noForms": "You have no assigned forms.",
     "savePrefs": "Save preferences",
+    "password": "Password",
+    "passwordDesc": "Change your account password.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "pwHint": "At least 8 characters.",
+    "changePassword": "Change password",
+    "pwChanged": "Password updated ✓",
+    "pwTooShort": "The new password must be at least 8 characters.",
+    "pwMismatch": "The passwords don't match.",
+    "pwError": "Could not change the password",
     "loadError": "Could not load the configuration",
     "saveError": "Could not save"
   },
@@ -385,6 +396,7 @@
     "AUTH_RATE_LIMITED": "Too many sign-in attempts. Wait a minute and try again.",
     "AUTH_INSUFFICIENT_PERMISSIONS": "You don't have permission to perform this action.",
     "RESET_TOKEN_INVALID": "The recovery link is invalid or has expired. Request a new one.",
+    "PASSWORD_INCORRECT": "The current password is incorrect.",
     "generic": "An error occurred"
   }
 }

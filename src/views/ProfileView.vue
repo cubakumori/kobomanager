@@ -20,6 +20,14 @@ const defaultLocale = ref('es')
 const validLocales = ref(['es', 'en'])
 const langSaving = ref(false)
 
+// Cambio de contraseña
+const pwCurrent = ref('')
+const pwNew = ref('')
+const pwConfirm = ref('')
+const pwSaving = ref(false)
+const pwError = ref('')
+const pwSaved = ref(false)
+
 async function load() {
   loading.value = true
   error.value = ''
@@ -71,6 +79,34 @@ async function changeLocale() {
   }
 }
 
+async function changePassword() {
+  pwError.value = ''
+  pwSaved.value = false
+  if (pwNew.value.length < 8) {
+    pwError.value = t('profile.pwTooShort')
+    return
+  }
+  if (pwNew.value !== pwConfirm.value) {
+    pwError.value = t('profile.pwMismatch')
+    return
+  }
+  pwSaving.value = true
+  try {
+    await api.post('/profile/password', {
+      current_password: pwCurrent.value,
+      new_password: pwNew.value,
+    })
+    pwSaved.value = true
+    pwCurrent.value = ''
+    pwNew.value = ''
+    pwConfirm.value = ''
+  } catch (e) {
+    pwError.value = apiError(e, t('profile.pwError'))
+  } finally {
+    pwSaving.value = false
+  }
+}
+
 onMounted(load)
 </script>
 
@@ -100,6 +136,65 @@ onMounted(load)
         <option value="">{{ $t('profile.systemDefault', { locale: $t('lang.' + defaultLocale) }) }}</option>
         <option v-for="l in validLocales" :key="l" :value="l">{{ $t('lang.' + l) }}</option>
       </select>
+    </section>
+
+    <!-- Contraseña -->
+    <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 space-y-3">
+      <div>
+        <h2 class="font-semibold text-slate-900">{{ $t('profile.password') }}</h2>
+        <p class="mt-0.5 text-sm text-slate-500">{{ $t('profile.passwordDesc') }}</p>
+      </div>
+
+      <div v-if="pwError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+        {{ pwError }}
+      </div>
+
+      <form class="space-y-3" @submit.prevent="changePassword">
+        <div class="space-y-1">
+          <label class="text-sm font-medium text-slate-700" for="pw-current">{{ $t('profile.currentPassword') }}</label>
+          <input
+            id="pw-current"
+            v-model="pwCurrent"
+            type="password"
+            autocomplete="current-password"
+            required
+            class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+          />
+        </div>
+        <div class="space-y-1">
+          <label class="text-sm font-medium text-slate-700" for="pw-new">{{ $t('profile.newPassword') }}</label>
+          <input
+            id="pw-new"
+            v-model="pwNew"
+            type="password"
+            autocomplete="new-password"
+            required
+            class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+          />
+          <p class="text-xs text-slate-400">{{ $t('profile.pwHint') }}</p>
+        </div>
+        <div class="space-y-1">
+          <label class="text-sm font-medium text-slate-700" for="pw-confirm">{{ $t('profile.confirmPassword') }}</label>
+          <input
+            id="pw-confirm"
+            v-model="pwConfirm"
+            type="password"
+            autocomplete="new-password"
+            required
+            class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+          />
+        </div>
+        <div class="flex items-center gap-3 pt-1">
+          <button
+            type="submit"
+            :disabled="pwSaving"
+            class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+          >
+            {{ pwSaving ? $t('common.saving') : $t('profile.changePassword') }}
+          </button>
+          <span v-if="pwSaved" class="text-sm text-green-600">{{ $t('profile.pwChanged') }}</span>
+        </div>
+      </form>
     </section>
 
     <!-- Notificaciones -->

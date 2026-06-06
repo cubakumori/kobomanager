@@ -112,6 +112,17 @@
     "notificationsDesc": "Recibe cada mañana un correo con los nuevos envíos de los formularios elegidos.",
     "noForms": "No tienes formularios asignados.",
     "savePrefs": "Guardar preferencias",
+    "password": "Contraseña",
+    "passwordDesc": "Cambia la contraseña de tu cuenta.",
+    "currentPassword": "Contraseña actual",
+    "newPassword": "Nueva contraseña",
+    "confirmPassword": "Confirmar nueva contraseña",
+    "pwHint": "Mínimo 8 caracteres.",
+    "changePassword": "Cambiar contraseña",
+    "pwChanged": "Contraseña actualizada ✓",
+    "pwTooShort": "La nueva contraseña debe tener al menos 8 caracteres.",
+    "pwMismatch": "Las contraseñas no coinciden.",
+    "pwError": "No se pudo cambiar la contraseña",
     "loadError": "No se pudo cargar la configuración",
     "saveError": "No se pudo guardar"
   },
@@ -385,6 +396,7 @@
     "AUTH_RATE_LIMITED": "Demasiados intentos de inicio de sesión. Espera un minuto e inténtalo de nuevo.",
     "AUTH_INSUFFICIENT_PERMISSIONS": "No tienes permisos para realizar esta acción.",
     "RESET_TOKEN_INVALID": "El enlace de recuperación no es válido o ha caducado. Solicita uno nuevo.",
+    "PASSWORD_INCORRECT": "La contraseña actual no es correcta.",
     "generic": "Ha ocurrido un error"
   }
 }

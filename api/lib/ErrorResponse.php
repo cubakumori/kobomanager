@@ -16,6 +16,7 @@ class ErrorResponse {
         'AUTH_RATE_LIMITED'             => [429, 'Demasiados intentos. Espera un minuto e inténtalo de nuevo.'],
         'VALIDATION_ERROR'              => [422, 'Datos de entrada inválidos'],
         'RESET_TOKEN_INVALID'           => [400, 'El enlace de recuperación no es válido o ha caducado'],
+        'PASSWORD_INCORRECT'            => [400, 'La contraseña actual no es correcta'],
         'NOT_FOUND'                     => [404, 'Recurso no encontrado'],
         'INTERNAL_ERROR'                => [500, 'Error interno del servidor'],
     ];
