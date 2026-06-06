@@ -59,10 +59,10 @@ const drawerLink =
           >
             {{ $t('landing.navKobo') }}
           </a>
-          <span
-            class="cursor-not-allowed whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-slate-400"
-            :title="$t('landing.soon')"
-          >{{ $t('landing.navTutorials') }}</span>
+          <RouterLink
+            :to="{ name: 'guide' }"
+            class="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          >{{ $t('landing.navTutorials') }}</RouterLink>
           <span
             class="cursor-not-allowed whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-slate-400"
             :title="$t('landing.soon')"
@@ -217,9 +217,9 @@ const drawerLink =
           <a href="https://www.kobotoolbox.org" target="_blank" rel="noopener" :class="drawerLink" @click="showMenu = false">
             {{ $t('landing.navKobo') }}
           </a>
-          <span :class="[drawerLink, 'cursor-not-allowed text-slate-500 hover:bg-transparent hover:text-slate-500']">
+          <RouterLink :to="{ name: 'guide' }" :class="drawerLink" @click="showMenu = false">
             {{ $t('landing.navTutorials') }}
-          </span>
+          </RouterLink>
           <span :class="[drawerLink, 'cursor-not-allowed text-slate-500 hover:bg-transparent hover:text-slate-500']">
             {{ $t('landing.navDonate') }}
           </span>

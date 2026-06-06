@@ -10,6 +10,7 @@ const routes = [
   { path: '/login', name: 'login', component: () => import('../views/LoginView.vue'), meta: { public: true } },
   { path: '/forgot-password', name: 'forgot-password', component: () => import('../views/ForgotPasswordView.vue'), meta: { public: true } },
   { path: '/reset-password', name: 'reset-password', component: () => import('../views/ResetPasswordView.vue'), meta: { public: true } },
+  { path: '/guide', name: 'guide', component: () => import('../views/GuideView.vue'), meta: { public: true } },
 
   { path: '/dashboard', name: 'dashboard', component: () => import('../views/DashboardView.vue'), meta: shell() },
   { path: '/forms', name: 'forms', component: () => import('../views/MyFormsView.vue'), meta: shell() },

@@ -57,6 +57,14 @@ const auth = useAuthStore()
         <h2 class="font-semibold text-slate-900">{{ $t('dashboard.about') }}</h2>
         <p class="mt-1 text-sm text-slate-500">{{ $t('dashboard.aboutDesc') }}</p>
       </RouterLink>
+
+      <RouterLink
+        :to="{ name: 'guide' }"
+        class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:ring-primary-300"
+      >
+        <h2 class="font-semibold text-slate-900">{{ $t('dashboard.guide') }}</h2>
+        <p class="mt-1 text-sm text-slate-500">{{ $t('dashboard.guideDesc') }}</p>
+      </RouterLink>
     </section>
   </div>
 </template>
