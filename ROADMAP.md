@@ -51,7 +51,6 @@ Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
 
 ### Seguridad y sesiones
 
-- [ ] **Recuperar contraseña** por email (flujo «olvidé mi contraseña» con token temporal).
 - [ ] **Sesión deslizante / refresh** y opción «cerrar todas mis sesiones».
 - [ ] **Protección CSRF** en peticiones que modifican (verificar `Origin`/token; la cookie
       es `SameSite=Lax`, conviene reforzar).

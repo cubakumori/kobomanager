@@ -8,6 +8,16 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Recuperación de contraseña por email** («olvidé mi contraseña»). Gobernada por un
+  interruptor en *Configuración* admin «Permitir recuperar contraseña» (desactivado por
+  defecto). Flujo público: el usuario pide el reset por email (`POST /auth/forgot-password`,
+  con *rate-limit* y respuesta genérica que no revela si el email existe) → se genera un
+  **token de un solo uso** (en BD se guarda solo su hash SHA-256 + expiración de 1 hora;
+  nueva tabla `password_resets`) → email con enlace a la página pública `/reset-password`
+  → al fijar la nueva contraseña se **consume el token** y se **invalidan todas las sesiones
+  activas** del usuario. El email se envía con Resend (`lib/Mailer.php`); si la clave no está
+  configurada, el envío se omite sin error (la UI admin avisa). El enlace «¿Olvidaste tu
+  contraseña?» solo aparece en el login si el flujo está habilitado. i18n ES/EN.
 - **Vista de mapa** para preguntas de ubicación (`geopoint`/`geoshape`/`geotrace`). El
   detalle de un envío muestra una sección «Ubicación» con su punto, línea o polígono, y
   cada formulario tiene una vista «Mapa» (`/forms/{id}/map`) que pinta todos los envíos con
