@@ -56,6 +56,12 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
+- **Diferenciación visual por color**: las tarjetas de *Mis formularios* usan ahora un
+  fondo verde claro (emerald, el color de marca) para distinguirse de las tarjetas blancas
+  del *Dashboard*, y el encabezado de la tabla de envíos de un formulario va en verde, de
+  modo que se reconoce de un vistazo dónde estás.
+- Corregido el **espaciado entre etiqueta y campo** en todos los formularios (las etiquetas
+  eran *inline* y quedaban pegadas al campo); ahora se separan correctamente.
 - El **«Resumen diario por email»** se traslada de *Mi perfil* a una **página propia
   «Notificaciones»** (enlace en el menú lateral, bajo «Mis formularios»). *Mi perfil*
   queda centrado en la cuenta: idioma y contraseña.
