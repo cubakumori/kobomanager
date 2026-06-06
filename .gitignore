@@ -8,6 +8,9 @@ dist/
 # Configuración con secretos (usar api/config.example.php como plantilla)
 api/config.php
 
+# Tests
+.phpunit.cache/
+
 # Logs y temporales
 *.log
 .DS_Store

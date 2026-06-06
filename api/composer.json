@@ -1,0 +1,17 @@
+{
+    "name": "kobomanager/api",
+    "description": "KoboManager backend — tests (PHPUnit). El runtime no usa dependencias.",
+    "type": "project",
+    "require-dev": {
+        "phpunit/phpunit": "^12.0"
+    },
+    "autoload-dev": {
+        "classmap": ["lib/", "tests/DbTestCase.php"]
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

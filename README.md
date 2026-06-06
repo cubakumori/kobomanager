@@ -116,6 +116,29 @@ to the `<html>` element in [`index.html`](./index.html):
 the default blue/green theme applies. To add your own, copy one of those classes and change
 the values.
 
+## Tests (backend)
+
+Backend unit tests use **PHPUnit** (the only dev dependency — the runtime stays
+dependency-free). They run against a **separate** database so your dev data is untouched.
+
+```bash
+# 1. One-time: create the test database and load the schema
+mysql -e "CREATE DATABASE kobomanager_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+for f in db/*.sql; do mysql kobomanager_test < "$f"; done
+# (grant your DB user access to kobomanager_test if it isn't the socket/admin user)
+
+# 2. Install PHPUnit and run the suite
+cd api
+composer install
+composer test         # or: ./vendor/bin/phpunit
+```
+
+Each test runs inside a transaction that is rolled back, so the test DB stays clean.
+Connection settings default to `kobomanager_test` on `127.0.0.1` and can be overridden
+with `TEST_DB_*` environment variables (see `api/tests/bootstrap.php`). Current coverage:
+auth/permissions and JWT session lifecycle, rate limiting, settings, token encryption and
+the geo parser.
+
 ## Languages
 
 The interface is available in **Spanish** and **English**. The admin sets the default
