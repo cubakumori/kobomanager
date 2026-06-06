@@ -58,6 +58,7 @@ $routes = [
     'auth/reset-password'       => 'auth/reset_password.php',
     'admin/users'               => 'admin/users.php',
     'admin/users/:id'           => 'admin/user_item.php',
+    'admin/users/:id/sessions'  => 'admin/user_sessions.php',
     'admin/accounts'            => 'admin/accounts.php',
     'admin/accounts/:id'        => 'admin/account_item.php',
     'admin/forms'               => 'admin/forms.php',

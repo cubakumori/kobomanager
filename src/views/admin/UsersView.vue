@@ -78,6 +78,29 @@ async function saveEdit() {
   }
 }
 
+async function revokeSessions(u) {
+  const ok = await confirmDialog({
+    title: t('users.confirmRevokeTitle'),
+    message: t('users.confirmRevoke', { name: u.name }),
+    confirmText: t('users.revokeSessions'),
+    danger: true,
+  })
+  if (!ok) return
+  actionError.value = ''
+  try {
+    const { data } = await api.delete(`/admin/users/${u.id}/sessions`)
+    // Si el admin cerró sus propias sesiones, la siguiente petición dará 401 → login.
+    if (u.id === auth.user?.id) {
+      await auth.logout()
+      return
+    }
+    u.active_sessions = 0
+    void data
+  } catch (e) {
+    actionError.value = apiError(e, t('users.revokeError'))
+  }
+}
+
 async function toggleActive(u) {
   const ok = await confirmDialog({
     title: u.active ? t('users.confirmDeactivateTitle') : t('users.confirmActivateTitle'),
@@ -162,6 +185,7 @@ onMounted(load)
             <th class="px-4 py-3">{{ $t('common.email') }}</th>
             <th class="px-4 py-3">{{ $t('common.role') }}</th>
             <th class="px-4 py-3">{{ $t('common.status') }}</th>
+            <th class="px-4 py-3">{{ $t('users.sessions') }}</th>
             <th class="px-4 py-3 text-right">{{ $t('common.actions') }}</th>
           </tr>
         </thead>
@@ -183,10 +207,22 @@ onMounted(load)
                 {{ u.active ? $t('users.active') : $t('users.inactive') }}
               </span>
             </td>
+            <td class="px-4 py-3 text-slate-600">
+              <span v-if="u.active_sessions">{{ u.active_sessions }}</span>
+              <span v-else class="text-slate-300">—</span>
+            </td>
             <td class="px-4 py-3">
               <div class="flex items-center justify-end gap-3">
                 <button class="font-medium text-primary-600 hover:underline" @click="startEdit(u)">
                   {{ $t('common.edit') }}
+                </button>
+                <button
+                  v-if="u.active_sessions"
+                  class="font-medium text-amber-600 hover:underline"
+                  :title="$t('users.revokeSessionsTitle')"
+                  @click="revokeSessions(u)"
+                >
+                  {{ $t('users.revokeSessions') }}
                 </button>
                 <button
                   v-if="u.id !== auth.user?.id"
@@ -203,7 +239,7 @@ onMounted(load)
             </td>
           </tr>
           <tr v-if="!users.length">
-            <td colspan="5" class="px-4 py-6 text-center text-slate-400">{{ $t('users.empty') }}</td>
+            <td colspan="6" class="px-4 py-6 text-center text-slate-400">{{ $t('users.empty') }}</td>
           </tr>
         </tbody>
       </table>

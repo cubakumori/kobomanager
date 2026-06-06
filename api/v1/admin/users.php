@@ -9,11 +9,15 @@ $admin = Auth::requireAdmin();
 
 if (Request::method() === 'GET') {
     $rows = DB::run(
-        'SELECT id, name, email, role, active, created_at FROM users ORDER BY created_at DESC'
+        'SELECT u.id, u.name, u.email, u.role, u.active, u.created_at,
+                (SELECT COUNT(*) FROM user_sessions s
+                 WHERE s.user_id = u.id AND s.expires_at > NOW()) AS active_sessions
+         FROM users u ORDER BY u.created_at DESC'
     )->fetchAll();
     foreach ($rows as &$r) {
-        $r['id']     = (int) $r['id'];
-        $r['active'] = (bool) $r['active'];
+        $r['id']              = (int) $r['id'];
+        $r['active']          = (bool) $r['active'];
+        $r['active_sessions'] = (int) $r['active_sessions'];
     }
     ErrorResponse::ok($rows);
 }
