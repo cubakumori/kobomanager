@@ -29,7 +29,7 @@ $resolved = FormSchema::resolve($schema, $admin['locale']);
 // ?values=CLAVE → valores distintos para ese campo (acotado).
 $valuesFor = isset($_GET['values']) ? (string) $_GET['values'] : '';
 if ($valuesFor !== '') {
-    $path = '$."' . str_replace(['\\', '"'], '', $valuesFor) . '"';
+    $path = RowScope::jsonPath($valuesFor);
     // Excluir campos ausentes (SQL NULL) y valores JSON null (JSON_UNQUOTE los
     // devolvería como la cadena "null"). Solo valores reales como sugerencia.
     $rows = DB::run(

@@ -107,8 +107,17 @@ class RowScope {
         return true;
     }
 
-    /** Ruta JSON segura para una clave de envío: `$."clave"`. */
-    private static function jsonPath(string $field): string {
-        return '$."' . str_replace(['\\', '"'], '', $field) . '"';
+    /**
+     * Ruta JSON para una clave de envío: `$."clave"`.
+     *
+     * MariaDB almacena el JSON como texto y NO normaliza el escape `\/`, así que
+     * las claves con barra (rutas de grupo `G01/P1_3`) quedan guardadas como
+     * `G01\/P1_3`. Para que JSON_EXTRACT las encuentre, la barra debe ir escapada
+     * en la ruta. En MySQL nativo `\/` también equivale a `/`, así que es seguro.
+     */
+    public static function jsonPath(string $field): string {
+        $clean = str_replace(['\\', '"'], '', $field); // sanea backslashes/comillas del input
+        $clean = str_replace('/', '\\/', $clean);      // escapa la barra como la guarda MariaDB
+        return '$."' . $clean . '"';
     }
 }
