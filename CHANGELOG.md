@@ -6,8 +6,12 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [Sin publicar]
 
+## [0.3.0] — 2026-06-06
+
 ### Añadido
 
+- **Licencia AGPL-3.0** y documentación para contribuidores (`ARCHITECTURE.md`,
+  `CONTRIBUTING.md`).
 - **Tests automatizados del backend** (PHPUnit): cobertura de autenticación y permisos,
   ciclo de sesión JWT (emisión, validación, revocación, logout), *rate limiting*, ajustes,
   cifrado de tokens y el parser geográfico. Se ejecutan contra una base de datos de test
