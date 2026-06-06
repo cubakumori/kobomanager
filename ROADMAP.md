@@ -42,7 +42,6 @@ Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
 - [ ] **Visor de `audit_log`** en el panel admin (quién hizo qué y cuándo).
 - [ ] Columnas configurables y filtros avanzados en la tabla de envíos.
 - [ ] Modo oscuro y mejores estados de carga/vacío (skeletons).
-- [ ] Accesibilidad de modales/drawers: cerrar con ESC, *focus trap* y `aria` (gestión del foco al abrir/cerrar).
 
 ### Seguridad y sesiones
 

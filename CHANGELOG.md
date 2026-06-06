@@ -8,6 +8,10 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Accesibilidad de ventanas y menús**: los modales y los menús laterales (drawers) se
+  cierran con **Escape**, atrapan el foco mientras están abiertos (Tab/Shift+Tab circulan
+  dentro), llevan el foco al abrirse y lo devuelven al control que los abrió al cerrarse;
+  además exponen los roles ARIA (`dialog`, `aria-modal`, etiqueta del título).
 - **Indicador global de sincronización** en *Formularios* (admin): un panel muestra, por
   cuenta Kobo, la última sincronización, su estado (correcto / con errores / sin sincronizar)
   y el número de formularios (e inactivos).
