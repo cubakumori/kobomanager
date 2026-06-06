@@ -76,6 +76,13 @@ define('MAIL_FROM', 'KoboManager <noreply@yourdomain.com>');
 > **Important:** keep `CONFIG_TOKEN_KEY` somewhere safe. If it's lost or changed, the
 > encrypted Kobo tokens can no longer be decrypted.
 
+> **CSRF / CORS:** state-changing requests (POST/PUT/DELETE) are rejected unless their
+> `Origin`/`Referer` matches an allowed origin — `CORS_ALLOWED_ORIGINS` plus the server's
+> own host. In a normal single-domain install (frontend and `/api` under the same domain)
+> this works out of the box; just make sure `CORS_ALLOWED_ORIGINS` lists your **public
+> HTTPS origin** (e.g. `https://yourdomain.com`). If the app is served from several
+> hostnames (e.g. with and without `www`), add each one.
+
 Create the first administrator (creating users via the API requires being an admin):
 
 ```bash
