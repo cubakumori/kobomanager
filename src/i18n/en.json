@@ -63,7 +63,31 @@
     "password": "Password",
     "submit": "Sign in",
     "submitting": "Signing in…",
-    "failed": "Could not sign in"
+    "failed": "Could not sign in",
+    "forgot": "Forgot your password?"
+  },
+  "forgot": {
+    "title": "Reset password",
+    "subtitle": "Enter your email and we'll send you a link to reset it.",
+    "submit": "Send link",
+    "sending": "Sending…",
+    "sent": "If that email has an account, we've sent a link to reset the password. Check your inbox (and the spam folder). The link expires in 1 hour.",
+    "backToLogin": "← Back to sign in",
+    "error": "Could not process the request"
+  },
+  "reset": {
+    "title": "New password",
+    "subtitle": "Choose a new password for your account.",
+    "newPassword": "New password",
+    "confirm": "Confirm password",
+    "hint": "At least 8 characters.",
+    "submit": "Change password",
+    "tooShort": "The password must be at least 8 characters.",
+    "mismatch": "The passwords don't match.",
+    "invalid": "This recovery link is invalid or has expired.",
+    "requestNew": "Request a new one",
+    "done": "Password changed. Your sessions were closed; taking you to sign in…",
+    "error": "Could not change the password"
   },
   "dashboard": {
     "hello": "Hello, {name}",
@@ -360,6 +384,7 @@
     "KOBO_SUBMISSION_NOT_FOUND": "The submission no longer exists in KoboToolbox.",
     "AUTH_RATE_LIMITED": "Too many sign-in attempts. Wait a minute and try again.",
     "AUTH_INSUFFICIENT_PERMISSIONS": "You don't have permission to perform this action.",
+    "RESET_TOKEN_INVALID": "The recovery link is invalid or has expired. Request a new one.",
     "generic": "An error occurred"
   }
 }

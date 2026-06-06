@@ -1,6 +1,8 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import api from '../services/api'
 import { useAuthStore, apiError } from '../stores/auth'
 
 const emit = defineEmits(['success'])
@@ -11,6 +13,17 @@ const email = ref('')
 const password = ref('')
 const error = ref('')
 const loading = ref(false)
+const resetEnabled = ref(false)
+
+// Mostrar el enlace «¿Olvidaste tu contraseña?» solo si el admin lo habilitó.
+onMounted(async () => {
+  try {
+    const { data } = await api.get('/config')
+    resetEnabled.value = !!data.data.password_reset_enabled
+  } catch {
+    resetEnabled.value = false
+  }
+})
 
 async function onSubmit() {
   error.value = ''
@@ -66,5 +79,11 @@ async function onSubmit() {
     >
       {{ loading ? $t('login.submitting') : $t('login.submit') }}
     </button>
+
+    <p v-if="resetEnabled" class="text-center text-sm">
+      <RouterLink to="/forgot-password" class="text-blue-600 hover:underline">
+        {{ $t('login.forgot') }}
+      </RouterLink>
+    </p>
   </form>
 </template>
