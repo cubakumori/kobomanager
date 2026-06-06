@@ -28,6 +28,7 @@
     "forms": "Forms",
     "permissions": "Permissions",
     "settings": "Settings",
+    "notifications": "Notifications",
     "profile": "My profile",
     "logout": "Log out",
     "goToProfile": "Go to my profile"
@@ -108,10 +109,6 @@
     "language": "Language",
     "languageDesc": "Choose the interface language for your account.",
     "systemDefault": "System default ({locale})",
-    "notifications": "Daily email summary",
-    "notificationsDesc": "Get a morning email with the new submissions of the selected forms.",
-    "noForms": "You have no assigned forms.",
-    "savePrefs": "Save preferences",
     "password": "Password",
     "passwordDesc": "Change your account password.",
     "currentPassword": "Current password",
@@ -124,6 +121,16 @@
     "pwMismatch": "The passwords don't match.",
     "pwError": "Could not change the password",
     "loadError": "Could not load the configuration",
+    "saveError": "Could not save"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "subtitle": "Email alerts about your forms' activity.",
+    "dailySummary": "Daily email summary",
+    "dailySummaryDesc": "Get a morning email with the new submissions of the selected forms.",
+    "noForms": "You have no assigned forms.",
+    "save": "Save preferences",
+    "loadError": "Could not load the notifications",
     "saveError": "Could not save"
   },
   "users": {

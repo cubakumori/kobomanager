@@ -51,9 +51,15 @@ const linkActive = 'bg-blue-600 text-white'
       </RouterLink>
       <RouterLink
         :to="{ name: 'forms' }"
-        :class="[linkBase, ['forms', 'submissions', 'submission-detail', 'stats'].includes($route.name) ? linkActive : linkInactive]"
+        :class="[linkBase, ['forms', 'submissions', 'submission-detail', 'stats', 'form-map'].includes($route.name) ? linkActive : linkInactive]"
       >
         {{ $t('nav.myForms') }}
+      </RouterLink>
+      <RouterLink
+        :to="{ name: 'notifications' }"
+        :class="[linkBase, $route.name === 'notifications' ? linkActive : linkInactive]"
+      >
+        {{ $t('nav.notifications') }}
       </RouterLink>
 
       <template v-if="auth.isAdmin">

@@ -28,6 +28,7 @@
     "forms": "Formularios",
     "permissions": "Permisos",
     "settings": "Configuración",
+    "notifications": "Notificaciones",
     "profile": "Mi perfil",
     "logout": "Cerrar sesión",
     "goToProfile": "Ir a mi perfil"
@@ -108,10 +109,6 @@
     "language": "Idioma",
     "languageDesc": "Elige el idioma de la interfaz para tu cuenta.",
     "systemDefault": "Predeterminado del sistema ({locale})",
-    "notifications": "Resumen diario por email",
-    "notificationsDesc": "Recibe cada mañana un correo con los nuevos envíos de los formularios elegidos.",
-    "noForms": "No tienes formularios asignados.",
-    "savePrefs": "Guardar preferencias",
     "password": "Contraseña",
     "passwordDesc": "Cambia la contraseña de tu cuenta.",
     "currentPassword": "Contraseña actual",
@@ -124,6 +121,16 @@
     "pwMismatch": "Las contraseñas no coinciden.",
     "pwError": "No se pudo cambiar la contraseña",
     "loadError": "No se pudo cargar la configuración",
+    "saveError": "No se pudo guardar"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "subtitle": "Avisos por email sobre la actividad de tus formularios.",
+    "dailySummary": "Resumen diario por email",
+    "dailySummaryDesc": "Recibe cada mañana un correo con los nuevos envíos de los formularios elegidos.",
+    "noForms": "No tienes formularios asignados.",
+    "save": "Guardar preferencias",
+    "loadError": "No se pudieron cargar las notificaciones",
     "saveError": "No se pudo guardar"
   },
   "users": {

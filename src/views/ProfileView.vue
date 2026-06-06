@@ -8,11 +8,7 @@ import { setLocale } from '../i18n'
 const { t } = useI18n()
 const auth = useAuthStore()
 
-const forms = ref([]) // [{ form_id, name, account_label, daily_summary }]
-const loading = ref(true)
 const error = ref('')
-const saving = ref(false)
-const saved = ref(false)
 
 // Idioma personal
 const localePref = ref('')      // '' = seguir el predeterminado del sistema
@@ -29,36 +25,14 @@ const pwError = ref('')
 const pwSaved = ref(false)
 
 async function load() {
-  loading.value = true
   error.value = ''
   try {
-    const [notif, profile] = await Promise.all([
-      api.get('/notifications'),
-      api.get('/profile'),
-    ])
-    forms.value = notif.data.data
-    localePref.value = profile.data.data.locale_pref ?? ''
-    defaultLocale.value = profile.data.data.default_locale
-    validLocales.value = profile.data.data.valid_locales
+    const { data } = await api.get('/profile')
+    localePref.value = data.data.locale_pref ?? ''
+    defaultLocale.value = data.data.default_locale
+    validLocales.value = data.data.valid_locales
   } catch (e) {
     error.value = apiError(e, t('profile.loadError'))
-  } finally {
-    loading.value = false
-  }
-}
-
-async function save() {
-  saving.value = true
-  saved.value = false
-  error.value = ''
-  try {
-    const enabled = forms.value.filter((f) => f.daily_summary).map((f) => f.form_id)
-    await api.put('/notifications', { enabled })
-    saved.value = true
-  } catch (e) {
-    error.value = apiError(e, t('profile.saveError'))
-  } finally {
-    saving.value = false
   }
 }
 
@@ -149,9 +123,9 @@ onMounted(load)
         {{ pwError }}
       </div>
 
-      <form class="space-y-3" @submit.prevent="changePassword">
-        <div class="space-y-1">
-          <label class="text-sm font-medium text-slate-700" for="pw-current">{{ $t('profile.currentPassword') }}</label>
+      <form class="space-y-4" @submit.prevent="changePassword">
+        <div class="space-y-1.5">
+          <label class="block text-sm font-medium text-slate-700" for="pw-current">{{ $t('profile.currentPassword') }}</label>
           <input
             id="pw-current"
             v-model="pwCurrent"
@@ -161,8 +135,8 @@ onMounted(load)
             class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
           />
         </div>
-        <div class="space-y-1">
-          <label class="text-sm font-medium text-slate-700" for="pw-new">{{ $t('profile.newPassword') }}</label>
+        <div class="space-y-1.5">
+          <label class="block text-sm font-medium text-slate-700" for="pw-new">{{ $t('profile.newPassword') }}</label>
           <input
             id="pw-new"
             v-model="pwNew"
@@ -173,8 +147,8 @@ onMounted(load)
           />
           <p class="text-xs text-slate-400">{{ $t('profile.pwHint') }}</p>
         </div>
-        <div class="space-y-1">
-          <label class="text-sm font-medium text-slate-700" for="pw-confirm">{{ $t('profile.confirmPassword') }}</label>
+        <div class="space-y-1.5">
+          <label class="block text-sm font-medium text-slate-700" for="pw-confirm">{{ $t('profile.confirmPassword') }}</label>
           <input
             id="pw-confirm"
             v-model="pwConfirm"
@@ -195,42 +169,6 @@ onMounted(load)
           <span v-if="pwSaved" class="text-sm text-green-600">{{ $t('profile.pwChanged') }}</span>
         </div>
       </form>
-    </section>
-
-    <!-- Notificaciones -->
-    <section class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-      <div class="border-b border-slate-100 px-5 py-3">
-        <h2 class="font-semibold text-slate-900">{{ $t('profile.notifications') }}</h2>
-        <p class="mt-0.5 text-sm text-slate-500">{{ $t('profile.notificationsDesc') }}</p>
-      </div>
-
-      <div v-if="loading" class="px-5 py-4 text-sm text-slate-500">{{ $t('common.loading') }}</div>
-
-      <template v-else>
-        <ul class="divide-y divide-slate-100">
-          <li v-for="f in forms" :key="f.form_id" class="flex items-center justify-between px-5 py-3">
-            <div>
-              <p class="text-sm font-medium text-slate-900">{{ f.name }}</p>
-              <p class="text-xs text-slate-400">{{ f.account_label }}</p>
-            </div>
-            <input v-model="f.daily_summary" type="checkbox" class="h-4 w-4" @change="saved = false" />
-          </li>
-          <li v-if="!forms.length" class="px-5 py-6 text-center text-sm text-slate-400">
-            {{ $t('profile.noForms') }}
-          </li>
-        </ul>
-
-        <div v-if="forms.length" class="flex items-center gap-3 border-t border-slate-100 px-5 py-4">
-          <button
-            :disabled="saving"
-            class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-            @click="save"
-          >
-            {{ saving ? $t('common.saving') : $t('profile.savePrefs') }}
-          </button>
-          <span v-if="saved" class="text-sm text-green-600">{{ $t('common.saved') }}</span>
-        </div>
-      </template>
     </section>
   </div>
 </template>
