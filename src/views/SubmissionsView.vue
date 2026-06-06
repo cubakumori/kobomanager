@@ -15,8 +15,11 @@ const formName = ref('')
 const items = ref([])
 const total = ref(0)
 const page = ref(1)
-const perPage = 25
+const perPage = ref(25)
+const perPageOptions = [10, 25, 50, 100]
 const search = ref('')
+const reviewFilter = ref('') // '' = todos
+const sort = ref('date_desc')
 const loading = ref(true)
 const error = ref('')
 const schema = ref(null)
@@ -111,14 +114,20 @@ function resetCols() {
   visibleCols.value = defaultVisible(allCols)
 }
 
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / perPage)))
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / perPage.value)))
 
 async function load() {
   loading.value = true
   error.value = ''
   try {
     const { data } = await api.get(`/forms/${formId.value}/submissions`, {
-      params: { page: page.value, per_page: perPage, search: search.value || undefined },
+      params: {
+        page: page.value,
+        per_page: perPage.value,
+        search: search.value || undefined,
+        review: reviewFilter.value || undefined,
+        sort: sort.value,
+      },
     })
     formName.value = data.data.form.name
     items.value = data.data.items
@@ -141,6 +150,12 @@ watch(search, () => {
     page.value = 1
     load()
   }, 300)
+})
+
+// Filtro de revisión, orden y tamaño de página: recargar desde la primera página.
+watch([reviewFilter, sort, perPage], () => {
+  page.value = 1
+  load()
 })
 
 // Al cambiar de formulario, re-inicializar las preferencias de columnas.
@@ -236,12 +251,45 @@ onMounted(load)
       <p class="mt-1 text-sm text-slate-500">{{ $t('submissions.total', { n: total }) }}</p>
     </header>
 
-    <input
-      v-model="search"
-      type="search"
-      :placeholder="$t('submissions.search')"
-      class="w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
-    />
+    <div class="flex flex-wrap items-center gap-3">
+      <input
+        v-model="search"
+        type="search"
+        :placeholder="$t('submissions.search')"
+        class="w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+      />
+      <label class="flex items-center gap-1.5 text-sm text-slate-600">
+        {{ $t('submissions.filterReview') }}
+        <select
+          v-model="reviewFilter"
+          class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+        >
+          <option value="">{{ $t('submissions.reviewAll') }}</option>
+          <option value="pending">{{ $t('review.pending') }}</option>
+          <option value="approved">{{ $t('review.approved') }}</option>
+          <option value="rejected">{{ $t('review.rejected') }}</option>
+        </select>
+      </label>
+      <label class="flex items-center gap-1.5 text-sm text-slate-600">
+        {{ $t('submissions.sort') }}
+        <select
+          v-model="sort"
+          class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+        >
+          <option value="date_desc">{{ $t('submissions.sortNewest') }}</option>
+          <option value="date_asc">{{ $t('submissions.sortOldest') }}</option>
+        </select>
+      </label>
+      <label class="flex items-center gap-1.5 text-sm text-slate-600">
+        {{ $t('submissions.perPage') }}
+        <select
+          v-model.number="perPage"
+          class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+        >
+          <option v-for="n in perPageOptions" :key="n" :value="n">{{ n }}</option>
+        </select>
+      </label>
+    </div>
 
     <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
       {{ error }}
