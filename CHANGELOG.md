@@ -8,6 +8,10 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Cambio de contraseña desde el propio perfil**. Sección «Contraseña» en *Mi perfil*
+  donde el usuario, ya autenticado, cambia su contraseña indicando la actual y la nueva
+  (con confirmación; mínimo 8 caracteres). `POST /profile/password` verifica la contraseña
+  actual antes de aplicar el cambio y mantiene la sesión en curso.
 - **Recuperación de contraseña por email** («olvidé mi contraseña»). Gobernada por un
   interruptor en *Configuración* admin «Permitir recuperar contraseña» (desactivado por
   defecto). Flujo público: el usuario pide el reset por email (`POST /auth/forgot-password`,

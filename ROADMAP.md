@@ -23,7 +23,6 @@ contra una cuenta KoboToolbox real:
 
 - [ ] Al re-sincronizar con un estado más restrictivo, desactivar los formularios que
       dejan de cumplirlo (hoy se quedan como estaban).
-- [ ] Acción de **reseteo de contraseña** visible para el propio usuario en su perfil.
 - [ ] Indicador global en el panel admin del estado de sincronización de todas las cuentas.
 - [ ] Cierre de sesión remoto desde el admin (la tabla `user_sessions` ya lo permite).
 - [ ] Tests automatizados del backend (PHPUnit) para auth, permisos y rate limiting.
