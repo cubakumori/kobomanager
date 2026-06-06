@@ -20,6 +20,22 @@ Todos los cambios notables de KoboManager. El formato sigue
   siguen aplicando sobre las filas visibles). Configuración con etiquetas legibles y, para
   preguntas de opción, sus etiquetas; para texto/metadatos, sugerencias de valores desde la
   caché. i18n es/en. *(Limitación v1: las preguntas `select_multiple` no se pueden filtrar.)*
+- En la portada, nueva tarjeta **«Acceso por filas»** que presenta el control de acceso
+  granular; el título «KoboManager» del encabezado público ahora enlaza al inicio.
+
+### Cambiado
+
+- La **Guía de uso** ya no se abre como página «fuera» del panel: con sesión iniciada se
+  carga **dentro del shell** (junto al resto del contenido); sin sesión sigue siendo una
+  página pública, ahora con el **mismo encabezado que la portada** (encabezado público
+  extraído a un componente reutilizable).
+
+### Corregido
+
+- El **botón de menú (hamburguesa)** de las páginas públicas aparecía también en pantallas
+  grandes (y descolocaba la navegación al centro): su estilo vivía en CSS sin capa y ganaba
+  a la utilidad `md:hidden`; ahora va en la capa `components` y se oculta correctamente en
+  escritorio, con la navegación alineada a la derecha y el menú lateral móvil a la derecha.
 
 ## [0.3.0] — 2026-06-06
 
