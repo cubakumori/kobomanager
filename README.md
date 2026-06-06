@@ -148,3 +148,17 @@ language in *Settings*; each user can override it in their profile.
 
 First complete functional version. See [`CHANGELOG.md`](./CHANGELOG.md) for what's shipped
 and [`ROADMAP.md`](./ROADMAP.md) for what's pending.
+
+## Contributing
+
+See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the design overview and
+[`CONTRIBUTING.md`](./CONTRIBUTING.md) for conventions and how to get set up.
+
+## License
+
+Licensed under the **GNU Affero General Public License v3.0 or later** (AGPL-3.0-or-later) —
+see [`LICENSE`](./LICENSE). In short: you may use, study, modify and redistribute it, but if
+you run a modified version as a network service you must offer your users its source code.
+The copyright holder may also offer the software under separate commercial terms.
+
+Copyright (C) 2026 Ernesto Ortiz and KoboManager contributors.

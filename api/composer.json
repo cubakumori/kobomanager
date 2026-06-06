@@ -2,6 +2,7 @@
     "name": "kobomanager/api",
     "description": "KoboManager backend — tests (PHPUnit). El runtime no usa dependencias.",
     "type": "project",
+    "license": "AGPL-3.0-or-later",
     "require-dev": {
         "phpunit/phpunit": "^12.0"
     },

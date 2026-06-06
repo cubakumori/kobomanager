@@ -2,6 +2,7 @@
   "name": "kobomanager",
   "private": true,
   "version": "0.2.0",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "scripts": {
     "predev": "(lsof -ti:8787 -sTCP:LISTEN 2>/dev/null; lsof -ti:5173 -sTCP:LISTEN 2>/dev/null) | xargs kill 2>/dev/null || true",
