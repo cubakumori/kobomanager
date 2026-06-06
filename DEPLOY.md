@@ -69,7 +69,7 @@ define('APP_ENV', 'prod');              // hides error details
 define('APP_URL', 'https://yourdomain.com');
 define('CORS_ALLOWED_ORIGINS', ['https://yourdomain.com']);
 
-define('RESEND_API_KEY', 're_••••••');  // for the daily summary
+define('RESEND_API_KEY', 're_••••••');  // email (see §8); leave '' to disable
 define('MAIL_FROM', 'KoboManager <noreply@yourdomain.com>');
 ```
 
@@ -111,14 +111,39 @@ The `/api` `.htaccess` ships with the repo (routes through `index.php` and block
 Both scripts run only from the CLI (they reject web requests). The daily summary
 requires `RESEND_API_KEY` and `MAIL_FROM` to be configured.
 
-## 8. Post-deployment checks
+## 8. Email (Resend)
+
+KoboManager sends email through the **Resend HTTP API** (`api/lib/Mailer.php`) — no SDK
+and **no SMTP server/port** to configure. Email powers:
+
+- the **daily summary** of new submissions (cron, §7), and
+- **password recovery** (the "forgot password" flow), when enabled.
+
+Setup:
+
+1. Create an account at [resend.com](https://resend.com) and generate an **API key**.
+2. **Verify your sending domain** in Resend (DNS records). Until the domain is verified,
+   delivery is limited/blocked by Resend.
+3. In `api/config.php` set:
+   ```php
+   define('RESEND_API_KEY', 're_••••••');
+   define('MAIL_FROM', 'KoboManager <noreply@yourdomain.com>'); // address at the verified domain
+   ```
+
+If `RESEND_API_KEY` is left empty, sending is **skipped gracefully** (logged, no error):
+the app keeps working but email-dependent features (daily summary, password recovery) won't
+send anything. Handy for staging.
+
+> The secret lives only in `config.php` (never in the database or exposed to the frontend).
+
+## 9. Post-deployment checks
 
 - `https://yourdomain.com/api/v1/health` → `status: ok` (php, sodium, pdo_mysql, database).
 - Sign in with the admin you created; the cookie must travel as `Secure` + `HttpOnly`.
 - Add a real Kobo account and click **Sync** under *Forms*.
 - Run `sync_submissions.php` manually once and check `submissions_cache`.
 
-## 9. Subsequent updates
+## 10. Subsequent updates
 
 1. `npm run build` locally.
 2. Replace `index.html` + `assets/` in the root and the `api/` folder (without touching `config.php`).

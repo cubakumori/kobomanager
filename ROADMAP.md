@@ -59,6 +59,10 @@ Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
 
 ### Operación y mantenimiento
 
+- [ ] **Transporte de correo alternativo (SMTP)**: hoy el envío es solo vía Resend (API HTTP,
+      `lib/Mailer.php`). Ofrecer SMTP como alternativa para quien prefiera su propio servidor.
+      Implica un cliente SMTP (PHPMailer o SMTP por sockets) — choca con la filosofía «sin
+      dependencias»; valorar abstraer un `MailTransport` con back-ends `resend`|`smtp`.
 - [ ] **Docker / docker-compose** (paridad dev↔prod) y **CI** (lint + build).
 - [ ] **Índices/búsqueda**: columnas generadas o full-text para acelerar la búsqueda en
       `submissions_cache` cuando crezca.
