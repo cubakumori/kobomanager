@@ -42,6 +42,12 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
+- En la tabla de envíos se puede **elegir qué columnas mostrar y reordenarlas**
+  (arrastrando), con «Enviado» siempre visible; la preferencia se guarda por formulario.
+- El **detalle de un envío** incluye navegación **Anterior/Siguiente** (arriba y al final).
+- El **sidebar** del panel queda fijo al hacer scroll en pantallas grandes (ya no deja un
+  hueco cuando el contenido es largo).
+- El botón **«Mapa»** se deshabilita cuando ningún envío del formulario tiene coordenadas.
 - El botón «Cerrar sesión» del sidebar se alinea a la izquierda como el resto.
 - Al cerrar sesión en el panel se vuelve a la **portada** (`/`) en lugar de a `/login`.
 - En la portada, el encabezado deja solo el texto «KoboManager» (sin icono) y las tarjetas
@@ -50,6 +56,8 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Corregido
 
+- En móvil, al abrir el menú lateral sobre una **vista de mapa**, el mapa ya no queda por
+  encima del *drawer*.
 - Al sincronizar, los formularios **borrados en Kobo** ahora se eliminan de la app
   (antes seguían listados); el resumen indica cuántos se eliminaron.
 
