@@ -21,9 +21,6 @@ contra una cuenta KoboToolbox real:
 
 ## Mejoras a corto plazo (ideas propias)
 
-- [ ] Al re-sincronizar con un estado más restrictivo, desactivar los formularios que
-      dejan de cumplirlo (hoy se quedan como estaban).
-- [ ] Indicador global en el panel admin del estado de sincronización de todas las cuentas.
 - [ ] Tests automatizados del backend (PHPUnit) para auth, permisos y rate limiting.
 
 ## Del análisis de la Comunidad de Kobo (ideas a copiar)

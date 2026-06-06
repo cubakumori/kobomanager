@@ -8,6 +8,9 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Indicador global de sincronización** en *Formularios* (admin): un panel muestra, por
+  cuenta Kobo, la última sincronización, su estado (correcto / con errores / sin sincronizar)
+  y el número de formularios (e inactivos).
 - **Cierre de sesión remoto desde el admin**. La lista de usuarios muestra el número de
   sesiones activas y permite **cerrar todas las sesiones** de un usuario (revoca sus tokens;
   tendrá que volver a iniciar sesión), sin necesidad de desactivarlo. Acción auditada.
@@ -62,6 +65,10 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
+- **Al re-sincronizar con un filtro de estados más restrictivo**, los formularios que dejan
+  de cumplirlo ahora se **desactivan** (se ocultan a los usuarios y al cron, conservando su
+  caché y revisiones) en lugar de quedarse visibles; vuelven a activarse solos si más adelante
+  cumplen el filtro.
 - **Tematización por variables CSS**: el color primario (azul) y el secundario/de marca
   (verde) se centralizan como *tokens* de tema en `src/style.css` (`@theme` de Tailwind v4,
   escalas `primary` y `accent` expuestas como variables `--color-primary-*`/`--color-accent-*`).
