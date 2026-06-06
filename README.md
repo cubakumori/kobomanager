@@ -69,6 +69,10 @@ Open http://localhost:5173. The dashboard shows the result of `/api/v1/health`.
 
 Standalone scripts if needed: `npm run dev:api`, `npm run dev:web`, `npm run build`.
 
+> A `predev` step frees ports `8787`/`5173` automatically before starting (so a leftover
+> server doesn't cause *"Address already in use"*). It uses `lsof`/`kill` (macOS/Linux);
+> on Windows, remove it or stop the previous process manually.
+
 ### 3. Create the first administrator
 
 Creating users via the API requires being authenticated as an admin, so the first
