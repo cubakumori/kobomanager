@@ -408,6 +408,7 @@
     "KOBO_SUBMISSION_NOT_FOUND": "The submission no longer exists in KoboToolbox.",
     "AUTH_RATE_LIMITED": "Too many sign-in attempts. Wait a minute and try again.",
     "AUTH_INSUFFICIENT_PERMISSIONS": "You don't have permission to perform this action.",
+    "CSRF_BLOCKED": "The request was blocked for security (origin not allowed). Reload the page and try again.",
     "RESET_TOKEN_INVALID": "The recovery link is invalid or has expired. Request a new one.",
     "PASSWORD_INCORRECT": "The current password is incorrect.",
     "generic": "An error occurred"

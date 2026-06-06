@@ -32,9 +32,36 @@ if (in_array($origin, CORS_ALLOWED_ORIGINS, true)) {
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+if ($method === 'OPTIONS') {
     http_response_code(204);
     exit;
+}
+
+// --- Protección CSRF ---
+// La cookie de sesión es SameSite=Lax (ya bloquea el envío en POST cross-site),
+// pero reforzamos comprobando el origen en métodos que modifican estado: el
+// Origin/Referer debe coincidir con un origen permitido. Una petición CSRF desde
+// otro sitio llevará un Origin ajeno (→ bloqueada); las del propio frontend
+// coinciden. Si no hay Origin ni Referer (clientes no-navegador: cron/CLI, que no
+// arrastran la cookie de la víctima) no se aplica.
+if (in_array($method, ['POST', 'PUT', 'DELETE', 'PATCH'], true)) {
+    $scheme = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443) ? 'https' : 'http';
+    $selfOrigin = isset($_SERVER['HTTP_HOST']) ? $scheme . '://' . $_SERVER['HTTP_HOST'] : null;
+    $allowedOrigins = array_values(array_filter(array_merge(CORS_ALLOWED_ORIGINS, [$selfOrigin])));
+
+    $reqOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    if ($reqOrigin === '' && !empty($_SERVER['HTTP_REFERER'])) {
+        $p = parse_url($_SERVER['HTTP_REFERER']);
+        if (isset($p['scheme'], $p['host'])) {
+            $reqOrigin = $p['scheme'] . '://' . $p['host'] . (isset($p['port']) ? ':' . $p['port'] : '');
+        }
+    }
+    if ($reqOrigin !== '' && !in_array($reqOrigin, $allowedOrigins, true)) {
+        ErrorResponse::send('CSRF_BLOCKED');
+    }
 }
 
 // --- Resolver path de la API ---

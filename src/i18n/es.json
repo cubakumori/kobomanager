@@ -408,6 +408,7 @@
     "KOBO_SUBMISSION_NOT_FOUND": "El envío ya no existe en KoboToolbox.",
     "AUTH_RATE_LIMITED": "Demasiados intentos de inicio de sesión. Espera un minuto e inténtalo de nuevo.",
     "AUTH_INSUFFICIENT_PERMISSIONS": "No tienes permisos para realizar esta acción.",
+    "CSRF_BLOCKED": "La petición fue bloqueada por seguridad (origen no permitido). Recarga la página e inténtalo de nuevo.",
     "RESET_TOKEN_INVALID": "El enlace de recuperación no es válido o ha caducado. Solicita uno nuevo.",
     "PASSWORD_INCORRECT": "La contraseña actual no es correcta.",
     "generic": "Ha ocurrido un error"
