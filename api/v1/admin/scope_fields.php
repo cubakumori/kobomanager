@@ -30,13 +30,17 @@ $resolved = FormSchema::resolve($schema, $admin['locale']);
 $valuesFor = isset($_GET['values']) ? (string) $_GET['values'] : '';
 if ($valuesFor !== '') {
     $path = '$."' . str_replace(['\\', '"'], '', $valuesFor) . '"';
+    // Excluir campos ausentes (SQL NULL) y valores JSON null (JSON_UNQUOTE los
+    // devolvería como la cadena "null"). Solo valores reales como sugerencia.
     $rows = DB::run(
         'SELECT DISTINCT JSON_UNQUOTE(JSON_EXTRACT(json_payload, ?)) AS v
          FROM submissions_cache
          WHERE form_id = ?
+           AND JSON_EXTRACT(json_payload, ?) IS NOT NULL
+           AND JSON_TYPE(JSON_EXTRACT(json_payload, ?)) <> \'NULL\'
          ORDER BY v
          LIMIT 50',
-        [$path, $formId]
+        [$path, $formId, $path, $path]
     )->fetchAll();
     $values = [];
     foreach ($rows as $r) {

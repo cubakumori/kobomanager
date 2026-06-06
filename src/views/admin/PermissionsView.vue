@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '../../services/api'
 import { apiError } from '../../stores/auth'
+import Modal from '../../components/Modal.vue'
 
 const { t } = useI18n()
 
@@ -77,6 +78,108 @@ function onToggle(p) {
   saved.value = false
 }
 
+// ---------- Filtro por filas (scoping) ----------
+const scopeOpen = ref(false)
+const scopeForm = ref(null) // la fila de permiso en edición
+const scopeFields = ref([]) // campos filtrables del formulario
+const scopeLoading = ref(false)
+const scopeError = ref('')
+const scopeConditions = ref([]) // copia de trabajo: [{ field, values: [] }]
+const suggestions = ref({}) // { [field]: string[] } valores sugeridos desde la caché
+
+function conditionCount(p) {
+  return p.row_filter?.conditions?.length || 0
+}
+
+const scopeFieldByKey = computed(() => {
+  const m = new Map()
+  for (const f of scopeFields.value) m.set(f.key, f)
+  return m
+})
+
+// Campos ofrecidos en el selector: del formulario (sin select_multiple) + metadatos.
+const selectableFields = computed(() =>
+  scopeFields.value.filter((f) => !f.multi),
+)
+
+async function openScope(p) {
+  scopeForm.value = p
+  scopeOpen.value = true
+  scopeError.value = ''
+  scopeFields.value = []
+  suggestions.value = {}
+  // Copia profunda de las condiciones actuales para editarlas sin tocar el original.
+  scopeConditions.value = (p.row_filter?.conditions || []).map((c) => ({
+    field: c.field,
+    values: [...(c.values || [])],
+  }))
+  scopeLoading.value = true
+  try {
+    const { data } = await api.get(`/admin/forms/${p.form_id}/scope-fields`)
+    scopeFields.value = data.data.fields
+  } catch (e) {
+    scopeError.value = apiError(e, t('permissions.scopeLoadError'))
+  } finally {
+    scopeLoading.value = false
+  }
+}
+
+function addCondition() {
+  scopeConditions.value.push({ field: '', values: [] })
+}
+function removeCondition(i) {
+  scopeConditions.value.splice(i, 1)
+}
+
+// Opciones (select_one) del campo de una condición, o null si es texto libre.
+function fieldOptions(field) {
+  const f = scopeFieldByKey.value.get(field)
+  return f && f.options.length ? f.options : null
+}
+function toggleValue(cond, value) {
+  const i = cond.values.indexOf(value)
+  if (i === -1) cond.values.push(value)
+  else cond.values.splice(i, 1)
+}
+function valuesText(cond) {
+  return cond.values.join('\n')
+}
+function setValuesText(cond, text) {
+  cond.values = text
+    .split('\n')
+    .map((v) => v.trim())
+    .filter((v) => v !== '')
+}
+
+async function loadSuggestions(field) {
+  if (!field || suggestions.value[field]) return
+  try {
+    const { data } = await api.get(`/admin/forms/${scopeForm.value.form_id}/scope-fields`, {
+      params: { values: field },
+    })
+    suggestions.value = { ...suggestions.value, [field]: data.data.values }
+  } catch {
+    suggestions.value = { ...suggestions.value, [field]: [] }
+  }
+}
+function addSuggestion(cond, value) {
+  if (!cond.values.includes(value)) cond.values.push(value)
+}
+
+function applyScope() {
+  const conditions = scopeConditions.value
+    .filter((c) => c.field && c.values.length)
+    .map((c) => ({ field: c.field, values: [...new Set(c.values)] }))
+  scopeForm.value.row_filter = conditions.length ? { conditions } : null
+  saved.value = false
+  scopeOpen.value = false
+}
+function clearScope() {
+  scopeForm.value.row_filter = null
+  saved.value = false
+  scopeOpen.value = false
+}
+
 onMounted(loadUsers)
 </script>
 
@@ -130,6 +233,7 @@ onMounted(loadUsers)
               <th class="px-4 py-3 text-center">{{ $t('permissions.colView') }}</th>
               <th class="px-4 py-3 text-center">{{ $t('permissions.colEdit') }}</th>
               <th class="px-4 py-3 text-center">{{ $t('permissions.colValidate') }}</th>
+              <th class="px-4 py-3 text-center">{{ $t('permissions.colScope') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -147,9 +251,25 @@ onMounted(loadUsers)
               <td class="px-4 py-3 text-center">
                 <input type="checkbox" v-model="p.can_validate" @change="onToggle(p)" />
               </td>
+              <td class="px-4 py-3 text-center">
+                <button
+                  v-if="p.can_view"
+                  type="button"
+                  class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ring-1 transition"
+                  :class="conditionCount(p)
+                    ? 'bg-accent-50 text-accent-700 ring-accent-200 hover:bg-accent-100'
+                    : 'bg-slate-50 text-slate-500 ring-slate-200 hover:bg-slate-100'"
+                  @click="openScope(p)"
+                >
+                  {{ conditionCount(p)
+                    ? $t('permissions.scopeFiltered', { n: conditionCount(p) })
+                    : $t('permissions.scopeAll') }}
+                </button>
+                <span v-else class="text-slate-300">—</span>
+              </td>
             </tr>
             <tr v-if="!visiblePerms.length">
-              <td colspan="4" class="px-4 py-6 text-center text-slate-400">{{ $t('permissions.empty') }}</td>
+              <td colspan="5" class="px-4 py-6 text-center text-slate-400">{{ $t('permissions.empty') }}</td>
             </tr>
           </tbody>
         </table>
@@ -166,5 +286,147 @@ onMounted(loadUsers)
         </div>
       </template>
     </div>
+
+    <!-- Modal: filtro por filas -->
+    <Modal
+      v-if="scopeOpen"
+      size="xl"
+      :title="$t('permissions.scopeTitle', { form: scopeForm?.name })"
+      @close="scopeOpen = false"
+    >
+      <div class="space-y-4">
+        <p class="text-sm text-slate-500">{{ $t('permissions.scopeIntro') }}</p>
+
+        <div v-if="scopeError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+          {{ scopeError }}
+        </div>
+        <div v-if="scopeLoading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
+
+        <template v-else>
+          <div v-if="!scopeConditions.length" class="rounded-lg bg-slate-50 px-3 py-3 text-sm text-slate-500">
+            {{ $t('permissions.scopeNoConditions') }}
+          </div>
+
+          <div
+            v-for="(cond, i) in scopeConditions"
+            :key="i"
+            class="space-y-2 rounded-lg border border-slate-200 p-3"
+          >
+            <div class="flex items-center gap-2">
+              <select
+                v-model="cond.field"
+                class="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+                @change="cond.values = []; loadSuggestions(cond.field)"
+              >
+                <option value="">{{ $t('permissions.scopeSelectField') }}</option>
+                <optgroup :label="$t('permissions.scopeMetaGroup')">
+                  <option value="_submitted_by">{{ $t('permissions.scopeFieldSubmittedBy') }}</option>
+                </optgroup>
+                <optgroup :label="$t('permissions.scopeFieldsGroup')">
+                  <option v-for="f in selectableFields" :key="f.key" :value="f.key">{{ f.label }}</option>
+                </optgroup>
+              </select>
+              <button
+                type="button"
+                class="rounded-lg px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                @click="removeCondition(i)"
+              >
+                {{ $t('permissions.scopeRemove') }}
+              </button>
+            </div>
+
+            <div v-if="cond.field">
+              <p class="mb-1 text-xs font-medium text-slate-600">{{ $t('permissions.scopeValues') }}</p>
+
+              <!-- select_one: opciones con etiqueta -->
+              <div v-if="fieldOptions(cond.field)" class="flex flex-wrap gap-2">
+                <label
+                  v-for="opt in fieldOptions(cond.field)"
+                  :key="opt.value"
+                  class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1 text-sm"
+                  :class="cond.values.includes(opt.value) ? 'bg-accent-50 border-accent-300' : ''"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="cond.values.includes(opt.value)"
+                    @change="toggleValue(cond, opt.value)"
+                  />
+                  <span>{{ opt.label }} <span class="text-slate-400">({{ opt.value }})</span></span>
+                </label>
+              </div>
+
+              <!-- texto libre / metadatos -->
+              <div v-else class="space-y-1.5">
+                <textarea
+                  :value="valuesText(cond)"
+                  rows="3"
+                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+                  :placeholder="$t('permissions.scopeValuesHint')"
+                  @input="setValuesText(cond, $event.target.value)"
+                ></textarea>
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    class="rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-600 hover:bg-slate-200"
+                    @click="loadSuggestions(cond.field)"
+                  >
+                    {{ $t('permissions.scopeSuggest') }}
+                  </button>
+                  <button
+                    v-for="s in suggestions[cond.field] || []"
+                    :key="s"
+                    type="button"
+                    class="rounded-md bg-primary-50 px-2 py-0.5 text-xs text-primary-700 hover:bg-primary-100"
+                    @click="addSuggestion(cond, s)"
+                  >
+                    + {{ s }}
+                  </button>
+                  <span
+                    v-if="suggestions[cond.field] && !suggestions[cond.field].length"
+                    class="text-xs text-slate-400"
+                  >
+                    {{ $t('permissions.scopeNoSuggest') }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+            @click="addCondition"
+          >
+            + {{ $t('permissions.scopeAddCondition') }}
+          </button>
+        </template>
+
+        <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
+          <button
+            type="button"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+            @click="clearScope"
+          >
+            {{ $t('permissions.scopeClear') }}
+          </button>
+          <div class="flex gap-2">
+            <button
+              type="button"
+              class="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+              @click="scopeOpen = false"
+            >
+              {{ $t('common.cancel') }}
+            </button>
+            <button
+              type="button"
+              class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+              @click="applyScope"
+            >
+              {{ $t('permissions.scopeApply') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Modal>
   </div>
 </template>

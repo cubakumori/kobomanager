@@ -1,12 +1,19 @@
 <script setup>
-import { ref, useId } from 'vue'
+import { ref, computed, useId } from 'vue'
 import { useDialogA11y } from '../composables/dialogA11y'
 
-defineProps({ title: { type: String, default: '' } })
+const props = defineProps({
+  title: { type: String, default: '' },
+  size: { type: String, default: 'md' }, // sm | md | lg | xl
+})
 const emit = defineEmits(['close'])
 
 const panel = ref(null)
 const titleId = useId()
+
+const maxWidth = computed(
+  () => ({ sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-lg', xl: 'max-w-2xl' })[props.size] || 'max-w-md',
+)
 
 // Cerrar con Escape, focus trap y gestión del foco al abrir/cerrar.
 useDialogA11y(panel, () => emit('close'))
@@ -19,7 +26,7 @@ useDialogA11y(panel, () => emit('close'))
   >
     <div
       ref="panel"
-      class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+      :class="['w-full rounded-2xl bg-white p-6 shadow-xl', maxWidth]"
       role="dialog"
       aria-modal="true"
       :aria-labelledby="title ? titleId : undefined"
