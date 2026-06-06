@@ -61,6 +61,8 @@ Todos los cambios notables de KoboManager. El formato sigue
   escalas `primary` y `accent` expuestas como variables `--color-primary-*`/`--color-accent-*`).
   Recolorear toda la aplicación es cambiar esas dos escalas en un solo sitio; las clases
   usan `primary`/`accent` en vez de `blue`/`emerald`. El verde de «éxito» se mantiene aparte.
+  Se incluyen además dos temas alternativos listos para usar (`theme-teal` y `theme-violet`)
+  activables con una clase en `<html>`. Documentado en el README.
 - **Diferenciación visual por color**: las tarjetas de *Mis formularios* usan ahora un
   fondo verde claro (emerald, el color de marca) para distinguirse de las tarjetas blancas
   del *Dashboard*, y el encabezado de la tabla de envíos de un formulario va en verde, de

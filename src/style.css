@@ -45,6 +45,69 @@
   --color-accent-900: #064e3b;
 }
 
+/*
+  TEMAS ALTERNATIVOS
+  ──────────────────
+  Cada clase redefine los tokens `primary` y `accent`. Se activan poniendo la
+  clase en el elemento <html> (ver index.html) o en tiempo de ejecución:
+      document.documentElement.classList.add('theme-teal')
+  Sin clase → tema por defecto (azul + verde, definido arriba en @theme).
+
+  Estas reglas van FUERA de @theme a propósito: las variables de @theme viven en
+  la capa `theme` y las reglas sin capa (como estas) tienen prioridad sobre ella,
+  así que la clase en <html> gana al valor por defecto.
+*/
+
+/* Verde azulado + ámbar */
+.theme-teal {
+  --color-primary-50:  #f0fdfa;
+  --color-primary-100: #ccfbf1;
+  --color-primary-200: #99f6e4;
+  --color-primary-300: #5eead4;
+  --color-primary-400: #2dd4bf;
+  --color-primary-500: #14b8a6;
+  --color-primary-600: #0d9488;
+  --color-primary-700: #0f766e;
+  --color-primary-800: #115e59;
+  --color-primary-900: #134e4a;
+
+  --color-accent-50:  #fffbeb;
+  --color-accent-100: #fef3c7;
+  --color-accent-200: #fde68a;
+  --color-accent-300: #fcd34d;
+  --color-accent-400: #fbbf24;
+  --color-accent-500: #f59e0b;
+  --color-accent-600: #d97706;
+  --color-accent-700: #b45309;
+  --color-accent-800: #92400e;
+  --color-accent-900: #78350f;
+}
+
+/* Violeta + verde esmeralda */
+.theme-violet {
+  --color-primary-50:  #f5f3ff;
+  --color-primary-100: #ede9fe;
+  --color-primary-200: #ddd6fe;
+  --color-primary-300: #c4b5fd;
+  --color-primary-400: #a78bfa;
+  --color-primary-500: #8b5cf6;
+  --color-primary-600: #7c3aed;
+  --color-primary-700: #6d28d9;
+  --color-primary-800: #5b21b6;
+  --color-primary-900: #4c1d95;
+
+  --color-accent-50:  #ecfdf5;
+  --color-accent-100: #d1fae5;
+  --color-accent-200: #a7f3d0;
+  --color-accent-300: #6ee7b7;
+  --color-accent-400: #34d399;
+  --color-accent-500: #10b981;
+  --color-accent-600: #059669;
+  --color-accent-700: #047857;
+  --color-accent-800: #065f46;
+  --color-accent-900: #064e3b;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
 }

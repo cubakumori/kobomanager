@@ -78,6 +78,40 @@ admin is created from the CLI:
 php api/cli/create_user.php <email> <password> <name> admin
 ```
 
+## Theming (colors)
+
+Brand colors are centralized as theme tokens in [`src/style.css`](./src/style.css), so
+recoloring the whole app means editing one place — no find-and-replace across components.
+
+Two semantic color scales drive the UI (Tailwind v4 `@theme`):
+
+- **`primary`** — actions, links, buttons, focus rings (default: blue).
+- **`accent`** — brand/secondary color: *My forms* cards and a form's table header
+  (default: emerald green).
+
+(The "success" green used for *Saved ✓* messages stays on Tailwind's `green` on purpose,
+independent of the theme.)
+
+### Change the default colors
+
+Edit the `primary` / `accent` scales (50–900) inside the `@theme { … }` block in
+`src/style.css`, then rebuild (`npm run build`). The utility classes (`bg-primary-600`,
+`text-accent-700`, …) resolve to these CSS variables automatically.
+
+### Switch to a bundled alternate theme
+
+`src/style.css` also ships two ready-made palettes as classes: **`theme-teal`**
+(teal + amber) and **`theme-violet`** (violet + emerald). Activate one by adding the class
+to the `<html>` element in [`index.html`](./index.html):
+
+```html
+<html lang="es" class="theme-teal">
+```
+
+…or at runtime: `document.documentElement.classList.add('theme-violet')`. With no class,
+the default blue/green theme applies. To add your own, copy one of those classes and change
+the values.
+
 ## Languages
 
 The interface is available in **Spanish** and **English**. The admin sets the default
