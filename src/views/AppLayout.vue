@@ -44,7 +44,7 @@ useDialogA11y(drawer, () => { open.value = false }, open)
       <header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
         <span class="text-lg font-semibold tracking-tight text-slate-900">KoboManager</span>
         <button
-          class="rounded-lg border border-slate-300 bg-white p-2 text-slate-600 shadow-sm hover:bg-slate-50"
+          class="km-hamburger"
           aria-label="Menu"
           @click="open = true"
         >

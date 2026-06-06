@@ -92,7 +92,7 @@ const drawerLink =
 
         <!-- Botón hamburguesa (móvil) — neutro; el azul se reserva para las acciones -->
         <button
-          class="rounded-lg border border-slate-300 bg-white p-2 text-slate-600 shadow-sm hover:bg-slate-50 md:hidden"
+          class="km-hamburger md:hidden"
           aria-label="Menu"
           @click="showMenu = true"
         >
