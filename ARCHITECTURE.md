@@ -61,6 +61,17 @@ to HTTP statuses in one table; the frontend maps codes → localized messages (`
 - Guards: `require()`, `requireAdmin()`, and per‑form `canForm($user,$id,$cap)` /
   `requireForm(...)` where `cap ∈ {view,edit,validate}` (admins bypass).
 
+### Row‑level scoping (`lib/RowScope.php`)
+A per‑(user, form) filter (`user_form_permissions.row_filter`, JSON) can restrict **which
+submissions** a viewer sees, on top of the form capability. The rule is a list of
+conditions (`{field, values}`) combined with **AND**; a submission passes when, for every
+condition, its value at `field` is in `values`. `NULL`/empty → unrestricted; a condition
+with no values matches nothing (fail‑closed); admins are never restricted. The same rule is
+applied as a SQL predicate over `submissions_cache.json_payload` (lists, stats, map, form
+counts, daily summary) and as an in‑PHP `matches()` check on the detail/edit/validate path,
+where an out‑of‑scope submission returns 404. Note: MariaDB stores JSON as text and keeps the
+`\/` escape, so group‑path keys (`G01/P1_3`) are matched with an escaped JSON path.
+
 ### CSRF
 For mutating methods (POST/PUT/DELETE/PATCH) the front controller requires the request
 `Origin`/`Referer` to match an allowed origin (`CORS_ALLOWED_ORIGINS` + the server's own

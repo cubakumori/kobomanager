@@ -6,6 +6,21 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [Sin publicar]
 
+### Añadido
+
+- **Scoping por filas**: un *viewer* con acceso a un formulario puede ahora ver solo
+  **ciertos envíos**, según un filtro configurable por el administrador en *Permisos*.
+  El filtro es una lista de condiciones **campo + valores permitidos** combinadas con **Y**
+  (cada condición acepta varios valores); p. ej. «región ∈ {norte, este}» o «usuario que
+  envió (`_submitted_by`) ∈ {alice, bob}». Sin filtro, el comportamiento es el de siempre
+  (ve todos los envíos). El filtro se aplica en la lista de envíos, las estadísticas, el
+  mapa, el conteo de *Mis formularios* y el resumen diario por email; un envío fuera de
+  alcance se comporta como inexistente (404) también al ver el detalle, **editar** o
+  **validar** (el filtro restringe el conjunto de filas; las capacidades `editar`/`validar`
+  siguen aplicando sobre las filas visibles). Configuración con etiquetas legibles y, para
+  preguntas de opción, sus etiquetas; para texto/metadatos, sugerencias de valores desde la
+  caché. i18n es/en. *(Limitación v1: las preguntas `select_multiple` no se pueden filtrar.)*
+
 ## [0.3.0] — 2026-06-06
 
 ### Añadido

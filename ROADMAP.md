@@ -23,8 +23,9 @@ contra una cuenta KoboToolbox real:
 
 Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
 
-- [ ] **Scoping por filas**: que un viewer vea solo ciertos envíos (p. ej. los de
+- [x] **Scoping por filas**: que un viewer vea solo ciertos envíos (p. ej. los de
       determinados enumeradores o por valor de un campo), no solo por formulario.
+      *(hecho: filtro campo+valores con Y por (usuario, formulario); ver `CHANGELOG`)*.
 - [ ] **Enlaces de solo lectura compartibles** (públicos o con token), útil porque Kobo
       está retirando su «compartir sin login».
 - [ ] **Historial de edición visible** por envío en la UI (ya se guarda en `audit_log`).
