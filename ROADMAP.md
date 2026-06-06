@@ -50,7 +50,9 @@ Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
       `lib/Mailer.php`). Ofrecer SMTP como alternativa para quien prefiera su propio servidor.
       Implica un cliente SMTP (PHPMailer o SMTP por sockets) — choca con la filosofía «sin
       dependencias»; valorar abstraer un `MailTransport` con back-ends `resend`|`smtp`.
-- [ ] **Docker / docker-compose** (paridad dev↔prod) y **CI** (lint + build).
+- [ ] **Tests de integración de endpoints** (HTTP): login, CSRF y recuperación de contraseña
+      extremo a extremo (la lógica vive en los scripts de `v1/`, hoy solo cubiertos a mano).
+- [ ] **CI** (lint + build + PHPUnit). *(Docker queda fuera por ahora: no se usa en el proyecto.)*
 - [ ] **Índices/búsqueda**: columnas generadas o full-text para acelerar la búsqueda en
       `submissions_cache` cuando crezca.
 - [ ] `/health` ampliado: última ejecución de cada cron y estado de sincronización.
