@@ -21,6 +21,7 @@ require __DIR__ . '/lib/KoboClient.php';
 require __DIR__ . '/lib/FormSchema.php';
 require __DIR__ . '/lib/Geo.php';
 require __DIR__ . '/lib/RowScope.php';
+require __DIR__ . '/lib/ShareLink.php';
 require __DIR__ . '/lib/SubmissionSync.php';
 
 // --- CORS (frontend en dev sobre otro origen) ---
@@ -97,6 +98,8 @@ $routes = [
     'admin/permissions'         => 'admin/permissions.php',
     'admin/forms/:id/scope-fields' => 'admin/scope_fields.php',
     'admin/settings'            => 'admin/settings.php',
+    'admin/shares'              => 'admin/shares.php',
+    'admin/shares/:id'          => 'admin/share_item.php',
     'notifications'             => 'notifications.php',
     'profile'                   => 'profile.php',
     'profile/password'          => 'profile_password.php',
@@ -109,6 +112,12 @@ $routes = [
     'submissions/:id'           => 'submissions/item.php',
     'submissions/:id/review'    => 'submissions/review.php',
     'submissions/:id/attachments/:attId' => 'submissions/attachment.php',
+    // Enlaces públicos de solo lectura (sin sesión): el :token es el secreto del enlace.
+    'public/share/:token'                  => 'public/share.php',
+    'public/share/:token/unlock'           => 'public/share_unlock.php',
+    'public/share/:token/submissions'      => 'public/share_submissions.php',
+    'public/share/:token/submissions/:uid' => 'public/share_submission.php',
+    'public/share/:token/map'              => 'public/share_map.php',
 ];
 
 /** Empareja la ruta solicitada contra los patrones; devuelve [archivo, params] o [null, []]. */

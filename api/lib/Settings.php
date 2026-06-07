@@ -22,6 +22,15 @@ class Settings {
     /** ¿Está habilitado el flujo público «olvidé mi contraseña»? (desactivado por defecto) */
     private const DEFAULT_PASSWORD_RESET = false;
 
+    /**
+     * Política de contraseña para enlaces de solo lectura compartibles:
+     *   'off'      → nunca se ofrece contraseña (acceso solo por token).
+     *   'optional' → el admin puede ponerla o dejarla en blanco (por defecto).
+     *   'required' → cada enlace debe llevar contraseña.
+     */
+    public const VALID_SHARE_PASSWORD_POLICIES = ['off', 'optional', 'required'];
+    private const DEFAULT_SHARE_PASSWORD_POLICY = 'optional';
+
     public static function get(string $key, mixed $default = null): mixed {
         $row = DB::run('SELECT `value` FROM settings WHERE `key` = ?', [$key])->fetch();
         if (!$row) return $default;
@@ -60,6 +69,12 @@ class Settings {
     /** ¿Habilitado el flujo público de recuperación de contraseña? */
     public static function passwordResetEnabled(): bool {
         return (bool) self::get('password_reset_enabled', self::DEFAULT_PASSWORD_RESET);
+    }
+
+    /** Política de contraseña para enlaces compartibles ('off'|'optional'|'required'). */
+    public static function sharePasswordPolicy(): string {
+        $v = self::get('share_password_policy', self::DEFAULT_SHARE_PASSWORD_POLICY);
+        return in_array($v, self::VALID_SHARE_PASSWORD_POLICIES, true) ? $v : self::DEFAULT_SHARE_PASSWORD_POLICY;
     }
 
     /**

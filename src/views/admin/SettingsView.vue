@@ -20,6 +20,8 @@ const passwordResetEnabled = ref(false)
 const mailConfigured = ref(false)
 const viewerActions = ref({ enketo: false, update: false, resync: false, login: false })
 const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login']
+const sharePasswordPolicy = ref('optional')
+const validSharePolicies = ref(['off', 'optional', 'required'])
 const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
@@ -38,6 +40,8 @@ async function load() {
     passwordResetEnabled.value = data.data.password_reset_enabled
     mailConfigured.value = data.data.mail_configured
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
+    sharePasswordPolicy.value = data.data.share_password_policy
+    if (data.data.valid_share_password_policies) validSharePolicies.value = data.data.valid_share_password_policies
   } catch (e) {
     error.value = apiError(e, t('settings.loadError'))
   } finally {
@@ -67,12 +71,14 @@ async function save() {
       label_mode: labelMode.value,
       password_reset_enabled: passwordResetEnabled.value,
       viewer_actions: viewerActions.value,
+      share_password_policy: sharePasswordPolicy.value,
     })
     selected.value = data.data.sync_deployment_statuses
     defaultLocale.value = data.data.default_locale
     labelMode.value = data.data.label_mode
     passwordResetEnabled.value = data.data.password_reset_enabled
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
+    if (data.data.share_password_policy) sharePasswordPolicy.value = data.data.share_password_policy
     saved.value = true
     // Si el usuario sigue el idioma por defecto, refleja el cambio al instante.
     if (!auth.user?.locale_pref) setLocale(defaultLocale.value)
@@ -189,6 +195,32 @@ onMounted(load)
         >
           {{ $t('settings.passwordResetNoMail') }}
         </p>
+      </section>
+
+      <!-- Contraseña de los enlaces de compartir -->
+      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.sharePassword') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.sharePasswordDesc') }}</p>
+        </div>
+        <label
+          v-for="pol in validSharePolicies"
+          :key="pol"
+          class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50"
+        >
+          <input
+            type="radio"
+            class="mt-0.5 h-4 w-4"
+            name="share_password_policy"
+            :value="pol"
+            :checked="sharePasswordPolicy === pol"
+            @change="sharePasswordPolicy = pol; saved = false"
+          />
+          <span>
+            <span class="block text-sm font-medium text-slate-800">{{ $t('settings.sharePolicy_' + pol) }}</span>
+            <span class="block text-xs text-slate-400">{{ $t('settings.sharePolicy_' + pol + 'Hint') }}</span>
+          </span>
+        </label>
       </section>
 
       <!-- Acciones de los viewers sobre formularios -->

@@ -8,6 +8,23 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **M1 · Compartir — enlaces de solo lectura.** El administrador puede crear, desde
+  *Compartir* (nueva sección admin), **enlaces públicos** que muestran los envíos de un
+  formulario **sin necesidad de cuenta** en Kobo ni en KoboManager —reemplazo directo del
+  «compartir sin login» que KoboToolbox está retirando. Cada enlace decide **qué expone**
+  (lista de envíos, detalle y/o mapa) y puede llevar un **filtro de filas** (reutiliza el
+  scoping por filas) para mostrar solo un subconjunto. El acceso es por un **token
+  impredecible** en la URL (`/s/<token>`); opcionalmente protegido con **contraseña** según
+  la política global `share_password_policy` (`off` | `optional` | `required`, por defecto
+  *opcional*; configurable en *Configuración*). Los enlaces admiten **caducidad opcional** y
+  son **revocables al instante** (o eliminables); registran nº de visitas y última visita.
+  La vista pública vive **fuera del shell** del panel, con encabezado propio, pestañas
+  Lista/Mapa, detalle navegable (anterior/siguiente) e i18n es/en. Backend sin dependencias:
+  tabla nueva `share_links` (`db/008_*.sql`), `lib/ShareLink.php`, endpoints públicos sin
+  sesión bajo `v1/public/` y CRUD admin en `v1/admin/shares*`. El endpoint de contraseña
+  (`unlock`) está limitado por IP; emite un *ticket* HMAC de vida corta para no reenviar la
+  contraseña. No se exponen adjuntos ni el estado de revisión interno. *(Rate-limit de los
+  GET públicos: se recomienda a nivel de proxy; ver ROADMAP.)*
 - **Scoping por filas**: un *viewer* con acceso a un formulario puede ahora ver solo
   **ciertos envíos**, según un filtro configurable por el administrador en *Permisos*.
   El filtro es una lista de condiciones **campo + valores permitidos** combinadas con **Y**

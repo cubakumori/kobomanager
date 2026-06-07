@@ -72,6 +72,19 @@ counts, daily summary) and as an in‑PHP `matches()` check on the detail/edit/v
 where an out‑of‑scope submission returns 404. Note: MariaDB stores JSON as text and keeps the
 `\/` escape, so group‑path keys (`G01/P1_3`) are matched with an escaped JSON path.
 
+### Public share links (`lib/ShareLink.php`)
+Read‑only links let anyone browse a form's submissions **without a session** (M1). A
+`share_links` row carries an unguessable URL `token`, what it exposes (`expose_list` /
+`expose_detail` / `expose_map`), an optional `row_filter` (reuses `RowScope`), an optional
+`password_hash`, and optional `expires_at` / `revoked_at`. `resolve()` returns the row only
+while active (not revoked, not expired, form active). The public endpoints live under
+`v1/public/` and **skip `Auth`** (like `v1/config.php`); `ShareLink::requireAccess()` is
+their guard — it resolves the token, checks the requested capability, and for
+password‑protected links requires a short‑lived **HMAC ticket** (issued by the rate‑limited
+`unlock` endpoint, sent back via the `X-Share-Ticket` header). Out‑of‑scope or other‑form
+submissions return 404; attachments and internal review status are never exposed. Admin CRUD
+is in `v1/admin/shares*`; the password policy is the `share_password_policy` setting.
+
 ### CSRF
 For mutating methods (POST/PUT/DELETE/PATCH) the front controller requires the request
 `Origin`/`Referer` to match an allowed origin (`CORS_ALLOWED_ORIGINS` + the server's own
@@ -134,7 +147,7 @@ a fresh database you drop and re‑apply all files. Runtime‑configurable behav
 
 Key tables: `kobo_accounts`, `users`, `user_sessions`, `forms`, `submissions_cache`,
 `submission_reviews`, `user_form_permissions`, `notification_config`, `audit_log`,
-`login_attempts`, `settings`, `password_resets`.
+`login_attempts`, `settings`, `password_resets`, `share_links`.
 
 ## Tests
 

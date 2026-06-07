@@ -29,4 +29,13 @@ api.interceptors.response.use(
   },
 )
 
+// Cliente para los enlaces públicos de solo lectura (/s/:token): sin cookie de
+// sesión y sin el interceptor de 401 (un enlace anónimo nunca debe redirigir a
+// login). El ticket de contraseña se adjunta por petición vía la cabecera
+// X-Share-Ticket.
+export const publicApi = axios.create({
+  baseURL: '/api/v1',
+  headers: { 'Content-Type': 'application/json' },
+})
+
 export default api

@@ -18,6 +18,8 @@ if (Request::method() === 'GET') {
         'password_reset_enabled'   => Settings::passwordResetEnabled(),
         'mail_configured'          => Settings::mailConfigured(),
         'viewer_actions'           => Settings::viewerActions(),
+        'share_password_policy'      => Settings::sharePasswordPolicy(),
+        'valid_share_password_policies' => Settings::VALID_SHARE_PASSWORD_POLICIES,
     ]);
 }
 
@@ -63,6 +65,15 @@ if (Request::method() === 'PUT') {
         $enabled = (bool) $body['password_reset_enabled'];
         Settings::set('password_reset_enabled', $enabled);
         $out['password_reset_enabled'] = $enabled;
+    }
+
+    if (array_key_exists('share_password_policy', $body)) {
+        $pol = (string) $body['share_password_policy'];
+        if (!in_array($pol, Settings::VALID_SHARE_PASSWORD_POLICIES, true)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Política de contraseña de enlaces no válida');
+        }
+        Settings::set('share_password_policy', $pol);
+        $out['share_password_policy'] = $pol;
     }
 
     if (array_key_exists('viewer_actions', $body) && is_array($body['viewer_actions'])) {

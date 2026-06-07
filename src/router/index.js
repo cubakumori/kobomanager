@@ -11,6 +11,7 @@ const routes = [
   { path: '/forgot-password', name: 'forgot-password', component: () => import('../views/ForgotPasswordView.vue'), meta: { public: true } },
   { path: '/reset-password', name: 'reset-password', component: () => import('../views/ResetPasswordView.vue'), meta: { public: true } },
   { path: '/guide', name: 'guide', component: () => import('../views/GuideView.vue'), meta: { public: true, shellWhenAuthed: true } },
+  { path: '/s/:token', name: 'share', component: () => import('../views/PublicShareView.vue'), meta: { public: true } },
 
   { path: '/dashboard', name: 'dashboard', component: () => import('../views/DashboardView.vue'), meta: shell() },
   { path: '/forms', name: 'forms', component: () => import('../views/MyFormsView.vue'), meta: shell() },
@@ -26,6 +27,7 @@ const routes = [
   { path: '/admin/accounts', name: 'admin-accounts', component: () => import('../views/admin/AccountsView.vue'), meta: shell({ requiresAdmin: true }) },
   { path: '/admin/forms', name: 'admin-forms', component: () => import('../views/admin/FormsView.vue'), meta: shell({ requiresAdmin: true }) },
   { path: '/admin/permissions', name: 'admin-permissions', component: () => import('../views/admin/PermissionsView.vue'), meta: shell({ requiresAdmin: true }) },
+  { path: '/admin/shares', name: 'admin-shares', component: () => import('../views/admin/SharesView.vue'), meta: shell({ requiresAdmin: true }) },
   { path: '/admin/settings', name: 'admin-settings', component: () => import('../views/admin/SettingsView.vue'), meta: shell({ requiresAdmin: true }) },
 
   { path: '/:pathMatch(.*)*', redirect: '/' },

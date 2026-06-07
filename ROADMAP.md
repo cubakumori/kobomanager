@@ -15,12 +15,13 @@ más abajo). Cada hito = **una sesión propia** (verificación contra datos real
 por hito + actualización de CHANGELOG/ROADMAP/memoria). Tras M5 se hace un repaso de
 fortalecimiento y se etiqueta **1.0.0**. Lo no listado aquí queda para futuras versiones.
 
-- [ ] **M1 · Compartir — enlaces de solo lectura** *(siguiente; flagship)*. Públicos o con
-      token, porque Kobo está retirando su «compartir sin login». Reutiliza `RowScope` (un
-      enlace puede llevar un filtro de filas). Tabla nueva `share_links` (`db/NNN_*.sql`).
-      Decisiones a cerrar al arrancar: público vs. token; qué se expone (lista / detalle /
-      adjuntos / mapa); caducidad y revocación; rate-limit del endpoint público; vista
-      pública sin shell.
+- [x] **M1 · Compartir — enlaces de solo lectura** *(hecho; ver `CHANGELOG`)*. Token
+      impredecible en la URL + contraseña opcional (política global). Expone lista / detalle
+      / mapa (adjuntos se difieren). Caducidad opcional + revocación inmediata. Reutiliza
+      `RowScope`. Tabla `share_links` (`db/008_*.sql`), `lib/ShareLink.php`, endpoints
+      `v1/public/`, vista pública sin shell. *(Pendiente de M5: rate-limit de los GET
+      públicos a nivel de app — hoy solo el `unlock` de contraseña se limita por IP; los GET
+      se apoyan en el token + revocación/caducidad y se recomienda throttling en el proxy.)*
 - [ ] **M2 · Productividad de datos**: **revisión en lote** (aprobar/rechazar varios envíos)
       + **exportación CSV** (UTF-8 con BOM; XLSX nativo se difiere por la filosofía
       sin-dependencias). Respetan permisos y scoping por filas.
@@ -55,8 +56,8 @@ Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
 - [x] **Scoping por filas**: que un viewer vea solo ciertos envíos (p. ej. los de
       determinados enumeradores o por valor de un campo), no solo por formulario.
       *(hecho: filtro campo+valores con Y por (usuario, formulario); ver `CHANGELOG`)*.
-- [ ] **Enlaces de solo lectura compartibles** (públicos o con token), útil porque Kobo
-      está retirando su «compartir sin login».
+- [x] **Enlaces de solo lectura compartibles** (públicos o con token), útil porque Kobo
+      está retirando su «compartir sin login». *(hecho en M1; ver `CHANGELOG`)*.
 - [ ] **Historial de edición visible** por envío en la UI (ya se guarda en `audit_log`).
 - [ ] Exportación CSV/Excel y notificaciones por otros canales (ya listadas abajo).
 

@@ -18,6 +18,8 @@ class ErrorResponse {
         'VALIDATION_ERROR'              => [422, 'Datos de entrada inválidos'],
         'RESET_TOKEN_INVALID'           => [400, 'El enlace de recuperación no es válido o ha caducado'],
         'PASSWORD_INCORRECT'            => [400, 'La contraseña actual no es correcta'],
+        'SHARE_PASSWORD_REQUIRED'       => [401, 'Este enlace requiere una contraseña'],
+        'RATE_LIMITED'                  => [429, 'Demasiadas peticiones. Inténtalo de nuevo en un momento.'],
         'NOT_FOUND'                     => [404, 'Recurso no encontrado'],
         'INTERNAL_ERROR'                => [500, 'Error interno del servidor'],
     ];
