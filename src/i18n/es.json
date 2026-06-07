@@ -189,6 +189,7 @@
     "notifBody": "Cada usuario puede activar, en «Notificaciones», un resumen diario por email con los nuevos envíos de los formularios elegidos (requiere que el administrador haya configurado el envío de email).",
     "auditTitle": "Auditoría y estado del sistema (admin)",
     "auditBody": "En «Auditoría», el administrador consulta el registro de acciones (quién hizo qué y cuándo) con filtros por acción, usuario, formulario y fecha, y un panel con la última ejecución de las tareas programadas y el estado de la sincronización.",
+    "auditSelfBody": "Si el administrador activa «Auditoría propia» en Configuración, cualquier usuario verá la entrada «Mi actividad» en el menú, donde consulta únicamente su propio registro de acciones (nunca el de otros), con filtros por acción, formulario y fecha.",
     "secTitle": "Seguridad y privacidad",
     "secToken": "Token cifrado",
     "secTokenBody": "El API token de Kobo se guarda cifrado en el servidor y nunca se muestra ni se envía al navegador.",

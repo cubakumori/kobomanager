@@ -120,6 +120,7 @@ const flowSteps = [1, 2, 3, 4]
     <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-2">
       <h2 class="font-semibold text-slate-900">{{ $t('guide.auditTitle') }}</h2>
       <p class="text-sm text-slate-600">{{ $t('guide.auditBody') }}</p>
+      <p class="text-sm text-slate-600">{{ $t('guide.auditSelfBody') }}</p>
     </section>
 
     <!-- Seguridad y privacidad -->

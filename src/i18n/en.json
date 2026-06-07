@@ -189,6 +189,7 @@
     "notifBody": "Each user can enable, under “Notifications”, a daily email summary of new submissions for the chosen forms (requires the admin to have configured email sending).",
     "auditTitle": "Audit log and system status (admin)",
     "auditBody": "Under “Audit log”, the admin browses the record of actions (who did what and when) with filters by action, user, form and date, plus a panel with the last run of the scheduled tasks and the sync status.",
+    "auditSelfBody": "If the admin enables “Self-service activity log” in Settings, every user gets a “My activity” menu entry where they review only their own action log (never anyone else's), with filters by action, form and date.",
     "secTitle": "Security and privacy",
     "secToken": "Encrypted token",
     "secTokenBody": "The Kobo API token is stored encrypted on the server and is never shown or sent to the browser.",
