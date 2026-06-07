@@ -31,6 +31,16 @@ class Settings {
     public const VALID_SHARE_PASSWORD_POLICIES = ['off', 'optional', 'required'];
     private const DEFAULT_SHARE_PASSWORD_POLICY = 'optional';
 
+    /**
+     * Acortado del nombre de los campos en la interfaz (cabeceras de tabla,
+     * selector de columnas, detalle…). Desactivado por defecto; al activarlo,
+     * los nombres más largos que `chars` se cortan con «…» (el completo va en el
+     * tooltip y la exportación nunca acorta). Límites de cordura para `chars`.
+     */
+    private const DEFAULT_FIELD_TRUNCATE_CHARS = 24;
+    public const FIELD_TRUNCATE_MIN = 8;
+    public const FIELD_TRUNCATE_MAX = 120;
+
     public static function get(string $key, mixed $default = null): mixed {
         $row = DB::run('SELECT `value` FROM settings WHERE `key` = ?', [$key])->fetch();
         if (!$row) return $default;
@@ -69,6 +79,17 @@ class Settings {
     /** ¿Habilitado el flujo público de recuperación de contraseña? */
     public static function passwordResetEnabled(): bool {
         return (bool) self::get('password_reset_enabled', self::DEFAULT_PASSWORD_RESET);
+    }
+
+    /**
+     * Ajuste de acortado de nombres de campo: { enabled: bool, chars: int }.
+     * `chars` se mantiene dentro de [FIELD_TRUNCATE_MIN, FIELD_TRUNCATE_MAX].
+     */
+    public static function fieldTruncate(): array {
+        $enabled = (bool) self::get('field_truncate_enabled', false);
+        $chars   = (int) self::get('field_truncate_chars', self::DEFAULT_FIELD_TRUNCATE_CHARS);
+        $chars   = max(self::FIELD_TRUNCATE_MIN, min(self::FIELD_TRUNCATE_MAX, $chars));
+        return ['enabled' => $enabled, 'chars' => $chars];
     }
 
     /** Política de contraseña para enlaces compartibles ('off'|'optional'|'required'). */

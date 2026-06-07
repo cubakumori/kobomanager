@@ -63,6 +63,7 @@ ErrorResponse::ok([
     'next'           => $next['submission_uid'] ?? null,
     'data'           => $payload,
     'label_mode'     => Settings::labelMode(),
+    'field_truncate' => Settings::fieldTruncate(),
     'schema'         => $resolved,
     'geo'            => Geo::features($payload, $schema, $resolved['labels']),
 ]);

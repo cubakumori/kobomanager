@@ -8,6 +8,13 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Acortar nombres de campo** (ajuste global en *Configuración*, desactivado por defecto):
+  un *checkbox* «Acortar nombres de campo» + un número de caracteres (8–120, por defecto 24).
+  Al activarlo, los nombres de campo largos se muestran recortados con «…» en las cabeceras
+  de la tabla de envíos, el selector de columnas y el detalle (también en los enlaces
+  públicos); el **nombre completo** aparece en el *tooltip* al pasar el ratón. La
+  **exportación CSV nunca acorta**. El recorte se centraliza en el *labeler*
+  (`composables/labels.js`) y el ajuste viaja con `label_mode` en las respuestas de lectura.
 - **M3 · Observabilidad/ops.** Nueva sección admin **Auditoría** (`/admin/audit`) con dos
   partes:
   - **Visor de `audit_log`**: tabla paginada de acciones (quién, qué, cuándo) con su
@@ -69,6 +76,10 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
+- En el menú/encabezado público, **«Tutoriales» pasa a llamarse «Guía»** (es/en), más
+  ajustado a su contenido actual.
+- En las acciones de formulario, la acción **«Ver»** (que abre el formulario público en
+  Enketo) se renombra a **«Abrir formulario»** para no confundirla con **«Ver envíos»** (es/en).
 - **Guía de uso ampliada** para cubrir todo lo que hace la app hoy: nuevas secciones de
   **Compartir** (enlaces de solo lectura), **Revisar y exportar** (revisión en lote + CSV),
   **Acciones sobre un formulario** (Enketo/actualizar/resync/login), **Explorar la tabla**
@@ -81,6 +92,16 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Corregido
 
+- En **Auditoría**, el nombre del cron en «Últimas ejecuciones» se mostraba crudo
+  (`daily_summary`): ahora lleva etiqueta legible (es/en), con el identificador en el *tooltip*.
+- El **`<select>` de campo del filtro de filas** (en *Permisos* y *Compartir*) podía
+  desbordar el ancho del modal con nombres de campo muy largos; ahora queda contenido
+  (`min-w-0` + recorte) dentro del modal.
+- Al **cerrar las propias sesiones** desde *Usuarios* (admin), la app no salía del panel
+  hasta recargar; ahora cierra sesión y redirige a la portada de inmediato.
+- El **diálogo de confirmación** mostraba sus textos por defecto (botón *Cancelar*, título…)
+  siempre en español aunque la interfaz estuviera en inglés; ahora se traducen según el
+  idioma activo (`common.cancel`/`common.confirm`/`common.areYouSure`).
 - El **botón de menú (hamburguesa)** de las páginas públicas aparecía también en pantallas
   grandes (y descolocaba la navegación al centro): su estilo vivía en CSS sin capa y ganaba
   a la utilidad `md:hidden`; ahora va en la capa `components` y se oculta correctamente en

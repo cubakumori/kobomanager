@@ -98,6 +98,7 @@ ErrorResponse::ok([
     'per_page'   => $perPage,
     'total'      => $total,
     'label_mode' => Settings::labelMode(),
+    'field_truncate' => Settings::fieldTruncate(),
     'schema'     => FormSchema::resolve($schema, $user['locale']),
     'has_geo'    => $hasGeo,
     'can_validate' => Auth::canForm($user, $formId, 'validate'),

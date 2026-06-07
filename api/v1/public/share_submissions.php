@@ -56,6 +56,7 @@ ErrorResponse::ok([
     'per_page'      => $perPage,
     'total'         => $total,
     'label_mode'    => Settings::labelMode(),
+    'field_truncate' => Settings::fieldTruncate(),
     'schema'        => FormSchema::resolve($schema, $locale),
     'expose_detail' => (bool) $link['expose_detail'],
     'expose_map'    => (bool) $link['expose_map'],

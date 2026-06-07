@@ -25,6 +25,7 @@ const loading = ref(true)
 const error = ref('')
 const schema = ref(null)
 const labelMode = ref('raw')
+const fieldTruncate = ref(null)
 const hasGeo = ref(false)
 const canValidate = ref(false)
 
@@ -90,7 +91,7 @@ const exportUrl = computed(() => {
   return `/api/v1/forms/${formId.value}/export${qs ? '?' + qs : ''}`
 })
 
-const labeler = computed(() => makeLabeler(schema.value, labelMode.value))
+const labeler = computed(() => makeLabeler(schema.value, labelMode.value, fieldTruncate.value))
 
 // --- Columnas configurables (visibilidad + orden), persistidas por formulario ---
 // "Enviado" (submitted_at) es una columna fija que siempre se muestra primero.
@@ -198,6 +199,7 @@ async function load() {
     total.value = data.data.total
     schema.value = data.data.schema ?? null
     labelMode.value = data.data.label_mode ?? 'raw'
+    fieldTruncate.value = data.data.field_truncate ?? null
     hasGeo.value = !!data.data.has_geo
     canValidate.value = !!data.data.can_validate
     clearSelection()
@@ -283,7 +285,7 @@ onMounted(load)
                       :checked="visibleCols.includes(c)"
                       @change.stop="toggleCol(c)"
                     />
-                    <span class="truncate text-sm text-slate-700" :title="labeler.label(c)">{{ labeler.label(c) }}</span>
+                    <span class="truncate text-sm text-slate-700" :title="labeler.fullLabel(c)">{{ labeler.label(c) }}</span>
                   </li>
                   <li v-if="!orderedCols.length" class="px-2 py-2 text-sm text-slate-400">—</li>
                 </ul>
@@ -417,7 +419,7 @@ onMounted(load)
               />
             </th>
             <th class="px-4 py-3">{{ $t('submissions.colSubmitted') }}</th>
-            <th v-for="c in shownColumns" :key="c" class="px-4 py-3">{{ labeler.label(c) }}</th>
+            <th v-for="c in shownColumns" :key="c" class="px-4 py-3" :title="labeler.fullLabel(c)">{{ labeler.label(c) }}</th>
             <th class="px-4 py-3">{{ $t('submissions.colReview') }}</th>
             <th class="px-4 py-3"></th>
           </tr>

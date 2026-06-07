@@ -123,7 +123,8 @@ assets; submissions are fetched paginated; edits use `PATCH .../data/bulk/`. Err
 
 ### Settings & audit
 - `lib/Settings.php`: global key/value settings (JSON) — sync statuses, default locale, label
-  mode, password‑reset flag, viewer action flags, share password policy, and `cron_runs`
+  mode, field‑name truncation (`field_truncate_enabled`/`field_truncate_chars`, display‑only),
+  password‑reset flag, viewer action flags, share password policy, and `cron_runs`
   (last run per cron, written by `recordCronRun()` at the end of each cron job).
 - `lib/Audit.php`: writes to `audit_log` (who did what). Read back via `GET /admin/audit`
   (admin), paginated and filterable by action/user/form/date/search.

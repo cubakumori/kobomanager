@@ -56,4 +56,27 @@ final class SettingsTest extends DbTestCase
         $this->assertFalse($va['enketo']);
         $this->assertFalse($va['login']);
     }
+
+    public function testFieldTruncateDefault(): void
+    {
+        $ft = Settings::fieldTruncate();
+        $this->assertFalse($ft['enabled']);
+        $this->assertSame(24, $ft['chars']);
+    }
+
+    public function testFieldTruncateReflectsStoredAndClamps(): void
+    {
+        Settings::set('field_truncate_enabled', true);
+        // Por debajo del mínimo → se sube al mínimo.
+        Settings::set('field_truncate_chars', 2);
+        $ft = Settings::fieldTruncate();
+        $this->assertTrue($ft['enabled']);
+        $this->assertSame(Settings::FIELD_TRUNCATE_MIN, $ft['chars']);
+        // Por encima del máximo → se baja al máximo.
+        Settings::set('field_truncate_chars', 9999);
+        $this->assertSame(Settings::FIELD_TRUNCATE_MAX, Settings::fieldTruncate()['chars']);
+        // Dentro de rango → se respeta.
+        Settings::set('field_truncate_chars', 30);
+        $this->assertSame(30, Settings::fieldTruncate()['chars']);
+    }
 }

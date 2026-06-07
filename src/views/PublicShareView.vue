@@ -79,7 +79,7 @@ async function unlock() {
 const list = ref({ items: [], total: 0, page: 1, per_page: 25, schema: null, label_mode: 'raw' })
 const search = ref('')
 const listLoading = ref(false)
-const labeler = computed(() => makeLabeler(list.value.schema, list.value.label_mode))
+const labeler = computed(() => makeLabeler(list.value.schema, list.value.label_mode, list.value.field_truncate))
 
 // Columnas: hasta 4 campos con etiqueta (o las primeras 4), como en el panel.
 const columns = computed(() => {
@@ -112,7 +112,7 @@ async function loadList(page = 1) {
 // ---------- detalle ----------
 const detail = ref(null)
 const detailLoading = ref(false)
-const detailLabeler = computed(() => makeLabeler(detail.value?.schema, detail.value?.label_mode))
+const detailLabeler = computed(() => makeLabeler(detail.value?.schema, detail.value?.label_mode, detail.value?.field_truncate))
 const detailFields = computed(() => {
   const d = detail.value?.data ?? {}
   return Object.entries(d).filter(([k]) => !k.startsWith('_'))
@@ -259,7 +259,7 @@ onMounted(loadMeta)
             <section class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
               <dl class="divide-y divide-slate-100">
                 <div v-for="[k, v] in detailFields" :key="k" class="grid grid-cols-3 gap-4 px-5 py-3">
-                  <dt class="text-sm font-medium text-slate-500">{{ detailLabeler.label(k) }}</dt>
+                  <dt class="text-sm font-medium text-slate-500" :title="detailLabeler.fullLabel(k)">{{ detailLabeler.label(k) }}</dt>
                   <dd class="col-span-2 text-sm text-slate-800">{{ detailLabeler.value(k, v) }}</dd>
                 </div>
                 <div v-if="!detailFields.length" class="px-5 py-3 text-sm text-slate-400">{{ $t('share.noFields') }}</div>
@@ -320,7 +320,7 @@ onMounted(loadMeta)
                 <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
                   <tr>
                     <th class="px-4 py-3">{{ $t('share.colSubmitted') }}</th>
-                    <th v-for="c in columns" :key="c" class="px-4 py-3">{{ labeler.label(c) }}</th>
+                    <th v-for="c in columns" :key="c" class="px-4 py-3" :title="labeler.fullLabel(c)">{{ labeler.label(c) }}</th>
                     <th v-if="meta.expose_detail" class="px-4 py-3"></th>
                   </tr>
                 </thead>

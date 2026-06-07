@@ -15,10 +15,11 @@ const loading = ref(true)
 const error = ref('')
 const schema = ref(null)
 const labelMode = ref('raw')
+const fieldTruncate = ref(null)
 const attachments = ref([])
 const geo = ref([])
 
-const labeler = computed(() => makeLabeler(schema.value, labelMode.value))
+const labeler = computed(() => makeLabeler(schema.value, labelMode.value, fieldTruncate.value))
 
 // Navegación al envío anterior/siguiente (mismo orden que la lista).
 const toPrev = computed(() =>
@@ -72,6 +73,7 @@ async function load() {
     sub.value = data.data
     schema.value = data.data.schema ?? null
     labelMode.value = data.data.label_mode ?? 'raw'
+    fieldTruncate.value = data.data.field_truncate ?? null
     attachments.value = data.data.attachments ?? []
     geo.value = data.data.geo ?? []
   } catch (e) {
@@ -193,7 +195,7 @@ onMounted(load)
         <!-- Modo lectura -->
         <dl v-if="!editing" class="divide-y divide-slate-100">
           <div v-for="[k, v] in fields.data" :key="k" class="grid grid-cols-3 gap-4 px-5 py-3">
-            <dt class="text-sm font-medium text-slate-500">{{ labeler.label(k) }}</dt>
+            <dt class="text-sm font-medium text-slate-500" :title="labeler.fullLabel(k)">{{ labeler.label(k) }}</dt>
             <dd class="col-span-2 text-sm text-slate-800">
               <a
                 v-if="attByField[k]"
@@ -211,7 +213,7 @@ onMounted(load)
         <!-- Modo edición -->
         <div v-else class="space-y-3 px-5 py-4">
           <label v-for="[k] in fields.data" :key="k" class="grid grid-cols-3 items-center gap-4">
-            <span class="text-sm font-medium text-slate-500">{{ labeler.label(k) }}</span>
+            <span class="text-sm font-medium text-slate-500" :title="labeler.fullLabel(k)">{{ labeler.label(k) }}</span>
             <!-- Desplegable con etiquetas para preguntas de opción única -->
             <select
               v-if="labeler.on && labeler.optionsFor(k) && !labeler.isMulti(k)"

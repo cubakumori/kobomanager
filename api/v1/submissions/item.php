@@ -102,6 +102,7 @@ if ($method === 'GET') {
         'can_edit'       => Auth::canForm($user, $formId, 'edit'),
         'can_validate'   => Auth::canForm($user, $formId, 'validate'),
         'label_mode'     => Settings::labelMode(),
+        'field_truncate' => Settings::fieldTruncate(),
         'schema'         => $resolved,
         'attachments'    => $attachments,
         'geo'            => Geo::features($payload, $schema, $resolved['labels']),

@@ -20,6 +20,9 @@ if (Request::method() === 'GET') {
         'viewer_actions'           => Settings::viewerActions(),
         'share_password_policy'      => Settings::sharePasswordPolicy(),
         'valid_share_password_policies' => Settings::VALID_SHARE_PASSWORD_POLICIES,
+        'field_truncate'             => Settings::fieldTruncate(),
+        'field_truncate_min'         => Settings::FIELD_TRUNCATE_MIN,
+        'field_truncate_max'         => Settings::FIELD_TRUNCATE_MAX,
     ]);
 }
 
@@ -74,6 +77,16 @@ if (Request::method() === 'PUT') {
         }
         Settings::set('share_password_policy', $pol);
         $out['share_password_policy'] = $pol;
+    }
+
+    if (array_key_exists('field_truncate', $body) && is_array($body['field_truncate'])) {
+        $ft = $body['field_truncate'];
+        $enabled = (bool) ($ft['enabled'] ?? false);
+        $chars   = (int) ($ft['chars'] ?? Settings::FIELD_TRUNCATE_MIN);
+        $chars   = max(Settings::FIELD_TRUNCATE_MIN, min(Settings::FIELD_TRUNCATE_MAX, $chars));
+        Settings::set('field_truncate_enabled', $enabled);
+        Settings::set('field_truncate_chars', $chars);
+        $out['field_truncate'] = ['enabled' => $enabled, 'chars' => $chars];
     }
 
     if (array_key_exists('viewer_actions', $body) && is_array($body['viewer_actions'])) {
