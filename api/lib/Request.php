@@ -13,9 +13,20 @@ class Request {
     }
 
     /** Cuerpo JSON de la petición como array asociativo. */
+    /** Tope del cuerpo JSON (anti-DoS por memoria). Generoso para edición de envíos. */
+    private const MAX_BODY_BYTES = 2 * 1024 * 1024; // 2 MB
+
     public static function json(): array {
         if (self::$jsonCache === null) {
-            $raw = file_get_contents('php://input') ?: '';
+            // Rechaza por Content-Length antes de leer; además acota la lectura para
+            // no materializar en memoria un cuerpo enorme aunque la cabecera mienta.
+            if ((int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > self::MAX_BODY_BYTES) {
+                ErrorResponse::send('VALIDATION_ERROR', 'Cuerpo de la petición demasiado grande', 413);
+            }
+            $raw = file_get_contents('php://input', false, null, 0, self::MAX_BODY_BYTES + 1) ?: '';
+            if (strlen($raw) > self::MAX_BODY_BYTES) {
+                ErrorResponse::send('VALIDATION_ERROR', 'Cuerpo de la petición demasiado grande', 413);
+            }
             $data = json_decode($raw, true);
             self::$jsonCache = is_array($data) ? $data : [];
         }

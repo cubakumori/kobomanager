@@ -147,8 +147,6 @@
     "dataAttachmentsBody": "Each submission's photos, audio, video and files are shown in its detail.",
     "dataMap": "Map",
     "dataMapBody": "Submissions with a location (point, line or polygon) are shown on a map.",
-    "dataReview": "Review",
-    "dataReviewBody": "Approve or reject submissions with comments; the status is internal to KoboManager, independent of Kobo.",
     "footer": "KoboManager — user guide",
     "dataScope": "Row-level access",
     "dataScopeBody": "Admins can limit, per user and form, which submissions are visible (e.g. by a region or the enumerator who sent them); the rest stays hidden when editing or validating too.",

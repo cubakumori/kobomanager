@@ -147,8 +147,6 @@
     "dataAttachmentsBody": "Las fotos, audio, vídeo y archivos de cada envío se ven en su detalle.",
     "dataMap": "Mapa",
     "dataMapBody": "Los envíos con ubicación (punto, línea o polígono) se muestran en un mapa.",
-    "dataReview": "Revisión",
-    "dataReviewBody": "Aprueba o rechaza envíos con comentarios; el estado es interno de KoboManager, independiente de Kobo.",
     "footer": "KoboManager — guía de uso",
     "dataScope": "Acceso por filas",
     "dataScopeBody": "El administrador puede limitar, por usuario y formulario, qué envíos se ven (p. ej. por una región o por el enumerador que los envió); el resto queda oculto también al editar o validar.",

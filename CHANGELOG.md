@@ -33,11 +33,17 @@ fortalecimiento (M5). El tag **1.0.0** se reserva para tras la revisión manual.
   DoS sobre un enlace filtrado, encima del token impredecible + revocación/caducidad.
 - **Defensa en profundidad:** `KoboClient::getAttachment` ahora valida que las redirecciones
   sean HTTP(S) y limita los saltos (`MAXREDIRS`, `REDIR_PROTOCOLS_STR`) — anti-SSRF; el
-  decodificador JWT rechaza explícitamente cualquier `alg` distinto de `HS256`; el `.htaccess`
-  del API bloquea también `tests/` y `vendor/`, y `DEPLOY §6` documenta el equivalente **nginx**
-  (bloqueo de `lib`/`cron`/`cli`/`tests`/`vendor`/`config.php`).
+  decodificador JWT rechaza explícitamente cualquier `alg` distinto de `HS256`; **`Request::json`
+  acota el cuerpo a 2 MB** (rechaza por `Content-Length` y al leer → 413, anti-DoS por memoria);
+  el `.htaccess` del API bloquea también `tests/` y `vendor/`, y `DEPLOY §6` documenta el
+  equivalente **nginx** (bloqueo de `lib`/`cron`/`cli`/`tests`/`vendor`/`config.php`).
 - Tests: rate-limit por bucket (independencia entre buckets y de login) y rechazo de JWT con
   `alg` no-HS256. Suite **95 tests / 224 aserciones** en verde.
+
+### Eliminado
+
+- Claves i18n huérfanas `guide.dataReview`/`guide.dataReviewBody` (ya no se renderizaban tras
+  reorganizar la Guía); paridad es/en intacta.
 
 ### Añadido
 
