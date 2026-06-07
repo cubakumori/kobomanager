@@ -106,6 +106,7 @@ if ($method === 'GET') {
         'schema'         => $resolved,
         'attachments'    => $attachments,
         'geo'            => Geo::features($payload, $schema, $resolved['labels']),
+        'derived'        => Derived::compute($payload, $schema, $sub['submitted_at']),
     ]);
 }
 

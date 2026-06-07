@@ -48,6 +48,7 @@ class FormSchema {
         $choices      = $content['choices'] ?? [];
 
         $fields = [];
+        $meta   = []; // campos meta de interés (start/end/today) → su ruta en el payload
         $stack  = []; // pila de nombres de grupo/repeat para reconstruir la ruta
         foreach ($survey as $row) {
             $type = (string) ($row['type'] ?? '');
@@ -59,6 +60,12 @@ class FormSchema {
             }
             if ($type === 'end_group' || $type === 'end_repeat') {
                 array_pop($stack);
+                continue;
+            }
+            // Campos meta de marca de tiempo: no son datos con etiqueta, pero su nombre
+            // real (puede no ser «start»/«end») hace falta para calcular la duración.
+            if (in_array($type, ['start', 'end', 'today'], true) && $name !== null && $name !== '') {
+                $meta[$type] = $stack ? implode('/', $stack) . '/' . $name : $name;
                 continue;
             }
             if ($name === null || $name === '' || in_array($type, self::SKIP_TYPES, true)) {
@@ -95,6 +102,7 @@ class FormSchema {
             'default_language' => $content['settings']['default_language'] ?? null,
             'fields'           => $fields,
             'choices'          => $choiceMap,
+            'meta'             => $meta,
         ];
     }
 

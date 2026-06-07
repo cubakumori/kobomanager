@@ -168,6 +168,8 @@
     "exploreSearchBody": "Search text across submissions and filter by review status; sort by date and choose how many to show per page.",
     "exploreColumns": "Configurable columns",
     "exploreColumnsBody": "Choose which columns are shown and reorder them by dragging; the preference is remembered per form.",
+    "exploreCalculated": "Calculated columns",
+    "exploreCalculatedBody": "In the same picker, the “Calculated” group adds columns the app derives from the submission (duration, has attachments, has geo). The detail view shows a “Summary” block with every metric (completeness, upload delay, time/day, version, Kobo validation…); the CSV export includes the three calculated columns.",
     "exploreStats": "Statistics",
     "exploreStatsBody": "Form summary: total submissions, submissions per day, and distribution by review status.",
     "reviewTitle": "Reviewing and exporting",
@@ -627,6 +629,7 @@
     "columnsTitle": "Columns to show",
     "columnsReset": "Reset",
     "columnsHint": "Check columns and drag to reorder. “Submitted” is always shown.",
+    "columnsCalculated": "Calculated",
     "search": "Search…",
     "filterReview": "Review:",
     "reviewAll": "All",
@@ -696,6 +699,47 @@
     "pending": "Pending",
     "approved": "Approved",
     "rejected": "Rejected"
+  },
+  "derived": {
+    "summary": "Summary",
+    "duration": "Duration",
+    "completeness": "Completeness",
+    "speed": "Speed",
+    "perQuestion": "per question",
+    "uploadDelay": "Upload delay",
+    "submitted": "Submission time/day",
+    "attachments": "Attachments",
+    "hasGeo": "Geolocation",
+    "validation": "Validation (Kobo)",
+    "submittedBy": "Submitted by",
+    "version": "Version",
+    "tags": "Tags",
+    "notes": "Notes",
+    "col": {
+      "duration": "Duration",
+      "has_attachments": "Attachments",
+      "has_geo": "Geo"
+    },
+    "kind": {
+      "image": "img",
+      "audio": "audio",
+      "video": "video",
+      "file": "file"
+    },
+    "validationStatus": {
+      "validation_status_approved": "Approved",
+      "validation_status_not_approved": "Not approved",
+      "validation_status_on_hold": "On hold"
+    },
+    "dow": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    }
   },
   "stats": {
     "back": "← Back to submissions",

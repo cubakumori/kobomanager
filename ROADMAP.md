@@ -41,18 +41,15 @@ fortalecimiento y se etiqueta **1.0.0**. Lo no listado aquí queda para futuras 
         limitadas al propio usuario); entrada de menú «Mi actividad» solo si está activo; 403 si
         el flag está off. Cubre en parte el pendiente «historial de edición visible» de más
         abajo. *(Coste bajo.)*
-  - [ ] **P2 · Valores «calculados» por envío.** Nuevo `lib/Derived.php` que computa métricas
-        derivadas del payload, reutilizado en detalle, tabla y CSV. **Ubicación:** acápite
-        «Resumen / Metadatos» en el **detalle** (lista completa) + unas pocas como **columnas
-        opcionales** en la tabla (duración, tiene adjuntos, tiene geo), integradas en el
-        selector de columnas (no una modal). Métricas: **duración** (`end − start`), **nº de
-        adjuntos por tipo**, **tiene geolocalización**, **% de completitud**, **retraso de
-        subida** (`_submission_time − end`), **hora/día** del envío, **enviado por**
-        (`_submitted_by`), **versión** (`__version__`), **estado de validación Kobo**
-        (`_validation_status`) vs revisión interna, **nº de notas/etiquetas**, **velocidad**
-        (duración/nº preguntas). Mostrar «—» cuando falte `start`/`end` (no están en todos los
-        XLSForm). Ordenar por columna derivada se difiere a una 2.ª fase. Se solapa con
-        «columnas configurables» de más abajo. *(Coste medio.)*
+  - [x] **P2 · Valores «calculados» por envío** *(hecho; ver `CHANGELOG`)*. `lib/Derived.php`
+        computa métricas derivadas del payload, reutilizado en detalle, tabla y CSV: acápite
+        **«Resumen»** en el detalle (lista completa) + tres columnas opcionales en la tabla
+        (duración, tiene adjuntos, tiene geo) integradas en el selector de columnas (grupo
+        «Calculadas»). Métricas: duración (`end − start`), nº de adjuntos por tipo, tiene
+        geolocalización, % de completitud, retraso de subida, hora/día, enviado por, versión,
+        estado de validación Kobo, nº de notas/etiquetas y velocidad. «—» cuando falta
+        `start`/`end`; `FormSchema::normalize` registra los campos meta para localizarlos.
+        **Pendiente 2.ª fase:** ordenar la tabla por una columna calculada. *(Coste medio.)*
   - [ ] **P3 · Estadísticas enriquecidas.** Hoy `stats.php` solo da total + por día + por
         estado. Añadir (por valor): **distribución de respuestas por pregunta**
         (`select_one`/`select_multiple`, respetando modo etiquetas y scoping) y **por

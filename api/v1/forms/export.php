@@ -107,6 +107,13 @@ $reviewWords = $user['locale'] === 'en'
     ? ['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected']
     : ['pending' => 'Pendiente', 'approved' => 'Aprobado', 'rejected' => 'Rechazado'];
 
+// Columnas calculadas (las mismas que la tabla): se computan con lib/Derived,
+// idéntico al detalle y la lista. Van al final, tras las columnas de datos.
+$derivedHeaders = $user['locale'] === 'en'
+    ? ['Duration (s)', 'Has attachments', 'Has geo']
+    : ['Duración (s)', 'Tiene adjuntos', 'Tiene geo'];
+$yesNo = $user['locale'] === 'en' ? ['yes' => 'Yes', 'no' => 'No'] : ['yes' => 'Sí', 'no' => 'No'];
+
 // --- Emitir CSV ---
 $safeName = preg_replace('/[^A-Za-z0-9_-]+/', '_', $form['name']) ?: 'export';
 $filename = $safeName . '_' . date('Ymd') . '.csv';
@@ -119,13 +126,17 @@ fwrite($out, "\xEF\xBB\xBF"); // BOM UTF-8 para Excel
 
 // $escape = '' → CSV estándar (comillas dobladas, sin escape con barra). Además, en
 // PHP 8.4+ el parámetro $escape debe pasarse explícitamente (su omisión está obsoleta).
-fputcsv($out, array_merge([$metaHeaders['submitted'], $metaHeaders['review']], array_map($header, $columns)), ',', '"', '');
+fputcsv($out, array_merge([$metaHeaders['submitted'], $metaHeaders['review']], array_map($header, $columns), $derivedHeaders), ',', '"', '');
 foreach ($rows as $r) {
     $data = json_decode($r['json_payload'], true) ?: [];
     $line = [$r['submitted_at'], $reviewWords[$r['review_status']] ?? $r['review_status']];
     foreach ($columns as $k) {
         $line[] = $cell($k, $data[$k] ?? null);
     }
+    $d = Derived::compute($data, $schemaRaw, $r['submitted_at']);
+    $line[] = $d['duration_s'] ?? '';
+    $line[] = $d['has_attachments'] ? $yesNo['yes'] : $yesNo['no'];
+    $line[] = $d['has_geo'] ? $yesNo['yes'] : $yesNo['no'];
     fputcsv($out, $line, ',', '"', '');
 }
 fclose($out);

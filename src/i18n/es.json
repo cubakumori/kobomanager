@@ -168,6 +168,8 @@
     "exploreSearchBody": "Busca texto en los envíos y filtra por estado de revisión; ordena por fecha y ajusta cuántos ver por página.",
     "exploreColumns": "Columnas configurables",
     "exploreColumnsBody": "Elige qué columnas se muestran y reordénalas arrastrando; la preferencia se recuerda por formulario.",
+    "exploreCalculated": "Columnas calculadas",
+    "exploreCalculatedBody": "En el mismo selector, el grupo «Calculadas» añade columnas que la app deriva del envío (duración, tiene adjuntos, tiene geo). El detalle muestra un acápite «Resumen» con todas las métricas (completitud, retraso de subida, hora/día, versión, validación de Kobo…); la exportación CSV incluye las tres calculadas.",
     "exploreStats": "Estadísticas",
     "exploreStatsBody": "Resumen del formulario: total de envíos, envíos por día y distribución por estado de revisión.",
     "reviewTitle": "Revisar y exportar",
@@ -627,6 +629,7 @@
     "columnsTitle": "Columnas a mostrar",
     "columnsReset": "Restablecer",
     "columnsHint": "Marca las columnas y arrástralas para ordenarlas. «Enviado» se muestra siempre.",
+    "columnsCalculated": "Calculadas",
     "search": "Buscar…",
     "filterReview": "Revisión:",
     "reviewAll": "Todas",
@@ -696,6 +699,47 @@
     "pending": "Pendiente",
     "approved": "Aprobado",
     "rejected": "Rechazado"
+  },
+  "derived": {
+    "summary": "Resumen",
+    "duration": "Duración",
+    "completeness": "Completitud",
+    "speed": "Velocidad",
+    "perQuestion": "por pregunta",
+    "uploadDelay": "Retraso de subida",
+    "submitted": "Hora/día del envío",
+    "attachments": "Adjuntos",
+    "hasGeo": "Geolocalización",
+    "validation": "Validación (Kobo)",
+    "submittedBy": "Enviado por",
+    "version": "Versión",
+    "tags": "Etiquetas",
+    "notes": "Notas",
+    "col": {
+      "duration": "Duración",
+      "has_attachments": "Adjuntos",
+      "has_geo": "Geo"
+    },
+    "kind": {
+      "image": "img",
+      "audio": "audio",
+      "video": "vídeo",
+      "file": "arch."
+    },
+    "validationStatus": {
+      "validation_status_approved": "Aprobado",
+      "validation_status_not_approved": "No aprobado",
+      "validation_status_on_hold": "En espera"
+    },
+    "dow": {
+      "0": "Dom",
+      "1": "Lun",
+      "2": "Mar",
+      "3": "Mié",
+      "4": "Jue",
+      "5": "Vie",
+      "6": "Sáb"
+    }
   },
   "stats": {
     "back": "← Volver a los envíos",

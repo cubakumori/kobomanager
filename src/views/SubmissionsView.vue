@@ -6,7 +6,10 @@ import api from '../services/api'
 import { apiError } from '../stores/auth'
 import { confirmDialog } from '../composables/confirm'
 import { makeLabeler } from '../composables/labels'
+import { useDerivedFormat, DERIVED_TABLE_COLS, isDerivedCol } from '../composables/derived'
 import ReviewBadge from '../components/ReviewBadge.vue'
+
+const { tableLabel, tableValue } = useDerivedFormat()
 
 const { t } = useI18n()
 const route = useRoute()
@@ -103,20 +106,28 @@ let prefsForm = null // formId para el que se inicializaron las preferencias
 
 const storeKey = (id) => `km.cols.${id}`
 
-function defaultVisible(allCols) {
-  // Igual que el comportamiento previo: primeras 4 preguntas con label (o primeras 4).
+// Etiqueta/valor de una columna, sea de datos o calculada (id con prefijo «@»).
+const colLabel = (c) => (isDerivedCol(c) ? tableLabel(c) : labeler.value.label(c))
+const colFullLabel = (c) => (isDerivedCol(c) ? tableLabel(c) : labeler.value.fullLabel(c))
+const cellValue = (c, s) => (isDerivedCol(c) ? tableValue(c, s.derived) : labeler.value.value(c, s.data[c]))
+
+function defaultVisible(dataCols) {
+  // Igual que el comportamiento previo: primeras 4 preguntas de datos con label (o
+  // primeras 4). Las columnas calculadas arrancan ocultas.
   if (labeler.value.on) {
-    const labeled = allCols.filter((k) => labeler.value.hasLabel(k))
+    const labeled = dataCols.filter((k) => labeler.value.hasLabel(k))
     if (labeled.length) return labeled.slice(0, 4)
   }
-  return allCols.slice(0, 4)
+  return dataCols.slice(0, 4)
 }
 
 function ensurePrefs() {
   const first = items.value[0]?.data
   if (!first) return
   if (prefsForm === formId.value && orderedCols.value.length) return
-  const allCols = Object.keys(first).filter((k) => !k.startsWith('_'))
+  const dataCols = Object.keys(first).filter((k) => !k.startsWith('_'))
+  // Las columnas calculadas se ofrecen primero, antes de los campos del formulario.
+  const allCols = [...DERIVED_TABLE_COLS, ...dataCols]
 
   let saved = null
   try {
@@ -134,7 +145,7 @@ function ensurePrefs() {
     visibleCols.value = vis
   } else {
     orderedCols.value = allCols
-    visibleCols.value = defaultVisible(allCols)
+    visibleCols.value = defaultVisible(dataCols)
   }
   prefsForm = formId.value
 }
@@ -174,9 +185,9 @@ function resetCols() {
   try {
     localStorage.removeItem(storeKey(formId.value))
   } catch { /* noop */ }
-  const allCols = Object.keys(items.value[0]?.data ?? {}).filter((k) => !k.startsWith('_'))
-  orderedCols.value = allCols
-  visibleCols.value = defaultVisible(allCols)
+  const dataCols = Object.keys(items.value[0]?.data ?? {}).filter((k) => !k.startsWith('_'))
+  orderedCols.value = [...DERIVED_TABLE_COLS, ...dataCols]
+  visibleCols.value = defaultVisible(dataCols)
 }
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / perPage.value)))
@@ -285,7 +296,11 @@ onMounted(load)
                       :checked="visibleCols.includes(c)"
                       @change.stop="toggleCol(c)"
                     />
-                    <span class="truncate text-sm text-slate-700" :title="labeler.fullLabel(c)">{{ labeler.label(c) }}</span>
+                    <span class="truncate text-sm text-slate-700" :title="colFullLabel(c)">{{ colLabel(c) }}</span>
+                    <span
+                      v-if="isDerivedCol(c)"
+                      class="ml-auto shrink-0 rounded bg-accent-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent-700"
+                    >{{ $t('submissions.columnsCalculated') }}</span>
                   </li>
                   <li v-if="!orderedCols.length" class="px-2 py-2 text-sm text-slate-400">—</li>
                 </ul>
@@ -419,7 +434,7 @@ onMounted(load)
               />
             </th>
             <th class="px-4 py-3">{{ $t('submissions.colSubmitted') }}</th>
-            <th v-for="c in shownColumns" :key="c" class="px-4 py-3" :title="labeler.fullLabel(c)">{{ labeler.label(c) }}</th>
+            <th v-for="c in shownColumns" :key="c" class="px-4 py-3" :title="colFullLabel(c)">{{ colLabel(c) }}</th>
             <th class="px-4 py-3">{{ $t('submissions.colReview') }}</th>
             <th class="px-4 py-3"></th>
           </tr>
@@ -435,7 +450,7 @@ onMounted(load)
               />
             </td>
             <td class="whitespace-nowrap px-4 py-3 text-slate-600">{{ s.submitted_at }}</td>
-            <td v-for="c in shownColumns" :key="c" class="px-4 py-3 text-slate-700">{{ labeler.value(c, s.data[c]) }}</td>
+            <td v-for="c in shownColumns" :key="c" class="px-4 py-3 text-slate-700">{{ cellValue(c, s) }}</td>
             <td class="px-4 py-3"><ReviewBadge :status="s.review_status" /></td>
             <td class="px-4 py-3 text-right">
               <RouterLink

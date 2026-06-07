@@ -66,16 +66,21 @@ $rows = DB::run(
     $params
 )->fetchAll();
 
-$items = array_map(fn($r) => [
-    'id'             => (int) $r['id'],
-    'submission_uid' => $r['submission_uid'],
-    'submitted_at'   => $r['submitted_at'],
-    'review_status'  => $r['review_status'],
-    'data'           => json_decode($r['json_payload'], true),
-], $rows);
-
 // Etiquetas legibles: esquema del formulario resuelto al idioma del usuario.
 $schema = $form['schema_json'] ? json_decode($form['schema_json'], true) : null;
+
+$items = array_map(function ($r) use ($schema) {
+    $data = json_decode($r['json_payload'], true) ?: [];
+    return [
+        'id'             => (int) $r['id'],
+        'submission_uid' => $r['submission_uid'],
+        'submitted_at'   => $r['submitted_at'],
+        'review_status'  => $r['review_status'],
+        'data'           => $data,
+        // Valores calculados (duración, adjuntos, geo…) para columnas opcionales.
+        'derived'        => Derived::compute($data, $schema, $r['submitted_at']),
+    ];
+}, $rows);
 
 // ¿Algún envío tiene coordenadas? (para habilitar/deshabilitar la vista de mapa).
 $geoConds  = ['JSON_TYPE(JSON_EXTRACT(json_payload, \'$._geolocation[0]\')) IN (\'DOUBLE\',\'INTEGER\',\'DECIMAL\')'];

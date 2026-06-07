@@ -8,6 +8,27 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **P2 · Valores «calculados» por envío.** Nueva clase pura `lib/Derived.php` que computa,
+  a partir del payload de cada envío y del esquema del formulario, métricas que Kobo no
+  entrega directamente: **duración** (`end − start`), **completitud** (preguntas respondidas /
+  total), **velocidad** (duración / nº de preguntas), **retraso de subida**
+  (`_submission_time − end`), **nº de adjuntos por tipo** (imagen/audio/vídeo/archivo),
+  **tiene geolocalización**, **hora/día** del envío, **enviado por** (`_submitted_by`),
+  **versión** (`__version__`), **estado de validación de Kobo** (`_validation_status`) y
+  **nº de etiquetas/notas** (`_tags`/`_notes`). Las métricas sin dato (p. ej. duración sin
+  `start`/`end`, que no están en todos los XLSForm) se muestran como **«—»**. Se reutiliza
+  idéntica en tres sitios, computada en el backend junto a `label_mode`/`field_truncate`:
+  - **Detalle**: nuevo acápite **«Resumen»** con la lista completa de métricas, formateadas
+    y localizadas.
+  - **Tabla de envíos**: tres columnas opcionales (**Duración**, **Adjuntos**, **Geo**)
+    integradas en el **selector de columnas** existente (grupo «Calculadas», apagadas por
+    defecto, arrastrables y persistidas como las demás). *(Ordenar por columna calculada se
+    difiere a una 2.ª fase.)*
+  - **Exportación CSV**: las mismas tres columnas se anexan al final, calculadas con la misma
+    clase. Respeta permisos y *scoping* por filas (solo se computa sobre envíos ya visibles).
+  - `FormSchema::normalize` ahora registra también los campos meta `start`/`end`/`today`
+    (en `schema_json.meta`) para localizar las marcas de tiempo aunque el formulario los haya
+    nombrado de forma no estándar; si faltan, se cae a las claves convencionales `start`/`end`.
 - **P1 · Auditoría propia (autoservicio).** Nuevo ajuste global en *Configuración*
   «Auditoría propia» (`audit_self_view_enabled`, **desactivado por defecto**) que habilita a
   cualquier usuario —no solo administradores— a consultar **su propio** registro de actividad

@@ -120,6 +120,14 @@ assets; submissions are fetched paginated; edits use `PATCH .../data/bulk/`. Err
 - **Readable labels** (`lib/FormSchema.php`): caches a normalized XLSForm schema per form
   (`forms.schema_json`) so the UI shows question/option labels instead of raw codes.
 - **Geo** (`lib/Geo.php`): parses geopoint/geotrace/geoshape for the map view.
+- **Derived values** (`lib/Derived.php`): pure helper that computes per‑submission metrics not
+  shipped by Kobo (duration `end − start`, completeness, upload delay, attachments by kind,
+  has‑geo, submission hour/day, `_submitted_by`, `__version__`, Kobo `_validation_status`,
+  tags/notes counts). Computed in the backend alongside `label_mode`/`field_truncate` and
+  reused identically by the submission list (optional table columns), the detail (a *Summary*
+  section) and the CSV export. Operates only on already‑authorized payloads, so it inherits
+  permissions/row‑scoping for free. `FormSchema::normalize` records `start`/`end`/`today` meta
+  field names (`schema_json.meta`) so durations work even with non‑standard field names.
 
 ### Settings & audit
 - `lib/Settings.php`: global key/value settings (JSON) — sync statuses, default locale, label

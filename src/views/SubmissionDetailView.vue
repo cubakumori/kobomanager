@@ -5,10 +5,12 @@ import { useRoute, RouterLink } from 'vue-router'
 import api from '../services/api'
 import { apiError } from '../stores/auth'
 import { makeLabeler } from '../composables/labels'
+import { useDerivedFormat } from '../composables/derived'
 import ReviewBadge from '../components/ReviewBadge.vue'
 import LeafletMap from '../components/LeafletMap.vue'
 
 const { t } = useI18n()
+const { summaryRows } = useDerivedFormat()
 const route = useRoute()
 const sub = ref(null)
 const loading = ref(true)
@@ -18,6 +20,7 @@ const labelMode = ref('raw')
 const fieldTruncate = ref(null)
 const attachments = ref([])
 const geo = ref([])
+const derived = ref(null)
 
 const labeler = computed(() => makeLabeler(schema.value, labelMode.value, fieldTruncate.value))
 
@@ -76,6 +79,7 @@ async function load() {
     fieldTruncate.value = data.data.field_truncate ?? null
     attachments.value = data.data.attachments ?? []
     geo.value = data.data.geo ?? []
+    derived.value = data.data.derived ?? null
   } catch (e) {
     error.value = apiError(e, t('detail.loadError'))
   } finally {
@@ -250,6 +254,21 @@ onMounted(load)
           </div>
           <p class="text-xs text-slate-400">{{ $t('detail.editHint') }}</p>
         </div>
+      </section>
+
+      <!-- Resumen / valores calculados -->
+      <section v-if="derived" class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+        <h2 class="border-b border-slate-100 px-5 py-3 font-semibold text-slate-900">{{ $t('derived.summary') }}</h2>
+        <dl class="grid grid-cols-1 sm:grid-cols-2">
+          <div
+            v-for="row in summaryRows(derived)"
+            :key="row.label"
+            class="grid grid-cols-3 gap-4 border-b border-slate-50 px-5 py-2.5"
+          >
+            <dt class="text-sm font-medium text-slate-500">{{ row.label }}</dt>
+            <dd class="col-span-2 text-sm text-slate-800">{{ row.value }}</dd>
+          </div>
+        </dl>
       </section>
 
       <!-- Ubicación (geopoint/geoshape/geotrace) -->
