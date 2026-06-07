@@ -194,7 +194,7 @@
     "secToken": "Token cifrado",
     "secTokenBody": "El API token de Kobo se guarda cifrado en el servidor y nunca se muestra ni se envía al navegador.",
     "secSessions": "Sesiones",
-    "secSessionsBody": "El acceso usa una sesión en cookie segura; el administrador puede cerrar de forma remota todas las sesiones de un usuario.",
+    "secSessionsBody": "El acceso usa una sesión en cookie segura que se renueva con el uso (hasta un límite); desde tu perfil puedes cerrar las demás sesiones si no las reconoces, y el administrador puede cerrar de forma remota todas las de un usuario.",
     "secScope": "Acceso mínimo",
     "secScopeBody": "Cada usuario ve solo los formularios —y, con el acceso por filas, solo los envíos— que el administrador le asigna."
   },

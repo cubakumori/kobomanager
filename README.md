@@ -40,7 +40,7 @@ as-is (see [`DEPLOY.md`](./DEPLOY.md)).
 
 ```bash
 mysql -e "CREATE DATABASE IF NOT EXISTS kobomanager CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-# Apply all migrations in order
+# Apply all schema files in order (they ARE the full schema — no incremental migrations)
 for f in db/*.sql; do mysql kobomanager < "$f"; done
 ```
 
@@ -136,9 +136,11 @@ composer test         # or: ./vendor/bin/phpunit
 Each test runs inside a transaction that is rolled back, so the test DB stays clean.
 Connection settings default to `kobomanager_test` on `127.0.0.1` and can be overridden
 with `TEST_DB_*` environment variables (see `api/tests/bootstrap.php`). Current coverage:
-auth/permissions and JWT session lifecycle, rate limiting, settings, token encryption,
-the geo parser, derived metrics, attachment classification, the submission-search
-projection/clause, row scoping and share-link resolution/tickets/attachment access.
+auth/permissions and the JWT session lifecycle (including the sliding session and absolute
+cap, and rejection of non-HS256 tokens), rate limiting (per-IP and bucketed), settings,
+token encryption **and key rotation**, the geo parser, derived metrics, attachment
+classification, the submission-search projection/clause, row scoping and share-link
+resolution/tickets/attachment access.
 
 ## Languages
 

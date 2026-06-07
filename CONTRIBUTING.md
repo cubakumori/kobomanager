@@ -24,10 +24,13 @@ overview read [`ARCHITECTURE.md`](./ARCHITECTURE.md); for setup read [`README.md
 
 ## Conventions
 
-### Database
-- **No incremental migrations** (pre‑public). Add a new `db/NNN_name.sql` with
-  `CREATE TABLE IF NOT EXISTS` rather than `ALTER`. The full schema = all `db/*.sql` applied in
-  order. Runtime‑configurable behavior goes in the `settings` table, not the schema.
+- **No incremental migrations** (pre‑public). The full schema = all `db/*.sql` applied in
+  order; never `ALTER`. Edit the **canonical `CREATE TABLE`** where the table lives: add new
+  columns there (e.g. `submissions_cache.search_text`, `share_links.expose_attachments`), and
+  add a sibling table to its thematic file (e.g. `rate_hits` next to `login_attempts` in
+  `db/002`) or, for a new area, a new `db/NNN_name.sql` — all with `CREATE TABLE IF NOT EXISTS`.
+  To pick up a change on an existing DB you recreate it (or apply the same DDL by hand in
+  dev/test). Runtime‑configurable behavior goes in the `settings` table, not the schema.
 
 ### Backend
 - One class per file in `lib/`, no namespaces (autoloaded by classmap for tests).

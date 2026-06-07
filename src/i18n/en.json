@@ -194,7 +194,7 @@
     "secToken": "Encrypted token",
     "secTokenBody": "The Kobo API token is stored encrypted on the server and is never shown or sent to the browser.",
     "secSessions": "Sessions",
-    "secSessionsBody": "Access uses a secure cookie session; the admin can remotely close all of a user's sessions.",
+    "secSessionsBody": "Access uses a secure cookie session that renews with use (up to a cap); from your profile you can close your other sessions if you don't recognize them, and the admin can remotely close all of a user's sessions.",
     "secScope": "Least access",
     "secScopeBody": "Each user sees only the forms —and, with row access, only the submissions— the admin assigns them."
   },
