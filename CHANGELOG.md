@@ -8,6 +8,21 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **M2 · Productividad de datos.** Dos mejoras en la tabla de envíos (*Mis formularios* →
+  un formulario), ambas respetando permisos y el scoping por filas:
+  - **Revisión en lote**: selección de envíos con casillas (más «seleccionar todos los de
+    la página») y una barra de acciones para **aprobar o rechazar** los seleccionados de
+    una vez, con comentario opcional común. Solo visible para quien puede **validar** el
+    formulario. Backend `POST /forms/{id}/review` (`forms/review_batch.php`): un único
+    chequeo de capacidad y, por seguridad, **revalida en el servidor** que cada envío
+    pertenece al formulario y está dentro de alcance (los demás se omiten); devuelve
+    *aplicados/omitidos* y audita la operación.
+  - **Exportación CSV**: botón *Exportar CSV* que descarga los envíos **con los filtros
+    activos** (búsqueda y estado de revisión). CSV **UTF-8 con BOM** (abre bien en Excel),
+    una columna por pregunta más *enviado* y *revisión*; cabeceras y valores siguen el modo
+    de etiquetas global (en modo *labels*, las opciones se muestran con su texto). Backend
+    `GET /forms/{id}/export` (`forms/export.php`), respeta `can_view` + scoping. *(XLSX
+    nativo se difiere por la filosofía sin‑dependencias.)*
 - **M1 · Compartir — enlaces de solo lectura.** El administrador puede crear, desde
   *Compartir* (nueva sección admin), **enlaces públicos** que muestran los envíos de un
   formulario **sin necesidad de cuenta** en Kobo ni en KoboManager —reemplazo directo del

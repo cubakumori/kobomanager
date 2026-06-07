@@ -85,6 +85,16 @@ password‑protected links requires a short‑lived **HMAC ticket** (issued by t
 submissions return 404; attachments and internal review status are never exposed. Admin CRUD
 is in `v1/admin/shares*`; the password policy is the `share_password_policy` setting.
 
+### Batch review & CSV export
+`POST /forms/{id}/review` (`forms/review_batch.php`) applies one review status to many
+submissions in a single transaction; it requires `validate` once and **re‑checks**, per uid,
+form membership and row scope server‑side (out‑of‑scope/foreign uids are silently skipped),
+returning `{applied, skipped}`. `GET /forms/{id}/export` (`forms/export.php`) streams a
+UTF‑8 **CSV with BOM** of the submissions (requires `view`, honors row scope and the
+list filters); it bypasses the JSON envelope and resolves question/option labels per the
+global label mode. Note: PHP 8.4+ requires the `fputcsv` `$escape` argument explicitly
+(passed as `''` → standard CSV quoting).
+
 ### CSRF
 For mutating methods (POST/PUT/DELETE/PATCH) the front controller requires the request
 `Origin`/`Referer` to match an allowed origin (`CORS_ALLOWED_ORIGINS` + the server's own

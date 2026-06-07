@@ -100,4 +100,5 @@ ErrorResponse::ok([
     'label_mode' => Settings::labelMode(),
     'schema'     => FormSchema::resolve($schema, $user['locale']),
     'has_geo'    => $hasGeo,
+    'can_validate' => Auth::canForm($user, $formId, 'validate'),
 ]);

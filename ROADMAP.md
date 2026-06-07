@@ -22,9 +22,10 @@ fortalecimiento y se etiqueta **1.0.0**. Lo no listado aquí queda para futuras 
       `v1/public/`, vista pública sin shell. *(Pendiente de M5: rate-limit de los GET
       públicos a nivel de app — hoy solo el `unlock` de contraseña se limita por IP; los GET
       se apoyan en el token + revocación/caducidad y se recomienda throttling en el proxy.)*
-- [ ] **M2 · Productividad de datos**: **revisión en lote** (aprobar/rechazar varios envíos)
-      + **exportación CSV** (UTF-8 con BOM; XLSX nativo se difiere por la filosofía
-      sin-dependencias). Respetan permisos y scoping por filas.
+- [x] **M2 · Productividad de datos** *(hecho; ver `CHANGELOG`)*: **revisión en lote**
+      (aprobar/rechazar varios envíos, `POST /forms/{id}/review`) + **exportación CSV**
+      (UTF-8 con BOM, `GET /forms/{id}/export`; XLSX nativo diferido). Respetan permisos y
+      scoping por filas.
 - [ ] **M3 · Observabilidad/ops**: **visor de `audit_log`** (admin, paginado y con filtros)
       + **`/health` ampliado** (última ejecución de cada cron y estado de sincronización).
 - [ ] **M4 · Rendimiento y seguridad** *(puede partirse)*:
@@ -65,7 +66,7 @@ Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
 
 ### UX
 
-- [ ] **Revisión en lote** (aprobar/rechazar varios envíos a la vez).
+- [x] **Revisión en lote** (aprobar/rechazar varios envíos a la vez). *(hecho en M2)*.
 - [ ] **Visor de `audit_log`** en el panel admin (quién hizo qué y cuándo).
 - [ ] Columnas configurables y filtros avanzados en la tabla de envíos.
 - [ ] Modo oscuro y mejores estados de carga/vacío (skeletons).
@@ -93,7 +94,7 @@ Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
 - [ ] **Versión de escritorio** con Tauri (envuelve el mismo frontend Vue).
 - [ ] **Webhooks de Kobo** para sincronización en cuasi-tiempo-real (en vez de cron cada 15 min).
 - [ ] **Notificaciones por otros canales** (Telegram, Slack, WhatsApp).
-- [ ] **Exportación de datos** (CSV, Excel) desde la app.
+- [x] **Exportación de datos** CSV desde la app *(hecho en M2; Excel/XLSX nativo diferido)*.
 - [ ] **Permiso `can_delete`** — añadir vía migración cuando exista la funcionalidad de borrado de envíos.
 - [ ] **Permisos más granulares** (por grupo de formularios, por período de tiempo).
 - [ ] **2FA** — la tabla `user_sessions` ya está preparada para soportarlo.

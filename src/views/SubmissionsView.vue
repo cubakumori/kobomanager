@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, RouterLink } from 'vue-router'
 import api from '../services/api'
 import { apiError } from '../stores/auth'
+import { confirmDialog } from '../composables/confirm'
 import { makeLabeler } from '../composables/labels'
 import ReviewBadge from '../components/ReviewBadge.vue'
 
@@ -25,6 +26,69 @@ const error = ref('')
 const schema = ref(null)
 const labelMode = ref('raw')
 const hasGeo = ref(false)
+const canValidate = ref(false)
+
+// --- Selección + revisión en lote ---
+const selected = ref(new Set())
+const batchComment = ref('')
+const batchBusy = ref(false)
+const batchFlash = ref('')
+
+const allOnPageSelected = computed(
+  () => items.value.length > 0 && items.value.every((s) => selected.value.has(s.submission_uid)),
+)
+function toggleRow(uid) {
+  const s = new Set(selected.value)
+  s.has(uid) ? s.delete(uid) : s.add(uid)
+  selected.value = s
+}
+function toggleAllOnPage() {
+  const s = new Set(selected.value)
+  if (allOnPageSelected.value) items.value.forEach((it) => s.delete(it.submission_uid))
+  else items.value.forEach((it) => s.add(it.submission_uid))
+  selected.value = s
+}
+function clearSelection() {
+  selected.value = new Set()
+}
+
+async function batchReview(status) {
+  const uids = [...selected.value]
+  if (!uids.length) return
+  const ok = await confirmDialog({
+    title: t('submissions.batchConfirmTitle'),
+    message: t('submissions.batchConfirm', { n: uids.length, action: t('review.' + status) }),
+    confirmText: t('review.' + status),
+    danger: status === 'rejected',
+  })
+  if (!ok) return
+  batchBusy.value = true
+  batchFlash.value = ''
+  try {
+    const { data } = await api.post(`/forms/${formId.value}/review`, {
+      uids,
+      status,
+      comment: batchComment.value || undefined,
+    })
+    batchFlash.value = t('submissions.batchDone', { n: data.data.applied })
+    batchComment.value = ''
+    clearSelection()
+    await load()
+  } catch (e) {
+    error.value = apiError(e, t('submissions.batchError'))
+  } finally {
+    batchBusy.value = false
+  }
+}
+
+// Enlace de descarga CSV con los filtros activos (la cookie de sesión viaja sola).
+const exportUrl = computed(() => {
+  const p = new URLSearchParams()
+  if (search.value) p.set('search', search.value)
+  if (reviewFilter.value) p.set('review', reviewFilter.value)
+  const qs = p.toString()
+  return `/api/v1/forms/${formId.value}/export${qs ? '?' + qs : ''}`
+})
 
 const labeler = computed(() => makeLabeler(schema.value, labelMode.value))
 
@@ -135,6 +199,8 @@ async function load() {
     schema.value = data.data.schema ?? null
     labelMode.value = data.data.label_mode ?? 'raw'
     hasGeo.value = !!data.data.has_geo
+    canValidate.value = !!data.data.can_validate
+    clearSelection()
     ensurePrefs()
   } catch (e) {
     error.value = apiError(e, t('submissions.loadError'))
@@ -246,6 +312,14 @@ onMounted(load)
           >
             {{ $t('submissions.stats') }}
           </RouterLink>
+
+          <a
+            :href="exportUrl"
+            class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            :title="$t('submissions.exportHint')"
+          >
+            {{ $t('submissions.export') }}
+          </a>
         </div>
       </div>
       <p class="mt-1 text-sm text-slate-500">{{ $t('submissions.total', { n: total }) }}</p>
@@ -294,12 +368,54 @@ onMounted(load)
     <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
       {{ error }}
     </div>
+    <p v-if="batchFlash" class="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700 ring-1 ring-green-200">
+      {{ batchFlash }}
+    </p>
+
+    <!-- Barra de revisión en lote (solo si el usuario puede validar y hay selección) -->
+    <div
+      v-if="canValidate && selected.size"
+      class="flex flex-wrap items-center gap-3 rounded-xl bg-accent-50 px-4 py-3 ring-1 ring-accent-200"
+    >
+      <span class="text-sm font-medium text-accent-800">{{ $t('submissions.selected', { n: selected.size }) }}</span>
+      <input
+        v-model="batchComment"
+        :placeholder="$t('submissions.batchComment')"
+        class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+      />
+      <button
+        :disabled="batchBusy"
+        class="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+        @click="batchReview('approved')"
+      >
+        {{ $t('submissions.batchApprove') }}
+      </button>
+      <button
+        :disabled="batchBusy"
+        class="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+        @click="batchReview('rejected')"
+      >
+        {{ $t('submissions.batchReject') }}
+      </button>
+      <button class="text-sm font-medium text-slate-500 hover:text-slate-700" @click="clearSelection">
+        {{ $t('submissions.clearSelection') }}
+      </button>
+    </div>
 
     <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
       <div v-if="loading" class="p-4 text-sm text-slate-500">{{ $t('common.loading') }}</div>
       <table v-else class="w-full text-left text-sm">
         <thead class="bg-accent-50 text-xs uppercase tracking-wider text-accent-700">
           <tr>
+            <th v-if="canValidate" class="w-10 px-4 py-3">
+              <input
+                type="checkbox"
+                class="h-4 w-4 align-middle"
+                :checked="allOnPageSelected"
+                :title="$t('submissions.selectAll')"
+                @change="toggleAllOnPage"
+              />
+            </th>
             <th class="px-4 py-3">{{ $t('submissions.colSubmitted') }}</th>
             <th v-for="c in shownColumns" :key="c" class="px-4 py-3">{{ labeler.label(c) }}</th>
             <th class="px-4 py-3">{{ $t('submissions.colReview') }}</th>
@@ -308,6 +424,14 @@ onMounted(load)
         </thead>
         <tbody class="divide-y divide-slate-100">
           <tr v-for="s in items" :key="s.submission_uid" class="hover:bg-slate-50">
+            <td v-if="canValidate" class="px-4 py-3">
+              <input
+                type="checkbox"
+                class="h-4 w-4 align-middle"
+                :checked="selected.has(s.submission_uid)"
+                @change="toggleRow(s.submission_uid)"
+              />
+            </td>
             <td class="whitespace-nowrap px-4 py-3 text-slate-600">{{ s.submitted_at }}</td>
             <td v-for="c in shownColumns" :key="c" class="px-4 py-3 text-slate-700">{{ labeler.value(c, s.data[c]) }}</td>
             <td class="px-4 py-3"><ReviewBadge :status="s.review_status" /></td>
@@ -321,7 +445,7 @@ onMounted(load)
             </td>
           </tr>
           <tr v-if="!items.length">
-            <td :colspan="shownColumns.length + 3" class="px-4 py-6 text-center text-slate-400">
+            <td :colspan="shownColumns.length + 3 + (canValidate ? 1 : 0)" class="px-4 py-6 text-center text-slate-400">
               {{ $t('submissions.empty') }}
             </td>
           </tr>

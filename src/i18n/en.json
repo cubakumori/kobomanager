@@ -511,7 +511,19 @@
     "loadError": "Could not load the submissions",
     "prev": "Previous",
     "next": "Next",
-    "page": "Page {page} of {pages}"
+    "page": "Page {page} of {pages}",
+    "export": "Export CSV",
+    "exportHint": "Download the submissions (with the current filters) as CSV (UTF-8).",
+    "selectAll": "Select all on this page",
+    "selected": "{n} selected",
+    "batchComment": "Comment (optional, applied to all)",
+    "batchApprove": "Approve",
+    "batchReject": "Reject",
+    "clearSelection": "Clear selection",
+    "batchConfirmTitle": "Batch review",
+    "batchConfirm": "“{action}” will be applied to {n} selected submission(s). Continue?",
+    "batchDone": "{n} submission(s) reviewed.",
+    "batchError": "Could not apply the batch review"
   },
   "map": {
     "back": "← Back to submissions",

@@ -511,7 +511,19 @@
     "loadError": "No se pudieron cargar los envíos",
     "prev": "Anterior",
     "next": "Siguiente",
-    "page": "Página {page} de {pages}"
+    "page": "Página {page} de {pages}",
+    "export": "Exportar CSV",
+    "exportHint": "Descarga los envíos (con los filtros actuales) en CSV (UTF-8).",
+    "selectAll": "Seleccionar todos los de esta página",
+    "selected": "{n} seleccionado(s)",
+    "batchComment": "Comentario (opcional, se aplica a todos)",
+    "batchApprove": "Aprobar",
+    "batchReject": "Rechazar",
+    "clearSelection": "Quitar selección",
+    "batchConfirmTitle": "Revisión en lote",
+    "batchConfirm": "Se aplicará «{action}» a {n} envío(s) seleccionado(s). ¿Continuar?",
+    "batchDone": "{n} envío(s) revisados.",
+    "batchError": "No se pudo aplicar la revisión en lote"
   },
   "map": {
     "back": "← Volver a los envíos",
