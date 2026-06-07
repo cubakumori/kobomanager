@@ -168,4 +168,6 @@ Key tables: `kobo_accounts`, `users`, `user_sessions`, `forms`, `submissions_cac
 PHPUnit (`api/tests/`), the only dev dependency. They run against a **separate** database
 (`kobomanager_test`); each test runs in a transaction that is rolled back. Coverage today:
 auth/permissions + JWT session lifecycle, rate limiting, settings, token encryption, geo
-parsing. Endpoint‑level (HTTP) integration tests are a known gap — see [`ROADMAP.md`](./ROADMAP.md).
+parsing, row scoping and share‑link resolution/tickets. Endpoint‑level (HTTP) integration
+tests are a known gap (e.g. batch review, CSV export, the audit viewer) — see
+[`ROADMAP.md`](./ROADMAP.md).
