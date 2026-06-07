@@ -69,16 +69,20 @@ fortalecimiento y se etiqueta **1.0.0**. Lo no listado aquí queda para futuras 
         `AttachmentsGallery.vue` + helper `lib/Attachments.php`, usada en la vista pública y en el
         detalle autenticado. **Nota de seguridad → M4b/M5:** el **rate-limit de los GET públicos**
         sigue pendiente (hoy solo el `unlock` se limita por IP).
-- [ ] **M4 · Rendimiento y seguridad** *(puede partirse)*:
+- [x] **M4 · Rendimiento y seguridad** *(hecho; ver `CHANGELOG`)*:
   - [x] **M4a · Índices/búsqueda** en `submissions_cache` *(hecho; ver `CHANGELOG`)*. Columna
         `search_text` (proyección de valores, sin claves ni metadatos `_*`) poblada por la app
         + índice `FULLTEXT`; búsqueda por `MATCH … AGAINST` con prefijo (fallback `LIKE` para
         términos < 3 car.), centralizada en `lib/SubmissionSearch`. Backfill
         `cli/rebuild_search_text.php`. *(2.ª fase posible: incluir etiquetas resueltas del
         esquema en el texto buscable.)*
-  - [ ] **M4b · Seguridad/operación**: **sesión deslizante / refresh** + **«cerrar todas mis
-        sesiones»** (autoservicio); **rotación documentada de `CONFIG_TOKEN_KEY`** (re-cifrado
-        de tokens vía CLI) y **copias de seguridad**.
+  - [x] **M4b · Seguridad/operación** *(hecho; ver `CHANGELOG`)*: **sesión deslizante / refresh**
+        (renueva con la actividad manteniendo el `jti`, con **tope absoluto** desde el login →
+        acota una cookie robada; sin cambios de esquema) + **«cerrar las demás sesiones»**
+        (autoservicio, `GET/DELETE /profile/sessions`, sección en *Mi perfil*); **rotación de
+        `CONFIG_TOKEN_KEY`** (`TokenVault` con clave explícita + `cli/rotate_token_key.php`
+        transaccional, procedimiento en `DEPLOY §12`) y **copias de seguridad** documentadas
+        (`DEPLOY §11`).
 - [ ] **M5 · Repaso y fortalecimiento** → tag **1.0.0** (primera pública). Posibles releases
       intermedias (`0.4.0`/`0.5.0`) por hito si se desea.
 

@@ -60,9 +60,16 @@ define('DB_NAME', 'kobomanager');
 define('DB_USER', 'kobomanager');
 define('DB_PASS', '••••••');
 
-// Generate once and do NOT change later (would invalidate tokens/sessions):
-define('CONFIG_TOKEN_KEY', '<64 hex>'); // php -r 'echo sodium_bin2hex(random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES));'
-define('JWT_SECRET',       '<64 hex>'); // php -r 'echo bin2hex(random_bytes(32));'
+// Generate once (rotating CONFIG_TOKEN_KEY is supported — see §12; changing JWT_SECRET
+// logs everyone out):
+define('CONFIG_TOKEN_KEY',     '<64 hex>'); // php -r 'echo sodium_bin2hex(random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES));'
+define('CONFIG_TOKEN_KEY_NEW', '');         // only set during key rotation (§12); empty otherwise
+define('JWT_SECRET',           '<64 hex>'); // php -r 'echo bin2hex(random_bytes(32));'
+
+// Sliding session: it renews on activity (idle TTL) up to an absolute cap, then re-login.
+define('JWT_TTL',               8 * 60 * 60);     // max idle time
+define('SESSION_ABSOLUTE_TTL',  7 * 24 * 60 * 60); // max lifetime since login
+define('SESSION_REFRESH_THRESHOLD', JWT_TTL / 2);  // renew the cookie when less than this remains
 
 define('COOKIE_SECURE', true);          // ← true in production (HTTPS)
 define('APP_ENV', 'prod');              // hides error details
@@ -161,3 +168,68 @@ send anything. Handy for staging.
    `submissions_cache.search_text` + its `FULLTEXT` index, backfill cached rows once with
    `php api/cli/rebuild_search_text.php` (new submissions fill it automatically on sync).
 ```
+
+## 11. Backups
+
+Two things need backing up; **everything else lives in git** and can be rebuilt with
+`npm run build` + re-uploading `api/`.
+
+1. **Database** (`kobomanager`) — users, permissions, Kobo accounts (encrypted tokens),
+   the submissions cache, settings, audit log, share links.
+2. **`api/config.php`** — the only secret outside git. It holds `CONFIG_TOKEN_KEY` (without
+   it the encrypted Kobo tokens are unrecoverable), `JWT_SECRET`, the DB password and the
+   Resend key. Keep a copy somewhere safe and separate from the DB dump.
+
+There are **no uploaded files on disk** to back up: attachments are streamed from Kobo on
+demand (never stored locally).
+
+**Nightly DB dump (cron) with 14-day retention:**
+
+```cron
+30 3 * * *  mysqldump --single-transaction --quick kobomanager | gzip > /var/backups/km/km-$(date +\%F).sql.gz && find /var/backups/km -name 'km-*.sql.gz' -mtime +14 -delete
+```
+
+(Use a credentials file or a `[mysqldump]` block in `~/.my.cnf` so the password is not on
+the command line. `--single-transaction` gives a consistent dump without locking InnoDB.)
+
+**Restore:**
+
+```bash
+gunzip < km-2026-01-31.sql.gz | mysql kobomanager
+# and put back api/config.php (same CONFIG_TOKEN_KEY as when the tokens were encrypted)
+```
+
+> Test a restore into a scratch database now and then — a backup you've never restored is a
+> guess, not a backup.
+
+## 12. Rotating `CONFIG_TOKEN_KEY`
+
+`CONFIG_TOKEN_KEY` encrypts the Kobo API tokens (`kobo_accounts.api_token`, libSodium). You
+can rotate it without losing the tokens: the CLI re-encrypts every account from the **old**
+key to a **new** one in a single transaction.
+
+1. **Back up** the database and `api/config.php` first (§11).
+2. Generate the new key:
+   ```bash
+   php -r 'echo sodium_bin2hex(random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES));'
+   ```
+3. In `api/config.php` keep `CONFIG_TOKEN_KEY` as the **current (old)** key and set
+   `CONFIG_TOKEN_KEY_NEW` to the **new** key.
+4. Dry run (reads + verifies, writes nothing):
+   ```bash
+   php api/cli/rotate_token_key.php --dry-run
+   ```
+5. Rotate for real (transactional; on any error it rolls back and changes nothing):
+   ```bash
+   php api/cli/rotate_token_key.php
+   ```
+6. **Promote** the new key: in `api/config.php` set `CONFIG_TOKEN_KEY` to the new key and
+   `CONFIG_TOKEN_KEY_NEW` back to `''`.
+7. Verify: open *Kobo accounts* and run a **Sync** (forces a token decrypt with the new key),
+   or check `/api/v1/health`.
+
+**Rollback.** If something looks wrong *before* step 6 (config still on the old key), the DB
+is already on the new key — finish step 6 to match them. If you must go back to the old key,
+swap the two keys (`CONFIG_TOKEN_KEY` = new, `CONFIG_TOKEN_KEY_NEW` = old) and run the CLI
+again, then promote the old key. As a last resort, restore the DB + `config.php` from the
+backup taken in step 1.

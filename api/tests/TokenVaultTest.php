@@ -27,4 +27,39 @@ final class TokenVaultTest extends TestCase
         $this->expectException(RuntimeException::class);
         TokenVault::decrypt($tampered);
     }
+
+    // ---------- Rotación de clave (función pura) ----------
+
+    private function freshKey(): string
+    {
+        return sodium_bin2hex(random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES));
+    }
+
+    public function testReencryptRotatesKey(): void
+    {
+        $old = $this->freshKey();
+        $new = $this->freshKey();
+        $plain = 'token_secreto_de_kobo_123';
+
+        $enc = TokenVault::encrypt($plain, $old);
+        $rot = TokenVault::reencrypt($enc, $old, $new);
+
+        // Con la clave nueva descifra; con la vieja ya no.
+        $this->assertSame($plain, TokenVault::decrypt($rot, $new));
+        $this->expectException(RuntimeException::class);
+        TokenVault::decrypt($rot, $old);
+    }
+
+    public function testDecryptWithWrongKeyThrows(): void
+    {
+        $enc = TokenVault::encrypt('hola', $this->freshKey());
+        $this->expectException(RuntimeException::class);
+        TokenVault::decrypt($enc, $this->freshKey());
+    }
+
+    public function testInvalidKeyLengthThrows(): void
+    {
+        $this->expectException(RuntimeException::class);
+        TokenVault::encrypt('x', 'abcd'); // 2 bytes, no 32
+    }
 }

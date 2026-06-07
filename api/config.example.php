@@ -21,10 +21,15 @@ define('DB_PASS', 'changeme');
 // --- Seguridad ---
 // Clave maestra para cifrar tokens de Kobo (libSodium). 64 hex chars.
 define('CONFIG_TOKEN_KEY', 'REEMPLAZAR_POR_CLAVE_GENERADA');
+// Clave NUEVA solo durante la rotación de CONFIG_TOKEN_KEY (ver DEPLOY §12 y
+// cli/rotate_token_key.php). En operación normal déjala vacía.
+define('CONFIG_TOKEN_KEY_NEW', '');
 // Secreto para firmar los JWT. 64 hex chars.
 define('JWT_SECRET', 'REEMPLAZAR_POR_SECRETO_GENERADO');
-// Duración de la sesión en segundos (8 horas).
-define('JWT_TTL', 8 * 60 * 60);
+// Sesión deslizante: se renueva con la actividad hasta un tope absoluto.
+define('JWT_TTL', 8 * 60 * 60);                   // inactividad máxima (idle TTL); 8 h
+define('SESSION_ABSOLUTE_TTL', 7 * 24 * 60 * 60); // vida máxima desde el login → re-login; 7 d
+define('SESSION_REFRESH_THRESHOLD', JWT_TTL / 2); // renueva la cookie cuando queda menos de esto
 
 // --- Cookies ---
 define('COOKIE_NAME', 'km_session');

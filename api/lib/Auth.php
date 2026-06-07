@@ -6,6 +6,10 @@
  * - El JWT viaja en cookie HttpOnly + SameSite (+ Secure en producción).
  * - Cada sesión se registra en `user_sessions`; en cada request se valida el
  *   JWT y que su `jti` siga existiendo (permite invalidación activa).
+ * - Sesión DESLIZANTE: con la actividad se renueva el `exp` del JWT y el
+ *   `expires_at` de la sesión (mismo `jti`, así la invalidación sigue intacta),
+ *   hasta un TOPE ABSOLUTO desde el login (SESSION_ABSOLUTE_TTL), tras el cual se
+ *   exige re-login.
  *
  * JWT implementado a mano (HS256) para no depender de librerías externas.
  */
@@ -98,10 +102,19 @@ class Auth {
         if ($payload === null) return null;
 
         $session = DB::run(
-            'SELECT id FROM user_sessions WHERE token_id = ? AND expires_at > NOW()',
+            'SELECT id, UNIX_TIMESTAMP(created_at) AS created_ts
+             FROM user_sessions WHERE token_id = ? AND expires_at > NOW()',
             [$payload['jti']]
         )->fetch();
         if (!$session) return null;
+
+        // Tope absoluto: pasada la vida máxima desde el login, la sesión muere
+        // aunque haya actividad (acota la vida de una cookie robada).
+        $createdTs = (int) $session['created_ts'];
+        if (time() >= $createdTs + SESSION_ABSOLUTE_TTL) {
+            DB::run('DELETE FROM user_sessions WHERE id = ?', [$session['id']]);
+            return null;
+        }
 
         $user = DB::run(
             'SELECT id, name, email, role, locale, active FROM users WHERE id = ? AND active = 1',
@@ -111,11 +124,51 @@ class Auth {
 
         DB::run('UPDATE user_sessions SET last_activity = NOW() WHERE id = ?', [$session['id']]);
 
+        // Sesión deslizante: renueva la cookie/JWT con la actividad (mismo jti).
+        self::maybeRefresh($payload, $createdTs);
+
         unset($user['active']);
         $user['id']          = (int) $user['id'];
         $user['locale_pref'] = $user['locale'];                                  // elección explícita (o null)
         $user['locale']      = $user['locale'] ?: Settings::defaultLocale();     // idioma efectivo
         return $user;
+    }
+
+    /**
+     * Renueva la cookie/JWT si al token le queda poca vida, sin cambiar el `jti`.
+     * El nuevo vencimiento se limita al tope absoluto desde el login.
+     */
+    private static function maybeRefresh(array $payload, int $createdTs): void {
+        $now       = time();
+        $remaining = (int) ($payload['exp'] ?? 0) - $now;
+        if ($remaining >= SESSION_REFRESH_THRESHOLD) {
+            return; // todavía le queda margen: no reescribimos la cookie
+        }
+
+        $newExp = min($now + JWT_TTL, $createdTs + SESSION_ABSOLUTE_TTL);
+        if ($newExp <= (int) ($payload['exp'] ?? 0)) {
+            return; // ya estamos en el tope absoluto: no se puede extender más
+        }
+
+        DB::run(
+            'UPDATE user_sessions SET expires_at = FROM_UNIXTIME(?) WHERE token_id = ?',
+            [$newExp, $payload['jti']]
+        );
+        $jwt = self::jwtEncode([
+            'sub' => (int) $payload['sub'],
+            'jti' => $payload['jti'],
+            'iat' => (int) ($payload['iat'] ?? $now),
+            'exp' => $newExp,
+        ]);
+        self::setCookie($jwt, $newExp);
+    }
+
+    /** `jti` de la sesión del request actual (o null), para identificar «este dispositivo». */
+    public static function currentTokenId(): ?string {
+        $jwt = $_COOKIE[COOKIE_NAME] ?? '';
+        if ($jwt === '') return null;
+        $payload = self::jwtDecode($jwt);
+        return $payload['jti'] ?? null;
     }
 
     /** Cierra la sesión del request actual (borra fila y cookie). */

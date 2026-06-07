@@ -217,7 +217,17 @@
     "pwMismatch": "The passwords don't match.",
     "pwError": "Could not change the password",
     "loadError": "Could not load the configuration",
-    "saveError": "Could not save"
+    "saveError": "Could not save",
+    "sessions": "Active sessions",
+    "sessionsDesc": "Devices where your account is currently signed in. You can close the others if you don't recognize them.",
+    "sessCurrent": "This device",
+    "sessLastActivity": "Last activity",
+    "sessUnknownAgent": "Unknown device",
+    "sessRevoke": "Close the other sessions",
+    "sessConfirm": "All your active sessions except this device will be closed. You'll need to sign in again on the rest.",
+    "sessClosed": "Sessions closed: {n}",
+    "sessLoadError": "Could not load the sessions",
+    "sessError": "Could not close the sessions"
   },
   "notifications": {
     "title": "Notifications",

@@ -108,6 +108,7 @@ $routes = [
     'notifications'             => 'notifications.php',
     'profile'                   => 'profile.php',
     'profile/password'          => 'profile_password.php',
+    'profile/sessions'          => 'profile_sessions.php',
     'forms'                     => 'forms/index.php',
     'forms/:id/enketo'          => 'forms/enketo.php',
     'forms/:id/sync'            => 'forms/sync.php',

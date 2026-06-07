@@ -8,6 +8,35 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **M4b · Seguridad/operación.** Endurecimiento de sesiones y operativa de claves/backups:
+  - **Sesión deslizante (sliding session).** El JWT pasa de expiración *absoluta* (te echaba a
+    las 8 h aunque estuvieras trabajando) a **renovarse con la actividad**: en cada request, si al
+    token le queda poco (< `SESSION_REFRESH_THRESHOLD`, por defecto la mitad del idle TTL) se
+    **re-emite manteniendo el mismo `jti`** —así la invalidación por `jti` sigue intacta— y se
+    extiende `user_sessions.expires_at`. Hay un **tope absoluto** desde el login
+    (`SESSION_ABSOLUTE_TTL`, 7 días por defecto): pasado ese punto se exige re-login aunque haya
+    actividad, lo que **acota la vida de una cookie robada**. Sin cambios de esquema
+    (`user_sessions.created_at` ancla el tope). Constantes nuevas en `config.php`:
+    `SESSION_ABSOLUTE_TTL` y `SESSION_REFRESH_THRESHOLD`.
+  - **«Cerrar las demás sesiones» (autoservicio).** Nuevo `GET/DELETE /profile/sessions`: el GET
+    lista las sesiones activas del propio usuario marcando «este dispositivo» (por su `jti`); el
+    DELETE **cierra todas menos la actual** (revoca sus JWT), auditado como `revoke_own_sessions`.
+    Equivalente de autoservicio del cierre remoto que el admin ya hacía en
+    `/admin/users/{id}/sessions`, sin desconectar el dispositivo en uso. Nueva sección
+    **«Sesiones activas»** en *Mi perfil* (lista + confirmación + flash).
+  - **Rotación de `CONFIG_TOKEN_KEY`.** `TokenVault::encrypt/decrypt` aceptan ahora una **clave
+    explícita** (default = `CONFIG_TOKEN_KEY`) y se añade `TokenVault::reencrypt(enc, vieja, nueva)`
+    (función pura). CLI `php api/cli/rotate_token_key.php [--dry-run]` re-cifra todos los
+    `kobo_accounts.api_token` de la clave vieja (`CONFIG_TOKEN_KEY`) a la nueva
+    (`CONFIG_TOKEN_KEY_NEW`) en una **transacción** con verificación de ida y vuelta. Procedimiento
+    paso a paso + rollback en `DEPLOY.md §12`.
+  - **Copias de seguridad.** Estrategia documentada en `DEPLOY.md §11`: `mysqldump`
+    (`--single-transaction`, cron nocturno con retención) + `api/config.php` (único secreto fuera
+    de git); restauración y aviso de que no hay ficheros subidos en disco (los adjuntos se
+    *streamean* desde Kobo).
+  - Tests: rotación de `TokenVault` (función pura), sesión deslizante (renueva cerca de la
+    expiración / no renueva con margen) y tope absoluto (la sesión muere y se borra). Suite **92
+    tests / 219 aserciones** en verde.
 - **M4a · Índices/búsqueda en `submissions_cache`.** La búsqueda de la tabla de envíos (y de la
   exportación CSV y los enlaces compartidos) dejaba de hacer `LIKE` sobre el **JSON completo**
   de cada fila (escaneo total, y matcheaba dentro de claves y metadatos) y pasa a un índice

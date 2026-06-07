@@ -217,7 +217,17 @@
     "pwMismatch": "Las contraseñas no coinciden.",
     "pwError": "No se pudo cambiar la contraseña",
     "loadError": "No se pudo cargar la configuración",
-    "saveError": "No se pudo guardar"
+    "saveError": "No se pudo guardar",
+    "sessions": "Sesiones activas",
+    "sessionsDesc": "Dispositivos donde tu cuenta tiene la sesión abierta. Puedes cerrar las demás si no las reconoces.",
+    "sessCurrent": "Este dispositivo",
+    "sessLastActivity": "Última actividad",
+    "sessUnknownAgent": "Dispositivo desconocido",
+    "sessRevoke": "Cerrar las demás sesiones",
+    "sessConfirm": "Se cerrarán todas tus sesiones activas excepto la de este dispositivo. Tendrás que volver a iniciar sesión en el resto.",
+    "sessClosed": "Sesiones cerradas: {n}",
+    "sessLoadError": "No se pudieron cargar las sesiones",
+    "sessError": "No se pudieron cerrar las sesiones"
   },
   "notifications": {
     "title": "Notificaciones",

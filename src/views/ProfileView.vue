@@ -4,11 +4,19 @@ import { useI18n } from 'vue-i18n'
 import api from '../services/api'
 import { useAuthStore, apiError } from '../stores/auth'
 import { setLocale } from '../i18n'
+import { confirmDialog } from '../composables/confirm'
 
 const { t } = useI18n()
 const auth = useAuthStore()
 
 const error = ref('')
+
+// Sesiones activas
+const sessions = ref([])
+const sessLoading = ref(false)
+const sessClosing = ref(false)
+const sessError = ref('')
+const sessClosedMsg = ref('')
 
 // Idioma personal
 const localePref = ref('')      // '' = seguir el predeterminado del sistema
@@ -81,7 +89,51 @@ async function changePassword() {
   }
 }
 
-onMounted(load)
+async function loadSessions() {
+  sessLoading.value = true
+  sessError.value = ''
+  try {
+    const { data } = await api.get('/profile/sessions')
+    sessions.value = data.data
+  } catch (e) {
+    sessError.value = apiError(e, t('profile.sessLoadError'))
+  } finally {
+    sessLoading.value = false
+  }
+}
+
+async function closeOtherSessions() {
+  const ok = await confirmDialog({
+    title: t('profile.sessRevoke'),
+    message: t('profile.sessConfirm'),
+    confirmText: t('profile.sessRevoke'),
+    danger: true,
+  })
+  if (!ok) return
+  sessClosing.value = true
+  sessError.value = ''
+  sessClosedMsg.value = ''
+  try {
+    const { data } = await api.delete('/profile/sessions')
+    sessClosedMsg.value = t('profile.sessClosed', { n: data.data.closed })
+    await loadSessions()
+  } catch (e) {
+    sessError.value = apiError(e, t('profile.sessError'))
+  } finally {
+    sessClosing.value = false
+  }
+}
+
+function fmtDate(s) {
+  if (!s) return '—'
+  const d = new Date(s.replace(' ', 'T'))
+  return isNaN(d) ? s : d.toLocaleString()
+}
+
+onMounted(() => {
+  load()
+  loadSessions()
+})
 </script>
 
 <template>
@@ -169,6 +221,47 @@ onMounted(load)
           <span v-if="pwSaved" class="text-sm text-green-600">{{ $t('profile.pwChanged') }}</span>
         </div>
       </form>
+    </section>
+
+    <!-- Sesiones activas -->
+    <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 space-y-3">
+      <div>
+        <h2 class="font-semibold text-slate-900">{{ $t('profile.sessions') }}</h2>
+        <p class="mt-0.5 text-sm text-slate-500">{{ $t('profile.sessionsDesc') }}</p>
+      </div>
+
+      <div v-if="sessError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+        {{ sessError }}
+      </div>
+
+      <p v-if="sessLoading" class="text-sm text-slate-400">{{ $t('common.loading') }}</p>
+
+      <ul v-else class="divide-y divide-slate-100 rounded-lg ring-1 ring-slate-200">
+        <li v-for="(s, i) in sessions" :key="i" class="flex items-start justify-between gap-4 px-3 py-2.5 text-sm">
+          <div class="min-w-0">
+            <p class="truncate text-slate-700">{{ s.user_agent || $t('profile.sessUnknownAgent') }}</p>
+            <p class="text-xs text-slate-400">
+              {{ s.ip || '—' }} · {{ $t('profile.sessLastActivity') }}: {{ fmtDate(s.last_activity) }}
+            </p>
+          </div>
+          <span
+            v-if="s.current"
+            class="shrink-0 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-primary-200"
+          >{{ $t('profile.sessCurrent') }}</span>
+        </li>
+      </ul>
+
+      <div class="flex items-center gap-3 pt-1">
+        <button
+          type="button"
+          :disabled="sessClosing || sessions.length <= 1"
+          class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+          @click="closeOtherSessions"
+        >
+          {{ sessClosing ? $t('common.saving') : $t('profile.sessRevoke') }}
+        </button>
+        <span v-if="sessClosedMsg" class="text-sm text-green-600">{{ sessClosedMsg }}</span>
+      </div>
     </section>
   </div>
 </template>

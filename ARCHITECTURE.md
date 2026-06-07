@@ -31,7 +31,7 @@ review (approve/reject) flow decoupled from Kobo.
   lib/                       one class per file, no namespaces
   v1/                        endpoint scripts, grouped by area
   cron/                      CLI jobs (daily_summary, sync_submissions)
-  cli/                       create_user.php (first admin)
+  cli/                       create_user.php, rebuild_search_text.php, rotate_token_key.php
   tests/                     PHPUnit (only dev dependency)
 /db              *.sql schema files, applied in order (see Database)
 ```
@@ -57,7 +57,16 @@ to HTTP statuses in one table; the frontend maps codes → localized messages (`
   (`SameSite=Lax`, `Secure` in prod).
 - Every session is a row in `user_sessions` keyed by the JWT `jti`. `currentUser()` validates
   signature + expiry **and** that the `jti` row still exists **and** the user is active — so
-  deleting the row (logout / admin remote revoke / deactivation) invalidates the token.
+  deleting the row (logout / admin remote revoke / self‑service / deactivation) invalidates the
+  token.
+- **Sliding session.** On each request, if the token is close to expiry
+  (`SESSION_REFRESH_THRESHOLD`) `currentUser()` re‑issues it **keeping the same `jti`** (so
+  invalidation still works) and pushes `user_sessions.expires_at` forward by the idle TTL,
+  bounded by an **absolute cap** from `created_at` (`SESSION_ABSOLUTE_TTL`) after which re‑login
+  is forced — limiting a stolen cookie's useful life. No schema change.
+- **Self‑service session control.** `GET/DELETE /profile/sessions`: list my active sessions
+  (the current one flagged via `Auth::currentTokenId()`) / close all but the current. Mirrors
+  the admin remote‑revoke at `/admin/users/{id}/sessions`.
 - Guards: `require()`, `requireAdmin()`, and per‑form `canForm($user,$id,$cap)` /
   `requireForm(...)` where `cap ∈ {view,edit,validate}` (admins bypass).
 
@@ -122,7 +131,9 @@ forgot‑password endpoint.
 Talks to the **Kobo API v2** with the account token (cURL, no SDK). Discovery lists `survey`
 assets; submissions are fetched paginated; edits use `PATCH .../data/bulk/`. Errors become
 `KoboException` with standard codes. The token is decrypted on the fly with `TokenVault`
-(libSodium `secretbox`; master key only in `config.php`).
+(libSodium `secretbox`; master key only in `config.php`). `TokenVault` takes an optional
+explicit key, which lets `cli/rotate_token_key.php` re‑encrypt every account from the old key
+to a new one (key rotation; see `DEPLOY.md §12`).
 
 ### Sync model
 - **Forms discovery** (`v1/admin/forms_sync.php`): upserts `forms`, filters by the
