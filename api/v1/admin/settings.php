@@ -16,6 +16,7 @@ if (Request::method() === 'GET') {
         'label_mode'               => Settings::labelMode(),
         'valid_label_modes'        => Settings::VALID_LABEL_MODES,
         'password_reset_enabled'   => Settings::passwordResetEnabled(),
+        'audit_self_view_enabled'  => Settings::auditSelfViewEnabled(),
         'mail_configured'          => Settings::mailConfigured(),
         'viewer_actions'           => Settings::viewerActions(),
         'share_password_policy'      => Settings::sharePasswordPolicy(),
@@ -68,6 +69,12 @@ if (Request::method() === 'PUT') {
         $enabled = (bool) $body['password_reset_enabled'];
         Settings::set('password_reset_enabled', $enabled);
         $out['password_reset_enabled'] = $enabled;
+    }
+
+    if (array_key_exists('audit_self_view_enabled', $body)) {
+        $enabled = (bool) $body['audit_self_view_enabled'];
+        Settings::set('audit_self_view_enabled', $enabled);
+        $out['audit_self_view_enabled'] = $enabled;
     }
 
     if (array_key_exists('share_password_policy', $body)) {

@@ -33,12 +33,14 @@ fortalecimiento y se etiqueta **1.0.0**. Lo no listado aquí queda para futuras 
       **antes de M4** y en este orden (esfuerzo/valor). Son funcionalidad, no la infra de
       rendimiento/seguridad de M4; la única salvedad es la seguridad del proxy público de
       adjuntos (P4), que entronca con M4b/M5 (ver nota).
-  - [ ] **P1 · Auditoría propia (autoservicio).** Checkbox global en *Configuración*
-        `audit_self_view_enabled` (**off por defecto**) que habilita a cualquier usuario ver
-        **su propio** registro de actividad. Endpoint `GET /audit/me` que **fuerza
-        `user_id = usuario actual`** (reutiliza paginación/filtros del visor admin, sin filtro
-        por usuario ni columna «usuario»); entrada de menú «Mi actividad» solo si está activo.
-        Cubre en parte el pendiente «historial de edición visible» de más abajo. *(Coste bajo.)*
+  - [x] **P1 · Auditoría propia (autoservicio)** *(hecho; ver `CHANGELOG`)*. Checkbox global en
+        *Configuración* `audit_self_view_enabled` (**off por defecto**) que habilita a cualquier
+        usuario ver **su propio** registro de actividad. Endpoint `GET /audit/me` que **fuerza
+        `user_id = usuario actual`** (reutiliza paginación/filtros del visor admin vía
+        `Audit::query()`, sin filtro por usuario ni columna «usuario»; acciones del desplegable
+        limitadas al propio usuario); entrada de menú «Mi actividad» solo si está activo; 403 si
+        el flag está off. Cubre en parte el pendiente «historial de edición visible» de más
+        abajo. *(Coste bajo.)*
   - [ ] **P2 · Valores «calculados» por envío.** Nuevo `lib/Derived.php` que computa métricas
         derivadas del payload, reutilizado en detalle, tabla y CSV. **Ubicación:** acápite
         «Resumen / Metadatos» en el **detalle** (lista completa) + unas pocas como **columnas

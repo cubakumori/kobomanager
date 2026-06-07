@@ -33,6 +33,7 @@
     "audit": "Auditoría",
     "settings": "Configuración",
     "notifications": "Notificaciones",
+    "myActivity": "Mi actividad",
     "profile": "Mi perfil",
     "logout": "Cerrar sesión",
     "goToProfile": "Ir a mi perfil"
@@ -410,6 +411,10 @@
     "passwordResetToggle": "Permitir recuperar contraseña",
     "passwordResetHint": "Si está activo, aparece el enlace «¿Olvidaste tu contraseña?» en el login. El enlace de recuperación caduca en 1 hora y solo puede usarse una vez.",
     "passwordResetNoMail": "El envío de email no está configurado (falta la clave de Resend en config.php). Los usuarios verán el enlace, pero no recibirán el correo de recuperación.",
+    "auditSelfView": "Auditoría propia (autoservicio)",
+    "auditSelfViewDesc": "Permite que cualquier usuario consulte su propio registro de actividad desde el menú «Mi actividad».",
+    "auditSelfViewToggle": "Habilitar «Mi actividad» para todos los usuarios",
+    "auditSelfViewHint": "Cada usuario verá únicamente sus propias acciones (nunca las de otros). Los administradores disponen además del visor completo en «Auditoría». Desactivado por defecto.",
     "viewerActions": "Acciones de los viewers sobre formularios",
     "viewerActionsDesc": "Acciones que los usuarios «viewer» podrán ejecutar desde «Mis formularios» (los administradores las tienen siempre). Desactivadas por defecto.",
     "viewerAction_enketo": "Ver (formulario público)",
@@ -508,6 +513,12 @@
     "prevPage": "Anterior",
     "nextPage": "Siguiente",
     "page": "Página {page} de {pages}"
+  },
+  "myActivity": {
+    "title": "Mi actividad",
+    "subtitle": "Tu propio registro de acciones: qué has hecho y cuándo.",
+    "empty": "Aún no hay actividad registrada.",
+    "loadError": "No se pudo cargar tu actividad"
   },
   "audit": {
     "title": "Auditoría",

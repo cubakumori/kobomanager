@@ -17,6 +17,7 @@ const validLocales = ref(['es', 'en'])
 const labelMode = ref('labels')
 const validLabelModes = ref(['labels', 'raw'])
 const passwordResetEnabled = ref(false)
+const auditSelfViewEnabled = ref(false)
 const mailConfigured = ref(false)
 const viewerActions = ref({ enketo: false, update: false, resync: false, login: false })
 const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login']
@@ -41,6 +42,7 @@ async function load() {
     labelMode.value = data.data.label_mode
     validLabelModes.value = data.data.valid_label_modes
     passwordResetEnabled.value = data.data.password_reset_enabled
+    auditSelfViewEnabled.value = data.data.audit_self_view_enabled
     mailConfigured.value = data.data.mail_configured
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     sharePasswordPolicy.value = data.data.share_password_policy
@@ -76,6 +78,7 @@ async function save() {
       default_locale: defaultLocale.value,
       label_mode: labelMode.value,
       password_reset_enabled: passwordResetEnabled.value,
+      audit_self_view_enabled: auditSelfViewEnabled.value,
       viewer_actions: viewerActions.value,
       share_password_policy: sharePasswordPolicy.value,
       field_truncate: {
@@ -87,6 +90,7 @@ async function save() {
     defaultLocale.value = data.data.default_locale
     labelMode.value = data.data.label_mode
     passwordResetEnabled.value = data.data.password_reset_enabled
+    if (data.data.audit_self_view_enabled != null) auditSelfViewEnabled.value = data.data.audit_self_view_enabled
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     if (data.data.share_password_policy) sharePasswordPolicy.value = data.data.share_password_policy
     if (data.data.field_truncate) fieldTruncate.value = data.data.field_truncate
@@ -239,6 +243,26 @@ onMounted(load)
         >
           {{ $t('settings.passwordResetNoMail') }}
         </p>
+      </section>
+
+      <!-- Auditoría propia (autoservicio) -->
+      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.auditSelfView') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.auditSelfViewDesc') }}</p>
+        </div>
+        <label class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+          <input
+            type="checkbox"
+            class="mt-0.5 h-4 w-4"
+            :checked="auditSelfViewEnabled"
+            @change="auditSelfViewEnabled = !auditSelfViewEnabled; saved = false"
+          />
+          <span>
+            <span class="block text-sm font-medium text-slate-800">{{ $t('settings.auditSelfViewToggle') }}</span>
+            <span class="block text-xs text-slate-400">{{ $t('settings.auditSelfViewHint') }}</span>
+          </span>
+        </label>
       </section>
 
       <!-- Contraseña de los enlaces de compartir -->

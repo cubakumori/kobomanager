@@ -101,6 +101,7 @@ $routes = [
     'admin/shares'              => 'admin/shares.php',
     'admin/shares/:id'          => 'admin/share_item.php',
     'admin/audit'               => 'admin/audit.php',
+    'audit/me'                  => 'audit/me.php',
     'notifications'             => 'notifications.php',
     'profile'                   => 'profile.php',
     'profile/password'          => 'profile_password.php',

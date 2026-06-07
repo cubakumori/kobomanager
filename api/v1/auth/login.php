@@ -40,4 +40,5 @@ ErrorResponse::ok([
     'role'        => $user['role'],
     'locale_pref' => $user['locale'] ?? null,
     'locale'      => ($user['locale'] ?? null) ?: Settings::defaultLocale(),
+    'audit_self_view_enabled' => Settings::auditSelfViewEnabled(),
 ]);

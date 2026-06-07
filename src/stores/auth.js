@@ -20,6 +20,9 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     isAuthenticated: (s) => !!s.user,
     isAdmin: (s) => s.user?.role === 'admin',
+    // Flag global: ¿puede el usuario ver su propio registro de actividad?
+    // Llega adjunto al usuario en /auth/me y /auth/login.
+    auditSelfView: (s) => !!s.user?.audit_self_view_enabled,
   },
   actions: {
     async login(email, password) {

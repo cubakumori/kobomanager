@@ -33,6 +33,7 @@
     "audit": "Audit log",
     "settings": "Settings",
     "notifications": "Notifications",
+    "myActivity": "My activity",
     "profile": "My profile",
     "logout": "Log out",
     "goToProfile": "Go to my profile"
@@ -410,6 +411,10 @@
     "passwordResetToggle": "Allow password recovery",
     "passwordResetHint": "When enabled, a “Forgot your password?” link appears on the login screen. The recovery link expires in 1 hour and can only be used once.",
     "passwordResetNoMail": "Email sending is not configured (the Resend key is missing in config.php). Users will see the link but won't receive the recovery email.",
+    "auditSelfView": "Self-service activity log",
+    "auditSelfViewDesc": "Lets any user review their own activity log from the “My activity” menu.",
+    "auditSelfViewToggle": "Enable “My activity” for all users",
+    "auditSelfViewHint": "Each user sees only their own actions (never anyone else's). Administrators also have the full viewer under “Audit log”. Off by default.",
     "viewerActions": "Viewer actions on forms",
     "viewerActionsDesc": "Actions that “viewer” users can run from “My forms” (admins always have them). Disabled by default.",
     "viewerAction_enketo": "View (public form)",
@@ -508,6 +513,12 @@
     "prevPage": "Previous",
     "nextPage": "Next",
     "page": "Page {page} of {pages}"
+  },
+  "myActivity": {
+    "title": "My activity",
+    "subtitle": "Your own action log: what you did and when.",
+    "empty": "No activity recorded yet.",
+    "loadError": "Could not load your activity"
   },
   "audit": {
     "title": "Audit log",

@@ -21,6 +21,7 @@ const routes = [
   { path: '/forms/:id/map', name: 'form-map', component: () => import('../views/FormMapView.vue'), meta: shell() },
   { path: '/profile', name: 'profile', component: () => import('../views/ProfileView.vue'), meta: shell() },
   { path: '/notifications', name: 'notifications', component: () => import('../views/NotificationsView.vue'), meta: shell() },
+  { path: '/activity', name: 'my-activity', component: () => import('../views/MyActivityView.vue'), meta: shell() },
   { path: '/about-kobo', name: 'about-kobo', component: () => import('../views/AboutKoboView.vue'), meta: shell() },
 
   { path: '/admin/users', name: 'admin-users', component: () => import('../views/admin/UsersView.vue'), meta: shell({ requiresAdmin: true }) },

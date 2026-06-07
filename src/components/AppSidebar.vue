@@ -61,6 +61,13 @@ const linkActive = 'bg-primary-600 text-white'
       >
         {{ $t('nav.notifications') }}
       </RouterLink>
+      <RouterLink
+        v-if="auth.auditSelfView"
+        :to="{ name: 'my-activity' }"
+        :class="[linkBase, $route.name === 'my-activity' ? linkActive : linkInactive]"
+      >
+        {{ $t('nav.myActivity') }}
+      </RouterLink>
 
       <template v-if="auth.isAdmin">
         <p class="px-3 pb-1 pt-4 text-xs font-semibold uppercase tracking-wider text-slate-500">

@@ -23,6 +23,12 @@ class Settings {
     private const DEFAULT_PASSWORD_RESET = false;
 
     /**
+     * ¿Puede cualquier usuario (no solo admin) ver SU PROPIO registro de
+     * actividad en «Mi actividad»? Desactivado por defecto.
+     */
+    private const DEFAULT_AUDIT_SELF_VIEW = false;
+
+    /**
      * Política de contraseña para enlaces de solo lectura compartibles:
      *   'off'      → nunca se ofrece contraseña (acceso solo por token).
      *   'optional' → el admin puede ponerla o dejarla en blanco (por defecto).
@@ -79,6 +85,11 @@ class Settings {
     /** ¿Habilitado el flujo público de recuperación de contraseña? */
     public static function passwordResetEnabled(): bool {
         return (bool) self::get('password_reset_enabled', self::DEFAULT_PASSWORD_RESET);
+    }
+
+    /** ¿Puede cualquier usuario ver su propio registro de actividad? */
+    public static function auditSelfViewEnabled(): bool {
+        return (bool) self::get('audit_self_view_enabled', self::DEFAULT_AUDIT_SELF_VIEW);
     }
 
     /**

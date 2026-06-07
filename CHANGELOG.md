@@ -8,6 +8,18 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **P1 · Auditoría propia (autoservicio).** Nuevo ajuste global en *Configuración*
+  «Auditoría propia» (`audit_self_view_enabled`, **desactivado por defecto**) que habilita a
+  cualquier usuario —no solo administradores— a consultar **su propio** registro de actividad
+  desde una nueva entrada de menú **«Mi actividad»** (visible solo si el ajuste está activo).
+  Endpoint `GET /audit/me` que **fuerza `user_id` = usuario actual** (ignora cualquier
+  `user_id` del query) y reutiliza la paginación/filtros del visor admin (acción, formulario,
+  rango de fechas y búsqueda), **sin** filtro ni columna de «usuario»; el desplegable de
+  acciones se limita a las del propio usuario. Requiere sesión (no admin); si el ajuste está
+  desactivado responde **403** para todos (los administradores disponen del visor completo en
+  *Auditoría*). La lógica de consulta se extrajo a `Audit::query()`, compartida por
+  `admin/audit.php` y `audit/me.php`. El flag viaja con el usuario en `/auth/me` y
+  `/auth/login` para gobernar el menú sin peticiones adicionales.
 - **Acortar nombres de campo** (ajuste global en *Configuración*, desactivado por defecto):
   un *checkbox* «Acortar nombres de campo» + un número de caracteres (8–120, por defecto 24).
   Al activarlo, los nombres de campo largos se muestran recortados con «…» en las cabeceras
