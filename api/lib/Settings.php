@@ -85,6 +85,25 @@ class Settings {
         return defined('RESEND_API_KEY') && RESEND_API_KEY !== '';
     }
 
+    /**
+     * Registra la última ejecución de un cron (clave `cron_runs`, objeto por nombre):
+     *   { "<name>": { "at": "YYYY-MM-DD HH:MM:SS", ...info } }
+     * `info` suele llevar `ok` (bool) y un pequeño resumen (conteos). Pensado para
+     * llamarse al final de cada cron (CLI).
+     */
+    public static function recordCronRun(string $name, array $info = []): void {
+        $runs = self::get('cron_runs', []);
+        if (!is_array($runs)) $runs = [];
+        $runs[$name] = array_merge(['at' => date('Y-m-d H:i:s')], $info);
+        self::set('cron_runs', $runs);
+    }
+
+    /** Últimas ejecuciones registradas de los crons (objeto por nombre). */
+    public static function cronRuns(): array {
+        $runs = self::get('cron_runs', []);
+        return is_array($runs) ? $runs : [];
+    }
+
     public const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login'];
 
     /**

@@ -26,8 +26,9 @@ fortalecimiento y se etiqueta **1.0.0**. Lo no listado aquí queda para futuras 
       (aprobar/rechazar varios envíos, `POST /forms/{id}/review`) + **exportación CSV**
       (UTF-8 con BOM, `GET /forms/{id}/export`; XLSX nativo diferido). Respetan permisos y
       scoping por filas.
-- [ ] **M3 · Observabilidad/ops**: **visor de `audit_log`** (admin, paginado y con filtros)
-      + **`/health` ampliado** (última ejecución de cada cron y estado de sincronización).
+- [x] **M3 · Observabilidad/ops** *(hecho; ver `CHANGELOG`)*: **visor de `audit_log`**
+      (`/admin/audit`, paginado + filtros) + **`/health` ampliado** (secciones `cron`/`sync`
+      solo para admin; los crons registran su ejecución con `Settings::recordCronRun`).
 - [ ] **M4 · Rendimiento y seguridad** *(puede partirse)*:
   - [ ] **M4a · Índices/búsqueda** en `submissions_cache` (columnas generadas o FULLTEXT;
         hoy la búsqueda es `LIKE` sobre el JSON completo).
@@ -67,7 +68,7 @@ Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
 ### UX
 
 - [x] **Revisión en lote** (aprobar/rechazar varios envíos a la vez). *(hecho en M2)*.
-- [ ] **Visor de `audit_log`** en el panel admin (quién hizo qué y cuándo).
+- [x] **Visor de `audit_log`** en el panel admin (quién hizo qué y cuándo). *(hecho en M3)*.
 - [ ] Columnas configurables y filtros avanzados en la tabla de envíos.
 - [ ] Modo oscuro y mejores estados de carga/vacío (skeletons).
 
@@ -87,7 +88,7 @@ Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
 - [ ] **CI** (lint + build + PHPUnit). *(Docker queda fuera por ahora: no se usa en el proyecto.)*
 - [ ] **Índices/búsqueda**: columnas generadas o full-text para acelerar la búsqueda en
       `submissions_cache` cuando crezca.
-- [ ] `/health` ampliado: última ejecución de cada cron y estado de sincronización.
+- [x] `/health` ampliado: última ejecución de cada cron y estado de sincronización. *(hecho en M3)*.
 
 ## Ampliaciones futuras (del plan original)
 

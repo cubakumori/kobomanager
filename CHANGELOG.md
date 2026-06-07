@@ -8,6 +8,18 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **M3 · Observabilidad/ops.** Nueva sección admin **Auditoría** (`/admin/audit`) con dos
+  partes:
+  - **Visor de `audit_log`**: tabla paginada de acciones (quién, qué, cuándo) con su
+    detalle, **filtrable** por acción, usuario, formulario, rango de fechas y búsqueda
+    libre (sobre el envío o el detalle). Las acciones se muestran con etiquetas legibles
+    (i18n) y *fallback* al código. Backend `GET /admin/audit` (solo admin).
+  - **Estado del sistema**: panel con la **última ejecución de cada cron** (con estado OK/
+    error y marca de tiempo) y el **estado de sincronización** (formularios activos, con
+    error de sync, envíos en caché, última sincronización, email configurado). Los crons
+    (`sync_submissions`, `daily_summary`) registran su ejecución vía un nuevo
+    `Settings::recordCronRun()`; **`GET /health`** se amplía con secciones `cron` y `sync`
+    **solo para administradores** (el sondeo público sigue devolviendo solo `status`/`checks`).
 - **M2 · Productividad de datos.** Dos mejoras en la tabla de envíos (*Mis formularios* →
   un formulario), ambas respetando permisos y el scoping por filas:
   - **Revisión en lote**: selección de envíos con casillas (más «seleccionar todos los de

@@ -16,6 +16,7 @@ if (PHP_SAPI !== 'cli') {
 
 require __DIR__ . '/../config.php';
 require __DIR__ . '/../lib/DB.php';
+require __DIR__ . '/../lib/Settings.php';
 require __DIR__ . '/../lib/TokenVault.php';
 require __DIR__ . '/../lib/KoboClient.php';
 require __DIR__ . '/../lib/FormSchema.php';
@@ -33,6 +34,7 @@ $accounts = DB::run($accSql, $accParams)->fetchAll();
 
 $totalForms = 0;
 $totalSubs  = 0;
+$errors     = 0;
 
 foreach ($accounts as $acc) {
     $token  = TokenVault::decrypt($acc['api_token']);
@@ -55,9 +57,20 @@ foreach ($accounts as $acc) {
                 $res['removed'] ? sprintf(', %d eliminados', $res['removed']) : ''
             ));
         } catch (KoboException $e) {
+            $errors++;
             fwrite(STDERR, sprintf("[ERR] %s / form %d: %s (%s)\n", $acc['label'], $formId, $e->getMessage(), $e->errorCode));
         }
     }
 }
+
+// Registrar la ejecución para /health (observabilidad).
+$onlyArg = $onlyAccount !== null ? (int) $onlyAccount : null;
+Settings::recordCronRun('sync_submissions', [
+    'ok'      => $errors === 0,
+    'forms'   => $totalForms,
+    'subs'    => $totalSubs,
+    'errors'  => $errors,
+    'account' => $onlyArg,
+]);
 
 fwrite(STDOUT, sprintf("Hecho: %d formularios, %d envíos sincronizados.\n", $totalForms, $totalSubs));

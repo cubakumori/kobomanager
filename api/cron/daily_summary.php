@@ -17,6 +17,7 @@ if (PHP_SAPI !== 'cli') {
 
 require __DIR__ . '/../config.php';
 require __DIR__ . '/../lib/DB.php';
+require __DIR__ . '/../lib/Settings.php';
 require __DIR__ . '/../lib/Mailer.php';
 require __DIR__ . '/../lib/RowScope.php';
 
@@ -60,6 +61,7 @@ foreach ($candidates as $r) {
 }
 
 if (!$byUser) {
+    Settings::recordCronRun('daily_summary', ['ok' => true, 'day' => $day, 'sent' => 0, 'recipients' => 0]);
     fwrite(STDOUT, "Sin resúmenes que enviar para el día $day.\n");
     exit(0);
 }
@@ -76,6 +78,13 @@ foreach ($byUser as $u) {
     ));
     if ($ok) $sent++;
 }
+
+Settings::recordCronRun('daily_summary', [
+    'ok'         => $sent === count($byUser),
+    'day'        => $day,
+    'sent'       => $sent,
+    'recipients' => count($byUser),
+]);
 
 fwrite(STDOUT, "Hecho: $sent email(s) enviado(s) para el día $day.\n");
 
