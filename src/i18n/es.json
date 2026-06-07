@@ -182,7 +182,7 @@
     "shareTitle": "Compartir: enlaces de solo lectura",
     "shareIntro": "El administrador puede crear enlaces para que cualquiera consulte los envíos de un formulario sin cuenta de Kobo ni de KoboManager —útil porque KoboToolbox está retirando su «compartir sin login».",
     "shareExposes": "Qué muestra",
-    "shareExposesBody": "Cada enlace decide si expone la lista de envíos, el detalle y/o el mapa; nunca muestra los adjuntos ni el estado de revisión interno.",
+    "shareExposesBody": "Cada enlace decide si expone la lista de envíos, el detalle, el mapa y/o los adjuntos (estos solo en enlaces con contraseña, y si la política global del servidor lo permite); nunca muestra el estado de revisión interno.",
     "shareAccess": "Acceso",
     "shareAccessBody": "Se entra por un enlace con un token impredecible; opcionalmente puede protegerse con contraseña, y puede llevar un filtro de filas para mostrar solo un subconjunto.",
     "shareLifecycle": "Caducidad y revocación",
@@ -436,6 +436,12 @@
     "sharePolicy_optionalHint": "Al crear un enlace puedes ponerle contraseña o dejarla en blanco.",
     "sharePolicy_required": "Obligatoria",
     "sharePolicy_requiredHint": "Cada enlace debe llevar contraseña.",
+    "shareAttachments": "Adjuntos en enlaces de compartir",
+    "shareAttachmentsDesc": "Si se permite exponer adjuntos (fotos, audio, documentos) en los enlaces. Suelen contener datos personales sensibles, por eso solo pueden activarse en enlaces protegidos con contraseña.",
+    "shareAttachmentsPolicy_off": "No permitir",
+    "shareAttachmentsPolicy_offHint": "Ningún enlace puede exponer adjuntos.",
+    "shareAttachmentsPolicy_require_password": "Permitir con contraseña",
+    "shareAttachmentsPolicy_require_passwordHint": "Un enlace con contraseña puede exponer sus adjuntos.",
     "loadError": "No se pudo cargar la configuración",
     "saveError": "No se pudo guardar"
   },
@@ -453,6 +459,8 @@
     "exposeList": "Lista de envíos",
     "exposeDetail": "Detalle de cada envío",
     "exposeMap": "Mapa",
+    "exposeAttachments": "Adjuntos",
+    "exposeAttachmentsNeedsPassword": "Exponer adjuntos requiere proteger el enlace con contraseña.",
     "exposeAtLeastOne": "Marca al menos una vista.",
     "password": "Contraseña",
     "passwordOptional": "Opcional. En blanco = acceso solo por el token de la URL.",
@@ -694,6 +702,17 @@
     "loadError": "No se pudo cargar el envío",
     "saveError": "No se pudo guardar (¿la cuenta Kobo es válida?)",
     "reviewError": "No se pudo registrar la revisión"
+  },
+  "attachments": {
+    "title": "Adjuntos ({n})",
+    "download": "Descargar",
+    "group": {
+      "image": "Imágenes",
+      "audio": "Audio",
+      "video": "Vídeo",
+      "document": "Documentos · PDF",
+      "file": "Otros"
+    }
   },
   "review": {
     "pending": "Pendiente",

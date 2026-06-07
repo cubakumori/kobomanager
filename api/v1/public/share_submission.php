@@ -52,18 +52,27 @@ $prev = DB::run(
     array_merge([$formId, $curTime, $curTime, $curId], $navP)
 )->fetch();
 
-// Datos sin metadatos de adjuntos (no se exponen archivos a través del enlace).
+// Adjuntos: solo si el enlace los expone. Se sirven por el proxy público; el
+// navegador nunca ve la download_url cruda de Kobo (que exige token).
+// Respeta la columna del enlace Y la política global en vivo (kill-switch).
+$exposeAttachments = (bool) ($link['expose_attachments'] ?? 0)
+    && Settings::shareAttachmentsPolicy() === 'require_password';
+$attachments       = $exposeAttachments ? Attachments::forPayload($payload) : [];
+
+// Los metadatos de adjuntos nunca viajan en el JSON de datos.
 unset($payload['_attachments']);
 
 ErrorResponse::ok([
-    'submission_uid' => $sub['submission_uid'],
-    'form'           => ['name' => $link['form_name']],
-    'submitted_at'   => $sub['submitted_at'],
-    'prev'           => $prev['submission_uid'] ?? null,
-    'next'           => $next['submission_uid'] ?? null,
-    'data'           => $payload,
-    'label_mode'     => Settings::labelMode(),
-    'field_truncate' => Settings::fieldTruncate(),
-    'schema'         => $resolved,
-    'geo'            => Geo::features($payload, $schema, $resolved['labels']),
+    'submission_uid'     => $sub['submission_uid'],
+    'form'               => ['name' => $link['form_name']],
+    'submitted_at'       => $sub['submitted_at'],
+    'prev'               => $prev['submission_uid'] ?? null,
+    'next'               => $next['submission_uid'] ?? null,
+    'data'               => $payload,
+    'label_mode'         => Settings::labelMode(),
+    'field_truncate'     => Settings::fieldTruncate(),
+    'schema'             => $resolved,
+    'geo'                => Geo::features($payload, $schema, $resolved['labels']),
+    'expose_attachments' => $exposeAttachments,
+    'attachments'        => $attachments,
 ]);

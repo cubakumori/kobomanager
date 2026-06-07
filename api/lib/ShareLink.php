@@ -116,12 +116,19 @@ class ShareLink {
             ErrorResponse::send('NOT_FOUND', 'Enlace no válido o caducado');
         }
         $exposeCol = match ($capability) {
-            'list'   => 'expose_list',
-            'detail' => 'expose_detail',
-            'map'    => 'expose_map',
-            default  => null,
+            'list'        => 'expose_list',
+            'detail'      => 'expose_detail',
+            'map'         => 'expose_map',
+            'attachments' => 'expose_attachments',
+            default       => null,
         };
         if ($exposeCol === null || !(int) $link[$exposeCol]) {
+            ErrorResponse::send('NOT_FOUND', 'Recurso no disponible en este enlace');
+        }
+        // Los adjuntos respetan además la política global EN VIVO: si el admin la
+        // vuelve a 'off', deja de servirlos aunque el enlace tenga la columna a 1
+        // (kill-switch, no solo validación en el momento de crear el enlace).
+        if ($capability === 'attachments' && Settings::shareAttachmentsPolicy() !== 'require_password') {
             ErrorResponse::send('NOT_FOUND', 'Recurso no disponible en este enlace');
         }
         if (self::hasPassword($link)) {

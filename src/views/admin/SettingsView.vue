@@ -23,6 +23,8 @@ const viewerActions = ref({ enketo: false, update: false, resync: false, login: 
 const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login']
 const sharePasswordPolicy = ref('optional')
 const validSharePolicies = ref(['off', 'optional', 'required'])
+const shareAttachmentsPolicy = ref('off')
+const validShareAttachmentsPolicies = ref(['off', 'require_password'])
 const fieldTruncate = ref({ enabled: false, chars: 24 })
 const fieldTruncateMin = ref(8)
 const fieldTruncateMax = ref(120)
@@ -47,6 +49,8 @@ async function load() {
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     sharePasswordPolicy.value = data.data.share_password_policy
     if (data.data.valid_share_password_policies) validSharePolicies.value = data.data.valid_share_password_policies
+    shareAttachmentsPolicy.value = data.data.share_attachments_policy
+    if (data.data.valid_share_attachments_policies) validShareAttachmentsPolicies.value = data.data.valid_share_attachments_policies
     if (data.data.field_truncate) fieldTruncate.value = data.data.field_truncate
     if (data.data.field_truncate_min != null) fieldTruncateMin.value = data.data.field_truncate_min
     if (data.data.field_truncate_max != null) fieldTruncateMax.value = data.data.field_truncate_max
@@ -81,6 +85,7 @@ async function save() {
       audit_self_view_enabled: auditSelfViewEnabled.value,
       viewer_actions: viewerActions.value,
       share_password_policy: sharePasswordPolicy.value,
+      share_attachments_policy: shareAttachmentsPolicy.value,
       field_truncate: {
         enabled: fieldTruncate.value.enabled,
         chars: Number(fieldTruncate.value.chars) || fieldTruncateMin.value,
@@ -93,6 +98,7 @@ async function save() {
     if (data.data.audit_self_view_enabled != null) auditSelfViewEnabled.value = data.data.audit_self_view_enabled
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     if (data.data.share_password_policy) sharePasswordPolicy.value = data.data.share_password_policy
+    if (data.data.share_attachments_policy) shareAttachmentsPolicy.value = data.data.share_attachments_policy
     if (data.data.field_truncate) fieldTruncate.value = data.data.field_truncate
     saved.value = true
     // Si el usuario sigue el idioma por defecto, refleja el cambio al instante.
@@ -287,6 +293,32 @@ onMounted(load)
           <span>
             <span class="block text-sm font-medium text-slate-800">{{ $t('settings.sharePolicy_' + pol) }}</span>
             <span class="block text-xs text-slate-400">{{ $t('settings.sharePolicy_' + pol + 'Hint') }}</span>
+          </span>
+        </label>
+      </section>
+
+      <!-- Adjuntos en los enlaces de compartir -->
+      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.shareAttachments') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.shareAttachmentsDesc') }}</p>
+        </div>
+        <label
+          v-for="pol in validShareAttachmentsPolicies"
+          :key="pol"
+          class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50"
+        >
+          <input
+            type="radio"
+            class="mt-0.5 h-4 w-4"
+            name="share_attachments_policy"
+            :value="pol"
+            :checked="shareAttachmentsPolicy === pol"
+            @change="shareAttachmentsPolicy = pol; saved = false"
+          />
+          <span>
+            <span class="block text-sm font-medium text-slate-800">{{ $t('settings.shareAttachmentsPolicy_' + pol) }}</span>
+            <span class="block text-xs text-slate-400">{{ $t('settings.shareAttachmentsPolicy_' + pol + 'Hint') }}</span>
           </span>
         </label>
       </section>

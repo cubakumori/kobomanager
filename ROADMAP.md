@@ -57,21 +57,18 @@ fortalecimiento y se etiqueta **1.0.0**. Lo no listado aquí queda para futuras 
         (% y por tipo), **cobertura geo** y **frescura** (último envío). **Diferido a 2.ª
         fase:** distribución de `select_multiple`; **agregación semana/mes + acumulado** y
         **tendencia** (7/30 días vs periodo anterior). *(Coste medio-alto.)*
-  - [ ] **P4 · Adjuntos en enlaces compartidos.** Hoy el detalle público hace
-        `unset($payload['_attachments'])` y no hay proxy público. Añadir columna
+  - [x] **P4 · Adjuntos en enlaces compartidos** *(hecho; ver `CHANGELOG`)*. Columna
         `expose_attachments` en `share_links` + **proxy público**
-        (`GET /public/share/{token}/submissions/{uid}/attachments/{attId}`) guardado por
-        `ShareLink::requireAccess(token,'attachments')` (+ ticket si hay contraseña), que valide
-        alcance de filas y pertenencia del adjunto; el token de Kobo **nunca** sale al navegador.
-        **Solo activable si el enlace tiene contraseña** (validado en CRUD admin y UI),
-        respaldado por política global `share_attachments_policy` (`off` | `require_password`,
-        por defecto `off`) — los adjuntos suelen contener PII sensible (rostros, testimonios en
-        audio en formularios de DDHH). Pestaña «Adjuntos» **agrupada por tipo** (Imágenes /
-        Audio / Vídeo / Documentos·PDF / Otros, vía `mimetype`), reutilizable en el detalle
-        autenticado (que hoy los lista en plano). **Nota de seguridad → M4b/M5:** este proxy
-        necesita **rate-limit de los GET públicos** (hoy solo el `unlock` se limita por IP);
-        si se prefiere, esa parte de endurecimiento puede plegarse en M4b. *(Coste mayor; es el
-        hito más grande del bloque.)*
+        (`GET /public/share/{token}/submissions/{uid}/attachments/{attId}`, `share_attachment.php`)
+        guardado por `ShareLink::requireAccess(token,'attachments')` (+ ticket vía `X-Share-Ticket`
+        o `?k=` si hay contraseña), que valida alcance de filas y pertenencia del adjunto; el token
+        de Kobo **nunca** sale al navegador. **Solo activable con contraseña** y bajo la política
+        global `share_attachments_policy` (`off` | `require_password`, por defecto `off`), que se
+        valida al crear **y actúa como *kill-switch* en vivo**. Galería **agrupada por tipo**
+        (Imágenes / Audio / Vídeo / Documentos·PDF / Otros) en componente reutilizable
+        `AttachmentsGallery.vue` + helper `lib/Attachments.php`, usada en la vista pública y en el
+        detalle autenticado. **Nota de seguridad → M4b/M5:** el **rate-limit de los GET públicos**
+        sigue pendiente (hoy solo el `unlock` se limita por IP).
 - [ ] **M4 · Rendimiento y seguridad** *(puede partirse)*:
   - [ ] **M4a · Índices/búsqueda** en `submissions_cache` (columnas generadas o FULLTEXT;
         hoy la búsqueda es `LIKE` sobre el JSON completo).

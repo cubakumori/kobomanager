@@ -1,0 +1,80 @@
+<?php
+/**
+ * GET /api/v1/public/share/{token}/submissions/{uid}/attachments/{attId}
+ *   (PÚBLICO, sin sesión)
+ *
+ * Proxy de un adjunto de Kobo a través de un enlace compartido. Descarga el
+ * archivo con el token de la cuenta (que NUNCA sale al navegador) y lo streamea.
+ *
+ * Sólo funciona si el enlace expone adjuntos (`expose_attachments`); si tiene
+ * contraseña, exige un ticket válido. Como un <img>/<audio>/<video> no puede
+ * enviar la cabecera X-Share-Ticket, el ticket viaja en `?k=` (lo lee
+ * `ShareLink::requireAccess`). Además valida que el envío pertenezca al enlace y
+ * esté dentro de su alcance de filas, y que el adjunto pertenezca al envío.
+ */
+
+if (Request::method() !== 'GET') {
+    ErrorResponse::send('VALIDATION_ERROR', 'Método no permitido', 405);
+}
+
+$token = (string) Request::param('token');
+$uid   = (string) Request::param('uid');
+$attId = (string) Request::param('attId');
+
+$link   = ShareLink::requireAccess($token, 'attachments');
+$formId = (int) $link['form_id'];
+
+$sub = DB::run(
+    'SELECT sc.json_payload, f.kobo_account_id
+     FROM submissions_cache sc
+     JOIN forms f ON f.id = sc.form_id
+     WHERE sc.submission_uid = ? AND sc.form_id = ?',
+    [$uid, $formId]
+)->fetch();
+if (!$sub) {
+    ErrorResponse::send('NOT_FOUND', 'Envío no encontrado');
+}
+
+$payload = json_decode($sub['json_payload'], true) ?: [];
+
+// Fuera del alcance de filas del enlace → como inexistente.
+if (!RowScope::matches(ShareLink::rule($link), $payload)) {
+    ErrorResponse::send('NOT_FOUND', 'Envío no encontrado');
+}
+
+// El adjunto debe pertenecer a este envío.
+$att = null;
+foreach (($payload['_attachments'] ?? []) as $a) {
+    if (($a['uid'] ?? null) === $attId) {
+        $att = $a;
+        break;
+    }
+}
+if (!$att || empty($att['download_url'])) {
+    ErrorResponse::send('NOT_FOUND', 'Adjunto no encontrado');
+}
+
+$acc = DB::run(
+    'SELECT server_url, api_token FROM kobo_accounts WHERE id = ?',
+    [$sub['kobo_account_id']]
+)->fetch();
+if (!$acc) {
+    ErrorResponse::send('KOBO_ACCOUNT_DISABLED', 'La cuenta Kobo no existe');
+}
+
+try {
+    $client = new KoboClient($acc['server_url'], TokenVault::decrypt($acc['api_token']));
+    $file   = $client->getAttachment($att['download_url']);
+} catch (KoboException $e) {
+    ErrorResponse::send($e->errorCode, $e->getMessage());
+}
+
+// Streamear inline (el navegador lo representa o lo descarga). No se audita ni se
+// incrementa access_count (acceso público sin usuario; ver memoria/decisiones P4).
+$name = $att['media_file_basename'] ?? basename((string) ($att['filename'] ?? $attId));
+header('Content-Type: ' . ($file['mimetype'] ?: ($att['mimetype'] ?? 'application/octet-stream')));
+header('Content-Length: ' . strlen($file['body']));
+header('Content-Disposition: inline; filename="' . str_replace('"', '', $name) . '"');
+header('Cache-Control: private, max-age=300');
+echo $file['body'];
+exit;

@@ -55,21 +55,7 @@ if ($method === 'GET') {
 
     // Adjuntos (fotos/audio/archivos): se descargan vía el proxy autenticado del
     // backend, nunca con la download_url cruda de Kobo (que exige token).
-    $attachments = [];
-    foreach (($payload['_attachments'] ?? []) as $a) {
-        $attUid = $a['uid'] ?? null;
-        if (!$attUid) continue;
-        $mime = (string) ($a['mimetype'] ?? '');
-        $attachments[] = [
-            'uid'      => $attUid,
-            'name'     => $a['media_file_basename'] ?? basename((string) ($a['filename'] ?? $attUid)),
-            'mimetype' => $mime ?: null,
-            'field'    => $a['question_xpath'] ?? null,
-            'kind'     => str_starts_with($mime, 'image/') ? 'image'
-                       : (str_starts_with($mime, 'audio/') ? 'audio'
-                       : (str_starts_with($mime, 'video/') ? 'video' : 'file')),
-        ];
-    }
+    $attachments = Attachments::forPayload($payload);
 
     // Envío anterior/siguiente, en el mismo orden que la lista (submitted_at DESC, id DESC).
     // "Siguiente" = el inmediatamente más abajo (más antiguo); "anterior" = más arriba (más nuevo).

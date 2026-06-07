@@ -20,6 +20,7 @@ require __DIR__ . '/lib/Settings.php';
 require __DIR__ . '/lib/KoboClient.php';
 require __DIR__ . '/lib/FormSchema.php';
 require __DIR__ . '/lib/Geo.php';
+require __DIR__ . '/lib/Attachments.php';
 require __DIR__ . '/lib/Derived.php';
 require __DIR__ . '/lib/RowScope.php';
 require __DIR__ . '/lib/ShareLink.php';
@@ -122,6 +123,7 @@ $routes = [
     'public/share/:token/unlock'           => 'public/share_unlock.php',
     'public/share/:token/submissions'      => 'public/share_submissions.php',
     'public/share/:token/submissions/:uid' => 'public/share_submission.php',
+    'public/share/:token/submissions/:uid/attachments/:attId' => 'public/share_attachment.php',
     'public/share/:token/map'              => 'public/share_map.php',
 ];
 

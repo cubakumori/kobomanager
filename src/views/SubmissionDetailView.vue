@@ -8,6 +8,7 @@ import { makeLabeler } from '../composables/labels'
 import { useDerivedFormat } from '../composables/derived'
 import ReviewBadge from '../components/ReviewBadge.vue'
 import LeafletMap from '../components/LeafletMap.vue'
+import AttachmentsGallery from '../components/AttachmentsGallery.vue'
 
 const { t } = useI18n()
 const { summaryRows } = useDerivedFormat()
@@ -284,23 +285,9 @@ onMounted(load)
         <h2 class="border-b border-slate-100 px-5 py-3 font-semibold text-slate-900">
           {{ $t('detail.attachments', { n: attachments.length }) }}
         </h2>
-        <ul class="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
-          <li v-for="a in attachments" :key="a.uid" class="space-y-2">
-            <a v-if="a.kind === 'image'" :href="attUrl(a)" target="_blank" rel="noopener" class="block">
-              <img :src="attUrl(a)" :alt="a.name" class="max-h-48 w-full rounded-lg object-contain ring-1 ring-slate-200" />
-            </a>
-            <audio v-else-if="a.kind === 'audio'" :src="attUrl(a)" controls class="w-full"></audio>
-            <video v-else-if="a.kind === 'video'" :src="attUrl(a)" controls class="max-h-64 w-full rounded-lg ring-1 ring-slate-200"></video>
-            <a
-              v-else
-              :href="attUrl(a)"
-              target="_blank"
-              rel="noopener"
-              class="inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:underline"
-            >⬇ {{ a.name }}</a>
-            <p class="truncate text-xs text-slate-400" :title="a.name">{{ a.name }}</p>
-          </li>
-        </ul>
+        <div class="p-5">
+          <AttachmentsGallery :attachments="attachments" :url-for="attUrl" />
+        </div>
       </section>
 
       <!-- Panel de revisión -->

@@ -75,15 +75,29 @@ where an out‑of‑scope submission returns 404. Note: MariaDB stores JSON as t
 ### Public share links (`lib/ShareLink.php`)
 Read‑only links let anyone browse a form's submissions **without a session** (M1). A
 `share_links` row carries an unguessable URL `token`, what it exposes (`expose_list` /
-`expose_detail` / `expose_map`), an optional `row_filter` (reuses `RowScope`), an optional
-`password_hash`, and optional `expires_at` / `revoked_at`. `resolve()` returns the row only
-while active (not revoked, not expired, form active). The public endpoints live under
-`v1/public/` and **skip `Auth`** (like `v1/config.php`); `ShareLink::requireAccess()` is
-their guard — it resolves the token, checks the requested capability, and for
+`expose_detail` / `expose_map` / `expose_attachments`), an optional `row_filter` (reuses
+`RowScope`), an optional `password_hash`, and optional `expires_at` / `revoked_at`. `resolve()`
+returns the row only while active (not revoked, not expired, form active). The public endpoints
+live under `v1/public/` and **skip `Auth`** (like `v1/config.php`); `ShareLink::requireAccess()`
+is their guard — it resolves the token, checks the requested capability, and for
 password‑protected links requires a short‑lived **HMAC ticket** (issued by the rate‑limited
-`unlock` endpoint, sent back via the `X-Share-Ticket` header). Out‑of‑scope or other‑form
-submissions return 404; attachments and internal review status are never exposed. Admin CRUD
-is in `v1/admin/shares*`; the password policy is the `share_password_policy` setting.
+`unlock` endpoint, sent back via the `X-Share-Ticket` header **or** the `?k=` query param so
+plain `<img>`/`<audio>` requests can carry it). Out‑of‑scope or other‑form submissions return
+404; the internal review status is never exposed. Admin CRUD is in `v1/admin/shares*`; the
+password policy is the `share_password_policy` setting.
+
+**Attachments (P4).** A link may also expose submission attachments through a dedicated public
+proxy (`GET /public/share/{token}/submissions/{uid}/attachments/{attId}`,
+`share_attachment.php`), guarded by `requireAccess(token, 'attachments')`. The proxy downloads
+the file with the Kobo account token (which **never** reaches the browser), after re‑validating
+row scope and that the attachment belongs to the submission. Because attachments often carry
+sensitive PII, they require **two layers**: the link must have a password **and** the global
+`share_attachments_policy` setting (`off` | `require_password`, default `off`) must allow it —
+checked both at link creation and **live on every request** (a *kill‑switch*). Attachment
+listing/grouping is centralised in `lib/Attachments.php` (`forPayload`/`kind`, five kinds:
+image/audio/video/document/file), reused by the authenticated detail and the public detail; the
+frontend renders it with the shared `AttachmentsGallery.vue` component. *(Per‑request rate
+limiting of the public GETs is still deferred to M4b/M5.)*
 
 ### Batch review & CSV export
 `POST /forms/{id}/review` (`forms/review_batch.php`) applies one review status to many
@@ -138,7 +152,8 @@ assets; submissions are fetched paginated; edits use `PATCH .../data/bulk/`. Err
 - `lib/Settings.php`: global key/value settings (JSON) — sync statuses, default locale, label
   mode, field‑name truncation (`field_truncate_enabled`/`field_truncate_chars`, display‑only),
   password‑reset flag, self‑service audit flag (`audit_self_view_enabled`), viewer action
-  flags, share password policy, and `cron_runs`
+  flags, share password policy, share attachments policy (`share_attachments_policy`), and
+  `cron_runs`
   (last run per cron, written by `recordCronRun()` at the end of each cron job).
 - `lib/Audit.php`: writes to `audit_log` (who did what) via `log()`, and reads it back via
   `query()` (pagination + filters by action/user/form/date/search, JOINs to users/forms).
@@ -186,6 +201,7 @@ Key tables: `kobo_accounts`, `users`, `user_sessions`, `forms`, `submissions_cac
 PHPUnit (`api/tests/`), the only dev dependency. They run against a **separate** database
 (`kobomanager_test`); each test runs in a transaction that is rolled back. Coverage today:
 auth/permissions + JWT session lifecycle, rate limiting, settings, token encryption, geo
-parsing, row scoping and share‑link resolution/tickets. Endpoint‑level (HTTP) integration
+parsing, derived metrics, attachment classification (`Attachments`), row scoping and
+share‑link resolution/tickets/attachment access. Endpoint‑level (HTTP) integration
 tests are a known gap (e.g. batch review, CSV export, the audit viewer) — see
 [`ROADMAP.md`](./ROADMAP.md).

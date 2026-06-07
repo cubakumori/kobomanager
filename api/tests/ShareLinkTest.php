@@ -15,12 +15,13 @@ final class ShareLinkTest extends DbTestCase
         DB::run(
             'INSERT INTO share_links
                 (token, form_id, created_by, label, expose_list, expose_detail, expose_map,
-                 row_filter, password_hash, expires_at, revoked_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                 expose_attachments, row_filter, password_hash, expires_at, revoked_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 $token, $formId, $opts['created_by'] ?? $this->makeUser('admin'),
                 $opts['label'] ?? null,
                 $opts['expose_list'] ?? 1, $opts['expose_detail'] ?? 1, $opts['expose_map'] ?? 0,
+                $opts['expose_attachments'] ?? 0,
                 isset($opts['row_filter']) ? json_encode($opts['row_filter']) : null,
                 $opts['password_hash'] ?? null,
                 $opts['expires_at'] ?? null,
@@ -147,5 +148,45 @@ final class ShareLinkTest extends DbTestCase
         $row = DB::run('SELECT access_count, last_accessed_at FROM share_links WHERE id = ?', [$id])->fetch();
         $this->assertSame(2, (int) $row['access_count']);
         $this->assertNotNull($row['last_accessed_at']);
+    }
+
+    // ---- Adjuntos (capacidad 'attachments') ----
+    // Solo se prueba el camino de ÉXITO: las ramas de error de requireAccess
+    // llaman a ErrorResponse::send(), que hace exit() y terminaría el proceso de
+    // test (igual que el resto de la suite, no se cubren esas ramas).
+
+    public function testResolveExposesAttachmentsColumn(): void
+    {
+        $formId = $this->makeForm();
+        [$token] = $this->makeShare($formId, ['expose_attachments' => 1]);
+        $link = ShareLink::resolve($token);
+        $this->assertSame(1, (int) $link['expose_attachments']);
+    }
+
+    public function testRequireAccessAttachmentsReturnsLinkWhenExposed(): void
+    {
+        Settings::set('share_attachments_policy', 'require_password');
+        $formId = $this->makeForm();
+        [$token] = $this->makeShare($formId, ['expose_attachments' => 1]);
+        $link = ShareLink::requireAccess($token, 'attachments');
+        $this->assertSame($formId, (int) $link['form_id']);
+    }
+
+    public function testRequireAccessAttachmentsWithPasswordAcceptsTicket(): void
+    {
+        Settings::set('share_attachments_policy', 'require_password');
+        $formId = $this->makeForm();
+        [$token] = $this->makeShare($formId, [
+            'expose_attachments' => 1,
+            'password_hash'      => password_hash('s3cret', PASSWORD_DEFAULT),
+        ]);
+        // Ticket válido vía cabecera (como lo enviaría el navegador en ?k= o header).
+        $_SERVER['HTTP_X_SHARE_TICKET'] = ShareLink::issueTicket($token);
+        try {
+            $link = ShareLink::requireAccess($token, 'attachments');
+            $this->assertSame($formId, (int) $link['form_id']);
+        } finally {
+            unset($_SERVER['HTTP_X_SHARE_TICKET']);
+        }
     }
 }

@@ -18,7 +18,7 @@ $method = Request::method();
 if ($method === 'GET') {
     $rows = DB::run(
         "SELECT sl.id, sl.token, sl.form_id, f.name AS form_name, sl.label,
-                sl.expose_list, sl.expose_detail, sl.expose_map, sl.row_filter,
+                sl.expose_list, sl.expose_detail, sl.expose_map, sl.expose_attachments, sl.row_filter,
                 (sl.password_hash IS NOT NULL) AS has_password,
                 sl.expires_at, sl.revoked_at, sl.last_accessed_at, sl.access_count,
                 sl.created_at, u.name AS created_by_name
@@ -34,9 +34,10 @@ if ($method === 'GET') {
         'token'           => $r['token'],
         'form'            => ['id' => (int) $r['form_id'], 'name' => $r['form_name']],
         'label'           => $r['label'],
-        'expose_list'     => (bool) $r['expose_list'],
-        'expose_detail'   => (bool) $r['expose_detail'],
-        'expose_map'      => (bool) $r['expose_map'],
+        'expose_list'       => (bool) $r['expose_list'],
+        'expose_detail'     => (bool) $r['expose_detail'],
+        'expose_map'        => (bool) $r['expose_map'],
+        'expose_attachments'=> (bool) $r['expose_attachments'],
         'row_filter'      => RowScope::normalize($r['row_filter'] ? json_decode($r['row_filter'], true) : null),
         'has_password'    => (bool) $r['has_password'],
         'expires_at'      => $r['expires_at'],
@@ -48,7 +49,11 @@ if ($method === 'GET') {
         'created_by'      => $r['created_by_name'],
     ], $rows);
 
-    ErrorResponse::ok(['items' => $items, 'password_policy' => Settings::sharePasswordPolicy()]);
+    ErrorResponse::ok([
+        'items'              => $items,
+        'password_policy'    => Settings::sharePasswordPolicy(),
+        'attachments_policy' => Settings::shareAttachmentsPolicy(),
+    ]);
 }
 
 if ($method === 'POST') {
@@ -87,6 +92,19 @@ if ($method === 'POST') {
         ErrorResponse::send('VALIDATION_ERROR', 'Este servidor exige contraseña en los enlaces');
     }
 
+    // Adjuntos: doble capa. Solo si la política global lo permite Y el enlace
+    // tiene contraseña (los adjuntos suelen contener PII sensible).
+    $exposeAttachments = 0;
+    if (!empty($body['expose_attachments'])) {
+        if (Settings::shareAttachmentsPolicy() !== 'require_password') {
+            ErrorResponse::send('VALIDATION_ERROR', 'Este servidor no permite exponer adjuntos en enlaces');
+        }
+        if ($hash === null) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Exponer adjuntos requiere proteger el enlace con contraseña');
+        }
+        $exposeAttachments = 1;
+    }
+
     // Caducidad opcional (YYYY-MM-DD o datetime). En blanco → sin caducidad.
     $expiresAt = null;
     $rawExp    = trim((string) ($body['expires_at'] ?? ''));
@@ -107,17 +125,17 @@ if ($method === 'POST') {
     DB::run(
         'INSERT INTO share_links
             (token, form_id, created_by, label, expose_list, expose_detail, expose_map,
-             row_filter, password_hash, expires_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+             expose_attachments, row_filter, password_hash, expires_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
             $token, $formId, $admin['id'], $label !== '' ? $label : null,
-            $exposeList, $exposeDetail, $exposeMap, $filterJson, $hash, $expiresAt,
+            $exposeList, $exposeDetail, $exposeMap, $exposeAttachments, $filterJson, $hash, $expiresAt,
         ]
     );
 
     $id = (int) DB::conn()->lastInsertId();
     Audit::log($admin['id'], 'share_create', $formId, null, [
-        'share_id' => $id, 'exposes' => compact('exposeList', 'exposeDetail', 'exposeMap'),
+        'share_id' => $id, 'exposes' => compact('exposeList', 'exposeDetail', 'exposeMap', 'exposeAttachments'),
         'has_password' => $hash !== null, 'expires_at' => $expiresAt,
     ]);
 

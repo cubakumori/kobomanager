@@ -11,6 +11,7 @@ const { t } = useI18n()
 const links = ref([])
 const forms = ref([])
 const passwordPolicy = ref('optional')
+const attachmentsPolicy = ref('off')
 const loading = ref(true)
 const error = ref('')
 
@@ -24,6 +25,7 @@ const blankForm = () => ({
   expose_list: true,
   expose_detail: true,
   expose_map: false,
+  expose_attachments: false,
   password: '',
   expires_at: '',
   row_filter: null,
@@ -48,6 +50,7 @@ async function loadLinks() {
     const { data } = await api.get('/admin/shares')
     links.value = data.data.items
     passwordPolicy.value = data.data.password_policy
+    attachmentsPolicy.value = data.data.attachments_policy
   } catch (e) {
     error.value = apiError(e, t('shares.loadError'))
   } finally {
@@ -68,6 +71,11 @@ const canCreate = computed(
     !(passwordPolicy.value === 'required' && !form.value.password),
 )
 
+// Adjuntos: solo si la política global los permite Y se está fijando contraseña.
+const canExposeAttachments = computed(
+  () => attachmentsPolicy.value === 'require_password' && passwordPolicy.value !== 'off' && !!form.value.password,
+)
+
 async function onCreate() {
   if (!canCreate.value) return
   creating.value = true
@@ -79,6 +87,7 @@ async function onCreate() {
       expose_list: form.value.expose_list,
       expose_detail: form.value.expose_detail,
       expose_map: form.value.expose_map,
+      expose_attachments: canExposeAttachments.value && form.value.expose_attachments,
       password: passwordPolicy.value === 'off' ? '' : form.value.password,
       expires_at: form.value.expires_at,
       row_filter: form.value.row_filter,
@@ -117,6 +126,7 @@ function exposesText(link) {
   if (link.expose_list) parts.push(t('shares.exposeList'))
   if (link.expose_detail) parts.push(t('shares.exposeDetail'))
   if (link.expose_map) parts.push(t('shares.exposeMap'))
+  if (link.expose_attachments) parts.push(t('shares.exposeAttachments'))
   return parts.join(' · ')
 }
 
@@ -378,9 +388,20 @@ onMounted(() => {
             <label class="inline-flex items-center gap-2 text-sm"><input type="checkbox" v-model="form.expose_list" /> {{ $t('shares.exposeList') }}</label>
             <label class="inline-flex items-center gap-2 text-sm"><input type="checkbox" v-model="form.expose_detail" /> {{ $t('shares.exposeDetail') }}</label>
             <label class="inline-flex items-center gap-2 text-sm"><input type="checkbox" v-model="form.expose_map" /> {{ $t('shares.exposeMap') }}</label>
+            <label
+              v-if="attachmentsPolicy === 'require_password'"
+              class="inline-flex items-center gap-2 text-sm"
+              :class="canExposeAttachments ? '' : 'text-slate-400'"
+            >
+              <input type="checkbox" v-model="form.expose_attachments" :disabled="!canExposeAttachments" />
+              {{ $t('shares.exposeAttachments') }}
+            </label>
           </div>
           <p v-if="!(form.expose_list || form.expose_detail || form.expose_map)" class="mt-1 text-xs text-red-600">
             {{ $t('shares.exposeAtLeastOne') }}
+          </p>
+          <p v-if="attachmentsPolicy === 'require_password' && form.expose_attachments && !canExposeAttachments" class="mt-1 text-xs text-amber-600">
+            {{ $t('shares.exposeAttachmentsNeedsPassword') }}
           </p>
         </fieldset>
 

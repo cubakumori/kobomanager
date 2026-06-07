@@ -7,6 +7,10 @@
 -- `user_form_permissions.row_filter`) para que un enlace muestre solo un
 -- subconjunto de envíos. Acceso por token impredecible en la URL; opcionalmente
 -- protegido con contraseña (ver ajuste `share_password_policy`).
+--
+-- Los adjuntos (`expose_attachments`) se sirven por un proxy público dedicado y
+-- solo pueden exponerse si el enlace tiene contraseña y la política global
+-- `share_attachments_policy` lo permite (off | require_password, en `settings`).
 
 CREATE TABLE IF NOT EXISTS share_links (
     id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -17,6 +21,7 @@ CREATE TABLE IF NOT EXISTS share_links (
     expose_list       TINYINT(1) NOT NULL DEFAULT 1,        -- mostrar lista de envíos
     expose_detail     TINYINT(1) NOT NULL DEFAULT 1,        -- permitir ver el detalle de un envío
     expose_map        TINYINT(1) NOT NULL DEFAULT 0,        -- mostrar mapa
+    expose_attachments TINYINT(1) NOT NULL DEFAULT 0,       -- exponer adjuntos (solo si el enlace tiene contraseña; ver `share_attachments_policy`)
     row_filter        JSON NULL,                            -- {conditions:[{field,values}]} o NULL (sin restricción)
     password_hash     VARCHAR(255) NULL,                    -- NULL = acceso solo por token
     expires_at        DATETIME NULL,                        -- NULL = sin caducidad

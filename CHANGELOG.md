@@ -8,6 +8,27 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **P4 · Adjuntos en enlaces compartidos.** Un enlace de solo lectura puede ahora exponer los
+  adjuntos de los envíos (fotos, audio, vídeo, documentos) de forma segura, además de la lista /
+  detalle / mapa que ya exponía:
+  - **Proxy público** `GET /public/share/{token}/submissions/{uid}/attachments/{attId}`
+    (`v1/public/share_attachment.php`): descarga el archivo con el token de la cuenta Kobo —que
+    **nunca** sale al navegador— y lo *streamea*. Guardado por `ShareLink::requireAccess(token,
+    'attachments')`, que valida que el enlace exponga adjuntos, exige **ticket** si el enlace
+    tiene contraseña (vía cabecera `X-Share-Ticket` **o** `?k=`, porque un `<img>`/`<audio>` no
+    puede enviar cabeceras), comprueba que el envío esté **dentro del alcance de filas** del
+    enlace (fuera → 404) y que el adjunto **pertenezca** a ese envío.
+  - **Doble capa de protección** (los adjuntos suelen contener PII sensible): solo pueden
+    exponerse en enlaces **con contraseña** y si la **política global** `share_attachments_policy`
+    (`off` | `require_password`, **`off` por defecto**, en *Configuración*) lo permite. La política
+    se valida al crear el enlace **y actúa como *kill-switch* en vivo**: volverla a `off` deja de
+    servir los adjuntos de los enlaces ya creados.
+  - **Galería agrupada por tipo** (Imágenes / Audio / Vídeo / Documentos·PDF / Otros, vía
+    *mimetype*): nuevo componente reutilizable `AttachmentsGallery.vue` y nuevo helper
+    `lib/Attachments.php` (`forPayload`/`kind`), usados tanto en la **vista pública** del enlace
+    como en el **detalle autenticado** (que antes los listaba en plano).
+  - Tabla `share_links`: nueva columna `expose_attachments`. *(El **rate-limit de los GET
+    públicos** sigue diferido a M4b/M5; hoy solo el `unlock` de contraseña se limita por IP.)*
 - **P3 · Estadísticas enriquecidas.** La vista de *Estadísticas* de un formulario, que antes
   solo mostraba total + envíos por día + estado de revisión, gana —calculado en una sola
   pasada en el backend (`forms/stats.php`), respetando permisos y *scoping* por filas:

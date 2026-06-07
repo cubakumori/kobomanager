@@ -6,6 +6,7 @@ import { publicApi } from '../services/api'
 import { i18n, setLocale } from '../i18n'
 import { makeLabeler } from '../composables/labels'
 import LeafletMap from '../components/LeafletMap.vue'
+import AttachmentsGallery from '../components/AttachmentsGallery.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -119,6 +120,13 @@ const detailFields = computed(() => {
 })
 function fmtVal(v) {
   return v !== null && typeof v === 'object' ? JSON.stringify(v) : String(v ?? '')
+}
+
+// URL del proxy público de adjuntos. El ticket (si el enlace tiene contraseña)
+// viaja en ?k= porque un <img>/<audio> no puede enviar la cabecera X-Share-Ticket.
+function attUrl(att) {
+  const base = `/api/v1/public/share/${token.value}/submissions/${currentSub.value}/attachments/${att.uid}`
+  return ticket.value ? `${base}?k=${encodeURIComponent(ticket.value)}` : base
 }
 
 async function loadDetail(uid) {
@@ -269,6 +277,13 @@ onMounted(loadMeta)
             <section v-if="detail.geo && detail.geo.length" class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
               <h2 class="border-b border-slate-100 px-5 py-3 font-semibold text-slate-900">{{ $t('share.location') }}</h2>
               <div class="p-5"><LeafletMap :features="detail.geo" height="320px" /></div>
+            </section>
+
+            <section v-if="detail.expose_attachments && detail.attachments && detail.attachments.length" class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+              <h2 class="border-b border-slate-100 px-5 py-3 font-semibold text-slate-900">
+                {{ $t('attachments.title', { n: detail.attachments.length }) }}
+              </h2>
+              <div class="p-5"><AttachmentsGallery :attachments="detail.attachments" :url-for="attUrl" /></div>
             </section>
           </template>
         </section>

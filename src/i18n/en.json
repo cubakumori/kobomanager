@@ -182,7 +182,7 @@
     "shareTitle": "Sharing: read-only links",
     "shareIntro": "The admin can create links so anyone can browse a form's submissions with no Kobo or KoboManager account —handy because KoboToolbox is retiring its “share without login”.",
     "shareExposes": "What it shows",
-    "shareExposesBody": "Each link decides whether to expose the submission list, the detail and/or the map; it never shows attachments or the internal review status.",
+    "shareExposesBody": "Each link decides whether to expose the submission list, the detail, the map and/or the attachments (the latter only on password-protected links, and if the server's global policy allows it); it never shows the internal review status.",
     "shareAccess": "Access",
     "shareAccessBody": "Entry is via a link with an unguessable token; it can optionally be password-protected, and can carry a row filter to show only a subset.",
     "shareLifecycle": "Expiry and revocation",
@@ -436,6 +436,12 @@
     "sharePolicy_optionalHint": "When creating a link you can set a password or leave it blank.",
     "sharePolicy_required": "Required",
     "sharePolicy_requiredHint": "Every link must have a password.",
+    "shareAttachments": "Attachments in share links",
+    "shareAttachmentsDesc": "Whether attachments (photos, audio, documents) may be exposed in share links. They often contain sensitive personal data, so they can only be turned on for password-protected links.",
+    "shareAttachmentsPolicy_off": "Do not allow",
+    "shareAttachmentsPolicy_offHint": "No link can expose attachments.",
+    "shareAttachmentsPolicy_require_password": "Allow with password",
+    "shareAttachmentsPolicy_require_passwordHint": "A password-protected link may expose its attachments.",
     "loadError": "Could not load the configuration",
     "saveError": "Could not save"
   },
@@ -453,6 +459,8 @@
     "exposeList": "Submission list",
     "exposeDetail": "Each submission's detail",
     "exposeMap": "Map",
+    "exposeAttachments": "Attachments",
+    "exposeAttachmentsNeedsPassword": "Exposing attachments requires protecting the link with a password.",
     "exposeAtLeastOne": "Pick at least one view.",
     "password": "Password",
     "passwordOptional": "Optional. Blank = access via the URL token only.",
@@ -694,6 +702,17 @@
     "loadError": "Could not load the submission",
     "saveError": "Could not save (is the Kobo account valid?)",
     "reviewError": "Could not record the review"
+  },
+  "attachments": {
+    "title": "Attachments ({n})",
+    "download": "Download",
+    "group": {
+      "image": "Images",
+      "audio": "Audio",
+      "video": "Video",
+      "document": "Documents · PDF",
+      "file": "Other"
+    }
   },
   "review": {
     "pending": "Pending",

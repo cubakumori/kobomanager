@@ -21,6 +21,8 @@ if (Request::method() === 'GET') {
         'viewer_actions'           => Settings::viewerActions(),
         'share_password_policy'      => Settings::sharePasswordPolicy(),
         'valid_share_password_policies' => Settings::VALID_SHARE_PASSWORD_POLICIES,
+        'share_attachments_policy'   => Settings::shareAttachmentsPolicy(),
+        'valid_share_attachments_policies' => Settings::VALID_SHARE_ATTACHMENTS_POLICIES,
         'field_truncate'             => Settings::fieldTruncate(),
         'field_truncate_min'         => Settings::FIELD_TRUNCATE_MIN,
         'field_truncate_max'         => Settings::FIELD_TRUNCATE_MAX,
@@ -84,6 +86,15 @@ if (Request::method() === 'PUT') {
         }
         Settings::set('share_password_policy', $pol);
         $out['share_password_policy'] = $pol;
+    }
+
+    if (array_key_exists('share_attachments_policy', $body)) {
+        $pol = (string) $body['share_attachments_policy'];
+        if (!in_array($pol, Settings::VALID_SHARE_ATTACHMENTS_POLICIES, true)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Política de adjuntos de enlaces no válida');
+        }
+        Settings::set('share_attachments_policy', $pol);
+        $out['share_attachments_policy'] = $pol;
     }
 
     if (array_key_exists('field_truncate', $body) && is_array($body['field_truncate'])) {

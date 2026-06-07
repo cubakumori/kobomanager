@@ -38,6 +38,16 @@ class Settings {
     private const DEFAULT_SHARE_PASSWORD_POLICY = 'optional';
 
     /**
+     * Política para exponer adjuntos en enlaces compartibles. Los adjuntos suelen
+     * contener PII sensible (rostros, testimonios en audio en formularios de DDHH),
+     * por eso van desactivados por defecto y, si se permiten, exigen contraseña.
+     *   off              → ningún enlace puede exponer adjuntos.
+     *   require_password → un enlace CON contraseña puede exponerlos.
+     */
+    public const VALID_SHARE_ATTACHMENTS_POLICIES = ['off', 'require_password'];
+    private const DEFAULT_SHARE_ATTACHMENTS_POLICY = 'off';
+
+    /**
      * Acortado del nombre de los campos en la interfaz (cabeceras de tabla,
      * selector de columnas, detalle…). Desactivado por defecto; al activarlo,
      * los nombres más largos que `chars` se cortan con «…» (el completo va en el
@@ -107,6 +117,12 @@ class Settings {
     public static function sharePasswordPolicy(): string {
         $v = self::get('share_password_policy', self::DEFAULT_SHARE_PASSWORD_POLICY);
         return in_array($v, self::VALID_SHARE_PASSWORD_POLICIES, true) ? $v : self::DEFAULT_SHARE_PASSWORD_POLICY;
+    }
+
+    /** Política de adjuntos en enlaces compartibles ('off'|'require_password'). */
+    public static function shareAttachmentsPolicy(): string {
+        $v = self::get('share_attachments_policy', self::DEFAULT_SHARE_ATTACHMENTS_POLICY);
+        return in_array($v, self::VALID_SHARE_ATTACHMENTS_POLICIES, true) ? $v : self::DEFAULT_SHARE_ATTACHMENTS_POLICY;
     }
 
     /**
