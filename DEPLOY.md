@@ -154,5 +154,10 @@ send anything. Handy for staging.
 
 1. `npm run build` locally.
 2. Replace `index.html` + `assets/` in the root and the `api/` folder (without touching `config.php`).
-3. Apply any new `db/` migrations.
+3. Apply any new `db/` files. Note that `db/*.sql` uses `CREATE TABLE IF NOT EXISTS`, so on an
+   **existing** database column/index changes are not picked up by re‑applying them — pre‑1.0 the
+   intended path is to recreate the database from `db/*.sql` and re‑sync, or apply the schema
+   change by hand. For the M4a search column specifically, after adding
+   `submissions_cache.search_text` + its `FULLTEXT` index, backfill cached rows once with
+   `php api/cli/rebuild_search_text.php` (new submissions fill it automatically on sync).
 ```

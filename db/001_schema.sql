@@ -62,10 +62,16 @@ CREATE TABLE IF NOT EXISTS submissions_cache (
     form_id         INT UNSIGNED NOT NULL,
     submission_uid  VARCHAR(100) NOT NULL UNIQUE,
     json_payload    JSON NOT NULL,
+    -- Proyección en texto plano de los VALORES de respuesta (sin claves ni
+    -- metadatos `_*`), poblada por la app (lib/SubmissionSearch::textFor) en cada
+    -- sync. Indexada con FULLTEXT para la búsqueda de la tabla de envíos; evita el
+    -- `LIKE` sobre el JSON completo. Backfill: cli/rebuild_search_text.php.
+    search_text     MEDIUMTEXT,
     submitted_at    DATETIME,
     last_synced_at  DATETIME,
     FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
-    INDEX idx_form_submitted (form_id, submitted_at)
+    INDEX idx_form_submitted (form_id, submitted_at),
+    FULLTEXT INDEX idx_search_text (search_text)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 3.6 Revisiones internas (desacopladas de Kobo)

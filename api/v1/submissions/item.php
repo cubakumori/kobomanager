@@ -148,8 +148,8 @@ if ($method === 'PUT') {
         $payload[$k] = $v;
     }
     DB::run(
-        'UPDATE submissions_cache SET json_payload = ? WHERE id = ?',
-        [json_encode($payload, JSON_UNESCAPED_UNICODE), $sub['id']]
+        'UPDATE submissions_cache SET json_payload = ?, search_text = ? WHERE id = ?',
+        [json_encode($payload, JSON_UNESCAPED_UNICODE), SubmissionSearch::textFor($payload), $sub['id']]
     );
 
     Audit::log($user['id'], 'edit', $formId, $uid, ['before' => $before, 'after' => $data]);

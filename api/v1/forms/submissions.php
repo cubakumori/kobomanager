@@ -44,8 +44,9 @@ $join = 'LEFT JOIN (
 $where  = 'WHERE sc.form_id = ? AND ' . $scopeSql;
 $params = array_merge([$formId], $scopeP);
 if ($search !== '') {
-    $where    .= ' AND CAST(sc.json_payload AS CHAR) LIKE ?';
-    $params[]  = '%' . $search . '%';
+    [$searchSql, $searchParams] = SubmissionSearch::clause('sc', $search);
+    $where  .= ' AND ' . $searchSql;
+    $params  = array_merge($params, $searchParams);
 }
 if (in_array($review, ['pending', 'approved', 'rejected'], true)) {
     $where    .= ' AND COALESCE(lr.status, \'pending\') = ?';

@@ -25,8 +25,9 @@ $search  = trim((string) ($_GET['search'] ?? ''));
 $where  = 'WHERE sc.form_id = ? AND ' . $scopeSql;
 $params = array_merge([$formId], $scopeP);
 if ($search !== '') {
-    $where    .= ' AND CAST(sc.json_payload AS CHAR) LIKE ?';
-    $params[]  = '%' . $search . '%';
+    [$searchSql, $searchParams] = SubmissionSearch::clause('sc', $search);
+    $where  .= ' AND ' . $searchSql;
+    $params  = array_merge($params, $searchParams);
 }
 
 $total = (int) DB::run("SELECT COUNT(*) AS c FROM submissions_cache sc $where", $params)->fetch()['c'];

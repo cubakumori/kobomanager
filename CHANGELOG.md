@@ -8,6 +8,22 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **M4a · Índices/búsqueda en `submissions_cache`.** La búsqueda de la tabla de envíos (y de la
+  exportación CSV y los enlaces compartidos) dejaba de hacer `LIKE` sobre el **JSON completo**
+  de cada fila (escaneo total, y matcheaba dentro de claves y metadatos) y pasa a un índice
+  **`FULLTEXT`**:
+  - Nueva columna `submissions_cache.search_text` con una **proyección en texto plano de los
+    valores de respuesta** (sin claves ni metadatos `_*`: nada de URLs de adjuntos, UUIDs
+    internos ni rutas de campo), poblada por la app (`lib/SubmissionSearch::textFor`) en cada
+    sync y en cada edición de envío. Esto además **quita el ruido**: buscar «audio» ya no casa
+    con el `question_xpath` de un adjunto.
+  - Las búsquedas usan `MATCH … AGAINST (… IN BOOLEAN MODE)` con prefijo (`+token*`) por palabra
+    (multi‑palabra = AND). Para términos demasiado cortos para FULLTEXT (< 3 caracteres) se cae a
+    un `LIKE` sobre `search_text` para no perder esas búsquedas. Centralizado en
+    `lib/SubmissionSearch::clause()`, usado por los tres endpoints de búsqueda.
+  - **Backfill**: `php api/cli/rebuild_search_text.php [form_id]` recalcula `search_text` de los
+    envíos ya cacheados (y si cambia la lógica de proyección). En operación normal la columna se
+    mantiene sola.
 - **P4 · Adjuntos en enlaces compartidos.** Un enlace de solo lectura puede ahora exponer los
   adjuntos de los envíos (fotos, audio, vídeo, documentos) de forma segura, además de la lista /
   detalle / mapa que ya exponía:

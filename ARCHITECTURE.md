@@ -147,6 +147,13 @@ assets; submissions are fetched paginated; edits use `PATCH .../data/bulk/`. Err
   labelled), per‑enumerator counts, fill‑in duration (mean/median + histogram), activity by
   hour/weekday, attachment and geo coverage, and freshness — reusing `Derived`, `FormSchema`
   and `RowScope`. (Week/month aggregation, cumulative and trend are deferred.)
+- **Search** (`lib/SubmissionSearch.php`, M4a): submission‑table search no longer does a `LIKE`
+  over the whole JSON. `textFor()` builds a plain‑text projection of the answer **values**
+  (skipping `_*` metadata keys) into the indexed `submissions_cache.search_text` column,
+  populated on every sync and on edit; `clause($alias, $term)` builds the WHERE fragment using a
+  `FULLTEXT` `MATCH … AGAINST (… IN BOOLEAN MODE)` with per‑word prefix matching (falling back to
+  `LIKE` for terms shorter than InnoDB's min token size). Reused by the list, the CSV export and
+  the public share list. Backfill / recompute: `cli/rebuild_search_text.php`.
 
 ### Settings & audit
 - `lib/Settings.php`: global key/value settings (JSON) — sync statuses, default locale, label
@@ -201,7 +208,8 @@ Key tables: `kobo_accounts`, `users`, `user_sessions`, `forms`, `submissions_cac
 PHPUnit (`api/tests/`), the only dev dependency. They run against a **separate** database
 (`kobomanager_test`); each test runs in a transaction that is rolled back. Coverage today:
 auth/permissions + JWT session lifecycle, rate limiting, settings, token encryption, geo
-parsing, derived metrics, attachment classification (`Attachments`), row scoping and
-share‑link resolution/tickets/attachment access. Endpoint‑level (HTTP) integration
+parsing, derived metrics, attachment classification (`Attachments`), search projection/clause
+(`SubmissionSearch`), row scoping and share‑link resolution/tickets/attachment access.
+Endpoint‑level (HTTP) integration
 tests are a known gap (e.g. batch review, CSV export, the audit viewer) — see
 [`ROADMAP.md`](./ROADMAP.md).

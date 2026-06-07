@@ -23,6 +23,7 @@ require __DIR__ . '/lib/Geo.php';
 require __DIR__ . '/lib/Attachments.php';
 require __DIR__ . '/lib/Derived.php';
 require __DIR__ . '/lib/RowScope.php';
+require __DIR__ . '/lib/SubmissionSearch.php';
 require __DIR__ . '/lib/ShareLink.php';
 require __DIR__ . '/lib/SubmissionSync.php';
 

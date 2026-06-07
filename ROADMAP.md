@@ -70,8 +70,12 @@ fortalecimiento y se etiqueta **1.0.0**. Lo no listado aquí queda para futuras 
         detalle autenticado. **Nota de seguridad → M4b/M5:** el **rate-limit de los GET públicos**
         sigue pendiente (hoy solo el `unlock` se limita por IP).
 - [ ] **M4 · Rendimiento y seguridad** *(puede partirse)*:
-  - [ ] **M4a · Índices/búsqueda** en `submissions_cache` (columnas generadas o FULLTEXT;
-        hoy la búsqueda es `LIKE` sobre el JSON completo).
+  - [x] **M4a · Índices/búsqueda** en `submissions_cache` *(hecho; ver `CHANGELOG`)*. Columna
+        `search_text` (proyección de valores, sin claves ni metadatos `_*`) poblada por la app
+        + índice `FULLTEXT`; búsqueda por `MATCH … AGAINST` con prefijo (fallback `LIKE` para
+        términos < 3 car.), centralizada en `lib/SubmissionSearch`. Backfill
+        `cli/rebuild_search_text.php`. *(2.ª fase posible: incluir etiquetas resueltas del
+        esquema en el texto buscable.)*
   - [ ] **M4b · Seguridad/operación**: **sesión deslizante / refresh** + **«cerrar todas mis
         sesiones»** (autoservicio); **rotación documentada de `CONFIG_TOKEN_KEY`** (re-cifrado
         de tokens vía CLI) y **copias de seguridad**.

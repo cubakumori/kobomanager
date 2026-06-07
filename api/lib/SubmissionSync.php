@@ -51,13 +51,14 @@ class SubmissionSync {
                 $submittedAt  = $submittedRaw ? date('Y-m-d H:i:s', strtotime($submittedRaw)) : null;
 
                 DB::run(
-                    'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, submitted_at, last_synced_at)
-                     VALUES (?, ?, ?, ?, NOW())
+                    'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, search_text, submitted_at, last_synced_at)
+                     VALUES (?, ?, ?, ?, ?, NOW())
                      ON DUPLICATE KEY UPDATE
                         json_payload   = VALUES(json_payload),
+                        search_text    = VALUES(search_text),
                         submitted_at   = VALUES(submitted_at),
                         last_synced_at = NOW()',
-                    [$formId, $uid, json_encode($sub, JSON_UNESCAPED_UNICODE), $submittedAt]
+                    [$formId, $uid, json_encode($sub, JSON_UNESCAPED_UNICODE), SubmissionSearch::textFor($sub), $submittedAt]
                 );
                 $count++;
             }
