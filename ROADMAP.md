@@ -71,6 +71,14 @@ Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
 - [x] **Visor de `audit_log`** en el panel admin (quién hizo qué y cuándo). *(hecho en M3)*.
 - [ ] Columnas configurables y filtros avanzados en la tabla de envíos.
 - [ ] Modo oscuro y mejores estados de carga/vacío (skeletons).
+- [ ] **Organización de los catálogos i18n** *(candidata, a discutir en su momento)*. Hoy
+      todo vive en `src/i18n/{es,en}.json` (convención: cada clave en ambos; check de
+      paridad). Valorar separar por *namespace* (p. ej. `guide`) en ficheros propios y/o
+      **cargar de forma diferida** el catálogo de la Guía por ruta (vue-i18n
+      `setLocaleMessage` + import dinámico), para no empaquetar su prosa en el bundle
+      principal. Solo merece la pena si entra un 3.er idioma, si la Guía crece a
+      documentación larga, o si el peso de `/guide` importa; entonces adaptar el script de
+      paridad para comparar el conjunto fusionado. Reevaluar en M5.
 
 ### Seguridad y sesiones
 
