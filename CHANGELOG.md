@@ -69,6 +69,11 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
+- **Guía de uso ampliada** para cubrir todo lo que hace la app hoy: nuevas secciones de
+  **Compartir** (enlaces de solo lectura), **Revisar y exportar** (revisión en lote + CSV),
+  **Acciones sobre un formulario** (Enketo/actualizar/resync/login), **Explorar la tabla**
+  (búsqueda/filtros/columnas/estadísticas), **Notificaciones**, **Auditoría y estado del
+  sistema** y **Seguridad y privacidad**. i18n es/en.
 - La **Guía de uso** ya no se abre como página «fuera» del panel: con sesión iniciada se
   carga **dentro del shell** (junto al resto del contenido); sin sesión sigue siendo una
   página pública, ahora con el **mismo encabezado que la portada** (encabezado público

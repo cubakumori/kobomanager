@@ -32,6 +32,19 @@ const flowSteps = [1, 2, 3, 4]
       </ol>
     </section>
 
+    <!-- Acciones sobre un formulario -->
+    <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-2">
+      <h2 class="font-semibold text-slate-900">{{ $t('guide.formActionsTitle') }}</h2>
+      <p class="text-sm text-slate-600">{{ $t('guide.formActionsIntro') }}</p>
+      <ul class="list-disc space-y-1 pl-5 text-sm text-slate-600">
+        <li><strong>{{ $t('guide.faEnketo') }}:</strong> {{ $t('guide.faEnketoBody') }}</li>
+        <li><strong>{{ $t('guide.faUpdate') }}:</strong> {{ $t('guide.faUpdateBody') }}</li>
+        <li><strong>{{ $t('guide.faResync') }}:</strong> {{ $t('guide.faResyncBody') }}</li>
+        <li><strong>{{ $t('guide.faLogin') }}:</strong> {{ $t('guide.faLoginBody') }}</li>
+      </ul>
+      <p class="text-sm text-slate-500">{{ $t('guide.formActionsNote') }}</p>
+    </section>
+
     <!-- Actualizar vs Resync -->
     <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
       <h2 class="font-semibold text-slate-900">{{ $t('guide.syncTitle') }}</h2>
@@ -48,11 +61,14 @@ const flowSteps = [1, 2, 3, 4]
       </div>
     </section>
 
-    <!-- Contraseñas -->
+    <!-- Explorar la tabla de envíos -->
     <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-2">
-      <h2 class="font-semibold text-slate-900">{{ $t('guide.pwTitle') }}</h2>
-      <p class="text-sm text-slate-600">{{ $t('guide.pwChangeBody') }}</p>
-      <p class="text-sm text-slate-600">{{ $t('guide.pwForgotBody') }}</p>
+      <h2 class="font-semibold text-slate-900">{{ $t('guide.exploreTitle') }}</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm text-slate-600">
+        <li><strong>{{ $t('guide.exploreSearch') }}:</strong> {{ $t('guide.exploreSearchBody') }}</li>
+        <li><strong>{{ $t('guide.exploreColumns') }}:</strong> {{ $t('guide.exploreColumnsBody') }}</li>
+        <li><strong>{{ $t('guide.exploreStats') }}:</strong> {{ $t('guide.exploreStatsBody') }}</li>
+      </ul>
     </section>
 
     <!-- Funciones de datos -->
@@ -63,7 +79,56 @@ const flowSteps = [1, 2, 3, 4]
         <li><strong>{{ $t('guide.dataAttachments') }}:</strong> {{ $t('guide.dataAttachmentsBody') }}</li>
         <li><strong>{{ $t('guide.dataScope') }}:</strong> {{ $t('guide.dataScopeBody') }}</li>
         <li><strong>{{ $t('guide.dataMap') }}:</strong> {{ $t('guide.dataMapBody') }}</li>
-        <li><strong>{{ $t('guide.dataReview') }}:</strong> {{ $t('guide.dataReviewBody') }}</li>
+      </ul>
+    </section>
+
+    <!-- Revisión y productividad -->
+    <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-2">
+      <h2 class="font-semibold text-slate-900">{{ $t('guide.reviewTitle') }}</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm text-slate-600">
+        <li><strong>{{ $t('guide.reviewSingle') }}:</strong> {{ $t('guide.reviewSingleBody') }}</li>
+        <li><strong>{{ $t('guide.reviewBatch') }}:</strong> {{ $t('guide.reviewBatchBody') }}</li>
+        <li><strong>{{ $t('guide.reviewExport') }}:</strong> {{ $t('guide.reviewExportBody') }}</li>
+      </ul>
+    </section>
+
+    <!-- Compartir: enlaces de solo lectura -->
+    <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-2">
+      <h2 class="font-semibold text-slate-900">{{ $t('guide.shareTitle') }}</h2>
+      <p class="text-sm text-slate-600">{{ $t('guide.shareIntro') }}</p>
+      <ul class="list-disc space-y-1 pl-5 text-sm text-slate-600">
+        <li><strong>{{ $t('guide.shareExposes') }}:</strong> {{ $t('guide.shareExposesBody') }}</li>
+        <li><strong>{{ $t('guide.shareAccess') }}:</strong> {{ $t('guide.shareAccessBody') }}</li>
+        <li><strong>{{ $t('guide.shareLifecycle') }}:</strong> {{ $t('guide.shareLifecycleBody') }}</li>
+      </ul>
+    </section>
+
+    <!-- Notificaciones -->
+    <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-2">
+      <h2 class="font-semibold text-slate-900">{{ $t('guide.notifTitle') }}</h2>
+      <p class="text-sm text-slate-600">{{ $t('guide.notifBody') }}</p>
+    </section>
+
+    <!-- Contraseñas -->
+    <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-2">
+      <h2 class="font-semibold text-slate-900">{{ $t('guide.pwTitle') }}</h2>
+      <p class="text-sm text-slate-600">{{ $t('guide.pwChangeBody') }}</p>
+      <p class="text-sm text-slate-600">{{ $t('guide.pwForgotBody') }}</p>
+    </section>
+
+    <!-- Auditoría y estado del sistema (admin) -->
+    <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-2">
+      <h2 class="font-semibold text-slate-900">{{ $t('guide.auditTitle') }}</h2>
+      <p class="text-sm text-slate-600">{{ $t('guide.auditBody') }}</p>
+    </section>
+
+    <!-- Seguridad y privacidad -->
+    <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-2">
+      <h2 class="font-semibold text-slate-900">{{ $t('guide.secTitle') }}</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm text-slate-600">
+        <li><strong>{{ $t('guide.secToken') }}:</strong> {{ $t('guide.secTokenBody') }}</li>
+        <li><strong>{{ $t('guide.secSessions') }}:</strong> {{ $t('guide.secSessionsBody') }}</li>
+        <li><strong>{{ $t('guide.secScope') }}:</strong> {{ $t('guide.secScopeBody') }}</li>
       </ul>
     </section>
 
