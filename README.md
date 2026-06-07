@@ -137,7 +137,8 @@ Each test runs inside a transaction that is rolled back, so the test DB stays cl
 Connection settings default to `kobomanager_test` on `127.0.0.1` and can be overridden
 with `TEST_DB_*` environment variables (see `api/tests/bootstrap.php`). Current coverage:
 auth/permissions and JWT session lifecycle, rate limiting, settings, token encryption,
-the geo parser, row scoping and share-link resolution/tickets.
+the geo parser, derived metrics, attachment classification, the submission-search
+projection/clause, row scoping and share-link resolution/tickets/attachment access.
 
 ## Languages
 
