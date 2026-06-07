@@ -43,6 +43,8 @@ const totalPages = computed(() => Math.max(1, Math.ceil(total.value / perPage.va
 
 // Etiqueta legible de una acción (con fallback al código crudo).
 const actionLabel = (a) => (te('audit.action_' + a) ? t('audit.action_' + a) : a)
+// Etiqueta legible del nombre de un cron (con fallback al identificador crudo).
+const cronLabel = (n) => (te('audit.cron_' + n) ? t('audit.cron_' + n) : n)
 
 async function loadRefs() {
   try {
@@ -138,7 +140,7 @@ onMounted(() => {
         <h2 class="mb-2 text-sm font-semibold uppercase tracking-wider text-slate-500">{{ $t('audit.cronTitle') }}</h2>
         <ul v-if="cronEntries.length" class="space-y-2 text-sm">
           <li v-for="[name, info] in cronEntries" :key="name" class="flex items-center justify-between gap-3">
-            <span class="font-medium text-slate-700">{{ name }}</span>
+            <span class="font-medium text-slate-700" :title="name">{{ cronLabel(name) }}</span>
             <span class="text-right">
               <span
                 class="mr-2 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1"

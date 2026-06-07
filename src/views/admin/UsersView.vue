@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import api from '../../services/api'
 import { useAuthStore, apiError } from '../../stores/auth'
@@ -8,6 +9,7 @@ import { confirmDialog } from '../../composables/confirm'
 
 const { t } = useI18n()
 const auth = useAuthStore()
+const router = useRouter()
 
 const users = ref([])
 const loading = ref(true)
@@ -97,9 +99,11 @@ async function revokeSessions(u) {
   actionError.value = ''
   try {
     const { data } = await api.delete(`/admin/users/${u.id}/sessions`)
-    // Si el admin cerró sus propias sesiones, la siguiente petición dará 401 → login.
+    // Si el admin cerró sus propias sesiones, su token ya está revocado: cerramos
+    // sesión y salimos del panel de inmediato (sin esperar a un 401 al recargar).
     if (u.id === auth.user?.id) {
       await auth.logout()
+      router.push('/')
       return
     }
     u.active_sessions = 0

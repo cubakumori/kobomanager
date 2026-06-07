@@ -453,7 +453,7 @@ onMounted(() => {
             <div class="flex items-center gap-2">
               <select
                 v-model="cond.field"
-                class="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+                class="min-w-0 flex-1 truncate rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
                 @change="cond.values = []; loadSuggestions(cond.field)"
               >
                 <option value="">{{ $t('permissions.scopeSelectField') }}</option>
