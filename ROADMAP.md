@@ -29,6 +29,51 @@ fortalecimiento y se etiqueta **1.0.0**. Lo no listado aquí queda para futuras 
 - [x] **M3 · Observabilidad/ops** *(hecho; ver `CHANGELOG`)*: **visor de `audit_log`**
       (`/admin/audit`, paginado + filtros) + **`/health` ampliado** (secciones `cron`/`sync`
       solo para admin; los crons registran su ejecución con `Settings::recordCronRun`).
+- [ ] **Bloque prioritario (antes de M4).** Cuatro mejoras de producto acordadas; se hacen
+      **antes de M4** y en este orden (esfuerzo/valor). Son funcionalidad, no la infra de
+      rendimiento/seguridad de M4; la única salvedad es la seguridad del proxy público de
+      adjuntos (P4), que entronca con M4b/M5 (ver nota).
+  - [ ] **P1 · Auditoría propia (autoservicio).** Checkbox global en *Configuración*
+        `audit_self_view_enabled` (**off por defecto**) que habilita a cualquier usuario ver
+        **su propio** registro de actividad. Endpoint `GET /audit/me` que **fuerza
+        `user_id = usuario actual`** (reutiliza paginación/filtros del visor admin, sin filtro
+        por usuario ni columna «usuario»); entrada de menú «Mi actividad» solo si está activo.
+        Cubre en parte el pendiente «historial de edición visible» de más abajo. *(Coste bajo.)*
+  - [ ] **P2 · Valores «calculados» por envío.** Nuevo `lib/Derived.php` que computa métricas
+        derivadas del payload, reutilizado en detalle, tabla y CSV. **Ubicación:** acápite
+        «Resumen / Metadatos» en el **detalle** (lista completa) + unas pocas como **columnas
+        opcionales** en la tabla (duración, tiene adjuntos, tiene geo), integradas en el
+        selector de columnas (no una modal). Métricas: **duración** (`end − start`), **nº de
+        adjuntos por tipo**, **tiene geolocalización**, **% de completitud**, **retraso de
+        subida** (`_submission_time − end`), **hora/día** del envío, **enviado por**
+        (`_submitted_by`), **versión** (`__version__`), **estado de validación Kobo**
+        (`_validation_status`) vs revisión interna, **nº de notas/etiquetas**, **velocidad**
+        (duración/nº preguntas). Mostrar «—» cuando falte `start`/`end` (no están en todos los
+        XLSForm). Ordenar por columna derivada se difiere a una 2.ª fase. Se solapa con
+        «columnas configurables» de más abajo. *(Coste medio.)*
+  - [ ] **P3 · Estadísticas enriquecidas.** Hoy `stats.php` solo da total + por día + por
+        estado. Añadir (por valor): **distribución de respuestas por pregunta**
+        (`select_one`/`select_multiple`, respetando modo etiquetas y scoping) y **por
+        enumerador** (`_submitted_by`); **agregación semana/mes + acumulado** y **tendencia**
+        (7/30 días vs periodo anterior); **métricas de duración** (media/mediana + histograma);
+        **actividad por hora/día**; **adjuntos** (% con adjuntos y por tipo); **cobertura geo**;
+        **frescura** (último envío). Prioritarias: por pregunta + por enumerador. *(Coste
+        medio-alto.)*
+  - [ ] **P4 · Adjuntos en enlaces compartidos.** Hoy el detalle público hace
+        `unset($payload['_attachments'])` y no hay proxy público. Añadir columna
+        `expose_attachments` en `share_links` + **proxy público**
+        (`GET /public/share/{token}/submissions/{uid}/attachments/{attId}`) guardado por
+        `ShareLink::requireAccess(token,'attachments')` (+ ticket si hay contraseña), que valide
+        alcance de filas y pertenencia del adjunto; el token de Kobo **nunca** sale al navegador.
+        **Solo activable si el enlace tiene contraseña** (validado en CRUD admin y UI),
+        respaldado por política global `share_attachments_policy` (`off` | `require_password`,
+        por defecto `off`) — los adjuntos suelen contener PII sensible (rostros, testimonios en
+        audio en formularios de DDHH). Pestaña «Adjuntos» **agrupada por tipo** (Imágenes /
+        Audio / Vídeo / Documentos·PDF / Otros, vía `mimetype`), reutilizable en el detalle
+        autenticado (que hoy los lista en plano). **Nota de seguridad → M4b/M5:** este proxy
+        necesita **rate-limit de los GET públicos** (hoy solo el `unlock` se limita por IP);
+        si se prefiere, esa parte de endurecimiento puede plegarse en M4b. *(Coste mayor; es el
+        hito más grande del bloque.)*
 - [ ] **M4 · Rendimiento y seguridad** *(puede partirse)*:
   - [ ] **M4a · Índices/búsqueda** en `submissions_cache` (columnas generadas o FULLTEXT;
         hoy la búsqueda es `LIKE` sobre el JSON completo).
@@ -61,6 +106,8 @@ Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
 - [x] **Enlaces de solo lectura compartibles** (públicos o con token), útil porque Kobo
       está retirando su «compartir sin login». *(hecho en M1; ver `CHANGELOG`)*.
 - [ ] **Historial de edición visible** por envío en la UI (ya se guarda en `audit_log`).
+      *(Se solapa con **P1** del bloque prioritario: la auditoría propia ya da al usuario su
+      actividad; queda pendiente la vista por-envío para admins.)*
 - [ ] Exportación CSV/Excel y notificaciones por otros canales (ya listadas abajo).
 
 ## Optimización y mejora (otras ideas)
@@ -69,7 +116,8 @@ Necesidades recurrentes en el foro que reforzarían el hueco que cubre la app:
 
 - [x] **Revisión en lote** (aprobar/rechazar varios envíos a la vez). *(hecho en M2)*.
 - [x] **Visor de `audit_log`** en el panel admin (quién hizo qué y cuándo). *(hecho en M3)*.
-- [ ] Columnas configurables y filtros avanzados en la tabla de envíos.
+- [ ] Columnas configurables y filtros avanzados en la tabla de envíos. *(Se solapa con **P2**:
+      las columnas «calculadas» se añadirán al selector de columnas ya existente.)*
 - [ ] Modo oscuro y mejores estados de carga/vacío (skeletons).
 - [ ] **Organización de los catálogos i18n** *(candidata, a discutir en su momento)*. Hoy
       todo vive en `src/i18n/{es,en}.json` (convención: cada clave en ambos; check de
