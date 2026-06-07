@@ -50,14 +50,13 @@ fortalecimiento y se etiqueta **1.0.0**. Lo no listado aquí queda para futuras 
         estado de validación Kobo, nº de notas/etiquetas y velocidad. «—» cuando falta
         `start`/`end`; `FormSchema::normalize` registra los campos meta para localizarlos.
         **Pendiente 2.ª fase:** ordenar la tabla por una columna calculada. *(Coste medio.)*
-  - [ ] **P3 · Estadísticas enriquecidas.** Hoy `stats.php` solo da total + por día + por
-        estado. Añadir (por valor): **distribución de respuestas por pregunta**
-        (`select_one`/`select_multiple`, respetando modo etiquetas y scoping) y **por
-        enumerador** (`_submitted_by`); **agregación semana/mes + acumulado** y **tendencia**
-        (7/30 días vs periodo anterior); **métricas de duración** (media/mediana + histograma);
-        **actividad por hora/día**; **adjuntos** (% con adjuntos y por tipo); **cobertura geo**;
-        **frescura** (último envío). Prioritarias: por pregunta + por enumerador. *(Coste
-        medio-alto.)*
+  - [x] **P3 · Estadísticas enriquecidas** *(hecho; ver `CHANGELOG`)*. `stats.php` se amplía en
+        una sola pasada (respeta scoping): **distribución por pregunta** (`select_one`, con
+        etiquetas y % por opción), **por enumerador** (`_submitted_by`), **duración**
+        (media/mediana + histograma, vía `Derived`), **actividad por hora/día**, **adjuntos**
+        (% y por tipo), **cobertura geo** y **frescura** (último envío). **Diferido a 2.ª
+        fase:** distribución de `select_multiple`; **agregación semana/mes + acumulado** y
+        **tendencia** (7/30 días vs periodo anterior). *(Coste medio-alto.)*
   - [ ] **P4 · Adjuntos en enlaces compartidos.** Hoy el detalle público hace
         `unset($payload['_attachments'])` y no hay proxy público. Añadir columna
         `expose_attachments` en `share_links` + **proxy público**

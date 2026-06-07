@@ -8,6 +8,22 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **P3 · Estadísticas enriquecidas.** La vista de *Estadísticas* de un formulario, que antes
+  solo mostraba total + envíos por día + estado de revisión, gana —calculado en una sola
+  pasada en el backend (`forms/stats.php`), respetando permisos y *scoping* por filas:
+  - **Distribución por pregunta** (`select_one`): conteo y % por opción de cada pregunta de
+    opción única, con etiquetas resueltas al idioma del usuario y respetando el modo de
+    etiquetas; barras horizontales (top 20 opciones + «+N más»). *(Opción múltiple diferida a
+    una 2.ª fase, como en el filtrado por filas.)*
+  - **Por enumerador** (`_submitted_by`): reparto de envíos por usuario de Kobo (`—` si el
+    envío no lo trae).
+  - **Duración de cumplimentación**: media, mediana, mínimo, máximo e **histograma** por
+    cubetas (reutiliza `lib/Derived`).
+  - **Actividad por hora y por día de la semana**, **adjuntos** (% con adjuntos + reparto por
+    tipo), **cobertura geográfica** (% con ubicación) y **frescura** (último envío).
+  - Frontend: nuevas secciones en `StatsView` con `StatsChart` (barras horizontales/verticales
+    y *doughnut*); i18n `stats.*`. *(Agregación semana/mes + acumulado y tendencia 7/30 días
+    quedan para una 2.ª fase.)*
 - **P2 · Valores «calculados» por envío.** Nueva clase pura `lib/Derived.php` que computa,
   a partir del payload de cada envío y del esquema del formulario, métricas que Kobo no
   entrega directamente: **duración** (`end − start`), **completitud** (preguntas respondidas /

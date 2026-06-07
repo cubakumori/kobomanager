@@ -128,6 +128,11 @@ assets; submissions are fetched paginated; edits use `PATCH .../data/bulk/`. Err
   section) and the CSV export. Operates only on already‑authorized payloads, so it inherits
   permissions/row‑scoping for free. `FormSchema::normalize` records `start`/`end`/`today` meta
   field names (`schema_json.meta`) so durations work even with non‑standard field names.
+- **Statistics** (`v1/forms/stats.php`): besides total / per‑day / review‑status counts, a
+  single in‑scope pass over the payloads computes per‑question distributions (`select_one`,
+  labelled), per‑enumerator counts, fill‑in duration (mean/median + histogram), activity by
+  hour/weekday, attachment and geo coverage, and freshness — reusing `Derived`, `FormSchema`
+  and `RowScope`. (Week/month aggregation, cumulative and trend are deferred.)
 
 ### Settings & audit
 - `lib/Settings.php`: global key/value settings (JSON) — sync statuses, default locale, label
