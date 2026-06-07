@@ -69,12 +69,18 @@ try {
     ErrorResponse::send($e->errorCode, $e->getMessage());
 }
 
-// Streamear inline (el navegador lo representa o lo descarga). No se audita ni se
+// Solo se muestra inline el multimedia; el resto se fuerza como descarga. CSP +
+// sandbox neutraliza cualquier ejecución de scripts (defensa en profundidad sobre
+// el nosniff global), importante en un endpoint PÚBLICO. No se audita ni se
 // incrementa access_count (acceso público sin usuario; ver memoria/decisiones P4).
+$mime = $file['mimetype'] ?: ($att['mimetype'] ?? 'application/octet-stream');
 $name = $att['media_file_basename'] ?? basename((string) ($att['filename'] ?? $attId));
-header('Content-Type: ' . ($file['mimetype'] ?: ($att['mimetype'] ?? 'application/octet-stream')));
+$inline = in_array(Attachments::kind($mime), ['image', 'audio', 'video'], true);
+header('Content-Type: ' . $mime);
 header('Content-Length: ' . strlen($file['body']));
-header('Content-Disposition: inline; filename="' . str_replace('"', '', $name) . '"');
+header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment')
+    . '; filename="' . str_replace('"', '', $name) . '"');
+header("Content-Security-Policy: default-src 'none'; sandbox");
 header('Cache-Control: private, max-age=300');
 echo $file['body'];
 exit;

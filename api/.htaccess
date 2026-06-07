@@ -13,4 +13,4 @@
 </FilesMatch>
 
 # Defensa en profundidad: denegar acceso web directo a código interno.
-RedirectMatch 403 ^/api/(lib|cron|cli)/
+RedirectMatch 403 ^/api/(lib|cron|cli|tests|vendor)/

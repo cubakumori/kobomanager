@@ -43,8 +43,10 @@ build (`dist/`) goes to the web root and `/api` sits alongside it (see [`DEPLOY.
 
 ### Front controller & routing
 All API requests enter `api/index.php`. It loads `config.php` + `lib/*`, applies CORS,
-enforces CSRF, resolves the path after `/api/v1/` against a **routes table** (patterns with
-`:param` segments) and `require`s the matching script in `v1/`. Dynamic params are read via
+emits **security headers** (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy: no-referrer`, and `Strict-Transport-Security` over HTTPS), enforces CSRF,
+resolves the path after `/api/v1/` against a **routes table** (patterns with `:param`
+segments) and `require`s the matching script in `v1/`. Dynamic params are read via
 `Request::param()`. Each endpoint script checks the HTTP method itself.
 
 ### Responses
@@ -53,8 +55,8 @@ envelope (`{success, data}` / `{success, error:{code,message}}`) and `exit`. Err
 to HTTP statuses in one table; the frontend maps codes → localized messages (`errors.<CODE>`).
 
 ### Auth & sessions (`lib/Auth.php`)
-- Hand‑rolled **JWT (HS256)** — no libraries. Token travels in an **HttpOnly cookie**
-  (`SameSite=Lax`, `Secure` in prod).
+- Hand‑rolled **JWT (HS256)** — no libraries; the decoder rejects any `alg` other than
+  HS256. Token travels in an **HttpOnly cookie** (`SameSite=Lax`, `Secure` in prod).
 - Every session is a row in `user_sessions` keyed by the JWT `jti`. `currentUser()` validates
   signature + expiry **and** that the `jti` row still exists **and** the user is active — so
   deleting the row (logout / admin remote revoke / self‑service / deactivation) invalidates the
@@ -124,8 +126,19 @@ For mutating methods (POST/PUT/DELETE/PATCH) the front controller requires the r
 host); requests with neither header (CLI/cron) are exempt. Reinforces the `SameSite=Lax` cookie.
 
 ### Rate limiting (`lib/RateLimit.php`)
-IP‑based counting over `login_attempts` within a time window. Used on login and on the
-forgot‑password endpoint.
+IP‑based counting within a time window. Two backends: `login_attempts` (login, forgot‑password,
+share unlock — supports `clear()` on success) and a generic **bucketed** `rate_hits`
+(`tooManyBucket`/`hitBucket`, with opportunistic pruning) kept separate so public‑read
+throttling never trips the login throttle. `ShareLink::throttle()` uses the `share` bucket to
+cap public share GETs at 240 req/60 s per IP (anti‑scraping/DoS on a leaked link).
+
+### Attachment proxies & CSV hardening
+The attachment proxies (`submissions/{id}/attachments/...` and the public share one) stream
+third‑party files; they set `Content-Security-Policy: default-src 'none'; sandbox`, serve only
+image/audio/video **inline** (everything else `Content-Disposition: attachment`), and rely on
+the global `nosniff`. `KoboClient::getAttachment` follows storage redirects only to HTTP(S)
+with a hop cap (anti‑SSRF). CSV export (`forms/export.php`) prefixes any cell starting with
+`= + - @`/tab/CR with an apostrophe to defuse spreadsheet formula injection.
 
 ### Kobo integration (`lib/KoboClient.php`)
 Talks to the **Kobo API v2** with the account token (cURL, no SDK). Discovery lists `survey`
@@ -212,7 +225,7 @@ a fresh database you drop and re‑apply all files. Runtime‑configurable behav
 
 Key tables: `kobo_accounts`, `users`, `user_sessions`, `forms`, `submissions_cache`,
 `submission_reviews`, `user_form_permissions`, `notification_config`, `audit_log`,
-`login_attempts`, `settings`, `password_resets`, `share_links`.
+`login_attempts`, `rate_hits`, `settings`, `password_resets`, `share_links`.
 
 ## Tests
 

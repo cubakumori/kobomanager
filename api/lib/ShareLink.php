@@ -18,6 +18,24 @@ class ShareLink {
     /** Vida del ticket de acceso para enlaces con contraseña (segundos). */
     private const TICKET_TTL = 3600;
 
+    /** Rate-limit de las peticiones públicas por IP (anti-scraping/DoS). Generoso:
+     *  un visitante real carga lista + varios detalles + adjuntos de una galería. */
+    private const RATE_MAX    = 240;
+    private const RATE_WINDOW = 60;
+
+    /**
+     * Throttle por IP de los endpoints públicos de share. Los enlaces se apoyan en
+     * un token impredecible + revocación/caducidad; esto añade un tope por IP para
+     * frenar el scraping/abuso de un enlace filtrado. Corta con 429 si se excede.
+     */
+    public static function throttle(): void {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        if (RateLimit::tooManyBucket($ip, 'share', self::RATE_MAX, self::RATE_WINDOW)) {
+            ErrorResponse::send('AUTH_RATE_LIMITED');
+        }
+        RateLimit::hitBucket($ip, 'share');
+    }
+
     /** Genera un token de enlace impredecible (URL-safe). */
     public static function generateToken(): string {
         return rtrim(strtr(base64_encode(random_bytes(24)), '+/', '-_'), '=');
@@ -111,6 +129,7 @@ class ShareLink {
      * exige un ticket válido. Corta con el error adecuado o devuelve la fila.
      */
     public static function requireAccess(string $token, string $capability): array {
+        self::throttle();
         $link = self::resolve($token);
         if ($link === null) {
             ErrorResponse::send('NOT_FOUND', 'Enlace no válido o caducado');

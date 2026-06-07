@@ -43,4 +43,24 @@ final class RateLimitTest extends DbTestCase
         }
         $this->assertFalse(RateLimit::tooMany($ip, 5, 60)); // ventana de 60s
     }
+
+    // ---------- Rate limiting por bucket (tabla rate_hits) ----------
+
+    public function testBucketReachingLimitBlocks(): void
+    {
+        $ip = '10.1.0.1';
+        for ($i = 0; $i < 3; $i++) RateLimit::hitBucket($ip, 'share');
+        $this->assertTrue(RateLimit::tooManyBucket($ip, 'share', 3, 60));
+        $this->assertFalse(RateLimit::tooManyBucket($ip, 'share', 4, 60));
+    }
+
+    public function testBucketsAreIndependent(): void
+    {
+        $ip = '10.1.0.2';
+        for ($i = 0; $i < 3; $i++) RateLimit::hitBucket($ip, 'share');
+        // Otro bucket no se ve afectado.
+        $this->assertFalse(RateLimit::tooManyBucket($ip, 'other', 3, 60));
+        // Ni cruza con login_attempts.
+        $this->assertFalse(RateLimit::tooMany($ip, 3, 60));
+    }
 }

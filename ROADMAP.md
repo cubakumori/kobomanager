@@ -19,9 +19,8 @@ fortalecimiento y se etiqueta **1.0.0**. Lo no listado aquí queda para futuras 
       impredecible en la URL + contraseña opcional (política global). Expone lista / detalle
       / mapa (adjuntos se difieren). Caducidad opcional + revocación inmediata. Reutiliza
       `RowScope`. Tabla `share_links` (`db/008_*.sql`), `lib/ShareLink.php`, endpoints
-      `v1/public/`, vista pública sin shell. *(Pendiente de M5: rate-limit de los GET
-      públicos a nivel de app — hoy solo el `unlock` de contraseña se limita por IP; los GET
-      se apoyan en el token + revocación/caducidad y se recomienda throttling en el proxy.)*
+      `v1/public/`, vista pública sin shell. *(El rate-limit de los GET públicos a nivel de app
+      se hizo en M5: `ShareLink::throttle()` 240 req/60 s por IP sobre tabla `rate_hits`.)*
 - [x] **M2 · Productividad de datos** *(hecho; ver `CHANGELOG`)*: **revisión en lote**
       (aprobar/rechazar varios envíos, `POST /forms/{id}/review`) + **exportación CSV**
       (UTF-8 con BOM, `GET /forms/{id}/export`; XLSX nativo diferido). Respetan permisos y
@@ -83,8 +82,12 @@ fortalecimiento y se etiqueta **1.0.0**. Lo no listado aquí queda para futuras 
         `CONFIG_TOKEN_KEY`** (`TokenVault` con clave explícita + `cli/rotate_token_key.php`
         transaccional, procedimiento en `DEPLOY §12`) y **copias de seguridad** documentadas
         (`DEPLOY §11`).
-- [ ] **M5 · Repaso y fortalecimiento** → tag **1.0.0** (primera pública). Posibles releases
-      intermedias (`0.4.0`/`0.5.0`) por hito si se desea.
+- [~] **M5 · Repaso y fortalecimiento** → tag **1.0.0** (primera pública). **Fortalecimiento
+      HECHO y etiquetado `0.4.0`** (ver `CHANGELOG`): auditoría de seguridad del backend (sin
+      hallazgos críticos/altos) + cabeceras de seguridad + neutralización CSV + rate-limit de
+      enlaces públicos + defensa en profundidad (SSRF en `getAttachment`, `alg` JWT, nginx en
+      DEPLOY). **Pendiente para 1.0.0:** la revisión manual exhaustiva del usuario; tras ella se
+      etiqueta `1.0.0`.
 
 ---
 

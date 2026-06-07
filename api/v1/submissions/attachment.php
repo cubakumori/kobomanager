@@ -62,12 +62,18 @@ try {
 
 Audit::log($user['id'], 'download_attachment', $formId, $uid, ['attachment' => $attId]);
 
-// Streamear el archivo. Content-Disposition inline para que el navegador lo
-// muestre (imagen/audio/vídeo) o lo descargue si no sabe representarlo.
+// Streamear el archivo. Solo se muestra inline el contenido multimedia
+// (imagen/audio/vídeo); todo lo demás se fuerza como descarga. Una CSP estricta
+// + sandbox neutraliza cualquier ejecución de scripts si el navegador llegara a
+// tratar el adjunto como HTML (defensa en profundidad sobre el nosniff global).
+$mime = $file['mimetype'] ?: ($att['mimetype'] ?? 'application/octet-stream');
 $name = $att['media_file_basename'] ?? basename((string) ($att['filename'] ?? $attId));
-header('Content-Type: ' . ($file['mimetype'] ?: ($att['mimetype'] ?? 'application/octet-stream')));
+$inline = in_array(Attachments::kind($mime), ['image', 'audio', 'video'], true);
+header('Content-Type: ' . $mime);
 header('Content-Length: ' . strlen($file['body']));
-header('Content-Disposition: inline; filename="' . str_replace('"', '', $name) . '"');
+header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment')
+    . '; filename="' . str_replace('"', '', $name) . '"');
+header("Content-Security-Policy: default-src 'none'; sandbox");
 header('Cache-Control: private, max-age=300');
 echo $file['body'];
 exit;

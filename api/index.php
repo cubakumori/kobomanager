@@ -37,6 +37,18 @@ if (in_array($origin, CORS_ALLOWED_ORIGINS, true)) {
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
+// --- Cabeceras de seguridad (todas las respuestas de la API) ---
+// nosniff evita que el navegador adivine el tipo de un adjunto servido por los
+// proxies (XSS almacenado vía MIME-sniffing). DENY/no-referrer endurecen el resto.
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('Referrer-Policy: no-referrer');
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443;
+if ($isHttps) {
+    header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+}
+
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 if ($method === 'OPTIONS') {

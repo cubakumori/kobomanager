@@ -100,6 +100,15 @@ $cell = static function (string $k, $v) use ($labelsOn, $options, $multi, $leaf)
     return array_key_exists($code, $opt) ? $opt[$code] : $raw;
 };
 
+// Neutraliza la inyección de fórmulas CSV: una celda cuyo primer carácter sea uno
+// de = + - @ TAB CR es interpretada como fórmula por Excel/LibreOffice. Los datos
+// vienen de envíos rellenados por terceros, así que se prefija un apóstrofo (fuerza
+// texto) sin alterar el valor mostrado.
+$csvSafe = static function ($v): string {
+    $s = (string) $v;
+    return ($s !== '' && in_array($s[0], ['=', '+', '-', '@', "\t", "\r"], true)) ? "'" . $s : $s;
+};
+
 // Cabeceras de las dos columnas de metadatos, en el idioma del usuario.
 $metaHeaders = $user['locale'] === 'en'
     ? ['submitted' => 'Submitted', 'review' => 'Review']
@@ -127,7 +136,7 @@ fwrite($out, "\xEF\xBB\xBF"); // BOM UTF-8 para Excel
 
 // $escape = '' → CSV estándar (comillas dobladas, sin escape con barra). Además, en
 // PHP 8.4+ el parámetro $escape debe pasarse explícitamente (su omisión está obsoleta).
-fputcsv($out, array_merge([$metaHeaders['submitted'], $metaHeaders['review']], array_map($header, $columns), $derivedHeaders), ',', '"', '');
+fputcsv($out, array_map($csvSafe, array_merge([$metaHeaders['submitted'], $metaHeaders['review']], array_map($header, $columns), $derivedHeaders)), ',', '"', '');
 foreach ($rows as $r) {
     $data = json_decode($r['json_payload'], true) ?: [];
     $line = [$r['submitted_at'], $reviewWords[$r['review_status']] ?? $r['review_status']];
@@ -138,7 +147,7 @@ foreach ($rows as $r) {
     $line[] = $d['duration_s'] ?? '';
     $line[] = $d['has_attachments'] ? $yesNo['yes'] : $yesNo['no'];
     $line[] = $d['has_geo'] ? $yesNo['yes'] : $yesNo['no'];
-    fputcsv($out, $line, ',', '"', '');
+    fputcsv($out, array_map($csvSafe, $line), ',', '"', '');
 }
 fclose($out);
 exit;

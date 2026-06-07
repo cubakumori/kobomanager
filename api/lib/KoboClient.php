@@ -174,13 +174,23 @@ class KoboClient {
 
         // 2) Redirección a almacenamiento firmado: seguirla sin el token.
         if (in_array($status, [301, 302, 303, 307, 308], true) && $redirect !== '') {
+            // Defensa anti-SSRF: solo seguir redirecciones a HTTP(S) (no file://,
+            // gopher://, etc.) y con un tope de saltos.
+            if (!preg_match('#^https?://#i', $redirect)) {
+                throw new KoboException('KOBO_TIMEOUT', 'No se pudo descargar el adjunto');
+            }
             $ch2 = curl_init($redirect);
-            curl_setopt_array($ch2, [
+            $opts2 = [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_MAXREDIRS      => 3,
                 CURLOPT_TIMEOUT        => 60,
                 CURLOPT_CONNECTTIMEOUT => self::CONNECT_TIMEOUT,
-            ]);
+            ];
+            if (defined('CURLOPT_REDIR_PROTOCOLS_STR')) {
+                $opts2[CURLOPT_REDIR_PROTOCOLS_STR] = 'http,https';
+            }
+            curl_setopt_array($ch2, $opts2);
             $body   = curl_exec($ch2);
             $errno  = curl_errno($ch2);
             $status = (int) curl_getinfo($ch2, CURLINFO_HTTP_CODE);

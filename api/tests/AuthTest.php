@@ -68,6 +68,20 @@ final class AuthTest extends DbTestCase
         $this->assertNull(Auth::currentUser());
     }
 
+    public function testNonHs256AlgIsRejected(): void
+    {
+        // Token con FIRMA HS256 VÁLIDA pero alg distinto en el header: debe rechazarse
+        // (defensa ante confusión de algoritmo / alg:none).
+        $uid  = $this->makeUser();
+        $b64  = new ReflectionMethod(Auth::class, 'b64url');
+        $sign = new ReflectionMethod(Auth::class, 'sign');
+        $h    = $b64->invoke(null, json_encode(['alg' => 'none', 'typ' => 'JWT']));
+        $body = $b64->invoke(null, json_encode(['sub' => $uid, 'jti' => 'x', 'iat' => time(), 'exp' => time() + 100]));
+        $sig  = $sign->invoke(null, $h . '.' . $body);
+        $_COOKIE[COOKIE_NAME] = $h . '.' . $body . '.' . $sig;
+        $this->assertNull(Auth::currentUser());
+    }
+
     public function testNoCookieIsNull(): void
     {
         $_COOKIE = [];

@@ -9,6 +9,8 @@ if (Request::method() !== 'GET') {
     ErrorResponse::send('VALIDATION_ERROR', 'Método no permitido', 405);
 }
 
+ShareLink::throttle();
+
 $token = (string) Request::param('token');
 $link  = ShareLink::resolve($token);
 if ($link === null) {

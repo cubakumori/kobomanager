@@ -6,6 +6,39 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [Sin publicar]
 
+## [0.4.0] - 2026-06-07
+
+Primera tanda hacia la versión pública: enlaces compartibles (M1), productividad de
+datos (M2), observabilidad (M3), las cuatro mejoras de producto (P1–P4), búsqueda
+FULLTEXT (M4a), endurecimiento de sesiones/operación (M4b) y el repaso de
+fortalecimiento (M5). El tag **1.0.0** se reserva para tras la revisión manual.
+
+### Seguridad (M5 · repaso y fortalecimiento)
+
+- **Cabeceras de seguridad** en todas las respuestas de la API (`api/index.php`):
+  `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`
+  y `Strict-Transport-Security` cuando la petición es HTTPS. Los **proxies de adjuntos**
+  (`submissions/{id}/attachments/...` y el público de share) añaden además
+  `Content-Security-Policy: default-src 'none'; sandbox` y solo sirven **inline** el contenido
+  multimedia (imagen/audio/vídeo); el resto se fuerza como **descarga** (`Content-Disposition:
+  attachment`). Cierra el vector de XSS almacenado por MIME-sniffing de un adjunto de tercero.
+- **Neutralización de inyección de fórmulas CSV** en la exportación (`forms/export.php`): toda
+  celda que empiece por `= + - @`, tabulador o retorno de carro se prefija con un apóstrofo
+  (fuerza texto), evitando que Excel/LibreOffice ejecute fórmulas incrustadas en datos de
+  envíos rellenados por terceros.
+- **Rate-limit de los enlaces públicos de share** (pendiente de M1): nueva tabla `rate_hits` y
+  `RateLimit::tooManyBucket/hitBucket` (bucket propio, separado de `login_attempts` para no
+  cruzar el throttle de login con el de lectura). `ShareLink::throttle()` limita a **240
+  peticiones/60 s por IP** los GET públicos (meta/lista/detalle/mapa/adjuntos) — anti-scraping/
+  DoS sobre un enlace filtrado, encima del token impredecible + revocación/caducidad.
+- **Defensa en profundidad:** `KoboClient::getAttachment` ahora valida que las redirecciones
+  sean HTTP(S) y limita los saltos (`MAXREDIRS`, `REDIR_PROTOCOLS_STR`) — anti-SSRF; el
+  decodificador JWT rechaza explícitamente cualquier `alg` distinto de `HS256`; el `.htaccess`
+  del API bloquea también `tests/` y `vendor/`, y `DEPLOY §6` documenta el equivalente **nginx**
+  (bloqueo de `lib`/`cron`/`cli`/`tests`/`vendor`/`config.php`).
+- Tests: rate-limit por bucket (independencia entre buckets y de login) y rechazo de JWT con
+  `alg` no-HS256. Suite **95 tests / 224 aserciones** en verde.
+
 ### Añadido
 
 - **M4b · Seguridad/operación.** Endurecimiento de sesiones y operativa de claves/backups:

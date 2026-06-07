@@ -113,7 +113,39 @@ Serve the API and, for everything else, return `index.html` (SPA routes):
 ```
 
 The `/api` `.htaccess` ships with the repo (routes through `index.php` and blocks
-`lib/`, `cron/`, `cli/` and `config.php`).
+`config.php` plus the internal `lib/`, `cron/`, `cli/`, `tests/` and `vendor/` folders).
+
+### nginx (no `.htaccess`)
+
+`.htaccess` is Apache-only. On **nginx** replicate the same two protections — route the
+SPA fallback to `index.html`, route every `/api/v1/...` request through the front controller,
+and **block direct access to internal code and config**:
+
+```nginx
+# SPA
+location / {
+    try_files $uri $uri/ /index.html;
+}
+
+# API front controller — everything under /api/v1 goes through index.php
+location /api/ {
+    # Never serve internal code or secrets directly.
+    location ~ ^/api/(lib|cron|cli|tests|vendor)/ { deny all; }
+    location ~ ^/api/config.*\.php$            { deny all; }
+
+    try_files $uri /api/index.php$is_args$args;
+
+    location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;   # adjust to your PHP-FPM socket
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    }
+}
+```
+
+> Without these `deny` blocks, nginx would happily serve `api/lib/*.php` and `api/config.php`
+> as plain text. Verify after deploy: `curl https://yourdomain.com/api/config.php` must **not**
+> return the file (expect 403/404), and `…/api/lib/DB.php` likewise.
 
 ## 7. Cron jobs
 

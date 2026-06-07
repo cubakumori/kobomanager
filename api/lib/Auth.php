@@ -40,6 +40,10 @@ class Auth {
         $parts = explode('.', $jwt);
         if (count($parts) !== 3) return null;
         [$h, $b, $sig] = $parts;
+        // Rechaza explícitamente cualquier algoritmo que no sea HS256 (robustez ante
+        // confusión de algoritmo / 'alg:none', aunque la firma ya se recomputa fija).
+        $header = json_decode(self::b64urlDecode($h), true);
+        if (!is_array($header) || ($header['alg'] ?? null) !== 'HS256') return null;
         if (!hash_equals(self::sign($h . '.' . $b), $sig)) return null;
         $payload = json_decode(self::b64urlDecode($b), true);
         if (!is_array($payload)) return null;
