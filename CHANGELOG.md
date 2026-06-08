@@ -6,6 +6,45 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [Sin publicar]
 
+Segundo hito del **roadmap 1.x**: scoping por filas **multi-condición (AND/OR +
+operadores)**.
+
+### Añadido
+
+- **Filtro de filas con grupos AND/OR y operadores** (antes solo `campo = uno de`
+  combinado con Y). `lib/RowScope` pasa a una forma canónica de **grupos a 2 niveles**
+  (`{match, groups:[{match, conditions:[{field, op, values}]}]}`): los grupos se
+  combinan con un conector raíz y, dentro de cada grupo, las condiciones con el conector
+  del grupo (`all`=Y, `any`=O). Permite expresar p. ej. *«(provincia=Habana Y edad≥18)
+  O (provincia=Santiago Y sexo=F)»*. Aplica a viewers (`user_form_permissions.row_filter`)
+  y a enlaces compartidos (`share_links.row_filter`). Pedido en el foro y **no soportado
+  por Kobo** ([condition-based-row-level-permissions/55372](https://community.kobotoolbox.org/t/condition-based-row-level-permissions/55372)).
+- **Operadores por condición**: `in` (es uno de), `nin` (≠ / ninguno de),
+  `lt/lte/gt/gte` (rango numérico o de fechas), `empty`/`not_empty` (vacío / con valor) y,
+  para `select_multiple`, operadores de conjunto `has_any`/`has_all`/`has_none`. El editor
+  ofrece los operadores y el widget de valor según el **tipo de campo** (opciones con
+  casillas para `select_one`/`select_multiple`, rango para numéricos/fechas, texto libre
+  con sugerencias para el resto).
+- **Editor de filtro reutilizable** (`src/components/RowFilterEditor.vue`): un único
+  componente para construir el filtro, usado tanto en **Permisos** (por usuario) como en
+  **Enlaces compartidos** (por enlace), con grupos añadibles/eliminables y conectores
+  seleccionables.
+
+### Cambiado
+
+- La traducción a SQL (`JSON_EXTRACT`) y la evaluación en PHP (`matches()`) comparten
+  exactamente la misma semántica para cada operador (paridad blindada con tests, incluida
+  una batería contra datos reales). Se mantiene el escape de barras en rutas de grupo
+  (`G01/P1_3`), el **fail-closed** (`in` sin valores no deja pasar la fila) y el bypass de
+  administradores.
+
+### Retrocompatibilidad
+
+- El formato anterior `{conditions:[{field,values}]}` (solo-Y, `op` implícito `in`) se
+  **sigue leyendo**: `RowScope::normalize()` lo canonicaliza al vuelo a un único grupo
+  `all`. **No se reescriben datos en BD**; al re-guardar desde la UI se persiste el nuevo
+  formato. Sin cambios de esquema (las columnas `row_filter` siguen siendo `JSON`).
+
 ## [1.1.0] - 2026-06-08
 
 Primer hito del **roadmap 1.x** (permisos a nivel de columna) más una tanda de

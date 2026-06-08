@@ -26,11 +26,15 @@ sesión propia** (acordar el modelo antes de codificar + verificación contra da
       Encaja como módulo «premium» (ver `my.docs/MONETIZE.md`).
       2.ª fase: **columnas de solo-lectura** (ver pero no editar) y ocultar columnas en
       las **estadísticas agregadas derivadas** que no dependen de un único campo.
-- [ ] **Scoping por filas multi-condición (AND/OR + operadores)**. Hoy `RowScope` combina
-      condiciones campo=valores **solo con Y (AND)**; ampliar a OR y a operadores
-      (≠, rangos) y/o `select_multiple`. Kobo **no lo soporta** — ventaja competitiva
+- [x] **Scoping por filas multi-condición (AND/OR + operadores)** *(prioridad nº 2)* —
+      **ENTREGADO** (ver `CHANGELOG.md`). `RowScope` pasa a **grupos a 2 niveles** con
+      conectores Y/O (raíz y por grupo) y operadores por condición: `in`, `nin` (≠),
+      `lt/lte/gt/gte` (rango num/fechas), `empty`/`not_empty` y, para `select_multiple`,
+      `has_any`/`has_all`/`has_none`. Paridad SQL≡PHP, fail-closed y retrocompat con el
+      formato `{conditions:[...]}`. Editor reutilizable `RowFilterEditor.vue` en Permisos
+      y Enlaces. Kobo **no lo soporta** — ventaja competitiva
       ([condition-based-row-level-permissions/55372](https://community.kobotoolbox.org/t/condition-based-row-level-permissions/55372),
-      el staff lo confirma jul-2024). El JSON de `row_filter` ya dejó la puerta abierta.
+      el staff lo confirma jul-2024).
 - [ ] **Mejoras del flujo de revisión** (sobre el estado «En espera» ya entregado):
       **estado inicial automático** al recibir un envío
       ([auto on-hold/54994](https://community.kobotoolbox.org/t/can-we-set-an-on-hold-validation-automatically-when-users-submit-data/54994)),

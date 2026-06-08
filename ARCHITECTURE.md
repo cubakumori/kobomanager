@@ -74,14 +74,23 @@ to HTTP statuses in one table; the frontend maps codes → localized messages (`
 
 ### Row‑level scoping (`lib/RowScope.php`)
 A per‑(user, form) filter (`user_form_permissions.row_filter`, JSON) can restrict **which
-submissions** a viewer sees, on top of the form capability. The rule is a list of
-conditions (`{field, values}`) combined with **AND**; a submission passes when, for every
-condition, its value at `field` is in `values`. `NULL`/empty → unrestricted; a condition
-with no values matches nothing (fail‑closed); admins are never restricted. The same rule is
-applied as a SQL predicate over `submissions_cache.json_payload` (lists, stats, map, form
-counts, daily summary) and as an in‑PHP `matches()` check on the detail/edit/validate path,
-where an out‑of‑scope submission returns 404. Note: MariaDB stores JSON as text and keeps the
-`\/` escape, so group‑path keys (`G01/P1_3`) are matched with an escaped JSON path.
+submissions** a viewer sees, on top of the form capability. The rule is a **2‑level group
+tree** — `{match, groups:[{match, conditions:[{field, op, values}]}]}` — where groups are
+combined by the root connector and each group's conditions by its own connector (`all`=AND,
+`any`=OR). This expresses e.g. *“(province=Habana AND age≥18) OR (province=Santiago AND
+sex=F)”*. Each condition has an operator: `in` / `nin` (≠), `lt/lte/gt/gte` (numeric or ISO‑date
+range — numeric when the operand is numeric, lexical otherwise), `empty` / `not_empty`, and the
+set operators `has_any` / `has_all` / `has_none` for `select_multiple` (codes are space‑separated
+in the payload). `NULL`/empty → unrestricted; an `in` with no values matches nothing
+(fail‑closed); admins are never restricted. The same rule is applied as a SQL predicate over
+`submissions_cache.json_payload` (lists, stats, map, form counts, daily summary) and as an
+in‑PHP `matches()` check on the detail/edit/validate path (out‑of‑scope → 404); SQL and PHP
+share identical per‑operator semantics (covered by parity tests). The legacy flat format
+`{conditions:[{field,values}]}` (AND‑only, implicit `op:in`) is still read and canonicalised by
+`normalize()` — no data migration, no schema change. Note: MariaDB stores JSON as text and keeps
+the `\/` escape, so group‑path keys (`G01/P1_3`) are matched with an escaped JSON path. The
+admin UI builds the rule with a shared `RowFilterEditor.vue` component (reused by both the
+Permissions and Share‑links editors), offering operators and value widgets per field type.
 
 ### Column‑level permissions (`lib/FieldScope.php`)
 Twin of row scoping: where `RowScope` decides *which submissions* are visible, `FieldScope`

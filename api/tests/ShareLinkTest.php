@@ -92,8 +92,13 @@ final class ShareLinkTest extends DbTestCase
             'row_filter' => ['conditions' => [['field' => 'region', 'values' => ['norte']]]],
         ]);
         $link = ShareLink::resolve($token);
+        // El formato antiguo del enlace se lee y canonicaliza a grupos (retrocompat).
         $this->assertSame(
-            ['conditions' => [['field' => 'region', 'values' => ['norte']]]],
+            ['match' => 'all', 'groups' => [
+                ['match' => 'all', 'conditions' => [
+                    ['field' => 'region', 'op' => 'in', 'values' => ['norte']],
+                ]],
+            ]],
             ShareLink::rule($link)
         );
     }

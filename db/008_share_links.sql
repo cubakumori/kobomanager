@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS share_links (
     expose_detail     TINYINT(1) NOT NULL DEFAULT 1,        -- permitir ver el detalle de un envío
     expose_map        TINYINT(1) NOT NULL DEFAULT 0,        -- mostrar mapa
     expose_attachments TINYINT(1) NOT NULL DEFAULT 0,       -- exponer adjuntos (solo si el enlace tiene contraseña; ver `share_attachments_policy`)
-    row_filter        JSON NULL,                            -- {conditions:[{field,values}]} o NULL (sin restricción)
+    row_filter        JSON NULL,                            -- {match,groups:[{match,conditions:[{field,op,values}]}]} o NULL (ver lib/RowScope; lee también el formato antiguo {conditions:[...]})
     field_filter      JSON NULL,                            -- {hidden:["clave",...]} o NULL: columnas ocultas en este enlace (ver lib/FieldScope)
     password_hash     VARCHAR(255) NULL,                    -- NULL = acceso solo por token
     expires_at        DATETIME NULL,                        -- NULL = sin caducidad
