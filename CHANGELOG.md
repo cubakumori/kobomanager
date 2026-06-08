@@ -6,6 +6,11 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [Sin publicar]
 
+## [1.1.0] - 2026-06-08
+
+Primer hito del **roadmap 1.x** (permisos a nivel de columna) más una tanda de
+correcciones y mejoras de UX y estadísticas.
+
 ### Añadido
 
 - **Backfill de envíos al importar un formulario**: el descubrimiento traía solo
