@@ -180,6 +180,53 @@ function clearScope() {
   scopeOpen.value = false
 }
 
+// ---------- Permisos por columna (ocultar campos) ----------
+const colsOpen = ref(false)
+const colsForm = ref(null)
+const colsFields = ref([]) // todos los campos del formulario (clave, etiqueta, tipo)
+const colsLoading = ref(false)
+const colsError = ref('')
+const colsHidden = ref([]) // copia de trabajo: claves ocultas
+
+function hiddenCount(p) {
+  return p.field_filter?.hidden?.length || 0
+}
+
+async function openCols(p) {
+  colsForm.value = p
+  colsOpen.value = true
+  colsError.value = ''
+  colsFields.value = []
+  colsHidden.value = [...(p.field_filter?.hidden || [])]
+  colsLoading.value = true
+  try {
+    const { data } = await api.get(`/admin/forms/${p.form_id}/scope-fields`)
+    colsFields.value = data.data.fields
+  } catch (e) {
+    colsError.value = apiError(e, t('permissions.colsLoadError'))
+  } finally {
+    colsLoading.value = false
+  }
+}
+
+function toggleHidden(key) {
+  const i = colsHidden.value.indexOf(key)
+  if (i === -1) colsHidden.value.push(key)
+  else colsHidden.value.splice(i, 1)
+}
+
+function applyCols() {
+  const hidden = [...new Set(colsHidden.value)]
+  colsForm.value.field_filter = hidden.length ? { hidden } : null
+  saved.value = false
+  colsOpen.value = false
+}
+function clearCols() {
+  colsForm.value.field_filter = null
+  saved.value = false
+  colsOpen.value = false
+}
+
 onMounted(loadUsers)
 </script>
 
@@ -234,6 +281,7 @@ onMounted(loadUsers)
               <th class="px-4 py-3 text-center">{{ $t('permissions.colEdit') }}</th>
               <th class="px-4 py-3 text-center">{{ $t('permissions.colValidate') }}</th>
               <th class="px-4 py-3 text-center">{{ $t('permissions.colScope') }}</th>
+              <th class="px-4 py-3 text-center">{{ $t('permissions.colColumns') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -267,9 +315,25 @@ onMounted(loadUsers)
                 </button>
                 <span v-else class="text-slate-300">—</span>
               </td>
+              <td class="px-4 py-3 text-center">
+                <button
+                  v-if="p.can_view"
+                  type="button"
+                  class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ring-1 transition"
+                  :class="hiddenCount(p)
+                    ? 'bg-accent-50 text-accent-700 ring-accent-200 hover:bg-accent-100'
+                    : 'bg-slate-50 text-slate-500 ring-slate-200 hover:bg-slate-100'"
+                  @click="openCols(p)"
+                >
+                  {{ hiddenCount(p)
+                    ? $t('permissions.colsHidden', { n: hiddenCount(p) })
+                    : $t('permissions.colsAll') }}
+                </button>
+                <span v-else class="text-slate-300">—</span>
+              </td>
             </tr>
             <tr v-if="!visiblePerms.length">
-              <td colspan="5" class="px-4 py-6 text-center text-slate-400">{{ $t('permissions.empty') }}</td>
+              <td colspan="6" class="px-4 py-6 text-center text-slate-400">{{ $t('permissions.empty') }}</td>
             </tr>
           </tbody>
         </table>
@@ -423,6 +487,76 @@ onMounted(loadUsers)
               @click="applyScope"
             >
               {{ $t('permissions.scopeApply') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Modal>
+
+    <!-- Modal: permisos por columna (ocultar campos) -->
+    <Modal
+      v-if="colsOpen"
+      size="xl"
+      :title="$t('permissions.colsTitle', { form: colsForm?.name })"
+      @close="colsOpen = false"
+    >
+      <div class="space-y-4">
+        <p class="text-sm text-slate-500">{{ $t('permissions.colsIntro') }}</p>
+
+        <div v-if="colsError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+          {{ colsError }}
+        </div>
+        <div v-if="colsLoading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
+
+        <template v-else>
+          <div v-if="!colsFields.length" class="rounded-lg bg-slate-50 px-3 py-3 text-sm text-slate-500">
+            {{ $t('permissions.colsNoFields') }}
+          </div>
+          <template v-else>
+            <p class="text-xs text-slate-500">
+              {{ $t('permissions.colsSelected', { n: colsHidden.length }) }}
+            </p>
+            <div class="max-h-96 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-2">
+              <label
+                v-for="f in colsFields"
+                :key="f.key"
+                class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-slate-50"
+                :class="colsHidden.includes(f.key) ? 'bg-accent-50' : ''"
+              >
+                <input
+                  type="checkbox"
+                  :checked="colsHidden.includes(f.key)"
+                  @change="toggleHidden(f.key)"
+                />
+                <span class="min-w-0 flex-1 truncate">{{ f.label }}</span>
+                <span class="shrink-0 text-xs text-slate-400">{{ f.type }}</span>
+              </label>
+            </div>
+          </template>
+        </template>
+
+        <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
+          <button
+            type="button"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+            @click="clearCols"
+          >
+            {{ $t('permissions.colsClear') }}
+          </button>
+          <div class="flex gap-2">
+            <button
+              type="button"
+              class="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+              @click="colsOpen = false"
+            >
+              {{ $t('common.cancel') }}
+            </button>
+            <button
+              type="button"
+              class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+              @click="applyCols"
+            >
+              {{ $t('permissions.colsApply') }}
             </button>
           </div>
         </div>

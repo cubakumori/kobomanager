@@ -29,6 +29,7 @@ const blankForm = () => ({
   password: '',
   expires_at: '',
   row_filter: null,
+  field_filter: null,
 })
 const form = ref(blankForm())
 
@@ -91,6 +92,7 @@ async function onCreate() {
       password: passwordPolicy.value === 'off' ? '' : form.value.password,
       expires_at: form.value.expires_at,
       row_filter: form.value.row_filter,
+      field_filter: form.value.field_filter,
     })
     showCreate.value = false
     await loadLinks()
@@ -243,9 +245,49 @@ function clearScope() {
   form.value.row_filter = null
   scopeOpen.value = false
 }
-// Al cambiar de formulario, el filtro de filas deja de tener sentido.
+// Al cambiar de formulario, los filtros (filas y columnas) dejan de tener sentido.
 function onFormChange() {
   form.value.row_filter = null
+  form.value.field_filter = null
+}
+
+// ---------- Ocultar columnas — reutiliza el endpoint scope-fields ----------
+const colsOpen = ref(false)
+const colsFields = ref([])
+const colsLoading = ref(false)
+const colsError = ref('')
+const colsHidden = ref([])
+const hiddenCount = computed(() => form.value.field_filter?.hidden?.length || 0)
+
+async function openCols() {
+  if (!form.value.form_id) return
+  colsOpen.value = true
+  colsError.value = ''
+  colsFields.value = []
+  colsHidden.value = [...(form.value.field_filter?.hidden || [])]
+  colsLoading.value = true
+  try {
+    const { data } = await api.get(`/admin/forms/${form.value.form_id}/scope-fields`)
+    colsFields.value = data.data.fields
+  } catch (e) {
+    colsError.value = apiError(e, t('permissions.colsLoadError'))
+  } finally {
+    colsLoading.value = false
+  }
+}
+function toggleHidden(key) {
+  const i = colsHidden.value.indexOf(key)
+  if (i === -1) colsHidden.value.push(key)
+  else colsHidden.value.splice(i, 1)
+}
+function applyCols() {
+  const hidden = [...new Set(colsHidden.value)]
+  form.value.field_filter = hidden.length ? { hidden } : null
+  colsOpen.value = false
+}
+function clearCols() {
+  form.value.field_filter = null
+  colsOpen.value = false
 }
 
 onMounted(() => {
@@ -296,6 +338,9 @@ onMounted(() => {
                 <span v-if="link.has_password" class="text-xs text-amber-600">🔒 {{ $t('shares.withPassword') }}</span>
                 <span v-if="link.row_filter" class="text-xs text-accent-700">
                   {{ $t('shares.rowFilterActive', { n: link.row_filter.conditions.length }) }}
+                </span>
+                <span v-if="link.field_filter" class="text-xs text-accent-700">
+                  {{ $t('permissions.colsHidden', { n: link.field_filter.hidden.length }) }}
                 </span>
               </div>
             </td>
@@ -417,6 +462,20 @@ onMounted(() => {
             class="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             @click="openScope"
           >{{ $t('shares.rowFilterEdit') }}</button>
+        </div>
+
+        <!-- Ocultar columnas -->
+        <div class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+          <span class="text-sm text-slate-600">
+            {{ $t('shares.fieldFilter') }}:
+            <strong>{{ hiddenCount ? $t('permissions.colsHidden', { n: hiddenCount }) : $t('permissions.colsAll') }}</strong>
+          </span>
+          <button
+            type="button"
+            :disabled="!form.form_id"
+            class="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            @click="openCols"
+          >{{ $t('shares.fieldFilterEdit') }}</button>
         </div>
 
         <!-- Contraseña (según política) -->
@@ -545,6 +604,50 @@ onMounted(() => {
             </button>
             <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700" @click="applyScope">
               {{ $t('permissions.scopeApply') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Modal>
+
+    <!-- Modal: ocultar columnas (reutiliza claves de permissions.cols*) -->
+    <Modal v-if="colsOpen" size="xl" :title="$t('permissions.colsTitle', { form: '' })" @close="colsOpen = false">
+      <div class="space-y-4">
+        <p class="text-sm text-slate-500">{{ $t('permissions.colsIntro') }}</p>
+        <div v-if="colsError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">{{ colsError }}</div>
+        <div v-if="colsLoading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
+
+        <template v-else>
+          <div v-if="!colsFields.length" class="rounded-lg bg-slate-50 px-3 py-3 text-sm text-slate-500">
+            {{ $t('permissions.colsNoFields') }}
+          </div>
+          <template v-else>
+            <p class="text-xs text-slate-500">{{ $t('permissions.colsSelected', { n: colsHidden.length }) }}</p>
+            <div class="max-h-96 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-2">
+              <label
+                v-for="f in colsFields"
+                :key="f.key"
+                class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-slate-50"
+                :class="colsHidden.includes(f.key) ? 'bg-accent-50' : ''"
+              >
+                <input type="checkbox" :checked="colsHidden.includes(f.key)" @change="toggleHidden(f.key)" />
+                <span class="min-w-0 flex-1 truncate">{{ f.label }}</span>
+                <span class="shrink-0 text-xs text-slate-400">{{ f.type }}</span>
+              </label>
+            </div>
+          </template>
+        </template>
+
+        <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
+          <button type="button" class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50" @click="clearCols">
+            {{ $t('permissions.colsClear') }}
+          </button>
+          <div class="flex gap-2">
+            <button type="button" class="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100" @click="colsOpen = false">
+              {{ $t('common.cancel') }}
+            </button>
+            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700" @click="applyCols">
+              {{ $t('permissions.colsApply') }}
             </button>
           </div>
         </div>

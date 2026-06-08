@@ -6,6 +6,31 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [Sin publicar]
 
+### Añadido
+
+- **Permisos a nivel de columna (ocultar campos sensibles)** — primer hito del
+  roadmap 1.x. Un administrador puede ocultar campos concretos de un formulario a
+  un usuario (p. ej. datos identificativos), por **(usuario, formulario)**. Es el
+  gemelo del scoping por filas: mientras aquél decide *qué envíos* se ven, éste
+  decide *qué campos* salen. Modelo: lista de **ocultar** (denylist)
+  `{"hidden":["clave","g_a/region"]}` en `user_form_permissions.field_filter`
+  (NULL = ve todos los campos → retrocompatible); los admin no tienen restricción.
+  El ocultado se aplica de forma consistente en **toda** lectura: tabla de envíos,
+  detalle, **estadísticas** (las preguntas ocultas no se cuentan), **exportación
+  CSV**, el esquema resuelto (no se filtra ni la *etiqueta* del campo oculto), los
+  **adjuntos** (incluido el proxy de descarga) y la **geolocalización** (un campo
+  geo oculto no aparece en el detalle ni en el mapa). La **edición** de un campo
+  oculto se rechaza. La **búsqueda**, para usuarios con columnas ocultas, casa solo
+  campos visibles (no el índice FULLTEXT global), para no filtrar que una fila
+  contiene un valor sensible oculto.
+- El ocultado de columnas también se aplica a los **enlaces compartidos**
+  (`share_links.field_filter`), configurable al crear el enlace: la vista pública
+  (lista/detalle/mapa/adjuntos/búsqueda) respeta los mismos campos ocultos.
+- UI: nueva columna **«Columnas»** en *Permisos* con un selector de campos a ocultar
+  por formulario, y una sección **«Ocultar columnas»** al crear un enlace en
+  *Compartir*. Reutiliza el endpoint `scope-fields` (admite todos los tipos de
+  campo, incluido `select_multiple` y geo). i18n es/en.
+
 ## [1.0.0] - 2026-06-08
 
 **Primera versión pública.** Recoge todo lo entregado en 0.1.0–0.4.0 (fases 0–7,

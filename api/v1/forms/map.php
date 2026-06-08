@@ -24,6 +24,9 @@ $schema = $form['schema_json'] ? json_decode($form['schema_json'], true) : null;
 $scope               = RowScope::ruleForUser($user, $formId);
 [$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'json_payload');
 
+// Permisos por columna: si el campo geo está oculto, su punto no debe aparecer.
+$fieldScope = FieldScope::ruleForUser($user, $formId);
+
 $rows = DB::run(
     "SELECT submission_uid, json_payload, submitted_at
      FROM submissions_cache
@@ -34,7 +37,7 @@ $rows = DB::run(
 
 $points = [];
 foreach ($rows as $r) {
-    $payload = json_decode($r['json_payload'], true) ?: [];
+    $payload = FieldScope::apply($fieldScope, json_decode($r['json_payload'], true) ?: [], $schema);
     $pt = Geo::primaryPoint($payload, $schema);
     if (!$pt) continue;
     $points[] = [

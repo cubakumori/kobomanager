@@ -29,6 +29,9 @@ Auth::requireForm($user, $formId, 'view');
 $scope               = RowScope::ruleForUser($user, $formId);
 [$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'json_payload');
 
+// Permisos por columna: campos ocultos que no deben contar ni mostrarse.
+$fieldScope = FieldScope::ruleForUser($user, $formId);
+
 $total = (int) DB::run(
     "SELECT COUNT(*) AS c FROM submissions_cache WHERE form_id = ? AND $scopeSql",
     array_merge([$formId], $scopeP)
@@ -84,6 +87,7 @@ $options   = $resolved['options'] ?? [];
 // múltiple se difieren a una 2.ª fase (igual que en el filtrado por filas).
 $singleFields = [];
 foreach (($schemaRaw['fields'] ?? []) as $path => $fd) {
+    if (FieldScope::isHidden($fieldScope, (string) $path)) continue; // pregunta oculta → no se cuenta
     if (str_starts_with((string) ($fd['type'] ?? ''), 'select_one') && empty($fd['multi'])) {
         $singleFields[$path] = ['leaf' => $fd['leaf'] ?? $path];
     }
@@ -107,7 +111,8 @@ $rows = DB::run(
 )->fetchAll();
 
 foreach ($rows as $r) {
-    $payload = json_decode($r['json_payload'], true) ?: [];
+    // Recorta los campos ocultos: adjuntos/geo de un campo oculto no cuentan.
+    $payload = FieldScope::apply($fieldScope, json_decode($r['json_payload'], true) ?: [], $schemaRaw);
 
     if ($r['submitted_at'] !== null && ($lastSub === null || $r['submitted_at'] > $lastSub)) {
         $lastSub = $r['submitted_at'];

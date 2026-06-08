@@ -44,6 +44,12 @@ if (!$att || empty($att['download_url'])) {
     ErrorResponse::send('NOT_FOUND', 'Adjunto no encontrado');
 }
 
+// Permisos por columna: no se sirve el adjunto de un campo oculto (aunque se
+// adivine el attId), coherente con que su campo no aparece en el detalle.
+if (FieldScope::isHidden(FieldScope::ruleForUser($user, $formId), (string) ($att['question_xpath'] ?? ''))) {
+    ErrorResponse::send('NOT_FOUND', 'Adjunto no encontrado');
+}
+
 // Cuenta + token para descargar de Kobo.
 $acc = DB::run(
     'SELECT server_url, api_token FROM kobo_accounts WHERE id = ?',

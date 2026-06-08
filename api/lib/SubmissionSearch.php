@@ -68,4 +68,45 @@ class SubmissionSearch {
         // Respaldo para términos cortos: LIKE sobre search_text.
         return ["$col LIKE ?", ['%' . $term . '%']];
     }
+
+    /**
+     * Fragmento WHERE para buscar `$term` SOLO sobre los campos visibles `$paths`.
+     * Devuelve [sqlFragment, params].
+     *
+     * Se usa para usuarios/enlaces con columnas ocultas (FieldScope): el índice
+     * FULLTEXT global `search_text` incluye los valores de campos ocultos, de modo
+     * que casar contra él filtraría que una fila CONTIENE un valor sensible aunque
+     * el valor no se muestre. En su lugar, cada token debe aparecer en al menos un
+     * campo visible (`LIKE` por columna; multi-palabra = AND entre tokens). Más
+     * lento que FULLTEXT, pero los usuarios restringidos son minoría.
+     *
+     * Si no hay campos visibles, devuelve `['1=0', []]` (nada que buscar → 0 filas).
+     */
+    public static function clauseVisible(string $alias, string $term, array $paths): array {
+        if (!$paths) {
+            return ['1=0', []];
+        }
+        $tokens = preg_split('/\s+/', trim($term), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        if (!$tokens) {
+            return ['1=1', []];
+        }
+        // Rutas JSON escapadas (reutiliza el escape de barras de RowScope para grupos).
+        $jsonPaths = array_map([RowScope::class, 'jsonPath'], $paths);
+
+        // JSON_EXTRACT/JSON_UNQUOTE devuelven colación binaria (sensible a
+        // mayúsculas/acentos); se fuerza utf8mb4_unicode_ci para que la búsqueda sea
+        // insensible, igual que el FULLTEXT sobre search_text (buscar «maria» casa «María»).
+        $andClauses = [];
+        $params     = [];
+        foreach ($tokens as $tok) {
+            $ors = [];
+            foreach ($jsonPaths as $jp) {
+                $ors[]    = "JSON_UNQUOTE(JSON_EXTRACT($alias.json_payload, ?)) COLLATE utf8mb4_unicode_ci LIKE ?";
+                $params[] = $jp;
+                $params[] = '%' . $tok . '%';
+            }
+            $andClauses[] = '(' . implode(' OR ', $ors) . ')';
+        }
+        return ['(' . implode(' AND ', $andClauses) . ')', $params];
+    }
 }

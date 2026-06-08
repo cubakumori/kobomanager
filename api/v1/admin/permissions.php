@@ -26,7 +26,7 @@ if ($method === 'GET') {
                 COALESCE(p.can_view, 0)     AS can_view,
                 COALESCE(p.can_edit, 0)     AS can_edit,
                 COALESCE(p.can_validate, 0) AS can_validate,
-                p.row_filter
+                p.row_filter, p.field_filter
          FROM forms f
          JOIN kobo_accounts a ON a.id = f.kobo_account_id
          LEFT JOIN user_form_permissions p ON p.form_id = f.id AND p.user_id = ?
@@ -43,6 +43,8 @@ if ($method === 'GET') {
         $r['can_validate'] = (bool) $r['can_validate'];
         // Filtro por filas (scoping): objeto canónico {conditions:[...]} o null.
         $r['row_filter']   = RowScope::normalize($r['row_filter'] ? json_decode($r['row_filter'], true) : null);
+        // Filtro por columna: objeto canónico {hidden:[...]} o null.
+        $r['field_filter'] = FieldScope::normalize($r['field_filter'] ? json_decode($r['field_filter'], true) : null);
     }
     ErrorResponse::ok($rows);
 }
@@ -71,15 +73,20 @@ if ($method === 'PUT') {
         $rule       = $canView ? RowScope::normalize($p['row_filter'] ?? null) : null;
         $filterJson = $rule ? json_encode($rule, JSON_UNESCAPED_UNICODE) : null;
 
+        // Filtro por columna (ocultar campos): igual, solo con can_view.
+        $fieldRule  = $canView ? FieldScope::normalize($p['field_filter'] ?? null) : null;
+        $fieldJson  = $fieldRule ? json_encode($fieldRule, JSON_UNESCAPED_UNICODE) : null;
+
         DB::run(
-            'INSERT INTO user_form_permissions (user_id, form_id, can_view, can_edit, can_validate, row_filter)
-             VALUES (?, ?, ?, ?, ?, ?)
+            'INSERT INTO user_form_permissions (user_id, form_id, can_view, can_edit, can_validate, row_filter, field_filter)
+             VALUES (?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                 can_view = VALUES(can_view),
                 can_edit = VALUES(can_edit),
                 can_validate = VALUES(can_validate),
-                row_filter = VALUES(row_filter)',
-            [$userId, $formId, $canView, $canEdit, $canValidate, $filterJson]
+                row_filter = VALUES(row_filter),
+                field_filter = VALUES(field_filter)',
+            [$userId, $formId, $canView, $canEdit, $canValidate, $filterJson, $fieldJson]
         );
     }
 

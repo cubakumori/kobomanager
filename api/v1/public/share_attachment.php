@@ -54,6 +54,11 @@ if (!$att || empty($att['download_url'])) {
     ErrorResponse::send('NOT_FOUND', 'Adjunto no encontrado');
 }
 
+// Ocultado de columnas del enlace: no se sirve el adjunto de un campo oculto.
+if (FieldScope::isHidden(FieldScope::ruleForLink($link), (string) ($att['question_xpath'] ?? ''))) {
+    ErrorResponse::send('NOT_FOUND', 'Adjunto no encontrado');
+}
+
 $acc = DB::run(
     'SELECT server_url, api_token FROM kobo_accounts WHERE id = ?',
     [$sub['kobo_account_id']]

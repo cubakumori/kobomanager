@@ -17,6 +17,10 @@ $formId              = (int) $link['form_id'];
 $scope               = ShareLink::rule($link);
 [$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'sc.json_payload');
 
+// Ocultado de columnas del enlace.
+$schema     = $link['schema_json'] ? json_decode($link['schema_json'], true) : null;
+$fieldScope = FieldScope::ruleForLink($link);
+
 $page    = max(1, (int) ($_GET['page'] ?? 1));
 $perPage = min(100, max(1, (int) ($_GET['per_page'] ?? 25)));
 $offset  = ($page - 1) * $perPage;
@@ -25,7 +29,9 @@ $search  = trim((string) ($_GET['search'] ?? ''));
 $where  = 'WHERE sc.form_id = ? AND ' . $scopeSql;
 $params = array_merge([$formId], $scopeP);
 if ($search !== '') {
-    [$searchSql, $searchParams] = SubmissionSearch::clause('sc', $search);
+    [$searchSql, $searchParams] = $fieldScope !== null
+        ? SubmissionSearch::clauseVisible('sc', $search, FieldScope::visiblePaths($fieldScope, $schema))
+        : SubmissionSearch::clause('sc', $search);
     $where  .= ' AND ' . $searchSql;
     $params  = array_merge($params, $searchParams);
 }
@@ -44,10 +50,9 @@ $rows = DB::run(
 $items = array_map(fn($r) => [
     'submission_uid' => $r['submission_uid'],
     'submitted_at'   => $r['submitted_at'],
-    'data'           => json_decode($r['json_payload'], true),
+    'data'           => FieldScope::apply($fieldScope, json_decode($r['json_payload'], true) ?: [], $schema),
 ], $rows);
 
-$schema = $link['schema_json'] ? json_decode($link['schema_json'], true) : null;
 $locale = Settings::defaultLocale();
 
 ErrorResponse::ok([
@@ -58,7 +63,7 @@ ErrorResponse::ok([
     'total'         => $total,
     'label_mode'    => Settings::labelMode(),
     'field_truncate' => Settings::fieldTruncate(),
-    'schema'        => FormSchema::resolve($schema, $locale),
+    'schema'        => FieldScope::applySchema($fieldScope, FormSchema::resolve($schema, $locale)),
     'expose_detail' => (bool) $link['expose_detail'],
     'expose_map'    => (bool) $link['expose_map'],
 ]);

@@ -26,6 +26,10 @@ Auth::requireForm($user, $formId, 'view');
 $scope               = RowScope::ruleForUser($user, $formId);
 [$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'sc.json_payload');
 
+// Permisos por columna: campos ocultos a este usuario (no salen al CSV).
+$schemaRaw  = $form['schema_json'] ? json_decode($form['schema_json'], true) : null;
+$fieldScope = FieldScope::ruleForUser($user, $formId);
+
 $search = trim((string) ($_GET['search'] ?? ''));
 $review = (string) ($_GET['review'] ?? '');
 
@@ -39,7 +43,9 @@ $join = 'LEFT JOIN (
 $where  = 'WHERE sc.form_id = ? AND ' . $scopeSql;
 $params = array_merge([$formId], $scopeP);
 if ($search !== '') {
-    [$searchSql, $searchParams] = SubmissionSearch::clause('sc', $search);
+    [$searchSql, $searchParams] = $fieldScope !== null
+        ? SubmissionSearch::clauseVisible('sc', $search, FieldScope::visiblePaths($fieldScope, $schemaRaw))
+        : SubmissionSearch::clause('sc', $search);
     $where  .= ' AND ' . $searchSql;
     $params  = array_merge($params, $searchParams);
 }
@@ -58,7 +64,6 @@ $rows = DB::run(
 )->fetchAll();
 
 // Esquema resuelto al idioma del usuario (etiquetas y opciones legibles).
-$schemaRaw = $form['schema_json'] ? json_decode($form['schema_json'], true) : null;
 $resolved  = FormSchema::resolve($schemaRaw, $user['locale']);
 $labelsOn  = Settings::labelMode() === 'labels' && $resolved;
 $labels    = $resolved['labels'] ?? [];
@@ -71,11 +76,11 @@ $leaf = static fn(string $k): string => (($p = strrpos($k, '/')) === false) ? $k
 // en los envíos (sin metadatos de Kobo, que empiezan por «_»).
 $columns = [];
 foreach (array_keys($schemaRaw['fields'] ?? []) as $k) {
-    if (!str_starts_with($k, '_')) $columns[$k] = true;
+    if (!str_starts_with($k, '_') && !FieldScope::isHidden($fieldScope, (string) $k)) $columns[$k] = true;
 }
 foreach ($rows as $r) {
     foreach (json_decode($r['json_payload'], true) ?: [] as $k => $_v) {
-        if (!str_starts_with((string) $k, '_')) $columns[$k] = true;
+        if (!str_starts_with((string) $k, '_') && !FieldScope::isHidden($fieldScope, (string) $k)) $columns[$k] = true;
     }
 }
 $columns = array_keys($columns);
@@ -138,7 +143,9 @@ fwrite($out, "\xEF\xBB\xBF"); // BOM UTF-8 para Excel
 // PHP 8.4+ el parámetro $escape debe pasarse explícitamente (su omisión está obsoleta).
 fputcsv($out, array_map($csvSafe, array_merge([$metaHeaders['submitted'], $metaHeaders['review']], array_map($header, $columns), $derivedHeaders)), ',', '"', '');
 foreach ($rows as $r) {
-    $data = json_decode($r['json_payload'], true) ?: [];
+    // Recorta los campos ocultos (también afecta a las columnas calculadas: un
+    // adjunto o geo de un campo oculto no se cuenta en las derivadas del CSV).
+    $data = FieldScope::apply($fieldScope, json_decode($r['json_payload'], true) ?: [], $schemaRaw);
     $line = [$r['submitted_at'], $reviewWords[$r['review_status']] ?? $r['review_status']];
     foreach ($columns as $k) {
         $line[] = $cell($k, $data[$k] ?? null);

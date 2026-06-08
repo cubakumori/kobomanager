@@ -17,12 +17,15 @@ datos sensibles y necesitan gobierno de acceso, no solo recolección. Cada hito 
 sesión propia** (acordar el modelo antes de codificar + verificación contra datos reales
 + commits por hito + actualización de `CHANGELOG`/`ROADMAP`/memoria).
 
-- [ ] **Permisos a nivel de columna / ocultar campos sensibles** *(prioridad nº 1)*.
-      Que ciertos usuarios no vean determinados campos de un envío (p. ej. datos
-      identificativos), sobre el modelo de permisos por formulario + scoping por filas ya
-      existente. Pedido explícito en el foro
+- [x] **Permisos a nivel de columna / ocultar campos sensibles** *(prioridad nº 1)* —
+      **ENTREGADO** (ver `CHANGELOG.md`). Lista de ocultar (denylist) por
+      (usuario, formulario) en `user_form_permissions.field_filter` y por enlace en
+      `share_links.field_filter`; gemelo de `RowScope` (`lib/FieldScope`), aplicado en
+      tabla/detalle/stats/CSV/adjuntos/geo/búsqueda. Pedido explícito en el foro
       ([column-level-permission/48743](https://community.kobotoolbox.org/t/column-level-permission/48743)).
-      Encaja además como módulo «premium» (ver `my.docs/MONETIZE.md`).
+      Encaja como módulo «premium» (ver `my.docs/MONETIZE.md`).
+      2.ª fase: **columnas de solo-lectura** (ver pero no editar) y ocultar columnas en
+      las **estadísticas agregadas derivadas** que no dependen de un único campo.
 - [ ] **Scoping por filas multi-condición (AND/OR + operadores)**. Hoy `RowScope` combina
       condiciones campo=valores **solo con Y (AND)**; ampliar a OR y a operadores
       (≠, rangos) y/o `select_multiple`. Kobo **no lo soporta** — ventaja competitiva

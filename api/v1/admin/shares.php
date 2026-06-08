@@ -18,7 +18,7 @@ $method = Request::method();
 if ($method === 'GET') {
     $rows = DB::run(
         "SELECT sl.id, sl.token, sl.form_id, f.name AS form_name, sl.label,
-                sl.expose_list, sl.expose_detail, sl.expose_map, sl.expose_attachments, sl.row_filter,
+                sl.expose_list, sl.expose_detail, sl.expose_map, sl.expose_attachments, sl.row_filter, sl.field_filter,
                 (sl.password_hash IS NOT NULL) AS has_password,
                 sl.expires_at, sl.revoked_at, sl.last_accessed_at, sl.access_count,
                 sl.created_at, u.name AS created_by_name
@@ -39,6 +39,7 @@ if ($method === 'GET') {
         'expose_map'        => (bool) $r['expose_map'],
         'expose_attachments'=> (bool) $r['expose_attachments'],
         'row_filter'      => RowScope::normalize($r['row_filter'] ? json_decode($r['row_filter'], true) : null),
+        'field_filter'    => FieldScope::normalize($r['field_filter'] ? json_decode($r['field_filter'], true) : null),
         'has_password'    => (bool) $r['has_password'],
         'expires_at'      => $r['expires_at'],
         'revoked_at'      => $r['revoked_at'],
@@ -78,6 +79,10 @@ if ($method === 'POST') {
     // Filtro por filas (scoping): canónico o NULL.
     $rule       = RowScope::normalize($body['row_filter'] ?? null);
     $filterJson = $rule ? json_encode($rule, JSON_UNESCAPED_UNICODE) : null;
+
+    // Filtro por columna (ocultar campos en el enlace): canónico o NULL.
+    $fieldRule  = FieldScope::normalize($body['field_filter'] ?? null);
+    $fieldJson  = $fieldRule ? json_encode($fieldRule, JSON_UNESCAPED_UNICODE) : null;
 
     // Contraseña según política global.
     $policy   = Settings::sharePasswordPolicy();
@@ -125,11 +130,11 @@ if ($method === 'POST') {
     DB::run(
         'INSERT INTO share_links
             (token, form_id, created_by, label, expose_list, expose_detail, expose_map,
-             expose_attachments, row_filter, password_hash, expires_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+             expose_attachments, row_filter, field_filter, password_hash, expires_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
             $token, $formId, $admin['id'], $label !== '' ? $label : null,
-            $exposeList, $exposeDetail, $exposeMap, $exposeAttachments, $filterJson, $hash, $expiresAt,
+            $exposeList, $exposeDetail, $exposeMap, $exposeAttachments, $filterJson, $fieldJson, $hash, $expiresAt,
         ]
     );
 

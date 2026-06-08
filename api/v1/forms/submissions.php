@@ -26,6 +26,10 @@ Auth::requireForm($user, $formId, 'view');
 $scope               = RowScope::ruleForUser($user, $formId);
 [$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'sc.json_payload');
 
+// Permisos por columna: el viewer puede tener campos ocultos en este formulario.
+$schema     = $form['schema_json'] ? json_decode($form['schema_json'], true) : null;
+$fieldScope = FieldScope::ruleForUser($user, $formId);
+
 $page    = max(1, (int) ($_GET['page'] ?? 1));
 $perPage = min(100, max(1, (int) ($_GET['per_page'] ?? 25)));
 $offset  = ($page - 1) * $perPage;
@@ -44,7 +48,11 @@ $join = 'LEFT JOIN (
 $where  = 'WHERE sc.form_id = ? AND ' . $scopeSql;
 $params = array_merge([$formId], $scopeP);
 if ($search !== '') {
-    [$searchSql, $searchParams] = SubmissionSearch::clause('sc', $search);
+    // Con columnas ocultas, la búsqueda solo casa campos visibles (no el índice
+    // global, que filtraría que una fila contiene un valor oculto). Si no, FULLTEXT.
+    [$searchSql, $searchParams] = $fieldScope !== null
+        ? SubmissionSearch::clauseVisible('sc', $search, FieldScope::visiblePaths($fieldScope, $schema))
+        : SubmissionSearch::clause('sc', $search);
     $where  .= ' AND ' . $searchSql;
     $params  = array_merge($params, $searchParams);
 }
@@ -67,11 +75,9 @@ $rows = DB::run(
     $params
 )->fetchAll();
 
-// Etiquetas legibles: esquema del formulario resuelto al idioma del usuario.
-$schema = $form['schema_json'] ? json_decode($form['schema_json'], true) : null;
-
-$items = array_map(function ($r) use ($schema) {
-    $data = json_decode($r['json_payload'], true) ?: [];
+$items = array_map(function ($r) use ($schema, $fieldScope) {
+    // Recorta los campos ocultos ANTES de calcular derivados y de devolver `data`.
+    $data = FieldScope::apply($fieldScope, json_decode($r['json_payload'], true) ?: [], $schema);
     return [
         'id'             => (int) $r['id'],
         'submission_uid' => $r['submission_uid'],
@@ -84,18 +90,29 @@ $items = array_map(function ($r) use ($schema) {
 }, $rows);
 
 // ¿Algún envío tiene coordenadas? (para habilitar/deshabilitar la vista de mapa).
-$geoConds  = ['JSON_TYPE(JSON_EXTRACT(json_payload, \'$._geolocation[0]\')) IN (\'DOUBLE\',\'INTEGER\',\'DECIMAL\')'];
+// Respeta los campos geo ocultos: un campo geo oculto no cuenta y, si se ocultó
+// alguno, tampoco el respaldo `_geolocation` (coherente con FieldScope::apply).
+$geoFields  = Geo::geoFieldPaths($schema);
+$visibleGeo = array_values(array_filter($geoFields, fn($gp) => !FieldScope::isHidden($fieldScope, $gp)));
+$anyGeoHidden = count($visibleGeo) !== count($geoFields);
+$geoConds  = [];
 $geoParams = [$formId];
-foreach (Geo::geoFieldPaths($schema) as $gp) {
+if (!$anyGeoHidden) {
+    $geoConds[] = 'JSON_TYPE(JSON_EXTRACT(json_payload, \'$._geolocation[0]\')) IN (\'DOUBLE\',\'INTEGER\',\'DECIMAL\')';
+}
+foreach ($visibleGeo as $gp) {
     $geoConds[]  = 'COALESCE(JSON_UNQUOTE(JSON_EXTRACT(json_payload, ?)), \'\') <> \'\'';
     $geoParams[] = '$."' . str_replace(['"', '\\'], '', $gp) . '"';
 }
-[$scopeSqlNa, $scopePNa] = RowScope::sqlCondition($scope, 'json_payload');
-$hasGeo = (bool) DB::run(
-    'SELECT 1 FROM submissions_cache WHERE form_id = ? AND (' . implode(' OR ', $geoConds) . ')'
-        . ' AND ' . $scopeSqlNa . ' LIMIT 1',
-    array_merge($geoParams, $scopePNa)
-)->fetch();
+$hasGeo = false;
+if ($geoConds) {
+    [$scopeSqlNa, $scopePNa] = RowScope::sqlCondition($scope, 'json_payload');
+    $hasGeo = (bool) DB::run(
+        'SELECT 1 FROM submissions_cache WHERE form_id = ? AND (' . implode(' OR ', $geoConds) . ')'
+            . ' AND ' . $scopeSqlNa . ' LIMIT 1',
+        array_merge($geoParams, $scopePNa)
+    )->fetch();
+}
 
 ErrorResponse::ok([
     'form'       => ['id' => (int) $form['id'], 'name' => $form['name']],
@@ -105,7 +122,7 @@ ErrorResponse::ok([
     'total'      => $total,
     'label_mode' => Settings::labelMode(),
     'field_truncate' => Settings::fieldTruncate(),
-    'schema'     => FormSchema::resolve($schema, $user['locale']),
+    'schema'     => FieldScope::applySchema($fieldScope, FormSchema::resolve($schema, $user['locale'])),
     'has_geo'    => $hasGeo,
     'can_validate' => Auth::canForm($user, $formId, 'validate'),
 ]);

@@ -29,6 +29,10 @@ $formId = (int) $sub['form_id'];
 $scopeRule    = RowScope::ruleForUser($user, $formId);
 $scopePayload = json_decode($sub['json_payload'], true) ?: [];
 
+// Permisos por columna: campos ocultos a este usuario en este formulario.
+$fieldScope = FieldScope::ruleForUser($user, $formId);
+$schemaRaw  = $sub['schema_json'] ? json_decode($sub['schema_json'], true) : null;
+
 // ---------- GET: detalle ----------
 if ($method === 'GET') {
     Auth::requireForm($user, $formId, 'view');
@@ -47,11 +51,12 @@ if ($method === 'GET') {
 
     Audit::log($user['id'], 'view', $formId, $uid);
 
-    $payload = json_decode($sub['json_payload'], true) ?: [];
+    // Recorta los campos ocultos ANTES de derivar adjuntos/geo/derivados y de devolver `data`.
+    $payload = FieldScope::apply($fieldScope, json_decode($sub['json_payload'], true) ?: [], $schemaRaw);
 
-    // Etiquetas legibles: esquema del formulario resuelto al idioma del usuario.
-    $schema   = $sub['schema_json'] ? json_decode($sub['schema_json'], true) : null;
-    $resolved = FormSchema::resolve($schema, $user['locale']);
+    // Etiquetas legibles: esquema del formulario resuelto al idioma del usuario
+    // (sin las etiquetas de campos ocultos).
+    $resolved = FieldScope::applySchema($fieldScope, FormSchema::resolve($schemaRaw, $user['locale']));
 
     // Adjuntos (fotos/audio/archivos): se descargan vía el proxy autenticado del
     // backend, nunca con la download_url cruda de Kobo (que exige token).
@@ -91,8 +96,8 @@ if ($method === 'GET') {
         'field_truncate' => Settings::fieldTruncate(),
         'schema'         => $resolved,
         'attachments'    => $attachments,
-        'geo'            => Geo::features($payload, $schema, $resolved['labels']),
-        'derived'        => Derived::compute($payload, $schema, $sub['submitted_at']),
+        'geo'            => Geo::features($payload, $schemaRaw, $resolved['labels']),
+        'derived'        => Derived::compute($payload, $schemaRaw, $sub['submitted_at']),
     ]);
 }
 
@@ -111,6 +116,10 @@ if ($method === 'PUT') {
     foreach (array_keys($data) as $k) {
         if (str_starts_with((string) $k, '_')) {
             ErrorResponse::send('VALIDATION_ERROR', "No se puede editar el metadato: $k");
+        }
+        // No se puede editar un campo que el usuario no ve (oculto por columna).
+        if (FieldScope::isHidden($fieldScope, (string) $k)) {
+            ErrorResponse::send('NOT_FOUND', 'Envío no encontrado');
         }
     }
 

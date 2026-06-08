@@ -83,11 +83,31 @@ counts, daily summary) and as an in‑PHP `matches()` check on the detail/edit/v
 where an out‑of‑scope submission returns 404. Note: MariaDB stores JSON as text and keeps the
 `\/` escape, so group‑path keys (`G01/P1_3`) are matched with an escaped JSON path.
 
+### Column‑level permissions (`lib/FieldScope.php`)
+Twin of row scoping: where `RowScope` decides *which submissions* are visible, `FieldScope`
+decides *which fields* leave the server. A per‑(user, form) **denylist** of hidden field keys
+(`user_form_permissions.field_filter`, JSON `{"hidden":[...]}`) is removed from every read
+path; `NULL`/empty → all fields visible (back‑compatible), admins never restricted. The single
+source of truth is `FieldScope::apply($rule, $payload, $schema)`, called once per decoded
+payload **after** row scoping: it strips hidden data keys, drops `_attachments` whose
+`question_xpath` is hidden, and removes `_geolocation` when a geo field is hidden (so the
+fallback can’t leak a hidden location). `applySchema()` also strips hidden keys from the
+resolved schema so even a field’s **label** isn’t exposed. Enforced in: submission lists,
+detail (data + attachments + geo + derived), CSV export (hidden columns dropped), stats
+(hidden `select_one` questions excluded), the authenticated and public attachment proxies
+(reject a hidden field’s attachment even if the `attId` is guessed), and edit (editing a
+hidden field returns 404). **Search**: for a restricted user the global FULLTEXT index over
+`search_text` would reveal that a row *contains* a hidden value, so `SubmissionSearch::
+clauseVisible()` matches only visible field paths (per‑column `LIKE` with `utf8mb4_unicode_ci`
+to stay case/accent‑insensitive; multi‑word = AND). Share links carry the same rule in
+`share_links.field_filter`.
+
 ### Public share links (`lib/ShareLink.php`)
 Read‑only links let anyone browse a form's submissions **without a session** (M1). A
 `share_links` row carries an unguessable URL `token`, what it exposes (`expose_list` /
 `expose_detail` / `expose_map` / `expose_attachments`), an optional `row_filter` (reuses
-`RowScope`), an optional `password_hash`, and optional `expires_at` / `revoked_at`. `resolve()`
+`RowScope`), an optional `field_filter` (reuses `FieldScope` — hide columns in the public
+view), an optional `password_hash`, and optional `expires_at` / `revoked_at`. `resolve()`
 returns the row only while active (not revoked, not expired, form active). The public endpoints
 live under `v1/public/` and **skip `Auth`** (like `v1/config.php`); `ShareLink::requireAccess()`
 is their guard — it resolves the token, checks the requested capability, and for
@@ -234,7 +254,9 @@ PHPUnit (`api/tests/`), the only dev dependency. They run against a **separate**
 (`kobomanager_test`); each test runs in a transaction that is rolled back. Coverage today:
 auth/permissions + JWT session lifecycle, rate limiting, settings, token encryption, geo
 parsing, derived metrics, attachment classification (`Attachments`), search projection/clause
-(`SubmissionSearch`), row scoping and share‑link resolution/tickets/attachment access.
+(`SubmissionSearch`, incl. the visible‑fields clause), row scoping, column‑level permissions
+(`FieldScope`: payload/attachment/geo stripping and schema redaction) and share‑link
+resolution/tickets/attachment access.
 Endpoint‑level (HTTP) integration
 tests are a known gap (e.g. batch review, CSV export, the audit viewer) — see
 [`ROADMAP.md`](./ROADMAP.md).

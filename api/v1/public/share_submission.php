@@ -32,8 +32,13 @@ if (!RowScope::matches($scope, $payload)) {
     ErrorResponse::send('NOT_FOUND', 'Envío no encontrado');
 }
 
-$schema   = $link['schema_json'] ? json_decode($link['schema_json'], true) : null;
-$resolved = FormSchema::resolve($schema, Settings::defaultLocale());
+$schema = $link['schema_json'] ? json_decode($link['schema_json'], true) : null;
+
+// Ocultado de columnas del enlace: recorta el payload ANTES de derivar geo/adjuntos.
+$fieldScope = FieldScope::ruleForLink($link);
+$payload    = FieldScope::apply($fieldScope, $payload, $schema);
+
+$resolved = FieldScope::applySchema($fieldScope, FormSchema::resolve($schema, Settings::defaultLocale()));
 
 // Envío anterior/siguiente dentro del alcance del enlace (mismo orden que la lista).
 $curTime = $sub['submitted_at'];

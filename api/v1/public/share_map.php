@@ -16,6 +16,9 @@ $schema              = $link['schema_json'] ? json_decode($link['schema_json'], 
 $scope               = ShareLink::rule($link);
 [$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'json_payload');
 
+// Ocultado de columnas: un campo geo oculto no aporta su punto al mapa.
+$fieldScope = FieldScope::ruleForLink($link);
+
 $rows = DB::run(
     "SELECT submission_uid, json_payload, submitted_at
      FROM submissions_cache
@@ -26,7 +29,7 @@ $rows = DB::run(
 
 $points = [];
 foreach ($rows as $r) {
-    $payload = json_decode($r['json_payload'], true) ?: [];
+    $payload = FieldScope::apply($fieldScope, json_decode($r['json_payload'], true) ?: [], $schema);
     $pt = Geo::primaryPoint($payload, $schema);
     if (!$pt) continue;
     $points[] = [

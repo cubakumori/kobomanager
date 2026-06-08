@@ -79,6 +79,7 @@ const flowSteps = [1, 2, 3, 4]
         <li><strong>{{ $t('guide.dataLabels') }}:</strong> {{ $t('guide.dataLabelsBody') }}</li>
         <li><strong>{{ $t('guide.dataAttachments') }}:</strong> {{ $t('guide.dataAttachmentsBody') }}</li>
         <li><strong>{{ $t('guide.dataScope') }}:</strong> {{ $t('guide.dataScopeBody') }}</li>
+        <li><strong>{{ $t('guide.dataColumns') }}:</strong> {{ $t('guide.dataColumnsBody') }}</li>
         <li><strong>{{ $t('guide.dataMap') }}:</strong> {{ $t('guide.dataMapBody') }}</li>
       </ul>
     </section>

@@ -94,6 +94,10 @@ CREATE TABLE IF NOT EXISTS user_form_permissions (
     can_view        TINYINT(1) DEFAULT 1,
     can_edit        TINYINT(1) DEFAULT 0,
     can_validate    TINYINT(1) DEFAULT 0,
+    -- Permisos a nivel de columna: campos OCULTOS a este viewer en este formulario.
+    -- {"hidden":["clave","g_a/region"]} o NULL = ve todos los campos. Ver lib/FieldScope.
+    -- (El scoping por filas `row_filter` lo añade db/007_row_scope.sql.)
+    field_filter    JSON NULL,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
