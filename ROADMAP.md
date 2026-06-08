@@ -87,8 +87,13 @@ sesión propia** (acordar el modelo antes de codificar + verificación contra da
 Implementado y probado con datos de ejemplo + manejo de errores, pero aún sin verificar
 contra una cuenta KoboToolbox real:
 
-- [ ] **Edición real de un envío** (escritura en Kobo vía `PATCH .../data/bulk/` y refresco
-      de caché). Confirmar el formato de campos con jerarquía de grupo (`grupo/campo`).
+- [x] **Edición real de un envío** (escritura en Kobo vía `PATCH .../data/bulk/` y refresco
+      de caché) — VERIFICADO contra Kobo real (form 43): campo en grupo (`grupo/campo`),
+      `select_one` y `select_multiple` se escriben en Kobo y la caché + `search_text` se
+      refrescan sin resync. Hallazgo clave: una edición crea una versión NUEVA con un
+      `_uuid` distinto (el `_id` numérico se conserva); el backend migra el `submission_uid`
+      de caché y arrastra el historial de revisiones, y detecta fallos por-envío del
+      endpoint bulk (HTTP 200 con `failures>0`).
 - [ ] **Envío real de email** con Resend. **Bloqueado por operación, no por código**: la
       cadena funciona extremo a extremo, pero Resend devuelve 403 «domain not verified»
       hasta verificar el dominio del remitente (ver `DEPLOY §8`).

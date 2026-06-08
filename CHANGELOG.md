@@ -6,6 +6,22 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [Sin publicar]
 
+### Corregido
+
+- **Edición real de envíos contra Kobo**: verificado contra una cuenta real que la
+  escritura por `PATCH /data/bulk/` actualiza campos dentro de grupos (`grupo/campo`),
+  `select_one` y `select_multiple`, refrescando la caché local y el `search_text` sin
+  necesidad de resincronizar. Una edición en Kobo **crea una versión nueva del envío con
+  un `_uuid` distinto** (conserva el `_id` numérico): ahora el backend toma ese `_uuid`
+  de la respuesta, **migra la clave de caché** (`submissions_cache.submission_uid`) y
+  **arrastra el historial de revisiones** (`submission_reviews`) para no perderlo en el
+  próximo resync `full`; el detalle del frontend navega al nuevo identificador tras
+  guardar.
+- **Detección de fallos del endpoint bulk de Kobo**: el endpoint responde `HTTP 200`
+  aunque la edición por-envío falle (el detalle viaja en `failures`/`results[].status_code`).
+  `KoboClient::editSubmission` ahora inspecciona el cuerpo y lanza error
+  (`KOBO_EDIT_FAILED`) en vez de dar la edición por buena.
+
 ## [1.2.0] - 2026-06-08
 
 Segundo hito del **roadmap 1.x**: scoping por filas **multi-condición (AND/OR +

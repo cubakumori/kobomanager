@@ -173,7 +173,16 @@ with a hop cap (anti‑SSRF). CSV export (`forms/export.php`) prefixes any cell 
 ### Kobo integration (`lib/KoboClient.php`)
 Talks to the **Kobo API v2** with the account token (cURL, no SDK). Discovery lists `survey`
 assets; submissions are fetched paginated; edits use `PATCH .../data/bulk/`. Errors become
-`KoboException` with standard codes. The token is decrypted on the fly with `TokenVault`
+`KoboException` with standard codes. **Submission edits** (`editSubmission`) write to Kobo
+first and only then update the cache. Two Kobo behaviours are handled explicitly: (1) the
+bulk endpoint returns `HTTP 200` even when the per‑submission update fails (detail lives in
+`failures`/`results[].status_code`), so the body is inspected and a failure throws
+`KOBO_EDIT_FAILED`; (2) an edit creates a **new submission version with a new `_uuid`** (the
+numeric `_id` is preserved), so `editSubmission` returns that new `_uuid` and
+`v1/submissions/item.php` migrates the cache key (`submissions_cache.submission_uid`) and the
+review history (`submission_reviews.submission_uid`) old→new in a transaction — keeping
+continuity across edits and preventing a phantom delete/re‑insert on the next *full* resync.
+The token is decrypted on the fly with `TokenVault`
 (libSodium `secretbox`; master key only in `config.php`). `TokenVault` takes an optional
 explicit key, which lets `cli/rotate_token_key.php` re‑encrypt every account from the old key
 to a new one (key rotation; see `DEPLOY.md §12`).

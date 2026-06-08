@@ -145,9 +145,11 @@ if ($method === 'PUT') {
     }
 
     // 1) Escribir en Kobo (lanza KoboException si falla).
+    //    Una edición en Kobo crea una versión nueva con un _uuid NUEVO (el _id
+    //    numérico se conserva); editSubmission devuelve ese _uuid resultante.
     $client = new KoboClient($acc['server_url'], TokenVault::decrypt($acc['api_token']));
     try {
-        $client->editSubmission($sub['kobo_asset_uid'], (int) $koboId, $data);
+        $newUuid = $client->editSubmission($sub['kobo_asset_uid'], (int) $koboId, $data);
     } catch (KoboException $e) {
         ErrorResponse::send($e->errorCode, $e->getMessage());
     }
@@ -156,14 +158,47 @@ if ($method === 'PUT') {
     foreach ($data as $k => $v) {
         $payload[$k] = $v;
     }
-    DB::run(
-        'UPDATE submissions_cache SET json_payload = ?, search_text = ? WHERE id = ?',
-        [json_encode($payload, JSON_UNESCAPED_UNICODE), SubmissionSearch::textFor($payload), $sub['id']]
-    );
 
-    Audit::log($user['id'], 'edit', $formId, $uid, ['before' => $before, 'after' => $data]);
+    // Si el _uuid cambió, migramos la clave de caché y arrastramos el historial de
+    // revisiones (indexado por submission_uid = _uuid) para no perderlo en el
+    // próximo resync `full` (que reconcilia por _uuid y borraría la fila antigua).
+    $changedUuid = ($newUuid !== '' && $newUuid !== $uid);
+    if ($changedUuid) {
+        $payload['_uuid'] = $newUuid;
+    }
 
-    ErrorResponse::ok(['data' => $payload]);
+    $conn = DB::conn();
+    $conn->beginTransaction();
+    try {
+        DB::run(
+            'UPDATE submissions_cache SET submission_uid = ?, json_payload = ?, search_text = ? WHERE id = ?',
+            [
+                $changedUuid ? $newUuid : $uid,
+                json_encode($payload, JSON_UNESCAPED_UNICODE),
+                SubmissionSearch::textFor($payload),
+                $sub['id'],
+            ]
+        );
+        if ($changedUuid) {
+            DB::run(
+                'UPDATE submission_reviews SET submission_uid = ? WHERE submission_uid = ?',
+                [$newUuid, $uid]
+            );
+        }
+        $conn->commit();
+    } catch (\Throwable $e) {
+        $conn->rollBack();
+        // Kobo ya aceptó el cambio; informamos del fallo de caché para que el usuario
+        // resincronice (la edición en Kobo es real).
+        ErrorResponse::send('INTERNAL_ERROR', 'La edición se guardó en Kobo pero falló la actualización de la caché local');
+    }
+
+    Audit::log($user['id'], 'edit', $formId, $uid, ['before' => $before, 'after' => $data, 'new_uid' => $changedUuid ? $newUuid : null]);
+
+    ErrorResponse::ok([
+        'data'           => $payload,
+        'submission_uid' => $changedUuid ? $newUuid : $uid,
+    ]);
 }
 
 ErrorResponse::send('VALIDATION_ERROR', 'Método no permitido', 405);

@@ -865,6 +865,7 @@
     "KOBO_RATE_LIMIT": "KoboToolbox is rate-limiting requests. Wait a moment and retry.",
     "KOBO_FORM_NOT_FOUND": "The form no longer exists in KoboToolbox.",
     "KOBO_SUBMISSION_NOT_FOUND": "The submission no longer exists in KoboToolbox.",
+    "KOBO_EDIT_FAILED": "KoboToolbox rejected the submission edit. Check the values and try again.",
     "AUTH_RATE_LIMITED": "Too many sign-in attempts. Wait a minute and try again.",
     "AUTH_INSUFFICIENT_PERMISSIONS": "You don't have permission to perform this action.",
     "CSRF_BLOCKED": "The request was blocked for security (origin not allowed). Reload the page and try again.",

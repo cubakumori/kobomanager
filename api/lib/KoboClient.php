@@ -126,17 +126,36 @@ class KoboClient {
      * Edita un envío en Kobo mediante el endpoint de actualización masiva
      * (PATCH /api/v2/assets/{uid}/data/bulk/). $submissionId es el _id numérico
      * de Kobo (no el _uuid). $data mapea nombre de campo (con jerarquía de grupo) → valor.
-     * Devuelve true si Kobo aceptó el cambio; lanza KoboException en caso contrario.
+     *
+     * IMPORTANTE (verificado contra Kobo real): una edición crea una NUEVA versión
+     * del envío con un `_uuid` NUEVO (el original queda como `root_uuid`); el `_id`
+     * numérico se conserva. Devuelve el `_uuid` resultante para que el llamador
+     * re-sincronice su caché (la clave de caché/revisiones es el _uuid).
+     *
+     * El endpoint bulk responde HTTP 200 AUNQUE la edición por-envío falle: el
+     * detalle viaja en el cuerpo (`failures` / `results[].status_code`). Por eso no
+     * basta con el código HTTP; se inspecciona el cuerpo y se lanza KoboException
+     * si la edición no fue aceptada.
      */
-    public function editSubmission(string $assetUid, int $submissionId, array $data): bool {
+    public function editSubmission(string $assetUid, int $submissionId, array $data): string {
         $payload = [
             'payload' => [
                 'submission_ids' => [(string) $submissionId],
                 'data'           => $data,
             ],
         ];
-        $this->request('PATCH', "/api/v2/assets/$assetUid/data/bulk/", [], $payload);
-        return true;
+        $resp = $this->request('PATCH', "/api/v2/assets/$assetUid/data/bulk/", [], $payload);
+
+        $failures = (int) ($resp['failures'] ?? 0);
+        $result   = $resp['results'][0] ?? null;
+        $code     = (int) ($result['status_code'] ?? 0);
+        if ($failures > 0 || ($result !== null && $code >= 400)) {
+            $msg = is_string($result['message'] ?? null) ? $result['message'] : 'Kobo rechazó la edición del envío';
+            throw new KoboException('KOBO_EDIT_FAILED', $msg);
+        }
+
+        // `uuid` del resultado = nuevo _uuid de la versión editada (vacío si Kobo no lo devolvió).
+        return (string) ($result['uuid'] ?? '');
     }
 
     /**

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, RouterLink } from 'vue-router'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import api from '../services/api'
 import { apiError } from '../stores/auth'
 import { makeLabeler } from '../composables/labels'
@@ -13,6 +13,7 @@ import AttachmentsGallery from '../components/AttachmentsGallery.vue'
 const { t } = useI18n()
 const { summaryRows } = useDerivedFormat()
 const route = useRoute()
+const router = useRouter()
 const sub = ref(null)
 const loading = ref(true)
 const error = ref('')
@@ -107,9 +108,17 @@ async function saveEdit() {
   saving.value = true
   editError.value = ''
   try {
-    await api.put(`/submissions/${route.params.subId}`, { data: changed })
+    const { data } = await api.put(`/submissions/${route.params.subId}`, { data: changed })
     editing.value = false
-    await load()
+    // Editar en Kobo crea una versión nueva con un _uuid distinto; el backend ya
+    // migró la caché y las revisiones a ese uid. Navegamos al nuevo uid (el watch
+    // dispara load()); si no cambió, recargamos en el sitio.
+    const newUid = data?.data?.submission_uid
+    if (newUid && newUid !== route.params.subId) {
+      router.replace({ name: 'submission-detail', params: { id: route.params.id, subId: newUid } })
+    } else {
+      await load()
+    }
   } catch (e) {
     editError.value = apiError(e, t('detail.saveError'))
   } finally {
