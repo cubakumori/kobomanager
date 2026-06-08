@@ -13,7 +13,8 @@ KoboManager is aimed at organizations that need to give reviewers or field staff
 access to KoboToolbox submissions — view, edit and validate — **without spending Kobo
 licenses/seats for every user and without exposing the API token**. The administrator
 holds the Kobo credentials (stored encrypted); end users work through KoboManager with
-per-form permissions and an internal review workflow decoupled from Kobo.
+per-form permissions — including row-level scoping and column-level field hiding — and an
+internal review workflow decoupled from Kobo.
 
 ## Repository layout
 
@@ -139,7 +140,8 @@ with `TEST_DB_*` environment variables (see `api/tests/bootstrap.php`). Current 
 auth/permissions and the JWT session lifecycle (including the sliding session and absolute
 cap, and rejection of non-HS256 tokens), rate limiting (per-IP and bucketed), settings,
 token encryption **and key rotation**, the geo parser, derived metrics, attachment
-classification, the submission-search projection/clause, row scoping and share-link
+classification, the submission-search projection/clause (incl. the visible-fields variant),
+row scoping, column-level permissions (`FieldScope`), and share-link
 resolution/tickets/attachment access.
 
 ## Languages
