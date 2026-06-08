@@ -60,9 +60,24 @@ sesión propia** (acordar el modelo antes de codificar + verificación contra da
       queda como ampliación, no como pendiente bloqueante.
       Pedido en el foro y **no soportado por Kobo**, el propio staff lo admite
       ([approval-workflow/25499](https://community.kobotoolbox.org/t/approval-workflow-using-kobo-post-submission/25499)).
-- [ ] **Dashboards / paneles compartibles** *(mayor esfuerzo, 1.2+)*. Ampliar las
-      estadísticas enriquecidas a paneles configurables y embebibles/compartibles. Demanda
-      recurrente ([open-source-online-dashboards/17702](https://community.kobotoolbox.org/t/open-source-online-dashboards/17702)).
+- [ ] **Dashboards / paneles compartibles** *(mayor esfuerzo; versión futura)*. Dar el salto
+      de la página fija de **Estadísticas** (un informe predefinido por formulario) a **paneles
+      configurables y publicables**:
+      - **Configurable**: el usuario elige qué indicadores/gráficos ve y cómo (qué preguntas,
+        qué agregación, qué filtros de fila), montando su propio panel con *widgets* en vez de
+        la vista fija actual.
+      - **Multi-fuente**: combinar varios formularios/indicadores en una sola vista (KPIs de la
+        organización, no de un único formulario).
+      - **Compartible/embebible**: igual que los enlaces de solo lectura de envíos, pero para un
+        *panel agregado* — un enlace público con contraseña/caducidad/revocación que muestra
+        solo gráficos, **sin exponer envíos individuales ni el token de Kobo**. Útil para un
+        donante o una web institucional.
+
+      Encaja con la arquitectura (reutiliza `forms/stats.php`, `ShareLink`/`RowScope`/`FieldScope`,
+      Chart.js y la vista pública sin shell), pero es el **mayor esfuerzo de UI** del roadmap
+      (editor de paneles + persistencia de configuraciones + render público) → su propio hito,
+      con modelo acordado primero. Demanda recurrente
+      ([open-source-online-dashboards/17702](https://community.kobotoolbox.org/t/open-source-online-dashboards/17702)).
 
 ---
 
