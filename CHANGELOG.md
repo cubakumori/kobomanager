@@ -6,9 +6,11 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [Sin publicar]
 
-Hitos del **roadmap 1.x**: scoping por filas **multi-condición (AND/OR + operadores)**
-y **mejoras del flujo de revisión** (estado inicial automático + estados de validación
-personalizables).
+## [1.2.0] - 2026-06-08
+
+Hitos nº2 y nº3 del **roadmap 1.x**: scoping por filas **multi-condición (AND/OR +
+operadores)** y **mejoras del flujo de revisión** (estado inicial automático + estados de
+validación personalizables).
 
 ### Añadido
 
