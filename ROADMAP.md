@@ -43,8 +43,22 @@ sesión propia** (acordar el modelo antes de codificar + verificación contra da
       crear estados propios, renombrar/recolorear los integrados, desactivar; flag
       `is_open` abierto/resuelto para las estadísticas;
       [customizing-validation-statuses/15808](https://community.kobotoolbox.org/t/customizing-validation-statuses/15808)).
-- [ ] **Cadena de aprobación multi-nivel por roles** *(fase futura del flujo de revisión)*:
-      solicitante → revisor → aprobador
+- [ ] **Cadena de aprobación multi-nivel por roles** *(fase futura del flujo de revisión)*.
+      Flujo por **etapas ordenadas**, cada una a cargo de un rol distinto
+      (p. ej. solicitante → revisor → aprobador), de modo que un envío solo avanza cuando la
+      etapa anterior lo despacha. Añade sobre lo ya entregado: definición de la cadena
+      (¿global o por formulario?), **gating por rol/capacidad por etapa** (hoy solo hay un
+      `can_validate` booleano por formulario), **posición actual** del envío + **transiciones
+      válidas** comprobadas en backend (un revisor no puede aprobar del todo), qué hace el
+      **rechazo** (terminal vs rebote a etapa anterior/al remitente), **colas** «lo que espera
+      por mí» y notificaciones opcionales. Se apoya en `submission_reviews` (historia),
+      `review_statuses` (estados) y el audit log. Esfuerzo **mayor** que nº1–nº3 (toca el
+      modelo de permisos + máquina de estados + UI nueva); acotar v1 (cadena lineal por
+      formulario, rechazo = rebote, sin notificaciones).
+      **Nota de prioridad**: para una primera versión, la validación **plana por formulario**
+      (un usuario con `can_validate` valida ese formulario) se considera **suficiente**; esto
+      queda como ampliación, no como pendiente bloqueante.
+      Pedido en el foro y **no soportado por Kobo**, el propio staff lo admite
       ([approval-workflow/25499](https://community.kobotoolbox.org/t/approval-workflow-using-kobo-post-submission/25499)).
 - [ ] **Dashboards / paneles compartibles** *(mayor esfuerzo, 1.2+)*. Ampliar las
       estadísticas enriquecidas a paneles configurables y embebibles/compartibles. Demanda
