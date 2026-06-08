@@ -8,6 +8,36 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Backfill de envíos al importar un formulario**: el descubrimiento traía solo
+  metadatos, así que un formulario recién importado mostraba «0 envíos» hasta el
+  cron. Ahora la primera vez que se descubre un formulario se traen también sus
+  envíos. Si falla la descarga no se interrumpe la importación (lo recoge el cron
+  o «Actualizar»). Columna nueva `forms.submissions_synced_at` (la fija
+  `SubmissionSync`).
+- **Estadísticas · valores sobre los gráficos**: cada barra/segmento muestra el
+  conteo —y el % cuando aplica— sin necesidad de pasar el ratón (clave en móvil),
+  mediante un plugin propio de Chart.js (sin añadir dependencias).
+- **Estadísticas · «Distribución por pregunta» incluye `select_multiple`**: antes
+  solo contaba `select_one`, lo que dejaba huecos en la numeración (p. ej. saltaba
+  de la pregunta 1 a la 3). Ahora cuenta también las de opción múltiple (cada opción
+  elegida; el % es sobre encuestados y puede sumar más de 100 %, indicado en la UI).
+
+### Cambiado
+
+- **Estadísticas · «Por enumerador»** se oculta cuando no aporta (solo se muestra
+  con 2+ enumeradores reales; no si los envíos no traen `_submitted_by`).
+- En la tabla de envíos, la acción de cada fila se llama ahora **«Detalles»**
+  (antes «Abrir formulario», que se confundía con abrir el formulario en Kobo).
+- En «Mis formularios», un formulario aún sin sincronizar muestra **«Sin
+  sincronizar todavía»** en vez de «0 envíos» (se distingue «0 real» de «pendiente
+  de sincronizar» con `forms.submissions_synced_at`).
+
+### Corregido
+
+- Los **modales** ya no se salen de la pantalla cuando su contenido es alto: el panel
+  se limita a la altura del viewport y su cuerpo hace scroll (afecta sobre todo al
+  filtro de filas al añadir varias condiciones).
+
 - **Permisos a nivel de columna (ocultar campos sensibles)** — primer hito del
   roadmap 1.x. Un administrador puede ocultar campos concretos de un formulario a
   un usuario (p. ej. datos identificativos), por **(usuario, formulario)**. Es el

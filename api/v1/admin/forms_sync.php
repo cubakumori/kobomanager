@@ -76,11 +76,24 @@ foreach ($accounts as $acc) {
             // Cachear/refrescar el esquema legible (labels de preguntas y opciones).
             // No interrumpe la sincronización si el contenido del asset no se puede leer.
             $formRow = DB::run(
-                'SELECT id FROM forms WHERE kobo_account_id = ? AND kobo_asset_uid = ?',
+                'SELECT id, submissions_synced_at FROM forms WHERE kobo_account_id = ? AND kobo_asset_uid = ?',
                 [$accId, $uid]
             )->fetch();
             if ($formRow) {
                 FormSchema::fetchAndStore((int) $formRow['id'], $uid, $client);
+
+                // Backfill inicial de envíos: el descubrimiento solo trae metadatos, así
+                // que un formulario recién importado mostraría «0 envíos» hasta el cron.
+                // La primera vez (submissions_synced_at NULL) traemos ya sus envíos.
+                // No rompe el descubrimiento si la descarga falla (lo recoge el cron/«Actualizar»).
+                if ($formRow['submissions_synced_at'] === null) {
+                    try {
+                        SubmissionSync::syncForm((int) $formRow['id'], $uid, $client);
+                    } catch (KoboException $e) {
+                        // Silencioso: el formulario queda importado; sus envíos llegarán
+                        // por el cron o por «Actualizar». No abortamos el resto del lote.
+                    }
+                }
             }
         }
 

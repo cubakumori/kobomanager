@@ -670,6 +670,7 @@
     "perPage": "Per page:",
     "colReview": "Review",
     "colSubmitted": "Submitted",
+    "details": "Details",
     "empty": "No submissions.",
     "loadError": "Could not load the submissions",
     "prev": "Previous",
@@ -701,6 +702,7 @@
     "subtitle": "Forms you have access to.",
     "empty": "You have no assigned forms yet.",
     "count": "{n} submission(s)",
+    "notSynced": "Not synced yet",
     "loadError": "Could not load the forms",
     "viewSubmissions": "View submissions"
   },
@@ -830,6 +832,7 @@
     "byEnumerator": "By enumerator",
     "byQuestion": "Distribution by question",
     "answered": "{n} answer(s)",
+    "multiHint": "multiple choice (% of respondents)",
     "others": "+{n} more"
   },
   "errors": {

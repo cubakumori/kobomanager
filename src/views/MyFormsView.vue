@@ -117,7 +117,8 @@ onMounted(load)
         <RouterLink :to="{ name: 'submissions', params: { id: f.id } }" class="block">
           <p class="text-xs uppercase tracking-wider text-accent-600">{{ f.account_label }}</p>
           <h2 class="mt-1 font-semibold text-accent-900">{{ f.name }}</h2>
-          <p class="mt-2 text-sm text-accent-900/70">{{ $t('myForms.count', { n: f.submission_count }) }}</p>
+          <p v-if="f.submissions_synced === false" class="mt-2 text-sm italic text-accent-900/50">{{ $t('myForms.notSynced') }}</p>
+          <p v-else class="mt-2 text-sm text-accent-900/70">{{ $t('myForms.count', { n: f.submission_count }) }}</p>
         </RouterLink>
 
         <div v-if="anyAction" class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-accent-200/70 pt-3 text-sm">

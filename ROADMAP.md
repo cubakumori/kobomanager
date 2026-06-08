@@ -61,8 +61,9 @@ contra una cuenta KoboToolbox real:
 ## Mejoras de 2.ª fase (diferidas dentro de funcionalidad ya entregada)
 
 - [ ] **Ordenar la tabla por una columna calculada** (de P2 · valores derivados).
-- [ ] **Estadísticas**: distribución de `select_multiple`; **agregación semana/mes +
-      acumulado** y **tendencia** (7/30 días vs periodo anterior) (de P3).
+- [ ] **Estadísticas**: ~~distribución de `select_multiple`~~ (HECHO; ver CHANGELOG);
+      pendiente **agregación semana/mes + acumulado** y **tendencia** (7/30 días vs
+      periodo anterior) (de P3).
 - [ ] **Búsqueda con etiquetas**: incluir las etiquetas resueltas del esquema en
       `search_text`, no solo los valores crudos (de M4a).
 - [ ] **Historial de edición por envío** en la UI **para admins** (ya se guarda en

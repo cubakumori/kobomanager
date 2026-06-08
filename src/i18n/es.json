@@ -670,6 +670,7 @@
     "perPage": "Por página:",
     "colReview": "Revisión",
     "colSubmitted": "Enviado",
+    "details": "Detalles",
     "empty": "Sin envíos.",
     "loadError": "No se pudieron cargar los envíos",
     "prev": "Anterior",
@@ -701,6 +702,7 @@
     "subtitle": "Formularios a los que tienes acceso.",
     "empty": "No tienes formularios asignados todavía.",
     "count": "{n} envío(s)",
+    "notSynced": "Sin sincronizar todavía",
     "loadError": "No se pudieron cargar los formularios",
     "viewSubmissions": "Ver envíos"
   },
@@ -830,6 +832,7 @@
     "byEnumerator": "Por enumerador",
     "byQuestion": "Distribución por pregunta",
     "answered": "{n} respuesta(s)",
+    "multiHint": "opción múltiple (% sobre encuestados)",
     "others": "+{n} más"
   },
   "errors": {

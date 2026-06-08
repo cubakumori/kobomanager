@@ -96,6 +96,32 @@ const doughnutOptions = {
   plugins: { legend: { position: 'bottom' } },
 }
 
+// Opciones que activan las etiquetas de valor/%. base>0 → muestra el %.
+// Los horizontales reservan margen derecho para que la etiqueta exterior no se corte.
+const doughnutValueOpts = (base) => ({
+  ...doughnutOptions,
+  plugins: { ...doughnutOptions.plugins, valueLabels: { enabled: true, base } },
+})
+const hBarValueOpts = (base) => ({
+  ...hBarOptions,
+  layout: { padding: { right: 52 } },
+  plugins: { ...hBarOptions.plugins, valueLabels: { enabled: true, base } },
+})
+// Barras verticales con conteo (sin %), para series poco densas (día, día de semana,
+// histograma de duración). El de actividad por HORA (24 barras) se deja sin etiquetas.
+const barValueOptions = {
+  ...barOptions,
+  plugins: { ...barOptions.plugins, valueLabels: { enabled: true } },
+}
+
+// «Por enumerador» solo aporta con 2+ enumeradores reales (no si todo es «—»
+// porque los envíos no traen _submitted_by, ni con un único enumerador).
+const showEnumerator = computed(() => {
+  const e = stats.value?.by_enumerator ?? []
+  const real = e.filter((x) => x.name !== '—')
+  return real.length >= 2 || (stats.value?.enumerator_others ?? 0) > 0
+})
+
 // Altura del gráfico horizontal según nº de barras (mín. legible).
 const hBarHeight = (n) => Math.max(120, n * 30 + 40) + 'px'
 
@@ -176,14 +202,14 @@ onMounted(load)
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 lg:col-span-2">
           <h2 class="mb-4 font-semibold text-slate-900">{{ $t('stats.byDay') }}</h2>
           <div class="h-64">
-            <StatsChart v-if="stats.by_day.length" type="bar" :data="byDayData" :options="barOptions" />
+            <StatsChart v-if="stats.by_day.length" type="bar" :data="byDayData" :options="barValueOptions" />
             <p v-else class="text-sm text-slate-400">{{ $t('stats.noData') }}</p>
           </div>
         </div>
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <h2 class="mb-4 font-semibold text-slate-900">{{ $t('stats.byStatus') }}</h2>
           <div class="h-64">
-            <StatsChart type="doughnut" :data="byStatusData" :options="doughnutOptions" />
+            <StatsChart type="doughnut" :data="byStatusData" :options="doughnutValueOpts(stats.total)" />
           </div>
         </div>
       </div>
@@ -202,7 +228,7 @@ onMounted(load)
         </div>
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 lg:col-span-2">
           <h2 class="mb-4 font-semibold text-slate-900">{{ $t('stats.durHistogram') }}</h2>
-          <div class="h-64"><StatsChart type="bar" :data="durationHistData" :options="barOptions" /></div>
+          <div class="h-64"><StatsChart type="bar" :data="durationHistData" :options="barValueOptions" /></div>
         </div>
       </div>
 
@@ -214,7 +240,7 @@ onMounted(load)
         </div>
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <h2 class="mb-4 font-semibold text-slate-900">{{ $t('stats.activityDay') }}</h2>
-          <div class="h-64"><StatsChart type="bar" :data="byDowData" :options="barOptions" /></div>
+          <div class="h-64"><StatsChart type="bar" :data="byDowData" :options="barValueOptions" /></div>
         </div>
       </div>
 
@@ -225,20 +251,20 @@ onMounted(load)
           <p class="mb-3 text-sm text-slate-500">
             {{ $t('stats.attSummary', { pct: stats.attachments.with_pct }) }}<span v-if="attByKindText"> · {{ attByKindText }}</span>
           </p>
-          <div class="h-56"><StatsChart type="doughnut" :data="attachmentsData" :options="doughnutOptions" /></div>
+          <div class="h-56"><StatsChart type="doughnut" :data="attachmentsData" :options="doughnutValueOpts(stats.total)" /></div>
         </div>
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <h2 class="mb-1 font-semibold text-slate-900">{{ $t('stats.geo') }}</h2>
           <p class="mb-3 text-sm text-slate-500">{{ $t('stats.geoSummary', { pct: stats.geo.with_pct }) }}</p>
-          <div class="h-56"><StatsChart type="doughnut" :data="geoData" :options="doughnutOptions" /></div>
+          <div class="h-56"><StatsChart type="doughnut" :data="geoData" :options="doughnutValueOpts(stats.total)" /></div>
         </div>
       </div>
 
-      <!-- Por enumerador -->
-      <div v-if="stats.by_enumerator.length" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <!-- Por enumerador (solo si hay 2+ enumeradores reales) -->
+      <div v-if="showEnumerator" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <h2 class="mb-4 font-semibold text-slate-900">{{ $t('stats.byEnumerator') }}</h2>
         <div :style="{ height: hBarHeight(stats.by_enumerator.length) }">
-          <StatsChart type="bar" :data="byEnumeratorData" :options="hBarOptions" />
+          <StatsChart type="bar" :data="byEnumeratorData" :options="hBarValueOpts(stats.total)" />
         </div>
         <p v-if="stats.enumerator_others" class="mt-2 text-xs text-slate-400">
           {{ $t('stats.others', { n: stats.enumerator_others }) }}
@@ -255,9 +281,11 @@ onMounted(load)
             class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200"
           >
             <h3 class="text-sm font-semibold text-slate-800">{{ q.label }}</h3>
-            <p class="mb-3 text-xs text-slate-400">{{ $t('stats.answered', { n: q.answered }) }}</p>
+            <p class="mb-3 text-xs text-slate-400">
+              {{ $t('stats.answered', { n: q.answered }) }}<span v-if="q.multi"> · {{ $t('stats.multiHint') }}</span>
+            </p>
             <div :style="{ height: hBarHeight(q.options.length) }">
-              <StatsChart type="bar" :data="questionData(q)" :options="hBarOptions" />
+              <StatsChart type="bar" :data="questionData(q)" :options="hBarValueOpts(q.answered)" />
             </div>
             <p v-if="q.others" class="mt-2 text-xs text-slate-400">{{ $t('stats.others', { n: q.others }) }}</p>
           </div>

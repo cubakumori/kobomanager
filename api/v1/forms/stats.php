@@ -5,8 +5,8 @@
  *   - total de envíos, frescura (último envío)
  *   - envíos por día (fecha de envío)
  *   - distribución por estado de revisión (última revisión de cada envío)
- *   - distribución por pregunta de opción única (select_one), resuelta al idioma
- *     del usuario y respetando el modo de etiquetas
+ *   - distribución por pregunta de opción (select_one y select_multiple), resuelta
+ *     al idioma del usuario y respetando el modo de etiquetas
  *   - por enumerador (_submitted_by)
  *   - duración (media/mediana + histograma), actividad por hora/día, adjuntos
  *     (% y por tipo) y cobertura geográfica — todo vía lib/Derived
@@ -83,13 +83,18 @@ $labelsOn  = Settings::labelMode() === 'labels';
 $labels    = $resolved['labels'] ?? [];
 $options   = $resolved['options'] ?? [];
 
-// Preguntas de opción única (select_one): se cuentan por opción. Las de opción
-// múltiple se difieren a una 2.ª fase (igual que en el filtrado por filas).
+// Preguntas de opción (select_one y select_multiple): se cuentan por opción, en el
+// orden del esquema (así no hay huecos en la numeración). En select_multiple un
+// envío puede marcar varias opciones (valor = códigos separados por espacios);
+// `answered` cuenta encuestados con ≥1 selección y los % son sobre encuestados,
+// por lo que pueden sumar más de 100 % (se marca `multi` para que la UI lo indique).
 $singleFields = [];
 foreach (($schemaRaw['fields'] ?? []) as $path => $fd) {
     if (FieldScope::isHidden($fieldScope, (string) $path)) continue; // pregunta oculta → no se cuenta
-    if (str_starts_with((string) ($fd['type'] ?? ''), 'select_one') && empty($fd['multi'])) {
-        $singleFields[$path] = ['leaf' => $fd['leaf'] ?? $path];
+    $type  = (string) ($fd['type'] ?? '');
+    $multi = str_starts_with($type, 'select_multiple') || !empty($fd['multi']);
+    if (str_starts_with($type, 'select_one') || str_starts_with($type, 'select_multiple')) {
+        $singleFields[$path] = ['leaf' => $fd['leaf'] ?? $path, 'multi' => $multi];
     }
 }
 
@@ -118,13 +123,23 @@ foreach ($rows as $r) {
         $lastSub = $r['submitted_at'];
     }
 
-    // Distribución por pregunta (select_one).
-    foreach ($singleFields as $path => $_f) {
+    // Distribución por pregunta (select_one y select_multiple).
+    foreach ($singleFields as $path => $f) {
         $v = $payload[$path] ?? null;
         if ($v === null || $v === '' || is_array($v)) continue;
-        $code = (string) $v;
-        $qCounts[$path][$code] = ($qCounts[$path][$code] ?? 0) + 1;
-        $qAnswered[$path] = ($qAnswered[$path] ?? 0) + 1;
+        if ($f['multi']) {
+            // select_multiple: códigos separados por espacios; cuenta cada opción única.
+            $codes = preg_split('/\s+/', trim((string) $v), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+            if (!$codes) continue;
+            foreach (array_unique($codes) as $code) {
+                $qCounts[$path][$code] = ($qCounts[$path][$code] ?? 0) + 1;
+            }
+            $qAnswered[$path] = ($qAnswered[$path] ?? 0) + 1; // encuestados con ≥1 selección
+        } else {
+            $code = (string) $v;
+            $qCounts[$path][$code] = ($qCounts[$path][$code] ?? 0) + 1;
+            $qAnswered[$path] = ($qAnswered[$path] ?? 0) + 1;
+        }
     }
 
     // Por enumerador.
@@ -173,6 +188,7 @@ foreach ($singleFields as $path => $f) {
         'field'    => $path,
         'label'    => $qLabel,
         'answered' => $answered,
+        'multi'    => $f['multi'], // select_multiple: % sobre encuestados (pueden sumar >100 %)
         'options'  => $opts,
         'others'   => $othersCount, // suma de opciones más allá del top 20
     ];

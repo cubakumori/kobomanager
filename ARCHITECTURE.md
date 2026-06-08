@@ -172,7 +172,10 @@ to a new one (key rotation; see `DEPLOY.md §12`).
 ### Sync model
 - **Forms discovery** (`v1/admin/forms_sync.php`): upserts `forms`, filters by the
   `sync_deployment_statuses` setting, **deactivates** forms that fall outside the filter and
-  **deletes** ones removed from Kobo.
+  **deletes** ones removed from Kobo. For a **newly discovered** form it also pulls its
+  submissions once (initial backfill) so it doesn't show «0» until the next cron tick;
+  `forms.submissions_synced_at` marks whether submissions have ever been synced (NULL → the
+  UI shows “not synced yet” instead of a misleading «0», and triggers the one‑time backfill).
 - **Submissions** (`lib/SubmissionSync.php`, cron + on demand): *incremental* (cursor =
   `MAX(submitted_at)` in cache) with a deletion sweep, or *full* (re‑download + reconcile by
   `_uuid`, reflecting edits made in Kobo). Reused by admin and viewer sync endpoints.

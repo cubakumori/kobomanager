@@ -26,13 +26,13 @@ useDialogA11y(panel, () => emit('close'))
   >
     <div
       ref="panel"
-      :class="['w-full rounded-2xl bg-white p-6 shadow-xl', maxWidth]"
+      :class="['flex max-h-[calc(100dvh-2rem)] w-full flex-col rounded-2xl bg-white shadow-xl', maxWidth]"
       role="dialog"
       aria-modal="true"
       :aria-labelledby="title ? titleId : undefined"
       tabindex="-1"
     >
-      <div class="mb-4 flex items-center justify-between">
+      <div class="flex shrink-0 items-center justify-between px-6 pb-4 pt-6">
         <h3 :id="titleId" class="text-lg font-semibold text-slate-900">{{ title }}</h3>
         <button
           type="button"
@@ -43,7 +43,11 @@ useDialogA11y(panel, () => emit('close'))
           &times;
         </button>
       </div>
-      <slot />
+      <!-- Cuerpo desplazable: el panel nunca rebasa la pantalla; si el contenido es
+           más alto que el viewport, este contenedor hace scroll (footer incluido). -->
+      <div class="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+        <slot />
+      </div>
     </div>
   </div>
 </template>

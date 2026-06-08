@@ -465,7 +465,7 @@ onMounted(load)
                 :to="{ name: 'submission-detail', params: { id: formId, subId: s.submission_uid } }"
                 class="text-sm font-medium text-primary-600 hover:underline"
               >
-                {{ $t('forms.view') }}
+                {{ $t('submissions.details') }}
               </RouterLink>
             </td>
           </tr>

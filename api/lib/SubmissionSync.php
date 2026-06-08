@@ -68,7 +68,8 @@ class SubmissionSync {
                 : self::reconcileDeletions($formId, $client, $assetUid);
 
             DB::run(
-                'UPDATE forms SET last_synced_at = NOW(), sync_status = \'success\', last_sync_error = NULL WHERE id = ?',
+                'UPDATE forms SET last_synced_at = NOW(), submissions_synced_at = NOW(),
+                                  sync_status = \'success\', last_sync_error = NULL WHERE id = ?',
                 [$formId]
             );
             return ['upserted' => $count, 'removed' => $removed];

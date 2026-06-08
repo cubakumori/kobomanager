@@ -48,6 +48,11 @@ CREATE TABLE IF NOT EXISTS forms (
     name                VARCHAR(255) NOT NULL,
     server_url          VARCHAR(255) NOT NULL,
     last_synced_at      DATETIME,
+    -- Marca de la primera/última sincronización de ENVÍOS (la pone SubmissionSync).
+    -- NULL = el formulario se descubrió pero aún no se han traído sus envíos → la UI
+    -- muestra «Sin sincronizar» en vez de «0 envíos». `last_synced_at` no sirve para
+    -- esto porque también lo fija el descubrimiento de formularios.
+    submissions_synced_at DATETIME NULL,
     sync_status         ENUM('pending', 'success', 'error') DEFAULT 'pending',
     last_sync_error     TEXT,
     active              TINYINT(1) DEFAULT 1,
