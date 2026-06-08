@@ -58,7 +58,7 @@ $reviewed = DB::run(
     array_merge([$formId], $scopeP)
 )->fetchAll();
 
-$byStatus = ['pending' => 0, 'approved' => 0, 'rejected' => 0];
+$byStatus = ['pending' => 0, 'approved' => 0, 'on_hold' => 0, 'rejected' => 0];
 $reviewedTotal = 0;
 foreach ($reviewed as $r) {
     if (isset($byStatus[$r['status']])) {

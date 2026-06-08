@@ -26,10 +26,10 @@ const byDayData = computed(() => ({
 }))
 
 const byStatusData = computed(() => {
-  const s = stats.value?.by_status ?? { pending: 0, approved: 0, rejected: 0 }
+  const s = stats.value?.by_status ?? { pending: 0, approved: 0, on_hold: 0, rejected: 0 }
   return {
-    labels: [t('review.pending'), t('review.approved'), t('review.rejected')],
-    datasets: [{ data: [s.pending, s.approved, s.rejected], backgroundColor: ['#f59e0b', '#16a34a', '#dc2626'] }],
+    labels: [t('review.pending'), t('review.approved'), t('review.on_hold'), t('review.rejected')],
+    datasets: [{ data: [s.pending, s.approved, s.on_hold ?? 0, s.rejected], backgroundColor: ['#f59e0b', '#16a34a', '#0284c7', '#dc2626'] }],
   }
 })
 
@@ -148,7 +148,7 @@ onMounted(load)
 
     <template v-else-if="stats">
       <!-- Tarjetas resumen -->
-      <div class="grid gap-4 sm:grid-cols-4">
+      <div class="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.total') }}</p>
           <p class="mt-1 text-2xl font-semibold text-slate-900">{{ stats.total }}</p>
@@ -160,6 +160,10 @@ onMounted(load)
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.approved') }}</p>
           <p class="mt-1 text-2xl font-semibold text-green-600">{{ stats.by_status.approved }}</p>
+        </div>
+        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+          <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.onHold') }}</p>
+          <p class="mt-1 text-2xl font-semibold text-sky-600">{{ stats.by_status.on_hold ?? 0 }}</p>
         </div>
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.rejected') }}</p>

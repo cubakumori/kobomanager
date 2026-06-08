@@ -358,6 +358,7 @@ onMounted(load)
           <option value="">{{ $t('submissions.reviewAll') }}</option>
           <option value="pending">{{ $t('review.pending') }}</option>
           <option value="approved">{{ $t('review.approved') }}</option>
+          <option value="on_hold">{{ $t('review.on_hold') }}</option>
           <option value="rejected">{{ $t('review.rejected') }}</option>
         </select>
       </label>
@@ -406,6 +407,13 @@ onMounted(load)
         @click="batchReview('approved')"
       >
         {{ $t('submissions.batchApprove') }}
+      </button>
+      <button
+        :disabled="batchBusy"
+        class="rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
+        @click="batchReview('on_hold')"
+      >
+        {{ $t('submissions.batchStandby') }}
       </button>
       <button
         :disabled="batchBusy"

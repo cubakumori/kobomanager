@@ -313,6 +313,13 @@ onMounted(load)
             </button>
             <button
               :disabled="reviewing"
+              class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
+              @click="submitReview('on_hold')"
+            >
+              {{ $t('detail.standby') }}
+            </button>
+            <button
+              :disabled="reviewing"
               class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
               @click="submitReview('rejected')"
             >

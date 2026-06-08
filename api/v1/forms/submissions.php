@@ -4,7 +4,7 @@
  * Lista paginada de envíos desde submissions_cache.
  * Query:
  *   page (1+), per_page (1-100), search (texto libre sobre el JSON),
- *   review (pending|approved|rejected) → filtra por estado de revisión más reciente,
+ *   review (pending|approved|on_hold|rejected) → filtra por estado de revisión más reciente,
  *   sort (date_desc|date_asc) → orden por fecha de envío (por defecto, más recientes).
  * Cada envío incluye su estado de revisión más reciente.
  */
@@ -48,7 +48,7 @@ if ($search !== '') {
     $where  .= ' AND ' . $searchSql;
     $params  = array_merge($params, $searchParams);
 }
-if (in_array($review, ['pending', 'approved', 'rejected'], true)) {
+if (in_array($review, ['pending', 'approved', 'on_hold', 'rejected'], true)) {
     $where    .= ' AND COALESCE(lr.status, \'pending\') = ?';
     $params[]  = $review;
 }

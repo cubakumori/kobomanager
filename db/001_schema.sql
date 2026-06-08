@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS submission_reviews (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     submission_uid  VARCHAR(100) NOT NULL,
     user_id         INT UNSIGNED NOT NULL,
-    status          ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+    status          ENUM('pending', 'approved', 'on_hold', 'rejected') NOT NULL DEFAULT 'pending',
     comment         TEXT,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

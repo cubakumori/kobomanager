@@ -1,7 +1,7 @@
 <?php
 /**
  * POST /api/v1/submissions/{id}/review   ({id} = submission_uid; requiere can_validate)
- * Body: { status: 'approved'|'rejected'|'pending', comment?: string }
+ * Body: { status: 'approved'|'rejected'|'on_hold'|'pending', comment?: string }
  * Crea una revisión interna en submission_reviews y la audita.
  */
 
@@ -32,7 +32,7 @@ $body    = Request::json();
 $status  = $body['status'] ?? '';
 $comment = isset($body['comment']) ? trim((string) $body['comment']) : null;
 
-if (!in_array($status, ['approved', 'rejected', 'pending'], true)) {
+if (!in_array($status, ['approved', 'rejected', 'on_hold', 'pending'], true)) {
     ErrorResponse::send('VALIDATION_ERROR', 'Estado de revisión no válido');
 }
 

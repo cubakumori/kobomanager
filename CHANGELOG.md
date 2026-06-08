@@ -6,6 +6,18 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [Sin publicar]
 
+### Añadido
+
+- **Estado de revisión «En espera» (on-hold)** como tercer estado, además de
+  Aprobado y Rechazado: marca un envío como *revisado pero pendiente de
+  verificación* —distinto del «Pendiente» de los que aún no se han revisado— y
+  sirve para dejar una nota sin aprobar ni rechazar todavía. Disponible en el
+  detalle del envío, en la **revisión en lote** y como opción del **filtro** por
+  estado; se refleja en el badge, en las **estadísticas** (tarjeta + distribución)
+  y en el **visor de auditoría**. Es un estado interno de KoboManager: no escribe
+  en el `validation_status` de Kobo. (Valor interno `on_hold`; columna
+  `submission_reviews.status` ampliada en el esquema canónico.)
+
 ## [0.4.0] - 2026-06-07
 
 Primera tanda hacia la versión pública: enlaces compartibles (M1), productividad de

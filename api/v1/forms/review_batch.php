@@ -2,7 +2,7 @@
 /**
  * POST /api/v1/forms/{id}/review   (requiere can_validate)
  * Revisión en lote: aplica un mismo estado a varios envíos del formulario.
- * Body: { uids: [submission_uid, ...], status: 'approved'|'rejected'|'pending', comment?: string }
+ * Body: { uids: [submission_uid, ...], status: 'approved'|'rejected'|'on_hold'|'pending', comment?: string }
  *
  * Revalida en el servidor que cada uid pertenece al formulario y está dentro del
  * alcance del scoping por filas del usuario (no se confía en el cliente). Los uids
@@ -28,7 +28,7 @@ $status  = $body['status'] ?? '';
 $comment = isset($body['comment']) ? trim((string) $body['comment']) : null;
 $uids    = $body['uids'] ?? null;
 
-if (!in_array($status, ['approved', 'rejected', 'pending'], true)) {
+if (!in_array($status, ['approved', 'rejected', 'on_hold', 'pending'], true)) {
     ErrorResponse::send('VALIDATION_ERROR', 'Estado de revisión no válido');
 }
 if (!is_array($uids) || $uids === []) {

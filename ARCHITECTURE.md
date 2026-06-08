@@ -9,7 +9,7 @@ KoboManager is a thin management layer **between KoboToolbox accounts and a smal
 An administrator connects Kobo accounts (API tokens stored encrypted); other users get
 per‑form permissions and review submissions **without a Kobo account and without ever seeing
 the token**. Submissions are mirrored into a local cache for fast browsing and an internal
-review (approve/reject) flow decoupled from Kobo.
+review (approve / on-hold / reject) flow decoupled from Kobo.
 
 ## Stack & layout
 
@@ -111,7 +111,8 @@ frontend renders it with the shared `AttachmentsGallery.vue` component. *(Per‑
 limiting of the public GETs is still deferred to M4b/M5.)*
 
 ### Batch review & CSV export
-`POST /forms/{id}/review` (`forms/review_batch.php`) applies one review status to many
+`POST /forms/{id}/review` (`forms/review_batch.php`) applies one review status
+(`approved` / `on_hold` / `rejected` / `pending`) to many
 submissions in a single transaction; it requires `validate` once and **re‑checks**, per uid,
 form membership and row scope server‑side (out‑of‑scope/foreign uids are silently skipped),
 returning `{applied, skipped}`. `GET /forms/{id}/export` (`forms/export.php`) streams a

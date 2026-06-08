@@ -8,6 +8,7 @@ const props = defineProps({
 const cls = {
   pending: 'bg-amber-100 text-amber-700',
   approved: 'bg-green-100 text-green-700',
+  on_hold: 'bg-sky-100 text-sky-700',
   rejected: 'bg-red-100 text-red-700',
 }
 
