@@ -6,6 +6,16 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [Sin publicar]
 
+## [1.0.0] - 2026-06-08
+
+**Primera versión pública.** Recoge todo lo entregado en 0.1.0–0.4.0 (fases 0–7,
+enlaces compartibles, productividad de datos, observabilidad, las cuatro mejoras de
+producto P1–P4, búsqueda FULLTEXT, endurecimiento de sesiones/operación y el repaso de
+fortalecimiento M5) tras la revisión manual exhaustiva, más los cambios de abajo. El
+producto se posiciona en torno al **control de acceso** sobre KoboToolbox —permisos por
+formulario, scoping por filas, enlaces de solo lectura gobernados y flujo de revisión
+propio— **sin repartir cuentas de Kobo ni exponer el token**.
+
 ### Añadido
 
 - **Estado de revisión «En espera» (on-hold)** como tercer estado, además de
@@ -17,6 +27,14 @@ Todos los cambios notables de KoboManager. El formato sigue
   y en el **visor de auditoría**. Es un estado interno de KoboManager: no escribe
   en el `validation_status` de Kobo. (Valor interno `on_hold`; columna
   `submission_reviews.status` ampliada en el esquema canónico.)
+
+### Cambiado
+
+- Reposicionada la introducción de **«Compartir»** en la Guía para destacar el
+  **control** del enlace (contraseña, caducidad, revocación, filtro de filas, sin
+  exponer el estado de revisión interno) en lugar de apoyarse en la retirada del
+  «compartir sin login» de Kobo —matiz impreciso: compartir el *formulario* para
+  recoger datos sigue vigente.
 
 ## [0.4.0] - 2026-06-07
 

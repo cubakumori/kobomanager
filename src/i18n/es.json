@@ -178,7 +178,7 @@
     "reviewExport": "Exportar a CSV",
     "reviewExportBody": "Descarga los envíos —con los filtros activos— en un CSV (UTF-8, abre bien en Excel) con las etiquetas legibles de cada pregunta.",
     "shareTitle": "Compartir: enlaces de solo lectura",
-    "shareIntro": "El administrador puede crear enlaces para que cualquiera consulte los envíos de un formulario sin cuenta de Kobo ni de KoboManager —útil porque KoboToolbox está retirando su «compartir sin login».",
+    "shareIntro": "El administrador puede crear enlaces para que cualquiera consulte los envíos de un formulario sin cuenta de Kobo ni de KoboManager, con control total: contraseña opcional, caducidad, revocación inmediata y filtro de filas, y sin exponer nunca el estado de revisión interno.",
     "shareExposes": "Qué muestra",
     "shareExposesBody": "Cada enlace decide si expone la lista de envíos, el detalle, el mapa y/o los adjuntos (estos solo en enlaces con contraseña, y si la política global del servidor lo permite); nunca muestra el estado de revisión interno.",
     "shareAccess": "Acceso",

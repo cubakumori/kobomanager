@@ -178,7 +178,7 @@
     "reviewExport": "Export to CSV",
     "reviewExportBody": "Download the submissions —with the active filters— as a CSV (UTF-8, opens fine in Excel) with each question's readable labels.",
     "shareTitle": "Sharing: read-only links",
-    "shareIntro": "The admin can create links so anyone can browse a form's submissions with no Kobo or KoboManager account —handy because KoboToolbox is retiring its “share without login”.",
+    "shareIntro": "The admin can create links so anyone can browse a form's submissions with no Kobo or KoboManager account, with full control: optional password, expiry, instant revocation and row filtering, and never exposing the internal review status.",
     "shareExposes": "What it shows",
     "shareExposesBody": "Each link decides whether to expose the submission list, the detail, the map and/or the attachments (the latter only on password-protected links, and if the server's global policy allows it); it never shows the internal review status.",
     "shareAccess": "Access",
