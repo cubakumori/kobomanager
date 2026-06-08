@@ -18,10 +18,16 @@ const error = ref('')
 // ---- Datos de gráficos ----
 const PRIMARY = '#2563eb'
 
-const byDayData = computed(() => ({
-  labels: (stats.value?.by_day ?? []).map((d) => d.date),
+// Serie temporal: por día, o por mes si el tramo de envíos supera 30 días
+// (lo decide el backend en `period_granularity`).
+const periodIsMonth = computed(() => stats.value?.period_granularity === 'month')
+const periodSeries = computed(() =>
+  periodIsMonth.value ? (stats.value?.by_month ?? []) : (stats.value?.by_day ?? []),
+)
+const byPeriodData = computed(() => ({
+  labels: periodSeries.value.map((d) => d.date),
   datasets: [
-    { label: t('stats.submissions'), data: (stats.value?.by_day ?? []).map((d) => d.count), backgroundColor: PRIMARY, borderRadius: 4 },
+    { label: t('stats.submissions'), data: periodSeries.value.map((d) => d.count), backgroundColor: PRIMARY, borderRadius: 4 },
   ],
 }))
 
@@ -200,9 +206,9 @@ onMounted(load)
       <!-- Gráficos base -->
       <div class="grid gap-4 lg:grid-cols-3">
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 lg:col-span-2">
-          <h2 class="mb-4 font-semibold text-slate-900">{{ $t('stats.byDay') }}</h2>
+          <h2 class="mb-4 font-semibold text-slate-900">{{ periodIsMonth ? $t('stats.byMonth') : $t('stats.byDay') }}</h2>
           <div class="h-64">
-            <StatsChart v-if="stats.by_day.length" type="bar" :data="byDayData" :options="barValueOptions" />
+            <StatsChart v-if="periodSeries.length" type="bar" :data="byPeriodData" :options="barValueOptions" />
             <p v-else class="text-sm text-slate-400">{{ $t('stats.noData') }}</p>
           </div>
         </div>

@@ -48,6 +48,27 @@ $byDay = DB::run(
 )->fetchAll();
 $byDay = array_map(fn($r) => ['date' => $r['day'], 'count' => (int) $r['count']], $byDay);
 
+// Si el tramo (primer→último envío) supera 30 días, el gráfico se agrupa por MES
+// (YYYY-MM) en vez de por día, para que no se vuelva ilegible en periodos largos.
+// by_day viene ordenado ascendente, así que el primero/último marcan el tramo.
+$periodGranularity = 'day';
+$byMonth = [];
+if ($byDay) {
+    $first = strtotime($byDay[0]['date']);
+    $last  = strtotime($byDay[count($byDay) - 1]['date']);
+    if ($first !== false && $last !== false && ($last - $first) > 30 * 86400) {
+        $periodGranularity = 'month';
+        $acc = [];
+        foreach ($byDay as $d) {
+            $m = substr($d['date'], 0, 7); // YYYY-MM (conserva el orden cronológico)
+            $acc[$m] = ($acc[$m] ?? 0) + $d['count'];
+        }
+        foreach ($acc as $m => $c) {
+            $byMonth[] = ['date' => $m, 'count' => $c];
+        }
+    }
+}
+
 // Distribución por estado de revisión: la revisión más reciente de cada envío de este formulario.
 $reviewed = DB::run(
     "SELECT r.status, COUNT(*) AS count
@@ -245,6 +266,8 @@ ErrorResponse::ok([
     'total'           => $total,
     'last_submission' => $lastSub,
     'by_day'          => $byDay,
+    'by_month'        => $byMonth,
+    'period_granularity' => $periodGranularity, // 'day' | 'month' (>30 días de tramo)
     'by_status'       => $byStatus,
     'by_question'     => $byQuestion,
     'by_enumerator'   => $byEnumerator,

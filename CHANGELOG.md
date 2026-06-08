@@ -24,6 +24,9 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
+- **Estadísticas · serie temporal**: el gráfico «Envíos por día» pasa a **«Envíos por
+  mes»** cuando el tramo entre el primer y el último envío supera 30 días, para que no
+  se vuelva ilegible en periodos largos (lo decide el backend en `period_granularity`).
 - **Estadísticas · «Por enumerador»** se oculta cuando no aporta (solo se muestra
   con 2+ enumeradores reales; no si los envíos no traen `_submitted_by`).
 - En la tabla de envíos, la acción de cada fila se llama ahora **«Detalles»**

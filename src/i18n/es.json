@@ -797,6 +797,7 @@
     "onHold": "En espera",
     "rejected": "Rechazados",
     "byDay": "Envíos por día",
+    "byMonth": "Envíos por mes",
     "byStatus": "Estado de revisión",
     "submissions": "Envíos",
     "noData": "Sin datos.",
