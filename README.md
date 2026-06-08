@@ -13,8 +13,8 @@ KoboManager is aimed at organizations that need to give reviewers or field staff
 access to KoboToolbox submissions — view, edit and validate — **without spending Kobo
 licenses/seats for every user and without exposing the API token**. The administrator
 holds the Kobo credentials (stored encrypted); end users work through KoboManager with
-per-form permissions — including row-level scoping and column-level field hiding — and an
-internal review workflow decoupled from Kobo.
+per-form permissions — including multi-condition (AND/OR) row-level scoping and
+column-level field hiding — and an internal review workflow decoupled from Kobo.
 
 ## Repository layout
 

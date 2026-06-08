@@ -63,7 +63,7 @@ foreach (($schema['fields'] ?? []) as $full => $f) {
         'key'     => $full,
         'label'   => $resolved['labels'][$full] ?? $full,
         'type'    => $f['type'] ?? '',
-        'multi'   => !empty($f['multi']),   // select_multiple: no soportado por el filtro (v1)
+        'multi'   => !empty($f['multi']),   // select_multiple: el editor usa operadores de conjunto (has_any/has_all/has_none)
         'options' => $options,
     ];
 }
