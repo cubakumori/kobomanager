@@ -56,7 +56,7 @@ if ($search !== '') {
     $where  .= ' AND ' . $searchSql;
     $params  = array_merge($params, $searchParams);
 }
-if (in_array($review, ['pending', 'approved', 'on_hold', 'rejected'], true)) {
+if ($review !== '' && ReviewStatus::isValidFilter($review)) {
     $where    .= ' AND COALESCE(lr.status, \'pending\') = ?';
     $params[]  = $review;
 }

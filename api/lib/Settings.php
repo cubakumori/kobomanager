@@ -152,6 +152,18 @@ class Settings {
         return is_array($runs) ? $runs : [];
     }
 
+    /**
+     * Estado inicial automático GLOBAL de revisión: el status_key que se asigna
+     * (fila de sistema) al cachear un envío nuevo, salvo override por formulario.
+     * NULL/''/'pending' = sin auto-estado (los envíos nuevos quedan «pendientes»).
+     * No se valida aquí contra el catálogo (lo hace ReviewStatus::initialFor).
+     */
+    public static function initialReviewStatus(): ?string
+    {
+        $v = self::get('initial_review_status', null);
+        return is_string($v) && $v !== '' ? $v : null;
+    }
+
     public const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login'];
 
     /**

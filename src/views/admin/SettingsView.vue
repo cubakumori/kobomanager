@@ -28,6 +28,8 @@ const validShareAttachmentsPolicies = ref(['off', 'require_password'])
 const fieldTruncate = ref({ enabled: false, chars: 24 })
 const fieldTruncateMin = ref(8)
 const fieldTruncateMax = ref(120)
+const initialReviewStatus = ref('') // '' = sin auto-estado
+const reviewStatusList = ref([])    // [{ key, label, color, is_open }]
 const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
@@ -54,6 +56,8 @@ async function load() {
     if (data.data.field_truncate) fieldTruncate.value = data.data.field_truncate
     if (data.data.field_truncate_min != null) fieldTruncateMin.value = data.data.field_truncate_min
     if (data.data.field_truncate_max != null) fieldTruncateMax.value = data.data.field_truncate_max
+    initialReviewStatus.value = data.data.initial_review_status ?? ''
+    if (data.data.review_statuses) reviewStatusList.value = data.data.review_statuses
   } catch (e) {
     error.value = apiError(e, t('settings.loadError'))
   } finally {
@@ -90,6 +94,7 @@ async function save() {
         enabled: fieldTruncate.value.enabled,
         chars: Number(fieldTruncate.value.chars) || fieldTruncateMin.value,
       },
+      initial_review_status: initialReviewStatus.value,
     })
     selected.value = data.data.sync_deployment_statuses
     defaultLocale.value = data.data.default_locale
@@ -100,6 +105,7 @@ async function save() {
     if (data.data.share_password_policy) sharePasswordPolicy.value = data.data.share_password_policy
     if (data.data.share_attachments_policy) shareAttachmentsPolicy.value = data.data.share_attachments_policy
     if (data.data.field_truncate) fieldTruncate.value = data.data.field_truncate
+    if (data.data.initial_review_status != null) initialReviewStatus.value = data.data.initial_review_status
     saved.value = true
     // Si el usuario sigue el idioma por defecto, refleja el cambio al instante.
     if (!auth.user?.locale_pref) setLocale(defaultLocale.value)
@@ -164,6 +170,28 @@ onMounted(load)
         >
           <option v-for="l in validLocales" :key="l" :value="l">{{ $t('lang.' + l) }}</option>
         </select>
+      </section>
+
+      <!-- Estado inicial automático de revisión -->
+      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.initialReview') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.initialReviewDesc') }}</p>
+        </div>
+        <select
+          v-model="initialReviewStatus"
+          class="w-56 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          @change="saved = false"
+        >
+          <option value="">{{ $t('settings.initialReviewNone') }}</option>
+          <option v-for="st in reviewStatusList" :key="st.key" :value="st.key">
+            {{ st.label || $t('review.' + st.key) }}
+          </option>
+        </select>
+        <p class="text-xs text-slate-400">
+          {{ $t('settings.initialReviewManage') }}
+          <RouterLink :to="{ name: 'admin-review-statuses' }" class="text-primary-600 hover:underline">{{ $t('nav.reviewStatuses') }}</RouterLink>
+        </p>
       </section>
 
       <!-- Etiquetas en tabla y detalles -->

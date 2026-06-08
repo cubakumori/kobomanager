@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import api from '../services/api'
 import i18n, { setLocale } from '../i18n'
+import { useReviewStatusesStore } from './reviewStatuses'
 
 // Traduce un error de Axios a un mensaje legible. Si hay traducción para el código
 // de error, se usa; si no, el mensaje del backend; si no, un genérico.
@@ -30,6 +31,7 @@ export const useAuthStore = defineStore('auth', {
       this.user = data.data
       this.checked = true
       setLocale(this.user?.locale)
+      useReviewStatusesStore().load(true)
       return this.user
     },
     async logout() {
@@ -37,6 +39,7 @@ export const useAuthStore = defineStore('auth', {
         await api.post('/auth/logout')
       } finally {
         this.user = null
+        useReviewStatusesStore().clear()
       }
     },
     async fetchMe() {
@@ -45,6 +48,7 @@ export const useAuthStore = defineStore('auth', {
         const { data } = await api.get('/auth/me', { skipAuthRedirect: true })
         this.user = data.data
         setLocale(this.user?.locale)
+        useReviewStatusesStore().load(true)
       } catch {
         this.user = null
       } finally {

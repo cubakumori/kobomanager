@@ -17,6 +17,7 @@ require __DIR__ . '/lib/Auth.php';
 require __DIR__ . '/lib/Audit.php';
 require __DIR__ . '/lib/RateLimit.php';
 require __DIR__ . '/lib/Settings.php';
+require __DIR__ . '/lib/ReviewStatus.php';
 require __DIR__ . '/lib/KoboClient.php';
 require __DIR__ . '/lib/FormSchema.php';
 require __DIR__ . '/lib/Geo.php';
@@ -114,10 +115,13 @@ $routes = [
     'admin/permissions'         => 'admin/permissions.php',
     'admin/forms/:id/scope-fields' => 'admin/scope_fields.php',
     'admin/settings'            => 'admin/settings.php',
+    'admin/review-statuses'     => 'admin/review_statuses.php',
+    'admin/review-statuses/:id' => 'admin/review_status_item.php',
     'admin/shares'              => 'admin/shares.php',
     'admin/shares/:id'          => 'admin/share_item.php',
     'admin/audit'               => 'admin/audit.php',
     'audit/me'                  => 'audit/me.php',
+    'review-statuses'           => 'review_statuses.php',
     'notifications'             => 'notifications.php',
     'profile'                   => 'profile.php',
     'profile/password'          => 'profile_password.php',

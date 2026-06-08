@@ -49,7 +49,7 @@ if ($search !== '') {
     $where  .= ' AND ' . $searchSql;
     $params  = array_merge($params, $searchParams);
 }
-if (in_array($review, ['pending', 'approved', 'rejected'], true)) {
+if ($review !== '' && ReviewStatus::isValidFilter($review)) {
     $where    .= ' AND COALESCE(lr.status, \'pending\') = ?';
     $params[]  = $review;
 }
@@ -118,9 +118,15 @@ $csvSafe = static function ($v): string {
 $metaHeaders = $user['locale'] === 'en'
     ? ['submitted' => 'Submitted', 'review' => 'Review']
     : ['submitted' => 'Enviado', 'review' => 'Revisión'];
-$reviewWords = $user['locale'] === 'en'
-    ? ['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected']
-    : ['pending' => 'Pendiente', 'approved' => 'Aprobado', 'rejected' => 'Rechazado'];
+// Etiqueta de cada estado de revisión: la del catálogo si está relabelado; si es un
+// built-in sin relabelar, la palabra localizada; si no, la propia clave.
+$builtinWords = $user['locale'] === 'en'
+    ? ['pending' => 'Pending', 'on_hold' => 'On hold', 'approved' => 'Approved', 'rejected' => 'Rejected']
+    : ['pending' => 'Pendiente', 'on_hold' => 'En espera', 'approved' => 'Aprobado', 'rejected' => 'Rechazado'];
+$reviewWords = [];
+foreach (ReviewStatus::all() as $s) {
+    $reviewWords[$s['key']] = $s['label'] ?? ($builtinWords[$s['key']] ?? $s['key']);
+}
 
 // Columnas calculadas (las mismas que la tabla): se computan con lib/Derived,
 // idéntico al detalle y la lista. Van al final, tras las columnas de datos.

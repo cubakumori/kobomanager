@@ -36,7 +36,8 @@
     "myActivity": "Mi actividad",
     "profile": "Mi perfil",
     "logout": "Cerrar sesión",
-    "goToProfile": "Ir a mi perfil"
+    "goToProfile": "Ir a mi perfil",
+    "reviewStatuses": "Estados de revisión"
   },
   "landing": {
     "eyebrow": "Capa de gestión para KoboToolbox",
@@ -174,7 +175,7 @@
     "exploreStatsBody": "Resumen del formulario: total y frescura, envíos por día, estado de revisión, distribución por pregunta (opción única) y por enumerador, duración de cumplimentación (media/mediana + histograma), actividad por hora/día, adjuntos y cobertura geográfica.",
     "reviewTitle": "Revisar y exportar",
     "reviewSingle": "Revisión individual",
-    "reviewSingleBody": "En el detalle de un envío, apruébalo, recházalo o déjalo «En espera» (revisado pero pendiente de verificación) con un comentario; el estado es interno de KoboManager.",
+    "reviewSingleBody": "En el detalle de un envío, apruébalo, recházalo o déjalo «En espera» (revisado pero pendiente de verificación) con un comentario; el estado es interno de KoboManager. Los administradores pueden personalizar los estados (crear nuevos, renombrar o recolorear) en «Estados de revisión», y configurar un estado inicial automático para los envíos nuevos.",
     "reviewBatch": "Revisión en lote",
     "reviewBatchBody": "Selecciona varios envíos con las casillas (o todos los de la página) y apruébalos, recházalos o ponlos «En espera» de una vez con un comentario común. Requiere permiso de validación.",
     "reviewExport": "Exportar a CSV",
@@ -354,7 +355,11 @@
     "loadError": "No se pudieron cargar los formularios",
     "syncErr": "No se pudo sincronizar",
     "updateErr": "no se pudo actualizar",
-    "deleteErr": "no se pudo eliminar"
+    "deleteErr": "no se pudo eliminar",
+    "colInitialReview": "Estado inicial",
+    "initialInherit": "Global (heredar)",
+    "initialSaved": "«{name}»: estado inicial actualizado.",
+    "initialErr": "no se pudo cambiar el estado inicial"
   },
   "permissions": {
     "title": "Permisos",
@@ -486,7 +491,11 @@
     "shareAttachmentsPolicy_require_password": "Permitir con contraseña",
     "shareAttachmentsPolicy_require_passwordHint": "Un enlace con contraseña puede exponer sus adjuntos.",
     "loadError": "No se pudo cargar la configuración",
-    "saveError": "No se pudo guardar"
+    "saveError": "No se pudo guardar",
+    "initialReview": "Estado inicial de revisión",
+    "initialReviewDesc": "Estado que se asigna automáticamente a cada envío nuevo al sincronizarlo. Útil para que todo llegue «En espera» de verificación. Se puede ajustar por formulario.",
+    "initialReviewNone": "Sin estado (pendiente)",
+    "initialReviewManage": "Gestiona los estados disponibles en"
   },
   "shares": {
     "title": "Compartir",
@@ -639,7 +648,11 @@
     "action_download_attachment": "Adjunto descargado",
     "action_share_create": "Enlace creado",
     "action_share_revoke": "Enlace revocado",
-    "action_share_delete": "Enlace eliminado"
+    "action_share_delete": "Enlace eliminado",
+    "action_review_status_create": "Estado de revisión creado",
+    "action_review_status_update": "Estado de revisión modificado",
+    "action_review_status_delete": "Estado de revisión borrado",
+    "action_update_form": "Formulario actualizado"
   },
   "lang": {
     "es": "Español",
@@ -873,5 +886,26 @@
     "SHARE_PASSWORD_REQUIRED": "Este enlace requiere una contraseña.",
     "RATE_LIMITED": "Demasiadas peticiones. Inténtalo de nuevo en un momento.",
     "generic": "Ha ocurrido un error"
+  },
+  "reviewStatuses": {
+    "title": "Estados de revisión",
+    "subtitle": "Personaliza los estados con los que validas los envíos: renómbralos, recolorea, añade los tuyos o desactiva los que no uses.",
+    "label": "Nombre",
+    "order": "Orden",
+    "color": "Color",
+    "isOpen": "Abierto (pendiente de resolución)",
+    "isOpenHint": "Los estados «abiertos» cuentan como no resueltos en las estadísticas (igual que Pendiente y En espera); los demás se consideran finales.",
+    "active": "Activo",
+    "builtin": "Integrado",
+    "save": "Guardar",
+    "saved": "Guardado.",
+    "saveError": "No se pudo guardar el estado.",
+    "loadError": "No se pudieron cargar los estados.",
+    "add": "Añadir",
+    "addTitle": "Añadir estado",
+    "delete": "Borrar",
+    "deleteTitle": "Borrar estado",
+    "deleteConfirm": "¿Borrar el estado «{name}»? Solo se puede si ninguna revisión lo usa.",
+    "deleted": "Estado borrado."
   }
 }

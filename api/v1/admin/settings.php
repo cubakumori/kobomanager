@@ -26,6 +26,9 @@ if (Request::method() === 'GET') {
         'field_truncate'             => Settings::fieldTruncate(),
         'field_truncate_min'         => Settings::FIELD_TRUNCATE_MIN,
         'field_truncate_max'         => Settings::FIELD_TRUNCATE_MAX,
+        // Estado inicial automático global ('' = sin auto-estado) + catálogo para el selector.
+        'initial_review_status'      => Settings::initialReviewStatus() ?? '',
+        'review_statuses'            => ReviewStatus::active(),
     ]);
 }
 
@@ -117,6 +120,16 @@ if (Request::method() === 'PUT') {
             }
         }
         if ($va) $out['viewer_actions'] = $va;
+    }
+
+    if (array_key_exists('initial_review_status', $body)) {
+        $key = trim((string) $body['initial_review_status']);
+        // '' o 'pending' = sin auto-estado; cualquier otra debe ser un estado válido.
+        if ($key !== '' && $key !== 'pending' && !ReviewStatus::isAssignable($key)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Estado inicial de revisión no válido');
+        }
+        Settings::set('initial_review_status', $key === 'pending' ? '' : $key);
+        $out['initial_review_status'] = $key === 'pending' ? '' : $key;
     }
 
     Audit::log($admin['id'], 'update_settings', null, null, $out);

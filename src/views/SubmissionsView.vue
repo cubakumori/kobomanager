@@ -8,7 +8,10 @@ import { confirmDialog } from '../composables/confirm'
 import { makeLabeler } from '../composables/labels'
 import { useDerivedFormat, DERIVED_TABLE_COLS, isDerivedCol } from '../composables/derived'
 import ReviewBadge from '../components/ReviewBadge.vue'
+import { useReviewStatusesStore } from '../stores/reviewStatuses'
+import { btnClass } from '../composables/reviewColors'
 
+const reviewStatuses = useReviewStatusesStore()
 const { tableLabel, tableValue } = useDerivedFormat()
 
 const { t } = useI18n()
@@ -59,10 +62,11 @@ function clearSelection() {
 async function batchReview(status) {
   const uids = [...selected.value]
   if (!uids.length) return
+  const label = reviewStatuses.label(status)
   const ok = await confirmDialog({
     title: t('submissions.batchConfirmTitle'),
-    message: t('submissions.batchConfirm', { n: uids.length, action: t('review.' + status) }),
-    confirmText: t('review.' + status),
+    message: t('submissions.batchConfirm', { n: uids.length, action: label }),
+    confirmText: label,
     danger: status === 'rejected',
   })
   if (!ok) return
@@ -356,10 +360,9 @@ onMounted(load)
           class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
         >
           <option value="">{{ $t('submissions.reviewAll') }}</option>
-          <option value="pending">{{ $t('review.pending') }}</option>
-          <option value="approved">{{ $t('review.approved') }}</option>
-          <option value="on_hold">{{ $t('review.on_hold') }}</option>
-          <option value="rejected">{{ $t('review.rejected') }}</option>
+          <option v-for="st in reviewStatuses.statuses" :key="st.key" :value="st.key">
+            {{ reviewStatuses.label(st.key) }}
+          </option>
         </select>
       </label>
       <label class="flex items-center gap-1.5 text-sm text-slate-600">
@@ -402,25 +405,14 @@ onMounted(load)
         class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
       />
       <button
+        v-for="st in reviewStatuses.actionable"
+        :key="st.key"
         :disabled="batchBusy"
-        class="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
-        @click="batchReview('approved')"
+        class="rounded-lg px-3 py-1.5 text-sm font-semibold disabled:opacity-60"
+        :class="btnClass(st.color)"
+        @click="batchReview(st.key)"
       >
-        {{ $t('submissions.batchApprove') }}
-      </button>
-      <button
-        :disabled="batchBusy"
-        class="rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
-        @click="batchReview('on_hold')"
-      >
-        {{ $t('submissions.batchStandby') }}
-      </button>
-      <button
-        :disabled="batchBusy"
-        class="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
-        @click="batchReview('rejected')"
-      >
-        {{ $t('submissions.batchReject') }}
+        {{ reviewStatuses.label(st.key) }}
       </button>
       <button class="text-sm font-medium text-slate-500 hover:text-slate-700" @click="clearSelection">
         {{ $t('submissions.clearSelection') }}

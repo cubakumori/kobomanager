@@ -82,16 +82,39 @@ $reviewed = DB::run(
     array_merge([$formId], $scopeP)
 )->fetchAll();
 
-$byStatus = ['pending' => 0, 'approved' => 0, 'on_hold' => 0, 'rejected' => 0];
+// Conteos por clave de estado del catálogo (dinámico). Incluye claves no presentes
+// en el catálogo (estados de datos antiguos) para no perder envíos.
+$byStatus = [];
+foreach (ReviewStatus::all() as $s) {
+    $byStatus[$s['key']] = 0;
+}
+$byStatus['pending'] ??= 0;
 $reviewedTotal = 0;
 foreach ($reviewed as $r) {
-    if (isset($byStatus[$r['status']])) {
-        $byStatus[$r['status']] = (int) $r['count'];
-        $reviewedTotal += (int) $r['count'];
-    }
+    $byStatus[$r['status']] = ($byStatus[$r['status']] ?? 0) + (int) $r['count'];
+    $reviewedTotal += (int) $r['count'];
 }
 // Los envíos sin revisión cuentan como 'pending'.
 $byStatus['pending'] += $total - $reviewedTotal;
+
+// Apertura: «abiertos» (siguen requiriendo acción: pending + estados is_open) vs
+// «resueltos» (estados finales). pending siempre cuenta como abierto.
+$openKeys     = array_flip(ReviewStatus::openKeys());
+$openTotal    = 0;
+foreach ($byStatus as $k => $c) {
+    if ($k === 'pending' || isset($openKeys[$k])) {
+        $openTotal += $c;
+    }
+}
+$byOpenness = ['open' => $openTotal, 'resolved' => $total - $openTotal];
+
+// Meta del catálogo para que el frontend pinte etiquetas/colores sin hardcodear.
+$statusMeta = array_map(static fn(array $s): array => [
+    'key'     => $s['key'],
+    'label'   => $s['label'],
+    'color'   => $s['color'],
+    'is_open' => $s['is_open'],
+], ReviewStatus::active());
 
 // ---------------------------------------------------------------------------
 // Métricas enriquecidas: una sola pasada en PHP sobre los payloads en alcance.
@@ -269,6 +292,8 @@ ErrorResponse::ok([
     'by_month'        => $byMonth,
     'period_granularity' => $periodGranularity, // 'day' | 'month' (>30 días de tramo)
     'by_status'       => $byStatus,
+    'by_openness'     => $byOpenness,
+    'status_meta'     => $statusMeta,
     'by_question'     => $byQuestion,
     'by_enumerator'   => $byEnumerator,
     'enumerator_others' => $enumOthers,

@@ -35,14 +35,17 @@ sesión propia** (acordar el modelo antes de codificar + verificación contra da
       y Enlaces. Kobo **no lo soporta** — ventaja competitiva
       ([condition-based-row-level-permissions/55372](https://community.kobotoolbox.org/t/condition-based-row-level-permissions/55372),
       el staff lo confirma jul-2024).
-- [ ] **Mejoras del flujo de revisión** (sobre el estado «En espera» ya entregado):
-      **estado inicial automático** al recibir un envío
-      ([auto on-hold/54994](https://community.kobotoolbox.org/t/can-we-set-an-on-hold-validation-automatically-when-users-submit-data/54994)),
-      **estados de validación personalizables**
-      ([customizing-validation-statuses/15808](https://community.kobotoolbox.org/t/customizing-validation-statuses/15808))
-      y, a más largo plazo, **cadena de aprobación multi-nivel por roles**
-      (solicitante → revisor → aprobador;
-      [approval-workflow/25499](https://community.kobotoolbox.org/t/approval-workflow-using-kobo-post-submission/25499)).
+- [x] **Mejoras del flujo de revisión** (sobre el estado «En espera» ya entregado) —
+      **ENTREGADO** (ver `CHANGELOG.md`). **Estado inicial automático** al sincronizar un
+      envío nuevo (global + override por formulario; fila de sistema; no escribe a Kobo;
+      [auto on-hold/54994](https://community.kobotoolbox.org/t/can-we-set-an-on-hold-validation-automatically-when-users-submit-data/54994))
+      y **estados de validación personalizables** (catálogo global `review_statuses`:
+      crear estados propios, renombrar/recolorear los integrados, desactivar; flag
+      `is_open` abierto/resuelto para las estadísticas;
+      [customizing-validation-statuses/15808](https://community.kobotoolbox.org/t/customizing-validation-statuses/15808)).
+- [ ] **Cadena de aprobación multi-nivel por roles** *(fase futura del flujo de revisión)*:
+      solicitante → revisor → aprobador
+      ([approval-workflow/25499](https://community.kobotoolbox.org/t/approval-workflow-using-kobo-post-submission/25499)).
 - [ ] **Dashboards / paneles compartibles** *(mayor esfuerzo, 1.2+)*. Ampliar las
       estadísticas enriquecidas a paneles configurables y embebibles/compartibles. Demanda
       recurrente ([open-source-online-dashboards/17702](https://community.kobotoolbox.org/t/open-source-online-dashboards/17702)).

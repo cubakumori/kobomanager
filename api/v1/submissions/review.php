@@ -32,7 +32,7 @@ $body    = Request::json();
 $status  = $body['status'] ?? '';
 $comment = isset($body['comment']) ? trim((string) $body['comment']) : null;
 
-if (!in_array($status, ['approved', 'rejected', 'on_hold', 'pending'], true)) {
+if (!ReviewStatus::isAssignable($status)) {
     ErrorResponse::send('VALIDATION_ERROR', 'Estado de revisión no válido');
 }
 

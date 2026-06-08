@@ -31,6 +31,7 @@ const routes = [
   { path: '/admin/shares', name: 'admin-shares', component: () => import('../views/admin/SharesView.vue'), meta: shell({ requiresAdmin: true }) },
   { path: '/admin/audit', name: 'admin-audit', component: () => import('../views/admin/AuditView.vue'), meta: shell({ requiresAdmin: true }) },
   { path: '/admin/settings', name: 'admin-settings', component: () => import('../views/admin/SettingsView.vue'), meta: shell({ requiresAdmin: true }) },
+  { path: '/admin/review-statuses', name: 'admin-review-statuses', component: () => import('../views/admin/ReviewStatusesView.vue'), meta: shell({ requiresAdmin: true }) },
 
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]

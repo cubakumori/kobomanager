@@ -40,8 +40,13 @@ class SubmissionSync {
             }
             $subs = $client->getSubmissionsSince($assetUid, $since);
 
-            $count    = 0;
-            $seenUids = [];
+            // Estado inicial automático (foro 54994): si el formulario/instancia lo
+            // configura, cada envío NUEVO recibe una revisión inicial de sistema.
+            $initialStatus = ReviewStatus::initialFor($formId);
+
+            $count       = 0;
+            $initialized = 0;
+            $seenUids    = [];
             foreach ($subs as $sub) {
                 $uid = $sub['_uuid'] ?? (isset($sub['_id']) ? (string) $sub['_id'] : null);
                 if (!$uid) continue;
@@ -50,7 +55,7 @@ class SubmissionSync {
                 $submittedRaw = $sub['_submission_time'] ?? null;
                 $submittedAt  = $submittedRaw ? date('Y-m-d H:i:s', strtotime($submittedRaw)) : null;
 
-                DB::run(
+                $stmt = DB::run(
                     'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, search_text, submitted_at, last_synced_at)
                      VALUES (?, ?, ?, ?, ?, NOW())
                      ON DUPLICATE KEY UPDATE
@@ -61,6 +66,18 @@ class SubmissionSync {
                     [$formId, $uid, json_encode($sub, JSON_UNESCAPED_UNICODE), SubmissionSearch::textFor($sub), $submittedAt]
                 );
                 $count++;
+
+                // rowCount()===1 ⇒ fila recién insertada (2 = actualizada, 0 = sin cambios).
+                // Solo a los envíos nuevos y sin revisión previa se les fija el estado inicial.
+                if ($initialStatus !== null && $stmt->rowCount() === 1) {
+                    $ins = DB::run(
+                        'INSERT INTO submission_reviews (submission_uid, user_id, status, comment)
+                         SELECT ?, NULL, ?, NULL
+                         WHERE NOT EXISTS (SELECT 1 FROM submission_reviews WHERE submission_uid = ?)',
+                        [$uid, $initialStatus, $uid]
+                    );
+                    $initialized += $ins->rowCount();
+                }
             }
 
             $removed = $full
@@ -72,7 +89,7 @@ class SubmissionSync {
                                   sync_status = \'success\', last_sync_error = NULL WHERE id = ?',
                 [$formId]
             );
-            return ['upserted' => $count, 'removed' => $removed];
+            return ['upserted' => $count, 'removed' => $removed, 'initialized' => $initialized];
         } catch (KoboException $e) {
             DB::run(
                 'UPDATE forms SET sync_status = \'error\', last_sync_error = ? WHERE id = ?',
