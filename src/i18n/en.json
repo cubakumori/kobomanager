@@ -36,8 +36,7 @@
     "myActivity": "My activity",
     "profile": "My profile",
     "logout": "Log out",
-    "goToProfile": "Go to my profile",
-    "reviewStatuses": "Review statuses"
+    "goToProfile": "Go to my profile"
   },
   "landing": {
     "eyebrow": "A management layer for KoboToolbox",
@@ -175,7 +174,7 @@
     "exploreStatsBody": "Form summary: total and freshness, submissions per day, review status, distribution by question (single‑choice) and by enumerator, fill‑in duration (mean/median + histogram), activity by hour/day, attachments and geographic coverage.",
     "reviewTitle": "Reviewing and exporting",
     "reviewSingle": "Single review",
-    "reviewSingleBody": "On a submission's detail, approve it, reject it or put it «On hold» (reviewed but awaiting verification) with a comment; the status is internal to KoboManager. Admins can customize the statuses (add new ones, rename or recolor) under «Review statuses», and set an automatic initial status for new submissions.",
+    "reviewSingleBody": "On a submission's detail, approve it, reject it or put it «On hold» (reviewed but awaiting verification) with a comment; the status is internal to KoboManager.",
     "reviewBatch": "Batch review",
     "reviewBatchBody": "Select several submissions with the checkboxes (or all on the page) and approve, reject or put them «On hold» at once with a shared comment. Requires validate permission.",
     "reviewExport": "Export to CSV",
@@ -355,11 +354,7 @@
     "loadError": "Could not load the forms",
     "syncErr": "Could not sync",
     "updateErr": "could not update",
-    "deleteErr": "could not delete",
-    "colInitialReview": "Initial status",
-    "initialInherit": "Global (inherit)",
-    "initialSaved": "«{name}»: initial status updated.",
-    "initialErr": "could not change the initial status"
+    "deleteErr": "could not delete"
   },
   "permissions": {
     "title": "Permissions",
@@ -491,11 +486,7 @@
     "shareAttachmentsPolicy_require_password": "Allow with password",
     "shareAttachmentsPolicy_require_passwordHint": "A password-protected link may expose its attachments.",
     "loadError": "Could not load the configuration",
-    "saveError": "Could not save",
-    "initialReview": "Initial review status",
-    "initialReviewDesc": "Status automatically assigned to every new submission when it is synced. Handy to have everything arrive «On hold» for verification. Can be overridden per form.",
-    "initialReviewNone": "No status (pending)",
-    "initialReviewManage": "Manage the available statuses in"
+    "saveError": "Could not save"
   },
   "shares": {
     "title": "Sharing",
@@ -648,11 +639,7 @@
     "action_download_attachment": "Attachment downloaded",
     "action_share_create": "Share link created",
     "action_share_revoke": "Share link revoked",
-    "action_share_delete": "Share link deleted",
-    "action_review_status_create": "Review status created",
-    "action_review_status_update": "Review status updated",
-    "action_review_status_delete": "Review status deleted",
-    "action_update_form": "Form updated"
+    "action_share_delete": "Share link deleted"
   },
   "lang": {
     "es": "Spanish",
@@ -886,26 +873,5 @@
     "SHARE_PASSWORD_REQUIRED": "This link requires a password.",
     "RATE_LIMITED": "Too many requests. Try again in a moment.",
     "generic": "An error occurred"
-  },
-  "reviewStatuses": {
-    "title": "Review statuses",
-    "subtitle": "Customize the statuses you validate submissions with: rename them, recolor, add your own or deactivate the ones you do not use.",
-    "label": "Name",
-    "order": "Order",
-    "color": "Color",
-    "isOpen": "Open (awaiting resolution)",
-    "isOpenHint": "«Open» statuses count as unresolved in the stats (like Pending and On hold); the others are treated as final.",
-    "active": "Active",
-    "builtin": "Built-in",
-    "save": "Save",
-    "saved": "Saved.",
-    "saveError": "Could not save the status.",
-    "loadError": "Could not load the statuses.",
-    "add": "Add",
-    "addTitle": "Add status",
-    "delete": "Delete",
-    "deleteTitle": "Delete status",
-    "deleteConfirm": "Delete the status «{name}»? Only possible if no review uses it.",
-    "deleted": "Status deleted."
   }
 }

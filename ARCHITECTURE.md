@@ -139,34 +139,9 @@ image/audio/video/document/file), reused by the authenticated detail and the pub
 frontend renders it with the shared `AttachmentsGallery.vue` component. *(Per‑request rate
 limiting of the public GETs is still deferred to M4b/M5.)*
 
-### Internal review flow & customizable statuses
-Review is an append‑only history (`submission_reviews`); a submission's **current** status
-is its most recent row (`MAX(id)`), defaulting to `pending` when none exists. It is fully
-**decoupled from Kobo** — these rows are never written back, and the native
-`_validation_status` is surfaced read‑only via `lib/Derived`.
-
-Statuses live in a **global catalog** (`review_statuses`, served by `lib/ReviewStatus`):
-four seeded built‑ins (`pending` / `on_hold` / `approved` / `rejected`) plus admin‑defined
-custom statuses. Each has a color (from a closed palette mirrored in
-`composables/reviewColors.js`), an optional label override (built‑ins fall back to the
-`review.<key>` i18n key), an `active` flag and an **`is_open`** flag — *open* statuses
-(like `pending`/`on_hold`) count as unresolved in stats; the rest are final. `status` is a
-`VARCHAR` referencing a catalog key (not an ENUM); `pending` cannot be deactivated.
-Admin CRUD is in `v1/admin/review_statuses*` (built‑ins can be relabeled/recolored/reordered
-but not deleted; a custom status in use can't be deleted, only deactivated). The catalog is
-fetched once into a Pinia store (`stores/reviewStatuses`) that drives badges, review buttons
-(single + batch), the list filter, CSV labels and stats — nothing hardcodes the status set.
-
-**Automatic initial status**: when `SubmissionSync` caches a *new* submission, it inserts one
-**system** review row (`user_id NULL`) with the form's effective initial status
-(`ReviewStatus::initialFor`: per‑form `forms.initial_review_status` override → global
-`settings.initial_review_status`; `null`/`pending` = disabled). Only genuinely new rows are
-seeded (detected via `rowCount()===1` + a `WHERE NOT EXISTS` guard), so updates and existing
-reviews are never overwritten. Disabled by default.
-
 ### Batch review & CSV export
 `POST /forms/{id}/review` (`forms/review_batch.php`) applies one review status
-(any active catalog key, e.g. `approved` / `on_hold` / `rejected` / `pending` or a custom one) to many
+(`approved` / `on_hold` / `rejected` / `pending`) to many
 submissions in a single transaction; it requires `validate` once and **re‑checks**, per uid,
 form membership and row scope server‑side (out‑of‑scope/foreign uids are silently skipped),
 returning `{applied, skipped}`. `GET /forms/{id}/export` (`forms/export.php`) streams a

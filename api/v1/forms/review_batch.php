@@ -28,7 +28,7 @@ $status  = $body['status'] ?? '';
 $comment = isset($body['comment']) ? trim((string) $body['comment']) : null;
 $uids    = $body['uids'] ?? null;
 
-if (!ReviewStatus::isAssignable($status)) {
+if (!in_array($status, ['approved', 'rejected', 'on_hold', 'pending'], true)) {
     ErrorResponse::send('VALIDATION_ERROR', 'Estado de revisión no válido');
 }
 if (!is_array($uids) || $uids === []) {

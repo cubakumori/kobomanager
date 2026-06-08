@@ -9,10 +9,7 @@ import { useDerivedFormat } from '../composables/derived'
 import ReviewBadge from '../components/ReviewBadge.vue'
 import LeafletMap from '../components/LeafletMap.vue'
 import AttachmentsGallery from '../components/AttachmentsGallery.vue'
-import { useReviewStatusesStore } from '../stores/reviewStatuses'
-import { btnClass } from '../composables/reviewColors'
 
-const reviewStatuses = useReviewStatusesStore()
 const { t } = useI18n()
 const { summaryRows } = useDerivedFormat()
 const route = useRoute()
@@ -306,16 +303,27 @@ onMounted(load)
             :placeholder="$t('detail.comment')"
             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
           ></textarea>
-          <div class="flex flex-wrap gap-3">
+          <div class="flex gap-3">
             <button
-              v-for="st in reviewStatuses.actionable"
-              :key="st.key"
               :disabled="reviewing"
-              class="rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-60"
-              :class="btnClass(st.color)"
-              @click="submitReview(st.key)"
+              class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+              @click="submitReview('approved')"
             >
-              {{ reviewStatuses.label(st.key) }}
+              {{ $t('detail.approve') }}
+            </button>
+            <button
+              :disabled="reviewing"
+              class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
+              @click="submitReview('on_hold')"
+            >
+              {{ $t('detail.standby') }}
+            </button>
+            <button
+              :disabled="reviewing"
+              class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+              @click="submitReview('rejected')"
+            >
+              {{ $t('detail.reject') }}
             </button>
           </div>
         </div>

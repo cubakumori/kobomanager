@@ -110,12 +110,6 @@ const linkActive = 'bg-primary-600 text-white'
           {{ $t('nav.audit') }}
         </RouterLink>
         <RouterLink
-          :to="{ name: 'admin-review-statuses' }"
-          :class="[linkBase, $route.name === 'admin-review-statuses' ? linkActive : linkInactive]"
-        >
-          {{ $t('nav.reviewStatuses') }}
-        </RouterLink>
-        <RouterLink
           :to="{ name: 'admin-settings' }"
           :class="[linkBase, $route.name === 'admin-settings' ? linkActive : linkInactive]"
         >

@@ -53,10 +53,6 @@ CREATE TABLE IF NOT EXISTS forms (
     -- muestra «Sin sincronizar» en vez de «0 envíos». `last_synced_at` no sirve para
     -- esto porque también lo fija el descubrimiento de formularios.
     submissions_synced_at DATETIME NULL,
-    -- Override por formulario del estado inicial automático de revisión. NULL =
-    -- hereda el ajuste global `initial_review_status`. Un status_key válido = ese
-    -- estado se asigna (fila de sistema) al cachear un envío nuevo. Ver lib/ReviewStatus.
-    initial_review_status VARCHAR(32) NULL,
     sync_status         ENUM('pending', 'success', 'error') DEFAULT 'pending',
     last_sync_error     TEXT,
     active              TINYINT(1) DEFAULT 1,
@@ -84,48 +80,16 @@ CREATE TABLE IF NOT EXISTS submissions_cache (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 3.6 Revisiones internas (desacopladas de Kobo)
--- `status` es un VARCHAR que referencia review_statuses.status_key (NO un ENUM): el
--- catálogo de estados es personalizable (built-ins + estados propios del usuario).
--- `user_id` es NULLable: las filas con autor NULL son del SISTEMA (estado inicial
--- automático fijado al sincronizar un envío nuevo; ver lib/ReviewStatus + SubmissionSync).
 CREATE TABLE IF NOT EXISTS submission_reviews (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     submission_uid  VARCHAR(100) NOT NULL,
-    user_id         INT UNSIGNED NULL,
-    status          VARCHAR(32) NOT NULL DEFAULT 'pending',
+    user_id         INT UNSIGNED NOT NULL,
+    status          ENUM('pending', 'approved', 'on_hold', 'rejected') NOT NULL DEFAULT 'pending',
     comment         TEXT,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_submission (submission_uid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 3.6.1 Catálogo GLOBAL de estados de revisión (personalizable).
--- Los 4 built-in (is_builtin=1) se siembran abajo y no se pueden borrar ni cambiar
--- su `status_key`; sí se pueden relabelar/recolorear/reordenar y (salvo pending)
--- desactivar o cambiar su `is_open`. `is_open`=1 ⇒ el estado sigue requiriendo
--- acción (cuenta como NO resuelto, igual que pending/on_hold); =0 ⇒ resuelto/final.
--- `label` NULL en un built-in ⇒ el frontend usa la clave i18n review.<status_key>.
--- `color` es un TOKEN de una paleta cerrada (ver ReviewBadge / composables/reviewColors).
-CREATE TABLE IF NOT EXISTS review_statuses (
-    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    status_key      VARCHAR(32) NOT NULL UNIQUE,
-    label           VARCHAR(64) NULL,
-    color           VARCHAR(16) NOT NULL DEFAULT 'slate',
-    is_open         TINYINT(1) NOT NULL DEFAULT 1,
-    is_builtin      TINYINT(1) NOT NULL DEFAULT 0,
-    sort_order      INT NOT NULL DEFAULT 0,
-    active          TINYINT(1) NOT NULL DEFAULT 1,
-    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Built-ins (idempotente). Colores alineados con el badge histórico:
--- pending=amber, on_hold=sky, approved=green, rejected=red.
-INSERT INTO review_statuses (status_key, label, color, is_open, is_builtin, sort_order, active) VALUES
-    ('pending',  NULL, 'amber', 1, 1,  0, 1),
-    ('on_hold',  NULL, 'sky',   1, 1, 10, 1),
-    ('approved', NULL, 'green', 0, 1, 20, 1),
-    ('rejected', NULL, 'red',   0, 1, 30, 1)
-ON DUPLICATE KEY UPDATE status_key = status_key;
 
 -- 3.7 Permisos usuario-formulario
 CREATE TABLE IF NOT EXISTS user_form_permissions (

@@ -35,14 +35,15 @@ sesión propia** (acordar el modelo antes de codificar + verificación contra da
       y Enlaces. Kobo **no lo soporta** — ventaja competitiva
       ([condition-based-row-level-permissions/55372](https://community.kobotoolbox.org/t/condition-based-row-level-permissions/55372),
       el staff lo confirma jul-2024).
-- [x] **Mejoras del flujo de revisión** (sobre el estado «En espera» ya entregado) —
-      **ENTREGADO** (ver `CHANGELOG.md`). **Estado inicial automático** al sincronizar un
-      envío nuevo (global + override por formulario; fila de sistema; no escribe a Kobo;
-      [auto on-hold/54994](https://community.kobotoolbox.org/t/can-we-set-an-on-hold-validation-automatically-when-users-submit-data/54994))
-      y **estados de validación personalizables** (catálogo global `review_statuses`:
-      crear estados propios, renombrar/recolorear los integrados, desactivar; flag
-      `is_open` abierto/resuelto para las estadísticas;
-      [customizing-validation-statuses/15808](https://community.kobotoolbox.org/t/customizing-validation-statuses/15808)).
+- **Flujo de revisión — decisión de diseño (mantener simple)**: se conservan los **4 estados
+      fijos** (pendiente / en espera / aprobado / rechazado) y la validación **plana por
+      formulario** (un usuario con `can_validate` valida ese formulario). Se exploraron y
+      **descartaron** por baja utilidad / posible confusión para el caso actual: el **estado
+      inicial automático**
+      ([54994](https://community.kobotoolbox.org/t/can-we-set-an-on-hold-validation-automatically-when-users-submit-data/54994))
+      y los **estados de validación personalizables**
+      ([15808](https://community.kobotoolbox.org/t/customizing-validation-statuses/15808)).
+      Quedan como ideas reabribles si aparece una necesidad real.
 - [ ] **Cadena de aprobación multi-nivel por roles** *(fase futura del flujo de revisión)*.
       Flujo por **etapas ordenadas**, cada una a cargo de un rol distinto
       (p. ej. solicitante → revisor → aprobador), de modo que un envío solo avanza cuando la

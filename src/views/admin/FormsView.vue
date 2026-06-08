@@ -4,10 +4,8 @@ import { useI18n } from 'vue-i18n'
 import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 import { confirmDialog } from '../../composables/confirm'
-import { useReviewStatusesStore } from '../../stores/reviewStatuses'
 
 const { t } = useI18n()
-const reviewStatuses = useReviewStatusesStore()
 
 const forms = ref([])
 const accountsList = ref([])
@@ -179,20 +177,6 @@ const statusBadge = {
 }
 const statusKey = { deployed: 'forms.typeDeployed', draft: 'forms.typeDraft', archived: 'forms.typeArchived' }
 
-// Override por formulario del estado inicial automático de revisión.
-// '' = hereda el ajuste global; 'pending' o un status_key = override.
-async function setInitial(f, value) {
-  const prev = f.initial_review_status ?? ''
-  f.initial_review_status = value === '' ? null : value
-  try {
-    await api.put(`/admin/forms/${f.id}`, { initial_review_status: value })
-    flash.value = t('forms.initialSaved', { name: f.name })
-  } catch (e) {
-    f.initial_review_status = prev === '' ? null : prev
-    syncError.value = `«${f.name}»: ${apiError(e, t('forms.initialErr'))}`
-  }
-}
-
 onMounted(load)
 </script>
 
@@ -260,7 +244,6 @@ onMounted(load)
             <th class="px-4 py-3">{{ $t('forms.colType') }}</th>
             <th class="px-4 py-3">{{ $t('forms.colSync') }}</th>
             <th class="px-4 py-3">{{ $t('forms.colLastSync') }}</th>
-            <th class="px-4 py-3">{{ $t('forms.colInitialReview') }}</th>
             <th class="px-4 py-3 text-right">{{ $t('common.actions') }}</th>
           </tr>
         </thead>
@@ -292,19 +275,6 @@ onMounted(load)
               </p>
             </td>
             <td class="px-4 py-3 text-slate-500">{{ f.last_synced_at ?? '—' }}</td>
-            <td class="px-4 py-3">
-              <select
-                :value="f.initial_review_status ?? ''"
-                class="rounded-lg border border-slate-300 px-2 py-1 text-xs outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
-                @change="setInitial(f, $event.target.value)"
-              >
-                <option value="">{{ $t('forms.initialInherit') }}</option>
-                <option value="pending">{{ $t('review.pending') }}</option>
-                <option v-for="st in reviewStatuses.actionable" :key="st.key" :value="st.key">
-                  {{ reviewStatuses.label(st.key) }}
-                </option>
-              </select>
-            </td>
             <td class="px-4 py-3">
               <div class="flex items-center justify-end gap-3">
                 <button
@@ -352,7 +322,7 @@ onMounted(load)
             </td>
           </tr>
           <tr v-if="!filteredForms.length">
-            <td colspan="7" class="px-4 py-6 text-center text-slate-400">{{ $t('forms.empty') }}</td>
+            <td colspan="6" class="px-4 py-6 text-center text-slate-400">{{ $t('forms.empty') }}</td>
           </tr>
         </tbody>
       </table>

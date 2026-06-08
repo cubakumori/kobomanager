@@ -8,29 +8,11 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [1.2.0] - 2026-06-08
 
-Hitos nº2 y nº3 del **roadmap 1.x**: scoping por filas **multi-condición (AND/OR +
-operadores)** y **mejoras del flujo de revisión** (estado inicial automático + estados de
-validación personalizables).
+Segundo hito del **roadmap 1.x**: scoping por filas **multi-condición (AND/OR +
+operadores)**.
 
 ### Añadido
 
-- **Estado inicial automático de revisión** (foro
-  [auto on-hold/54994](https://community.kobotoolbox.org/t/can-we-set-an-on-hold-validation-automatically-when-users-submit-data/54994)):
-  cada envío **nuevo** puede recibir automáticamente un estado de revisión al sincronizarlo
-  (p. ej. todo llega «En espera» de verificación). Se configura **globalmente**
-  (Configuración → «Estado inicial de revisión») con **override por formulario**
-  (Formularios → columna «Estado inicial»). La fila la crea el **sistema** (autor nulo) solo
-  para envíos realmente nuevos; nunca pisa una revisión existente ni escribe a Kobo. Por
-  defecto está **desactivado** (los envíos siguen llegando «pendientes»).
-- **Estados de validación personalizables** (foro
-  [customizing-validation-statuses/15808](https://community.kobotoolbox.org/t/customizing-validation-statuses/15808)):
-  además de los integrados (Pendiente / En espera / Aprobado / Rechazado) se pueden **crear
-  estados propios**, **renombrar/recolorear** los integrados y **desactivar** los que no se
-  usen. Cada estado declara si es **«abierto»** (sigue pendiente de resolución, cuenta como
-  no resuelto en estadísticas, igual que Pendiente/En espera) o **resuelto/final**. Nueva
-  página de administración **«Estados de revisión»** (`/admin/review-statuses`). Los estados
-  alimentan badges, botones de revisión (individual y en lote), el filtro de la tabla, la
-  exportación CSV y las estadísticas, sin valores fijos en el código.
 - **Filtro de filas con grupos AND/OR y operadores** (antes solo `campo = uno de`
   combinado con Y). `lib/RowScope` pasa a una forma canónica de **grupos a 2 niveles**
   (`{match, groups:[{match, conditions:[{field, op, values}]}]}`): los grupos se
@@ -64,14 +46,6 @@ validación personalizables).
   **sigue leyendo**: `RowScope::normalize()` lo canonicaliza al vuelo a un único grupo
   `all`. **No se reescriben datos en BD**; al re-guardar desde la UI se persiste el nuevo
   formato. Sin cambios de esquema (las columnas `row_filter` siguen siendo `JSON`).
-- **Estados de revisión**: `submission_reviews.status` pasa de `ENUM` a `VARCHAR(32)`
-  (referencia el catálogo `review_statuses`) y `submission_reviews.user_id` ahora admite
-  `NULL` (filas de sistema del estado inicial automático). Los 4 estados integrados se
-  **siembran** en `review_statuses`; las revisiones existentes (con claves
-  `pending`/`approved`/`on_hold`/`rejected`) siguen siendo válidas sin tocar datos. Nuevas
-  columnas: `forms.initial_review_status` y la tabla `review_statuses`. En instalaciones
-  pre-1.0 hay que aplicar el DDL a mano (el `CREATE TABLE IF NOT EXISTS` no altera tablas
-  existentes): ver `db/001_schema.sql`.
 
 ## [1.1.0] - 2026-06-08
 

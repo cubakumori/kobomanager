@@ -6,10 +6,7 @@ import api from '../services/api'
 import { apiError } from '../stores/auth'
 import { fmtDuration } from '../composables/derived'
 import StatsChart from '../components/StatsChart.vue'
-import { useReviewStatusesStore } from '../stores/reviewStatuses'
-import { colorHex } from '../composables/reviewColors'
 
-const reviewStatuses = useReviewStatusesStore()
 const { t } = useI18n()
 const route = useRoute()
 const formId = computed(() => Number(route.params.id))
@@ -34,28 +31,13 @@ const byPeriodData = computed(() => ({
   ],
 }))
 
-// Filas de estado dinámicas: el catálogo activo (status_meta) + cualquier estado
-// con conteo que ya no esté en el catálogo (datos antiguos), para no perder envíos.
-const statusRows = computed(() => {
-  const counts = stats.value?.by_status ?? {}
-  const meta = stats.value?.status_meta ?? []
-  const seen = new Set()
-  const rows = meta.map((m) => {
-    seen.add(m.key)
-    return { key: m.key, label: reviewStatuses.label(m.key), color: m.color, count: counts[m.key] ?? 0 }
-  })
-  for (const [k, c] of Object.entries(counts)) {
-    if (!seen.has(k) && c > 0) {
-      rows.push({ key: k, label: reviewStatuses.label(k), color: reviewStatuses.color(k), count: c })
-    }
+const byStatusData = computed(() => {
+  const s = stats.value?.by_status ?? { pending: 0, approved: 0, on_hold: 0, rejected: 0 }
+  return {
+    labels: [t('review.pending'), t('review.approved'), t('review.on_hold'), t('review.rejected')],
+    datasets: [{ data: [s.pending, s.approved, s.on_hold ?? 0, s.rejected], backgroundColor: ['#f59e0b', '#16a34a', '#0284c7', '#dc2626'] }],
   }
-  return rows
 })
-
-const byStatusData = computed(() => ({
-  labels: statusRows.value.map((r) => r.label),
-  datasets: [{ data: statusRows.value.map((r) => r.count), backgroundColor: statusRows.value.map((r) => colorHex(r.color)) }],
-}))
 
 function hBar(labels, values) {
   return { labels, datasets: [{ data: values, backgroundColor: PRIMARY, borderRadius: 4 }] }
@@ -203,9 +185,21 @@ onMounted(load)
           <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.total') }}</p>
           <p class="mt-1 text-2xl font-semibold text-slate-900">{{ stats.total }}</p>
         </div>
-        <div v-for="r in statusRows" :key="r.key" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <p class="text-xs uppercase tracking-wider text-slate-400">{{ r.label }}</p>
-          <p class="mt-1 text-2xl font-semibold" :style="{ color: colorHex(r.color) }">{{ r.count }}</p>
+        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+          <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.pending') }}</p>
+          <p class="mt-1 text-2xl font-semibold text-amber-600">{{ stats.by_status.pending }}</p>
+        </div>
+        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+          <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.approved') }}</p>
+          <p class="mt-1 text-2xl font-semibold text-green-600">{{ stats.by_status.approved }}</p>
+        </div>
+        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+          <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.onHold') }}</p>
+          <p class="mt-1 text-2xl font-semibold text-sky-600">{{ stats.by_status.on_hold ?? 0 }}</p>
+        </div>
+        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+          <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.rejected') }}</p>
+          <p class="mt-1 text-2xl font-semibold text-red-600">{{ stats.by_status.rejected }}</p>
         </div>
       </div>
 
