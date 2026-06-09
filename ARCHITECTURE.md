@@ -212,14 +212,25 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   single in‑scope pass over the payloads computes per‑question distributions (`select_one`,
   labelled), per‑enumerator counts, fill‑in duration (mean/median + histogram), activity by
   hour/weekday, attachment and geo coverage, and freshness — reusing `Derived`, `FormSchema`
-  and `RowScope`. (Week/month aggregation, cumulative and trend are deferred.)
+  and `RowScope`. It also returns a **cumulative** running total per period point and a
+  **trend** object (last 7/30 days vs the previous equal period, with % change). The
+  submission list can be **sorted by a calculated column** (duration, attachment count,
+  has‑geo) expressed as SQL over the JSON, so the order is global rather than per‑page.
 - **Search** (`lib/SubmissionSearch.php`, M4a): submission‑table search no longer does a `LIKE`
   over the whole JSON. `textFor()` builds a plain‑text projection of the answer **values**
   (skipping `_*` metadata keys) into the indexed `submissions_cache.search_text` column,
   populated on every sync and on edit; `clause($alias, $term)` builds the WHERE fragment using a
   `FULLTEXT` `MATCH … AGAINST (… IN BOOLEAN MODE)` with per‑word prefix matching (falling back to
   `LIKE` for terms shorter than InnoDB's min token size). Reused by the list, the CSV export and
-  the public share list. Backfill / recompute: `cli/rebuild_search_text.php`.
+  the public share list. `textFor()` also appends the readable **option labels** (all of the
+  form's translations, via `FormSchema::searchOptionLabels`) next to the raw codes, so a search
+  for «Femenino» matches a row whose value is the code «2». Backfill / recompute:
+  `cli/rebuild_search_text.php`.
+- **Edit history** (`v1/submissions/history.php`): since each Kobo edit changes the `_uuid`,
+  the per‑submission edit log is reconstructed by walking the `_uuid` chain backwards (audit
+  `edit` rows where `detail.new_uid` = the current uid → its `submission_uid` is the
+  predecessor). Returns each change as `field → before/after` with resolved labels; requires
+  `can_edit`, honours row‑scoping and hidden fields.
 
 ### Settings & audit
 - `lib/Settings.php`: global key/value settings (JSON) — sync statuses, default locale, label

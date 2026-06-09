@@ -8,6 +8,22 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Estadísticas con tendencias**: la serie temporal (por día/mes) añade una línea de
+  **total acumulado** (gráfico mixto barra+línea con doble eje), y dos tarjetas de
+  **tendencia reciente** — envíos de los últimos 7 y 30 días vs el periodo anterior
+  equivalente, con % de variación (▲/▼) y «—» cuando no hay base. Respeta el scoping.
+- **Búsqueda por etiqueta legible**: `search_text` indexa ahora, además del código, la
+  **etiqueta** de las opciones de `select_one`/`select_multiple` (uniendo todas las
+  traducciones del formulario), de modo que buscar «Femenino» casa un envío cuyo valor es
+  el código «2». Buscar por código sigue funcionando. Backfill:
+  `cli/rebuild_search_text.php`.
+- **Ordenar la tabla de envíos por columna calculada**: el orden admite ahora *duración*,
+  *nº de adjuntos* y *tiene ubicación* (además de la fecha), expresadas como SQL sobre el
+  JSON para que el orden sea **global** (toda la tabla, no solo la página).
+- **Historial de edición por envío**: nueva sección en el detalle (para quien puede
+  editar) que reconstruye todas las ediciones siguiendo la cadena de `_uuid`
+  (`GET /submissions/{id}/history`), mostrando «campo: valor anterior → nuevo» con
+  etiquetas legibles. Respeta scoping y campos ocultos.
 - **Tests de integración HTTP**: nueva suite (`api/tests/http/`) que arranca la API real
   (`api/index.php`) en un servidor `php -S` efímero y le hace peticiones HTTP de verdad
   (cookies, CSRF, cabeceras, routing del front controller). Cubre el ciclo de

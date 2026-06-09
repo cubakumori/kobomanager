@@ -102,14 +102,15 @@ contra una cuenta KoboToolbox real:
 
 ## Mejoras de 2.ª fase (diferidas dentro de funcionalidad ya entregada)
 
-- [ ] **Ordenar la tabla por una columna calculada** (de P2 · valores derivados).
-- [ ] **Estadísticas**: ~~distribución de `select_multiple`~~ (HECHO; ver CHANGELOG);
-      pendiente **agregación semana/mes + acumulado** y **tendencia** (7/30 días vs
-      periodo anterior) (de P3).
-- [ ] **Búsqueda con etiquetas**: incluir las etiquetas resueltas del esquema en
-      `search_text`, no solo los valores crudos (de M4a).
-- [ ] **Historial de edición por envío** en la UI **para admins** (ya se guarda en
-      `audit_log`; «Mi actividad» de P1 cubre la vista del propio usuario).
+- [x] **Ordenar la tabla por una columna calculada** (de P2 · valores derivados) —
+      duración, nº de adjuntos y tiene-ubicación, ordenadas GLOBALMENTE vía SQL sobre el JSON.
+- [x] **Estadísticas**: ~~distribución de `select_multiple`~~, **acumulado** y **tendencia**
+      (7/30 días vs periodo anterior) — HECHO (ver CHANGELOG). Pendiente menor: agregación
+      explícita por semana (hoy día↔mes automático según el tramo).
+- [x] **Búsqueda con etiquetas**: `search_text` incluye ahora código + etiqueta resuelta
+      de las opciones (todas las traducciones).
+- [x] **Historial de edición por envío** en la UI para quien puede editar — recorre la
+      cadena de `_uuid` (`GET /submissions/{id}/history`).
 
 ---
 
