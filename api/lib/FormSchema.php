@@ -153,6 +153,48 @@ class FormSchema {
         return ['labels' => $labels, 'options' => $options, 'multi' => array_keys($multi)];
     }
 
+    /**
+     * Mapa para INDEXAR la búsqueda: ruta (y hoja) => { código => "etiquetas de TODAS
+     * las traducciones" }. A diferencia de resolve() (un solo idioma de UI), une las
+     * etiquetas de opción de todos los idiomas del formulario, para que buscar por la
+     * etiqueta —en cualquier idioma— case el envío aunque en el payload viva el código.
+     * Lo consume SubmissionSearch::textFor para enriquecer `search_text`.
+     */
+    public static function searchOptionLabels(?array $schema): array {
+        if (!$schema || empty($schema['fields'])) {
+            return [];
+        }
+        $choices = $schema['choices'] ?? [];
+        $out = [];
+        foreach ($schema['fields'] as $full => $f) {
+            $list = $f['list'] ?? null;
+            if ($list === null || !isset($choices[$list])) {
+                continue;
+            }
+            $byCode = [];
+            foreach ($choices[$list] as $val => $lblMap) {
+                $labels = [];
+                foreach ((array) $lblMap as $t) {
+                    $t = trim((string) $t);
+                    if ($t !== '' && !in_array($t, $labels, true)) {
+                        $labels[] = $t;
+                    }
+                }
+                if ($labels) {
+                    $byCode[(string) $val] = implode(' ', $labels);
+                }
+            }
+            if ($byCode) {
+                $out[$full] = $byCode;
+                $leaf = $f['leaf'] ?? $full;
+                if (!isset($out[$leaf])) {
+                    $out[$leaf] = $byCode;
+                }
+            }
+        }
+        return $out;
+    }
+
     // ---------- internos ----------
 
     /**

@@ -40,6 +40,14 @@ class SubmissionSync {
             }
             $subs = $client->getSubmissionsSince($assetUid, $since);
 
+            // Mapa de etiquetas de opción (todas las traducciones) para enriquecer el
+            // texto buscable: se calcula UNA vez por formulario desde el esquema recién
+            // refrescado y se reutiliza en cada fila.
+            $schemaRow   = DB::run('SELECT schema_json FROM forms WHERE id = ?', [$formId])->fetch();
+            $optionLabels = FormSchema::searchOptionLabels(
+                ($schemaRow && $schemaRow['schema_json']) ? json_decode($schemaRow['schema_json'], true) : null
+            );
+
             $count    = 0;
             $seenUids = [];
             foreach ($subs as $sub) {
@@ -58,7 +66,7 @@ class SubmissionSync {
                         search_text    = VALUES(search_text),
                         submitted_at   = VALUES(submitted_at),
                         last_synced_at = NOW()',
-                    [$formId, $uid, json_encode($sub, JSON_UNESCAPED_UNICODE), SubmissionSearch::textFor($sub), $submittedAt]
+                    [$formId, $uid, json_encode($sub, JSON_UNESCAPED_UNICODE), SubmissionSearch::textFor($sub, $optionLabels), $submittedAt]
                 );
                 $count++;
             }

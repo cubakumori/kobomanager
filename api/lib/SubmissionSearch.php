@@ -19,9 +19,29 @@ class SubmissionSearch {
      * índice no se contamina con URLs de adjuntos, UUIDs internos ni rutas de
      * campo, y una búsqueda de «audio» ya no casa con un `question_xpath`.
      */
-    public static function textFor(array $payload): string {
+    public static function textFor(array $payload, array $optionLabels = []): string {
         $parts = [];
         self::collect($payload, $parts);
+
+        // Enriquecer con etiquetas legibles de las opciones (select_one/multiple): así
+        // buscar «Femenino» casa un envío cuyo payload guarda el código «2». $optionLabels
+        // = FormSchema::searchOptionLabels($schema): ruta => { código => "etiquetas" }.
+        // Los códigos crudos ya van vía collect(), de modo que buscar por código sigue
+        // funcionando (decisión: código + etiqueta).
+        foreach ($optionLabels as $path => $byCode) {
+            if (!array_key_exists($path, $payload)) {
+                continue;
+            }
+            $val = $payload[$path];
+            if (!is_string($val) && !is_int($val)) {
+                continue;
+            }
+            foreach (preg_split('/\s+/', trim((string) $val), -1, PREG_SPLIT_NO_EMPTY) ?: [] as $code) {
+                if (isset($byCode[$code])) {
+                    $parts[] = $byCode[$code];
+                }
+            }
+        }
         return trim(implode(' ', $parts));
     }
 

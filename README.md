@@ -166,6 +166,18 @@ and [`ROADMAP.md`](./ROADMAP.md) for what's pending.
 See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the design overview and
 [`CONTRIBUTING.md`](./CONTRIBUTING.md) for conventions and how to get set up.
 
+---
+
+## Support this project
+
+If you've found this **KoboManager** app useful, please consider supporting me:
+
+[![PayPal](https://img.shields.io/badge/PayPal-Donar-blue?style=for-the-badge&logo=paypal)](https://paypal.me/ernestortiz)
+
+[![Ko-fi](https://img.shields.io/badge/BUY_ME_A-KO_FI-darkseagreen?style=for-the-badge&logo=ko-fi)](https://ko-fi.com/kumoricuba)
+
+---
+
 ## License
 
 Licensed under the **GNU Affero General Public License v3.0 or later** (AGPL-3.0-or-later) —

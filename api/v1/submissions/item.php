@@ -175,7 +175,7 @@ if ($method === 'PUT') {
             [
                 $changedUuid ? $newUuid : $uid,
                 json_encode($payload, JSON_UNESCAPED_UNICODE),
-                SubmissionSearch::textFor($payload),
+                SubmissionSearch::textFor($payload, FormSchema::searchOptionLabels($schemaRaw)),
                 $sub['id'],
             ]
         );

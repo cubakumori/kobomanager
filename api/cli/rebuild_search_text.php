@@ -20,26 +20,35 @@ if (PHP_SAPI !== 'cli') {
 require __DIR__ . '/../config.php';
 require __DIR__ . '/../lib/DB.php';
 require __DIR__ . '/../lib/SubmissionSearch.php';
+require __DIR__ . '/../lib/FormSchema.php';
 
 $formId = isset($argv[1]) ? (int) $argv[1] : 0;
 
-$sql    = 'SELECT id, json_payload FROM submissions_cache';
-$params = [];
+// Se procesa POR FORMULARIO para reutilizar su mapa de etiquetas de opción (el
+// texto buscable incluye ahora código + etiqueta legible; ver SubmissionSearch::textFor).
+$formSql    = 'SELECT id, schema_json FROM forms';
+$formParams = [];
 if ($formId > 0) {
-    $sql      .= ' WHERE form_id = ?';
-    $params[]  = $formId;
+    $formSql     .= ' WHERE id = ?';
+    $formParams[] = $formId;
 }
+$forms = DB::run($formSql, $formParams)->fetchAll();
 
-$rows = DB::run($sql, $params)->fetchAll();
-$n    = 0;
-foreach ($rows as $row) {
-    $payload = json_decode((string) $row['json_payload'], true);
-    if (!is_array($payload)) continue;
-    DB::run(
-        'UPDATE submissions_cache SET search_text = ? WHERE id = ?',
-        [SubmissionSearch::textFor($payload), $row['id']]
-    );
-    $n++;
+$n = 0;
+foreach ($forms as $form) {
+    $schema       = $form['schema_json'] ? json_decode((string) $form['schema_json'], true) : null;
+    $optionLabels = FormSchema::searchOptionLabels($schema);
+
+    $rows = DB::run('SELECT id, json_payload FROM submissions_cache WHERE form_id = ?', [$form['id']])->fetchAll();
+    foreach ($rows as $row) {
+        $payload = json_decode((string) $row['json_payload'], true);
+        if (!is_array($payload)) continue;
+        DB::run(
+            'UPDATE submissions_cache SET search_text = ? WHERE id = ?',
+            [SubmissionSearch::textFor($payload, $optionLabels), $row['id']]
+        );
+        $n++;
+    }
 }
 
 echo "search_text recalculado en $n envío(s)" . ($formId ? " (form $formId)" : '') . ".\n";
