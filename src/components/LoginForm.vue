@@ -43,7 +43,7 @@ async function onSubmit() {
   <form class="space-y-5" @submit.prevent="onSubmit">
     <div
       v-if="error"
-      class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200"
+      class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900"
     >
       {{ error }}
     </div>

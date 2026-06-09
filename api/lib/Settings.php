@@ -152,6 +152,28 @@ class Settings {
         return is_array($runs) ? $runs : [];
     }
 
+    /**
+     * Tema visual por defecto del sitio ('light'|'dark'|'auto'). Solo aplica a
+     * quien no haya elegido tema con el selector (la elección del usuario,
+     * guardada en su navegador, siempre gana).
+     */
+    public const VALID_THEMES = ['light', 'dark', 'auto'];
+    private const DEFAULT_THEME = 'auto';
+
+    /** ¿Se muestra el selector de tema (portada y perfil)? Activado por defecto. */
+    private const DEFAULT_SHOW_THEME_TOGGLE = true;
+
+    /** Tema por defecto del sitio ('light'|'dark'|'auto'). */
+    public static function defaultTheme(): string {
+        $v = self::get('default_theme', self::DEFAULT_THEME);
+        return in_array($v, self::VALID_THEMES, true) ? $v : self::DEFAULT_THEME;
+    }
+
+    /** ¿Selector de tema visible para los usuarios? */
+    public static function showThemeToggle(): bool {
+        return (bool) self::get('show_theme_toggle', self::DEFAULT_SHOW_THEME_TOGGLE);
+    }
+
     public const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login'];
 
     /**

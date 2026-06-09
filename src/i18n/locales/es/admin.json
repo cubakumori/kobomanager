@@ -179,7 +179,11 @@
     "shareAttachmentsPolicy_require_password": "Permitir con contraseña",
     "shareAttachmentsPolicy_require_passwordHint": "Un enlace con contraseña puede exponer sus adjuntos.",
     "loadError": "No se pudo cargar la configuración",
-    "saveError": "No se pudo guardar"
+    "saveError": "No se pudo guardar",
+    "theme": "Tema por defecto",
+    "themeDesc": "Tema visual inicial del sitio (claro, oscuro o automático según el sistema). Quien ya haya elegido tema con el selector conserva su elección.",
+    "themeToggle": "Mostrar selector de tema",
+    "themeToggleHint": "Si se desactiva, el botón sol/luna de la portada y el ajuste de tema del perfil se ocultan; todos los que no hayan elegido tema ven el tema por defecto."
   },
   "audit": {
     "title": "Auditoría",

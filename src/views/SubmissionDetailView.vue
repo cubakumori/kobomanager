@@ -198,7 +198,7 @@ onMounted(load)
       </p>
     </header>
 
-    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
       {{ error }}
     </div>
     <Skeleton v-else-if="loading" variant="lines" :lines="10" />
@@ -325,7 +325,7 @@ onMounted(load)
       <section v-if="sub.can_validate" class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
         <h2 class="border-b border-slate-100 px-5 py-3 font-semibold text-slate-900">{{ $t('detail.review') }}</h2>
         <div class="space-y-3 px-5 py-4">
-          <div v-if="reviewError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div v-if="reviewError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
             {{ reviewError }}
           </div>
           <textarea

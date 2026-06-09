@@ -148,7 +148,7 @@ onMounted(() => {
       </button>
     </div>
 
-    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">{{ error }}</div>
+    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">{{ error }}</div>
 
     <p class="text-sm text-slate-500">{{ $t('audit.total', { n: total }) }}</p>
 

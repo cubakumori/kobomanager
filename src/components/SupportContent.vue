@@ -77,9 +77,9 @@ function reset() {
         </div>
       </section>
 
-      <section class="rounded-2xl bg-accent-50 p-6 ring-1 ring-accent-200">
-        <h2 class="text-lg font-semibold text-accent-800">{{ $t('support.donateTitle') }}</h2>
-        <p class="mt-2 text-sm text-accent-900/70">{{ $t('support.donateBody') }}</p>
+      <section class="rounded-2xl bg-accent-50 p-6 ring-1 ring-accent-200 dark:bg-accent-900/25 dark:ring-accent-800">
+        <h2 class="text-lg font-semibold text-accent-800 dark:text-accent-300">{{ $t('support.donateTitle') }}</h2>
+        <p class="mt-2 text-sm text-accent-900/70 dark:text-accent-200/70">{{ $t('support.donateBody') }}</p>
         <div class="mt-4 flex flex-wrap gap-3">
           <a
             :href="paypalUrl"
@@ -115,7 +115,7 @@ function reset() {
       <p class="mt-2 text-sm text-slate-600">{{ $t('support.contactBody') }}</p>
 
       <!-- Estado: enviado -->
-      <div v-if="sent" class="mt-5 rounded-xl bg-success-50 p-5 text-center ring-1 ring-success-200">
+      <div v-if="sent" class="mt-5 rounded-xl bg-success-50 p-5 text-center ring-1 ring-success-200 dark:bg-success-900/25 dark:ring-success-800">
         <p class="font-semibold text-success-800">{{ $t('support.okTitle') }}</p>
         <p class="mt-1 text-sm text-success-900/70">{{ $t('support.okBody') }}</p>
         <button

@@ -6,11 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>KoboManager</title>
     <!-- Modo oscuro sin destello: aplica la clase ANTES de cargar la app
-         (misma lógica que src/composables/darkMode.js). -->
+         (misma lógica que src/composables/darkMode.js: elección del usuario →
+         default del sitio cacheado de /config → 'auto'). -->
     <script>
       try {
-        var kmTheme = localStorage.getItem('km.theme')
-        if (kmTheme === 'dark' || ((kmTheme === 'auto' || !kmTheme) && matchMedia('(prefers-color-scheme: dark)').matches)) {
+        var kmTheme = localStorage.getItem('km.theme') || localStorage.getItem('km.theme.default') || 'auto'
+        if (kmTheme === 'dark' || (kmTheme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches)) {
           document.documentElement.classList.add('dark')
         }
       } catch (e) {}

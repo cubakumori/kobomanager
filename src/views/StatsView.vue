@@ -225,7 +225,7 @@ onMounted(load)
       </p>
     </header>
 
-    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
       {{ error }}
     </div>
     <Skeleton v-else-if="loading" variant="cards" :count="4" />

@@ -255,7 +255,7 @@ onMounted(() => {
       </button>
     </header>
 
-    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
       {{ error }}
     </div>
 
@@ -282,10 +282,10 @@ onMounted(() => {
               <div class="mt-1 flex flex-wrap items-center gap-1.5">
                 <code class="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">/s/{{ link.token.slice(0, 10) }}…</code>
                 <span v-if="link.has_password" class="text-xs text-amber-600">🔒 {{ $t('shares.withPassword') }}</span>
-                <span v-if="link.row_filter" class="text-xs text-accent-700">
+                <span v-if="link.row_filter" class="text-xs text-accent-700 dark:text-accent-300">
                   {{ $t('shares.rowFilterActive', { n: countConditions(link.row_filter) }) }}
                 </span>
-                <span v-if="link.field_filter" class="text-xs text-accent-700">
+                <span v-if="link.field_filter" class="text-xs text-accent-700 dark:text-accent-300">
                   {{ $t('permissions.colsHidden', { n: link.field_filter.hidden.length }) }}
                 </span>
               </div>
@@ -295,9 +295,9 @@ onMounted(() => {
               <span
                 class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1"
                 :class="{
-                  'bg-success-50 text-success-700 ring-success-200': linkState(link) === 'active',
+                  'bg-success-50 text-success-700 ring-success-200 dark:bg-success-900/40 dark:text-success-300 dark:ring-success-800': linkState(link) === 'active',
                   'bg-slate-100 text-slate-500 ring-slate-200': linkState(link) === 'revoked',
-                  'bg-amber-50 text-amber-700 ring-amber-200': linkState(link) === 'expired',
+                  'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:ring-amber-900': linkState(link) === 'expired',
                 }"
               >
                 {{ $t('shares.state' + linkState(link).charAt(0).toUpperCase() + linkState(link).slice(1)) }}
@@ -328,11 +328,11 @@ onMounted(() => {
                 >{{ $t('shares.open') }}</a>
                 <button
                   v-if="linkState(link) !== 'revoked'"
-                  class="rounded-lg px-2.5 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50"
+                  class="rounded-lg px-2.5 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40"
                   @click="revoke(link)"
                 >{{ $t('shares.revoke') }}</button>
                 <button
-                  class="rounded-lg px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                  class="rounded-lg px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
                   @click="remove(link)"
                 >{{ $t('shares.delete') }}</button>
               </div>
@@ -348,7 +348,7 @@ onMounted(() => {
     <!-- Modal: crear enlace -->
     <Modal v-if="showCreate" size="lg" :title="$t('shares.new')" @close="showCreate = false">
       <div class="space-y-4">
-        <div v-if="createError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+        <div v-if="createError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
           {{ createError }}
         </div>
 
@@ -473,7 +473,7 @@ onMounted(() => {
         />
 
         <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
-          <button type="button" class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50" @click="clearScope">
+          <button type="button" class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40" @click="clearScope">
             {{ $t('permissions.scopeClear') }}
           </button>
           <div class="flex gap-2">
@@ -492,7 +492,7 @@ onMounted(() => {
     <Modal v-if="colsOpen" size="xl" :title="$t('permissions.colsTitle', { form: '' })" @close="colsOpen = false">
       <div class="space-y-4">
         <p class="text-sm text-slate-500">{{ $t('permissions.colsIntro') }}</p>
-        <div v-if="colsError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">{{ colsError }}</div>
+        <div v-if="colsError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">{{ colsError }}</div>
         <div v-if="colsLoading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
 
         <template v-else>
@@ -517,7 +517,7 @@ onMounted(() => {
         </template>
 
         <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
-          <button type="button" class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50" @click="clearCols">
+          <button type="button" class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40" @click="clearCols">
             {{ $t('permissions.colsClear') }}
           </button>
           <div class="flex gap-2">

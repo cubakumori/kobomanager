@@ -100,11 +100,14 @@ Three semantic color scales drive the UI (Tailwind v4 `@theme`):
 
 ### Dark mode
 
-The app ships a **light / dark / auto** theme switch (sun/moon icon in the sidebar and the
-public header). "Auto" follows the system (`prefers-color-scheme`); the choice persists per
-device in `localStorage`. Dark mode only remaps the **neutral** colors (`white` + the `slate`
-scale) under the `.dark` class in `src/style.css` — brand tokens and semantic colors are
-untouched, so it composes freely with the alternate themes below.
+The app ships a **light / dark / auto** theme switch (sun/moon icon in the public header,
+plus a selector in *My profile*). "Auto" follows the system (`prefers-color-scheme`); the
+choice persists per device in `localStorage` and always wins over the site default. Admins
+can set a **default theme** and **hide the theme selector** in *Settings*. Dark mode only
+remaps the **neutral** colors (`white` + the `slate` scale) under the `.dark` class in
+`src/style.css` — brand tokens and semantic colors are untouched, so it composes freely
+with the alternate themes below — plus muted `dark:` variants for tinted chips/badges/cards.
+The landing hero swaps to a night variant of the banner.
 
 ### Change the default colors
 

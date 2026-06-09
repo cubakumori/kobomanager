@@ -50,7 +50,7 @@ const auth = useAuthStore()
           </tbody>
         </table>
       </div>
-      <p class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200">
+      <p class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900">
         {{ $t('about.crossWarning') }}
       </p>
     </section>

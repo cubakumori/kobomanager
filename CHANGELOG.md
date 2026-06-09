@@ -8,6 +8,13 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
+- **Imágenes optimizadas y limpieza de assets**: el banner de la portada pasa de PNG
+  (1926×1320, 1,6 MB) a **WebP a 1000 px** (~87 KB; la variante nocturna ~57 KB) y el
+  logo de 600×600 (298 KB) a **256×256 PNG cuantizado (~9 KB)** — en total ~3,4 MB menos
+  por carga de portada/login, sin pérdida visible a los tamaños de render (448/80 px).
+  Eliminados los assets sin uso: `src/assets/hero.png`, `vite.svg`, `vue.svg` (restos del
+  scaffold) y `public/favicon.svg`, `public/icons.svg` (el favicon real es `km_logo.png`).
+
 - **Reorganización de los catálogos i18n**: `src/i18n/{es,en}.json` (un fichero monolítico
   por idioma, ~865 claves) se divide en `src/i18n/locales/{es,en}/*.json` — 10 ficheros por
   área (`common`, `landing`, `support`, `guide`, `auth`, `account`, `submissions`, `stats`,
@@ -48,16 +55,24 @@ Todos los cambios notables de KoboManager. El formato sigue
   excluye la pregunta oculta y sus adjuntos/geo no cuentan), ahora con tests de regresión.
   6 tests nuevos (PHPUnit 175/175).
 
-- **Modo oscuro (claro / oscuro / auto)**: nuevo interruptor de tema (icono sol/luna) en el
-  sidebar del panel, la cabecera pública y la vista de enlaces compartidos. «Auto» sigue al
-  sistema (`prefers-color-scheme`); la preferencia persiste por dispositivo (localStorage) y
-  un script inline en `index.html` aplica la clase antes de montar la app (sin destello).
-  Implementación: bajo `.dark` solo se invierten los **neutros** (`white` + escala `slate`)
-  en `src/style.css`; los tokens de marca (`primary`/`accent`/`success`) y los semánticos
-  (rojo/ámbar…) no cambian, así que botones y avisos conservan su contraste y el modo oscuro
-  combina con los temas `theme-teal`/`theme-violet`. Las superficies oscuras por diseño
-  (sidebar, drawer móvil) se anclan con `.km-pin-neutrals`; los gráficos re-renderizan el
-  texto/rejilla al alternar; `color-scheme: dark` adapta inputs nativos y scrollbars.
+- **Modo oscuro (claro / oscuro / auto)**: nuevo interruptor de tema (icono sol/luna) en la
+  cabecera pública (portada, Guía, Apoyar) y selector en «Mi perfil» («por defecto del sitio»
+  / claro / oscuro / auto). «Auto» sigue al sistema (`prefers-color-scheme`); la preferencia
+  persiste por dispositivo (localStorage), **siempre gana sobre el tema por defecto** y un
+  script inline en `index.html` aplica la clase antes de montar la app (sin destello, también
+  con el default del sitio gracias a una caché local). En Configuración el admin dispone de
+  **«Tema por defecto»** (claro/oscuro/auto, aplica a quien no haya elegido tema) y de
+  **«Mostrar selector de tema»** (al desactivarlo, el botón de la portada y el ajuste del
+  perfil se ocultan); ambos viajan en `GET /config`. Implementación: bajo `.dark` solo se
+  invierten los **neutros** (`white` + escala `slate`) en `src/style.css`; los tokens de
+  marca (`primary`/`accent`/`success`) y los semánticos (rojo/ámbar…) no cambian, así que
+  botones y avisos conservan su contraste y el modo oscuro combina con los temas
+  `theme-teal`/`theme-violet`; los fondos teñidos claros (pills de la portada, cajas de
+  error/éxito/aviso, chips de estado, tarjetas accent de «Mis formularios»/«Apoyar») llevan
+  variantes `dark:` apagadas y translúcidas para no deslumbrar. Las superficies oscuras por
+  diseño (sidebar, drawer móvil) se anclan con `.km-pin-neutrals`; los gráficos re-renderizan
+  el texto/rejilla al alternar; `color-scheme: dark` adapta inputs nativos y scrollbars. La
+  portada muestra una **variante nocturna del banner** en modo oscuro.
 - **Skeletons de carga**: nuevo componente `Skeleton.vue` (variantes `table`/`lines`/`cards`)
   que sustituye el texto «Cargando…» en las vistas principales (tabla de envíos, detalle,
   estadísticas, Mis formularios, Mi actividad y las listas de administración).

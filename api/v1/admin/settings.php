@@ -26,6 +26,9 @@ if (Request::method() === 'GET') {
         'field_truncate'             => Settings::fieldTruncate(),
         'field_truncate_min'         => Settings::FIELD_TRUNCATE_MIN,
         'field_truncate_max'         => Settings::FIELD_TRUNCATE_MAX,
+        'default_theme'              => Settings::defaultTheme(),
+        'valid_themes'               => Settings::VALID_THEMES,
+        'show_theme_toggle'          => Settings::showThemeToggle(),
     ]);
 }
 
@@ -56,6 +59,20 @@ if (Request::method() === 'PUT') {
         }
         Settings::set('default_locale', $loc);
         $out['default_locale'] = $loc;
+    }
+
+    if (array_key_exists('default_theme', $body)) {
+        $theme = (string) $body['default_theme'];
+        if (!in_array($theme, Settings::VALID_THEMES, true)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Tema no válido');
+        }
+        Settings::set('default_theme', $theme);
+        $out['default_theme'] = $theme;
+    }
+
+    if (array_key_exists('show_theme_toggle', $body)) {
+        Settings::set('show_theme_toggle', (bool) $body['show_theme_toggle']);
+        $out['show_theme_toggle'] = (bool) $body['show_theme_toggle'];
     }
 
     if (array_key_exists('label_mode', $body)) {

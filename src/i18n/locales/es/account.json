@@ -46,7 +46,10 @@
     "sessConfirm": "Se cerrarán todas tus sesiones activas excepto la de este dispositivo. Tendrás que volver a iniciar sesión en el resto.",
     "sessClosed": "Sesiones cerradas: {n}",
     "sessLoadError": "No se pudieron cargar las sesiones",
-    "sessError": "No se pudieron cerrar las sesiones"
+    "sessError": "No se pudieron cerrar las sesiones",
+    "theme": "Tema",
+    "themeDesc": "Tema visual de la interfaz en este dispositivo (no viaja con tu cuenta).",
+    "themeSiteDefault": "Por defecto del sitio"
   },
   "notifications": {
     "title": "Notificaciones",

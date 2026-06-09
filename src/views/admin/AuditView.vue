@@ -145,7 +145,7 @@ onMounted(() => {
             <span class="text-right">
               <span
                 class="mr-2 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1"
-                :class="info.ok ? 'bg-success-50 text-success-700 ring-success-200' : 'bg-red-50 text-red-700 ring-red-200'"
+                :class="info.ok ? 'bg-success-50 text-success-700 ring-success-200 dark:bg-success-900/40 dark:text-success-300 dark:ring-success-800' : 'bg-red-50 text-red-700 ring-red-200 dark:bg-red-950/50 dark:text-red-300 dark:ring-red-900'"
               >{{ info.ok ? $t('audit.ok') : $t('audit.error') }}</span>
               <span class="text-slate-400">{{ info.at }}</span>
             </span>
@@ -212,7 +212,7 @@ onMounted(() => {
       </button>
     </div>
 
-    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">{{ error }}</div>
+    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">{{ error }}</div>
 
     <p class="text-sm text-slate-500">{{ $t('audit.total', { n: total }) }}</p>
 

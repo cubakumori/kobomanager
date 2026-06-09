@@ -149,7 +149,7 @@ onMounted(load)
       </button>
     </header>
 
-    <div v-if="actionError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+    <div v-if="actionError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
       {{ actionError }}
     </div>
 
@@ -158,7 +158,7 @@ onMounted(load)
       <form class="space-y-4" @submit.prevent="onCreate">
         <div
           v-if="formError"
-          class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200"
+          class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900"
         >
           {{ formError }}
         </div>
@@ -278,7 +278,7 @@ onMounted(load)
     <!-- Modal de edición -->
     <Modal v-if="editing" :title="$t('users.editTitle', { name: editing.name })" @close="editing = null">
       <form class="space-y-4" @submit.prevent="saveEdit">
-        <div v-if="editError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div v-if="editError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
           {{ editError }}
         </div>
         <label class="block space-y-1">

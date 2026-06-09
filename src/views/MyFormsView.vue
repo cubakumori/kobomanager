@@ -106,13 +106,13 @@ onMounted(load)
       <p class="mt-1 text-sm text-slate-500">{{ $t('myForms.subtitle') }}</p>
     </header>
 
-    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
       {{ error }}
     </div>
-    <div v-if="actionError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+    <div v-if="actionError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
       {{ actionError }}
     </div>
-    <div v-if="flash" class="rounded-lg bg-success-50 px-3 py-2 text-sm text-success-800 ring-1 ring-success-200">
+    <div v-if="flash" class="rounded-lg bg-success-50 px-3 py-2 text-sm text-success-800 ring-1 ring-success-200 dark:bg-success-900/30 dark:text-success-300 dark:ring-success-800">
       {{ flash }}
     </div>
 
@@ -140,26 +140,26 @@ onMounted(load)
       <div
         v-for="f in filteredForms"
         :key="f.id"
-        class="flex flex-col rounded-xl bg-accent-50 p-5 shadow-sm ring-1 ring-accent-200 transition hover:ring-accent-400"
+        class="flex flex-col rounded-xl bg-accent-50 p-5 shadow-sm ring-1 ring-accent-200 transition hover:ring-accent-400 dark:bg-accent-900/25 dark:ring-accent-800 dark:hover:ring-accent-600"
       >
         <RouterLink :to="{ name: 'submissions', params: { id: f.id } }" class="block">
-          <p class="text-xs uppercase tracking-wider text-accent-600">{{ f.account_label }}</p>
-          <h2 class="mt-1 font-semibold text-accent-900">{{ f.name }}</h2>
-          <p v-if="f.submissions_synced === false" class="mt-2 text-sm italic text-accent-900/50">{{ $t('myForms.notSynced') }}</p>
-          <p v-else class="mt-2 text-sm text-accent-900/70">{{ $t('myForms.count', { n: f.submission_count }) }}</p>
+          <p class="text-xs uppercase tracking-wider text-accent-600 dark:text-accent-400">{{ f.account_label }}</p>
+          <h2 class="mt-1 font-semibold text-accent-900 dark:text-accent-100">{{ f.name }}</h2>
+          <p v-if="f.submissions_synced === false" class="mt-2 text-sm italic text-accent-900/50 dark:text-accent-200/50">{{ $t('myForms.notSynced') }}</p>
+          <p v-else class="mt-2 text-sm text-accent-900/70 dark:text-accent-200/70">{{ $t('myForms.count', { n: f.submission_count }) }}</p>
         </RouterLink>
 
-        <div v-if="anyAction" class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-accent-200/70 pt-3 text-sm">
+        <div v-if="anyAction" class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-accent-200/70 dark:border-accent-800/70 pt-3 text-sm">
           <RouterLink
             :to="{ name: 'submissions', params: { id: f.id } }"
-            class="font-medium text-accent-800 hover:underline"
+            class="font-medium text-accent-800 hover:underline dark:text-accent-300"
           >
             {{ $t('myForms.viewSubmissions') }}
           </RouterLink>
           <button
             v-if="can('enketo') && f.deployment_status === 'deployed'"
             :disabled="enketoId === f.id"
-            class="font-medium text-accent-800 hover:underline disabled:opacity-50"
+            class="font-medium text-accent-800 hover:underline dark:text-accent-300 disabled:opacity-50"
             :title="$t('forms.viewTitle')"
             @click="openEnketo(f)"
           >
@@ -170,7 +170,7 @@ onMounted(load)
             :href="loginUrl(f)"
             target="_blank"
             rel="noopener"
-            class="font-medium text-accent-800 hover:underline"
+            class="font-medium text-accent-800 hover:underline dark:text-accent-300"
             :title="$t('forms.loginTitle')"
           >
             {{ $t('forms.login') }}
@@ -178,7 +178,7 @@ onMounted(load)
           <button
             v-if="can('update')"
             :disabled="busyId === f.id"
-            class="font-medium text-accent-800 hover:underline disabled:opacity-50"
+            class="font-medium text-accent-800 hover:underline dark:text-accent-300 disabled:opacity-50"
             :title="$t('forms.updateTitle')"
             @click="onUpdate(f, false)"
           >
@@ -187,7 +187,7 @@ onMounted(load)
           <button
             v-if="can('resync')"
             :disabled="busyId === f.id"
-            class="font-medium text-accent-800 hover:underline disabled:opacity-50"
+            class="font-medium text-accent-800 hover:underline dark:text-accent-300 disabled:opacity-50"
             :title="$t('forms.resyncTitle')"
             @click="onUpdate(f, true)"
           >

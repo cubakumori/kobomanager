@@ -9,4 +9,6 @@ ErrorResponse::ok([
     'password_reset_enabled' => Settings::passwordResetEnabled(),
     'default_locale'         => Settings::defaultLocale(),
     'viewer_actions'         => Settings::viewerActions(),
+    'default_theme'          => Settings::defaultTheme(),
+    'show_theme_toggle'      => Settings::showThemeToggle(),
 ]);

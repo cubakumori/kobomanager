@@ -383,7 +383,7 @@ onMounted(() => { loadAdvFilter(); load() })
               <span class="truncate text-sm text-slate-700" :title="colFullLabel(c)">{{ colLabel(c) }}</span>
               <span
                 v-if="isDerivedCol(c)"
-                class="ml-auto shrink-0 rounded bg-accent-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent-700"
+                class="ml-auto shrink-0 rounded bg-accent-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent-700 dark:bg-accent-900/40 dark:text-accent-300"
               >{{ $t('submissions.columnsCalculated') }}</span>
             </li>
             <li v-if="!orderedCols.length" class="px-2 py-2 text-sm text-slate-400">—</li>
@@ -443,7 +443,7 @@ onMounted(() => { loadAdvFilter(); load() })
           type="button"
           class="w-full whitespace-nowrap rounded-lg border px-3 py-1.5 text-sm font-medium sm:w-auto"
           :class="advCount
-            ? 'border-primary-300 bg-primary-50 text-primary-700 hover:bg-primary-100'
+            ? 'border-primary-300 bg-primary-50 text-primary-700 hover:bg-primary-100 dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-300 dark:hover:bg-primary-900/50'
             : 'border-slate-300 text-slate-700 hover:bg-slate-50'"
           @click="advOpen = true"
         >
@@ -459,19 +459,19 @@ onMounted(() => { loadAdvFilter(); load() })
       </div>
     </div>
 
-    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
       {{ error }}
     </div>
-    <p v-if="batchFlash" class="rounded-lg bg-success-50 px-3 py-2 text-sm text-success-700 ring-1 ring-success-200">
+    <p v-if="batchFlash" class="rounded-lg bg-success-50 px-3 py-2 text-sm text-success-700 ring-1 ring-success-200 dark:bg-success-900/30 dark:text-success-300 dark:ring-success-800">
       {{ batchFlash }}
     </p>
 
     <!-- Barra de revisión en lote (solo si el usuario puede validar y hay selección) -->
     <div
       v-if="canValidate && selected.size"
-      class="flex flex-wrap items-center gap-3 rounded-xl bg-accent-50 px-4 py-3 ring-1 ring-accent-200"
+      class="flex flex-wrap items-center gap-3 rounded-xl bg-accent-50 px-4 py-3 ring-1 ring-accent-200 dark:bg-accent-900/25 dark:ring-accent-800"
     >
-      <span class="text-sm font-medium text-accent-800">{{ $t('submissions.selected', { n: selected.size }) }}</span>
+      <span class="text-sm font-medium text-accent-800 dark:text-accent-300">{{ $t('submissions.selected', { n: selected.size }) }}</span>
       <input
         v-model="batchComment"
         :placeholder="$t('submissions.batchComment')"
@@ -595,7 +595,7 @@ onMounted(() => { loadAdvFilter(); load() })
           :fields-url="`/forms/${formId}/scope-fields`"
         />
         <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
-          <button type="button" class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50" @click="clearAdv">
+          <button type="button" class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40" @click="clearAdv">
             {{ $t('submissions.filtersClear') }}
           </button>
           <div class="flex gap-2">

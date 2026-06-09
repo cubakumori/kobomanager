@@ -149,7 +149,7 @@ onMounted(load)
       <form class="space-y-4" @submit.prevent="onCreate">
         <div
           v-if="formError"
-          class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200"
+          class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900"
         >
           {{ formError }}
         </div>
@@ -188,10 +188,10 @@ onMounted(load)
     </Modal>
 
     <!-- Resultado de sincronización por cuenta -->
-    <div v-if="syncError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+    <div v-if="syncError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
       {{ syncError }}
     </div>
-    <div v-if="syncFlash" class="rounded-lg bg-success-50 px-3 py-2 text-sm text-success-800 ring-1 ring-success-200">
+    <div v-if="syncFlash" class="rounded-lg bg-success-50 px-3 py-2 text-sm text-success-800 ring-1 ring-success-200 dark:bg-success-900/30 dark:text-success-300 dark:ring-success-800">
       {{ syncFlash }}
     </div>
 
@@ -264,7 +264,7 @@ onMounted(load)
     <!-- Modal de edición -->
     <Modal v-if="editing" :title="$t('accounts.editTitle', { label: editing.label })" @close="editing = null">
       <form class="space-y-4" @submit.prevent="saveEdit">
-        <div v-if="editError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div v-if="editError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
           {{ editError }}
         </div>
         <label class="block space-y-1">

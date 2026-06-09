@@ -5,6 +5,7 @@ import api from '../services/api'
 import { useAuthStore, apiError } from '../stores/auth'
 import { setLocale } from '../i18n'
 import { confirmDialog } from '../composables/confirm'
+import { useDarkMode } from '../composables/darkMode'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -23,6 +24,14 @@ const localePref = ref('')      // '' = seguir el predeterminado del sistema
 const defaultLocale = ref('es')
 const validLocales = ref(['es', 'en'])
 const langSaving = ref(false)
+
+// Tema (claro/oscuro/auto) — preferencia de ESTE dispositivo (localStorage),
+// '' = seguir el «Tema por defecto» del sitio.
+const { pref: darkPref, showToggle, setPref: setThemePref } = useDarkMode()
+const themePref = ref(darkPref.value ?? '')
+function changeTheme() {
+  setThemePref(themePref.value || null)
+}
 
 // Cambio de contraseña
 const pwCurrent = ref('')
@@ -143,7 +152,7 @@ onMounted(() => {
       <p class="mt-1 text-sm text-slate-500">{{ auth.user?.name }} · {{ auth.user?.email }}</p>
     </header>
 
-    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
       {{ error }}
     </div>
 
@@ -164,6 +173,24 @@ onMounted(() => {
       </select>
     </section>
 
+    <!-- Tema (claro/oscuro) — preferencia por dispositivo, no viaja con la cuenta -->
+    <section v-if="showToggle" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 space-y-3">
+      <div>
+        <h2 class="font-semibold text-slate-900">{{ $t('profile.theme') }}</h2>
+        <p class="mt-0.5 text-sm text-slate-500">{{ $t('profile.themeDesc') }}</p>
+      </div>
+      <select
+        v-model="themePref"
+        class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+        @change="changeTheme"
+      >
+        <option value="">{{ $t('profile.themeSiteDefault') }}</option>
+        <option value="light">{{ $t('common.theme_light') }}</option>
+        <option value="dark">{{ $t('common.theme_dark') }}</option>
+        <option value="auto">{{ $t('common.theme_auto') }}</option>
+      </select>
+    </section>
+
     <!-- Contraseña -->
     <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 space-y-3">
       <div>
@@ -171,7 +198,7 @@ onMounted(() => {
         <p class="mt-0.5 text-sm text-slate-500">{{ $t('profile.passwordDesc') }}</p>
       </div>
 
-      <div v-if="pwError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+      <div v-if="pwError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
         {{ pwError }}
       </div>
 
@@ -230,7 +257,7 @@ onMounted(() => {
         <p class="mt-0.5 text-sm text-slate-500">{{ $t('profile.sessionsDesc') }}</p>
       </div>
 
-      <div v-if="sessError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+      <div v-if="sessError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
         {{ sessError }}
       </div>
 
@@ -246,7 +273,7 @@ onMounted(() => {
           </div>
           <span
             v-if="s.current"
-            class="shrink-0 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-primary-200"
+            class="shrink-0 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:text-primary-300 dark:ring-primary-800"
           >{{ $t('profile.sessCurrent') }}</span>
         </li>
       </ul>

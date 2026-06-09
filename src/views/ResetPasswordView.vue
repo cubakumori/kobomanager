@@ -80,7 +80,7 @@ async function onSubmit() {
 
         <!-- Enlace inválido o caducado -->
         <template v-else-if="!validToken && !done">
-          <div class="rounded-lg bg-red-50 px-3 py-3 text-sm text-red-700 ring-1 ring-red-200">
+          <div class="rounded-lg bg-red-50 px-3 py-3 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
             {{ $t('reset.invalid') }}
           </div>
           <p class="text-center text-sm">
@@ -91,7 +91,7 @@ async function onSubmit() {
         <!-- Éxito -->
         <div
           v-else-if="done"
-          class="rounded-lg bg-success-50 px-3 py-3 text-sm text-success-800 ring-1 ring-success-200"
+          class="rounded-lg bg-success-50 px-3 py-3 text-sm text-success-800 ring-1 ring-success-200 dark:bg-success-900/30 dark:text-success-300 dark:ring-success-800"
         >
           {{ $t('reset.done') }}
         </div>
@@ -102,7 +102,7 @@ async function onSubmit() {
 
           <div
             v-if="error"
-            class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200"
+            class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900"
           >
             {{ error }}
           </div>

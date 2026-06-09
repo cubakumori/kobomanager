@@ -18,6 +18,9 @@ const labelMode = ref('labels')
 const validLabelModes = ref(['labels', 'raw'])
 const passwordResetEnabled = ref(false)
 const auditSelfViewEnabled = ref(false)
+const defaultTheme = ref('auto')
+const validThemes = ref(['light', 'dark', 'auto'])
+const showThemeToggle = ref(true)
 const mailConfigured = ref(false)
 const viewerActions = ref({ enketo: false, update: false, resync: false, login: false })
 const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login']
@@ -45,6 +48,9 @@ async function load() {
     validLabelModes.value = data.data.valid_label_modes
     passwordResetEnabled.value = data.data.password_reset_enabled
     auditSelfViewEnabled.value = data.data.audit_self_view_enabled
+    defaultTheme.value = data.data.default_theme
+    validThemes.value = data.data.valid_themes ?? validThemes.value
+    showThemeToggle.value = data.data.show_theme_toggle
     mailConfigured.value = data.data.mail_configured
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     sharePasswordPolicy.value = data.data.share_password_policy
@@ -83,6 +89,8 @@ async function save() {
       label_mode: labelMode.value,
       password_reset_enabled: passwordResetEnabled.value,
       audit_self_view_enabled: auditSelfViewEnabled.value,
+      default_theme: defaultTheme.value,
+      show_theme_toggle: showThemeToggle.value,
       viewer_actions: viewerActions.value,
       share_password_policy: sharePasswordPolicy.value,
       share_attachments_policy: shareAttachmentsPolicy.value,
@@ -96,6 +104,8 @@ async function save() {
     labelMode.value = data.data.label_mode
     passwordResetEnabled.value = data.data.password_reset_enabled
     if (data.data.audit_self_view_enabled != null) auditSelfViewEnabled.value = data.data.audit_self_view_enabled
+    if (data.data.default_theme != null) defaultTheme.value = data.data.default_theme
+    if (data.data.show_theme_toggle != null) showThemeToggle.value = data.data.show_theme_toggle
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     if (data.data.share_password_policy) sharePasswordPolicy.value = data.data.share_password_policy
     if (data.data.share_attachments_policy) shareAttachmentsPolicy.value = data.data.share_attachments_policy
@@ -120,7 +130,7 @@ onMounted(load)
       <p class="mt-1 text-sm text-slate-500">{{ $t('settings.subtitle') }}</p>
     </header>
 
-    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
       {{ error }}
     </div>
     <div v-if="loading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
@@ -164,6 +174,33 @@ onMounted(load)
         >
           <option v-for="l in validLocales" :key="l" :value="l">{{ $t('lang.' + l) }}</option>
         </select>
+      </section>
+
+      <!-- Tema por defecto -->
+      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.theme') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.themeDesc') }}</p>
+        </div>
+        <select
+          v-model="defaultTheme"
+          class="w-56 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          @change="saved = false"
+        >
+          <option v-for="th in validThemes" :key="th" :value="th">{{ $t('common.theme_' + th) }}</option>
+        </select>
+        <label class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+          <input
+            type="checkbox"
+            class="mt-0.5 h-4 w-4"
+            :checked="showThemeToggle"
+            @change="showThemeToggle = !showThemeToggle; saved = false"
+          />
+          <span>
+            <span class="block text-sm font-medium text-slate-800">{{ $t('settings.themeToggle') }}</span>
+            <span class="block text-xs text-slate-400">{{ $t('settings.themeToggleHint') }}</span>
+          </span>
+        </label>
       </section>
 
       <!-- Etiquetas en tabla y detalles -->
@@ -245,7 +282,7 @@ onMounted(load)
         </label>
         <p
           v-if="passwordResetEnabled && !mailConfigured"
-          class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200"
+          class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900"
         >
           {{ $t('settings.passwordResetNoMail') }}
         </p>

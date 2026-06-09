@@ -1,6 +1,11 @@
 <script setup>
 import PublicLayout from '../components/PublicLayout.vue'
-import banner from '../assets/kobomanager.png'
+import { useDarkMode } from '../composables/darkMode'
+import bannerDay from '../assets/kobomanager.webp'
+import bannerNight from '../assets/kobomanager_night.webp'
+
+// Banner del hero: variante diurna o nocturna según el tema activo.
+const { isDark } = useDarkMode()
 
 // Tarjetas de características (estilo "pill" verde). La 4ª destaca el control de
 // acceso granular (permisos por filas), añadido recientemente.
@@ -17,7 +22,7 @@ const chips = ['chipColumns', 'chipStats', 'chipEmail', 'chipLabels', 'chipMap',
     <main class="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center gap-10 px-6 py-12 lg:flex-row lg:py-20">
       <div class="flex-1 text-center lg:text-left">
         <span
-          class="inline-flex items-center gap-2 rounded-full bg-accent-50 px-3 py-1 text-xs font-semibold text-accent-700 ring-1 ring-accent-200"
+          class="inline-flex items-center gap-2 rounded-full bg-accent-50 px-3 py-1 text-xs font-semibold text-accent-700 ring-1 ring-accent-200 dark:bg-accent-900/25 dark:text-accent-300 dark:ring-accent-800"
         >
           <span class="h-1.5 w-1.5 rounded-full bg-accent-500"></span>
           {{ $t('landing.eyebrow') }}
@@ -58,7 +63,7 @@ const chips = ['chipColumns', 'chipStats', 'chipEmail', 'chipLabels', 'chipMap',
 
       <div class="relative flex-1">
         <div class="absolute inset-0 -z-10 mx-auto h-72 w-72 self-center rounded-full bg-gradient-to-tr from-primary-400/30 to-accent-400/30 blur-3xl"></div>
-        <img :src="banner" alt="KoboManager" class="mx-auto w-full max-w-md drop-shadow-2xl" />
+        <img :src="isDark ? bannerNight : bannerDay" alt="KoboManager" class="mx-auto w-full max-w-md drop-shadow-2xl" />
       </div>
     </main>
 
@@ -67,13 +72,13 @@ const chips = ['chipColumns', 'chipStats', 'chipEmail', 'chipLabels', 'chipMap',
       <div
         v-for="n in features"
         :key="n"
-        class="rounded-2xl bg-accent-50 p-6 ring-1 ring-accent-200"
+        class="rounded-2xl bg-accent-50 p-6 ring-1 ring-accent-200 dark:bg-accent-900/25 dark:ring-accent-800"
       >
-        <h3 class="flex items-center gap-2 font-semibold text-accent-800">
+        <h3 class="flex items-center gap-2 font-semibold text-accent-800 dark:text-accent-300">
           <span class="h-1.5 w-1.5 rounded-full bg-accent-500"></span>
           {{ $t('landing.feat' + n + 'Title') }}
         </h3>
-        <p class="mt-2 text-sm text-accent-900/70">{{ $t('landing.feat' + n + 'Desc') }}</p>
+        <p class="mt-2 text-sm text-accent-900/70 dark:text-accent-200/70">{{ $t('landing.feat' + n + 'Desc') }}</p>
       </div>
     </section>
 
@@ -83,12 +88,12 @@ const chips = ['chipColumns', 'chipStats', 'chipEmail', 'chipLabels', 'chipMap',
       <p class="mx-auto mt-2 max-w-2xl text-center text-sm text-slate-600">{{ $t('landing.moreSubtitle') }}</p>
 
       <!-- Tarjeta destacada: enlaces públicos de solo lectura -->
-      <div class="mx-auto mt-8 max-w-3xl rounded-2xl bg-accent-50 p-6 ring-1 ring-accent-200">
-        <h3 class="flex items-center gap-2 font-semibold text-accent-800">
+      <div class="mx-auto mt-8 max-w-3xl rounded-2xl bg-accent-50 p-6 ring-1 ring-accent-200 dark:bg-accent-900/25 dark:ring-accent-800">
+        <h3 class="flex items-center gap-2 font-semibold text-accent-800 dark:text-accent-300">
           <span class="h-1.5 w-1.5 rounded-full bg-accent-500"></span>
           {{ $t('landing.feat5Title') }}
         </h3>
-        <p class="mt-2 text-sm text-accent-900/70">{{ $t('landing.feat5Desc') }}</p>
+        <p class="mt-2 text-sm text-accent-900/70 dark:text-accent-200/70">{{ $t('landing.feat5Desc') }}</p>
       </div>
 
       <!-- Resto de capacidades como chips -->
@@ -96,7 +101,7 @@ const chips = ['chipColumns', 'chipStats', 'chipEmail', 'chipLabels', 'chipMap',
         <li
           v-for="c in chips"
           :key="c"
-          class="inline-flex items-center gap-2 rounded-full bg-accent-50 px-4 py-2 text-sm font-medium text-accent-800 ring-1 ring-accent-200"
+          class="inline-flex items-center gap-2 rounded-full bg-accent-50 px-4 py-2 text-sm font-medium text-accent-800 ring-1 ring-accent-200 dark:bg-accent-900/25 dark:text-accent-300 dark:ring-accent-800"
         >
           <span class="h-1.5 w-1.5 rounded-full bg-accent-500"></span>
           {{ $t('landing.' + c) }}

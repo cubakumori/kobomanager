@@ -169,13 +169,13 @@ async function onFullResync(f) {
 }
 
 const badge = {
-  success: 'bg-success-100 text-success-700',
-  error: 'bg-red-100 text-red-700',
-  pending: 'bg-amber-100 text-amber-700',
+  success: 'bg-success-100 text-success-700 dark:bg-success-900/40 dark:text-success-300',
+  error: 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300',
+  pending: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
 }
 const statusBadge = {
-  deployed: 'bg-success-100 text-success-700',
-  draft: 'bg-amber-100 text-amber-700',
+  deployed: 'bg-success-100 text-success-700 dark:bg-success-900/40 dark:text-success-300',
+  draft: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
   archived: 'bg-slate-200 text-slate-600',
 }
 const statusKey = { deployed: 'forms.typeDeployed', draft: 'forms.typeDraft', archived: 'forms.typeArchived' }
@@ -219,10 +219,10 @@ onMounted(async () => {
     </div>
 
     <!-- Resultado del sync / flash -->
-    <div v-if="syncError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+    <div v-if="syncError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
       {{ syncError }}
     </div>
-    <div v-if="flash" class="rounded-lg bg-success-50 px-3 py-2 text-sm text-success-800 ring-1 ring-success-200">
+    <div v-if="flash" class="rounded-lg bg-success-50 px-3 py-2 text-sm text-success-800 ring-1 ring-success-200 dark:bg-success-900/30 dark:text-success-300 dark:ring-success-800">
       {{ flash }}
     </div>
     <div v-if="syncResult" class="space-y-2">

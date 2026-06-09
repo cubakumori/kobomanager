@@ -6,10 +6,10 @@ const props = defineProps({
 })
 
 const cls = {
-  pending: 'bg-amber-100 text-amber-700',
-  approved: 'bg-success-100 text-success-700',
-  on_hold: 'bg-sky-100 text-sky-700',
-  rejected: 'bg-red-100 text-red-700',
+  pending: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
+  approved: 'bg-success-100 text-success-700 dark:bg-success-900/40 dark:text-success-300',
+  on_hold: 'bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300',
+  rejected: 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300',
 }
 
 const info = computed(() => ({

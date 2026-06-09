@@ -291,12 +291,19 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   + `--km-burger-*` tokens.
 - **Dark mode**: the `.dark` class on `<html>` remaps only the **neutrals** (`white` + the
   `slate` scale) in `src/style.css` — brand/semantic tokens don't change, so dark mode is
-  orthogonal to `.theme-*`. `composables/darkMode.js` manages the light/dark/auto preference
-  (`localStorage`, `ThemeToggle.vue` button; an inline script in `index.html` avoids the
-  flash on load). Components that are dark **by design** in light mode (panel sidebar, public
-  mobile drawer) pin the original neutrals with the `.km-pin-neutrals` class. The `dark:`
-  variant is class-based (`@custom-variant dark`) for spot fixes (e.g. the accent table
-  header). Chart text colors re-read the slate variables and re-render on toggle.
+  orthogonal to `.theme-*`. `composables/darkMode.js` manages the user preference
+  (light/dark/auto or *none* = follow the site default) in `localStorage`; the admin sets a
+  **default theme** and can **hide the selector** (settings `default_theme` +
+  `show_theme_toggle`, served by the public `GET /config` and cached locally so the inline
+  no-flash script in `index.html` works on repeat visits). The user's own choice always wins
+  over the default. `ThemeToggle.vue` lives in the public header (and a selector in
+  `/profile`); both hide when the admin disables the selector. Components that are dark
+  **by design** in light mode (panel sidebar, public mobile drawer) pin the original
+  neutrals with the `.km-pin-neutrals` class. The `dark:` variant is class-based
+  (`@custom-variant dark`) for spot fixes: the accent table header and the muted dark
+  variants of tinted surfaces (error/success/notice boxes, status chips, accent cards/pills).
+  Chart text colors re-read the slate variables and re-render on toggle. The landing banner
+  swaps to a night WebP variant.
 - **Loading skeletons**: `Skeleton.vue` (variants `table`/`lines`/`cards`) replaces the
   "Loading…" text in the main list/detail/stats views.
 - **Reusable UI**: `Modal.vue` + `ConfirmDialog.vue` (`composables/confirm.js`), with

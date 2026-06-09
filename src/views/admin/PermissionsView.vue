@@ -190,7 +190,7 @@ onMounted(async () => {
       <p class="mt-1 text-sm text-slate-500">{{ $t('permissions.subtitle') }}</p>
     </header>
 
-    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
       {{ error }}
     </div>
 
@@ -274,7 +274,7 @@ onMounted(async () => {
                   type="button"
                   class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ring-1 transition"
                   :class="hiddenCount(p) + readonlyCount(p)
-                    ? 'bg-accent-50 text-accent-700 ring-accent-200 hover:bg-accent-100 dark:bg-accent-900/40'
+                    ? 'bg-accent-50 text-accent-700 ring-accent-200 hover:bg-accent-100 dark:bg-accent-900/30 dark:text-accent-300 dark:ring-accent-800 dark:hover:bg-accent-900/50'
                     : 'bg-slate-50 text-slate-500 ring-slate-200 hover:bg-slate-100'"
                   @click="openCols(p)"
                 >
@@ -323,7 +323,7 @@ onMounted(async () => {
         <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
           <button
             type="button"
-            class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
             @click="clearScope"
           >
             {{ $t('permissions.scopeClear') }}
@@ -358,7 +358,7 @@ onMounted(async () => {
       <div class="space-y-4">
         <p class="text-sm text-slate-500">{{ $t('permissions.colsIntro') }}</p>
 
-        <div v-if="colsError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+        <div v-if="colsError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
           {{ colsError }}
         </div>
         <div v-if="colsLoading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
@@ -401,7 +401,7 @@ onMounted(async () => {
         <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
           <button
             type="button"
-            class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
             @click="clearCols"
           >
             {{ $t('permissions.colsClear') }}

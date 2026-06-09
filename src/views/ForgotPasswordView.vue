@@ -44,7 +44,7 @@ async function onSubmit() {
 
         <div
           v-if="done"
-          class="rounded-lg bg-success-50 px-3 py-3 text-sm text-success-800 ring-1 ring-success-200"
+          class="rounded-lg bg-success-50 px-3 py-3 text-sm text-success-800 ring-1 ring-success-200 dark:bg-success-900/30 dark:text-success-300 dark:ring-success-800"
         >
           {{ $t('forgot.sent') }}
         </div>
@@ -52,7 +52,7 @@ async function onSubmit() {
         <form v-else class="space-y-5" @submit.prevent="onSubmit">
           <div
             v-if="error"
-            class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200"
+            class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900"
           >
             {{ error }}
           </div>

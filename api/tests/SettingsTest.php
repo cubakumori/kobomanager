@@ -22,6 +22,20 @@ final class SettingsTest extends DbTestCase
         $this->assertSame('es', Settings::defaultLocale());
         $this->assertSame('labels', Settings::labelMode());
         $this->assertFalse(Settings::passwordResetEnabled());
+        $this->assertSame('auto', Settings::defaultTheme());
+        $this->assertTrue(Settings::showThemeToggle());
+    }
+
+    public function testThemeSettings(): void
+    {
+        Settings::set('default_theme', 'dark');
+        $this->assertSame('dark', Settings::defaultTheme());
+        // Valor desconocido → vuelve al por defecto ('auto').
+        Settings::set('default_theme', 'sepia');
+        $this->assertSame('auto', Settings::defaultTheme());
+
+        Settings::set('show_theme_toggle', false);
+        $this->assertFalse(Settings::showThemeToggle());
     }
 
     public function testSyncStatusesSanitizes(): void

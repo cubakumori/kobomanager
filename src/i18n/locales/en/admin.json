@@ -179,7 +179,11 @@
     "shareAttachmentsPolicy_require_password": "Allow with password",
     "shareAttachmentsPolicy_require_passwordHint": "A password-protected link may expose its attachments.",
     "loadError": "Could not load the configuration",
-    "saveError": "Could not save"
+    "saveError": "Could not save",
+    "theme": "Default theme",
+    "themeDesc": "Initial site theme (light, dark, or auto following the system). Anyone who already picked a theme with the selector keeps their choice.",
+    "themeToggle": "Show theme selector",
+    "themeToggleHint": "When disabled, the sun/moon button on the homepage and the theme setting in the profile are hidden; everyone without a chosen theme sees the default theme."
   },
   "audit": {
     "title": "Audit log",

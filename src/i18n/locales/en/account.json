@@ -46,7 +46,10 @@
     "sessConfirm": "All your active sessions except this device will be closed. You'll need to sign in again on the rest.",
     "sessClosed": "Sessions closed: {n}",
     "sessLoadError": "Could not load the sessions",
-    "sessError": "Could not close the sessions"
+    "sessError": "Could not close the sessions",
+    "theme": "Theme",
+    "themeDesc": "Interface theme on this device (it does not travel with your account).",
+    "themeSiteDefault": "Site default"
   },
   "notifications": {
     "title": "Notifications",

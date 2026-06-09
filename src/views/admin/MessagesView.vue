@@ -117,13 +117,13 @@ onMounted(load)
       <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ $t('messages.title') }}</h1>
       <p class="mt-1 text-sm text-slate-500">
         {{ $t('messages.subtitle') }}
-        <span v-if="newCount" class="ml-1 inline-flex rounded-full bg-primary-100 px-2 py-0.5 text-xs font-semibold text-primary-700">
+        <span v-if="newCount" class="ml-1 inline-flex rounded-full bg-primary-100 px-2 py-0.5 text-xs font-semibold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
           {{ $t('messages.newCount', { n: newCount }) }}
         </span>
       </p>
     </header>
 
-    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
       {{ error }}
     </div>
 
@@ -168,7 +168,7 @@ onMounted(load)
             v-for="msg in items"
             :key="msg.id"
             class="cursor-pointer hover:bg-slate-50"
-            :class="msg.status === 'new' ? 'bg-primary-50/40' : ''"
+            :class="msg.status === 'new' ? 'bg-primary-50/40 dark:bg-primary-900/15' : ''"
             @click="open(msg)"
           >
             <td class="px-4 py-3 text-slate-600">{{ fmtDate(msg.created_at) }}</td>
@@ -185,8 +185,8 @@ onMounted(load)
               <span
                 class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1"
                 :class="{
-                  'bg-primary-50 text-primary-700 ring-primary-200': msg.status === 'new',
-                  'bg-success-50 text-success-700 ring-success-200': msg.status === 'read',
+                  'bg-primary-50 text-primary-700 ring-primary-200 dark:bg-primary-900/40 dark:text-primary-300 dark:ring-primary-800': msg.status === 'new',
+                  'bg-success-50 text-success-700 ring-success-200 dark:bg-success-900/40 dark:text-success-300 dark:ring-success-800': msg.status === 'read',
                   'bg-slate-100 text-slate-500 ring-slate-200': msg.status === 'archived',
                 }"
               >
@@ -230,7 +230,7 @@ onMounted(load)
         <p class="whitespace-pre-wrap break-words text-sm text-slate-800">{{ current.message }}</p>
 
         <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-4">
-          <button class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50" @click="remove(current)">
+          <button class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40" @click="remove(current)">
             {{ $t('common.delete') }}
           </button>
           <div class="flex flex-wrap gap-2">
