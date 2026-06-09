@@ -8,6 +8,12 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Zona horaria de visualización en Estadísticas**: «Actividad por hora» y «Actividad por
+  día de la semana» se muestran en hora local en lugar de UTC. Kobo entrega
+  `_submission_time` en UTC; ahora se ancla explícitamente como UTC y se convierte a la zona
+  configurada en `APP_TIMEZONE` (identificador IANA, por defecto `UTC`), con conversión
+  correcta por instante (respeta el horario de verano de cada envío). Bajo cada gráfico se
+  indica la zona en lenguaje humano —«Hora de {etiqueta} (UTC±N)»— usando `APP_TIMEZONE_LABEL`.
 - **Filtro por cuenta en «Mis formularios»** (`/forms`), igual que en la página admin de
   formularios; se muestra solo si hay 2+ cuentas.
 - **Acción «Permisos» en admin/usuarios**: para cada viewer, enlace directo a la página de

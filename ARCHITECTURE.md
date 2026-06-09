@@ -208,6 +208,10 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   section) and the CSV export. Operates only on already‑authorized payloads, so it inherits
   permissions/row‑scoping for free. `FormSchema::normalize` records `start`/`end`/`today` meta
   field names (`schema_json.meta`) so durations work even with non‑standard field names.
+  Timestamps are anchored as **UTC** when zone‑less (as Kobo ships `_submission_time`), and the
+  submission **hour/weekday** are then converted to the display zone `APP_TIMEZONE` (IANA, default
+  `UTC`) — per‑instant, so DST is respected. `Derived::tzMeta()` exposes the zone (id, human label
+  from `APP_TIMEZONE_LABEL`, and a `UTC±N` offset) to the stats UI.
 - **Statistics** (`v1/forms/stats.php`): besides total / per‑day / review‑status counts, a
   single in‑scope pass over the payloads computes per‑question distributions (`select_one`,
   labelled), per‑enumerator counts, fill‑in duration (mean/median + histogram), activity by

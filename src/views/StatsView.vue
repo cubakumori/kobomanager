@@ -81,6 +81,17 @@ const byDowData = computed(() =>
   hBar([...Array(7).keys()].map((d) => t('derived.dow.' + d)), stats.value?.by_dow ?? []),
 )
 
+// Etiqueta de la zona horaria en que se expresan «por hora» y «por día de la
+// semana» (el backend la deriva de APP_TIMEZONE). Con UTC mostramos solo el
+// offset; con una zona nombrada, «Hora de {nombre} (UTC±N)».
+const tzLabel = computed(() => {
+  const tz = stats.value?.timezone
+  if (!tz) return ''
+  return tz.label && tz.label !== 'UTC' && tz.label !== tz.offset
+    ? t('stats.tzLabel', { label: tz.label, offset: tz.offset })
+    : `(${tz.offset})`
+})
+
 const durationHistData = computed(() => {
   const h = stats.value?.duration?.histogram ?? []
   return hBar(h.map((b) => t('stats.durBucket.' + b.key)), h.map((b) => b.count))
@@ -300,12 +311,14 @@ onMounted(load)
       <!-- Actividad por hora / día -->
       <div class="grid gap-4 lg:grid-cols-2">
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <h2 class="mb-4 font-semibold text-slate-900">{{ $t('stats.activityHour') }}</h2>
-          <div class="h-64"><StatsChart type="bar" :data="byHourData" :options="barOptions" /></div>
+          <h2 class="font-semibold text-slate-900">{{ $t('stats.activityHour') }}</h2>
+          <p v-if="tzLabel" class="mb-3 text-xs text-slate-400">{{ tzLabel }}</p>
+          <div class="mt-4 h-64"><StatsChart type="bar" :data="byHourData" :options="barOptions" /></div>
         </div>
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <h2 class="mb-4 font-semibold text-slate-900">{{ $t('stats.activityDay') }}</h2>
-          <div class="h-64"><StatsChart type="bar" :data="byDowData" :options="barValueOptions" /></div>
+          <h2 class="font-semibold text-slate-900">{{ $t('stats.activityDay') }}</h2>
+          <p v-if="tzLabel" class="mb-3 text-xs text-slate-400">{{ tzLabel }}</p>
+          <div class="mt-4 h-64"><StatsChart type="bar" :data="byDowData" :options="barValueOptions" /></div>
         </div>
       </div>
 

@@ -91,11 +91,15 @@ sesión propia** (acordar el modelo antes de codificar + verificación contra da
 Mejoras pequeñas acordadas; se hacen antes que los frentes mayores. Las que tocan una
 decisión de diseño se acuerdan al arrancar.
 
-- [ ] **Zona horaria de «Actividad por hora»** en Estadísticas: hoy el gráfico no indica
-      la referencia horaria. Decidir el modelo: (a) etiquetar simplemente la referencia
-      (p. ej. «UTC»), o (b) convertir a una zona configurable mostrada «en lenguaje humano»
-      («Hora de La Habana / Madrid»), vía ajuste global y/o preferencia de usuario. Requiere
-      confirmar primero en qué zona viene `_submission_time` de Kobo.
+- [x] **Zona horaria de «Actividad por hora»** en Estadísticas — HECHO. Confirmado que Kobo
+      entrega `_submission_time` en UTC (ISO sin offset). Modelo elegido: **zona fija global
+      configurable** (`APP_TIMEZONE`, IANA; por defecto `UTC`), aplicada a «Actividad por
+      hora» y «por día de la semana» (lo derivado de `_submission_time` en `Derived.php`). La
+      lectura se ancla explícitamente como UTC (no depende ya de la zona del servidor) y se
+      convierte por instante (DST correcto). La UI etiqueta la zona en lenguaje humano
+      —«Hora de {etiqueta} (UTC±N)»— con `APP_TIMEZONE_LABEL`. *No* se tocaron «por día/mes»
+      ni «tendencias» (siguen sobre `submitted_at`); preferencia por usuario descartada para
+      v1. Verificado contra el form 43 (pico desplazado a las 8 h locales, UTC-4).
 - [ ] **Color `success` como token de tema**: hoy los estados de éxito usan el `green` de
       Tailwind a propósito (independiente del tema). Para seguir la convención de tokens
       (`primary`/`accent`), valorar añadir una escala `success` en `style.css` y sustituir

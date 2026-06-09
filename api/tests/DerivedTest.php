@@ -65,6 +65,44 @@ final class DerivedTest extends TestCase
         $this->assertSame(1, $d['notes_count']);
     }
 
+    public function testSubmittedHourDowConvertToDisplayTimezone(): void
+    {
+        // _submission_time llega en UTC; con una zona UTC-5 (sin DST) un envío de
+        // las 02:30 UTC del viernes cae a las 21:30 del jueves anterior.
+        $payload = ['_submission_time' => '2024-03-01T02:30:00'];
+
+        $utc = Derived::compute($payload, $this->schema());
+        $this->assertSame(2, $utc['submitted_hour']);          // sin tz ⇒ UTC
+        $this->assertSame(5, $utc['submitted_dow']);           // viernes
+
+        $bogota = Derived::compute($payload, $this->schema(), null, 'America/Bogota');
+        $this->assertSame(21, $bogota['submitted_hour']);      // 02:30 − 5 h
+        $this->assertSame(4, $bogota['submitted_dow']);        // jueves (día anterior)
+    }
+
+    public function testTsAnchorsZonelessAsUtcRegardlessOfServerTz(): void
+    {
+        // Aunque el servidor PHP esté en otra zona, una marca sin offset se ancla
+        // en UTC (así viene _submission_time de Kobo).
+        $prev = date_default_timezone_get();
+        date_default_timezone_set('America/Havana');
+        try {
+            $d = Derived::compute(['_submission_time' => '2024-03-01T10:35:00'], $this->schema());
+            $this->assertSame(10, $d['submitted_hour']);       // 10 UTC, no la hora local del server
+        } finally {
+            date_default_timezone_set($prev);
+        }
+    }
+
+    public function testTzMetaDefaultsToUtc(): void
+    {
+        // Sin APP_TIMEZONE definido (entorno de test) ⇒ UTC.
+        $meta = Derived::tzMeta();
+        $this->assertSame('UTC', $meta['id']);
+        $this->assertSame('UTC', $meta['offset']);
+        $this->assertSame(0, $meta['offset_min']);
+    }
+
     public function testMissingStartEndYieldsNull(): void
     {
         $payload = ['q1' => 'a', '_submission_time' => '2024-03-01T10:35:00'];

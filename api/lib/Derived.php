@@ -24,8 +24,10 @@ class Derived {
      * @param array       $payload     Datos del envío (json_payload decodificado).
      * @param array|null  $schema      Esquema normalizado del formulario (con `fields` y `meta`).
      * @param string|null $submittedAt Fecha de envío de la caché (respaldo de `_submission_time`).
+     * @param string|null $tz          Zona IANA para `submitted_hour`/`submitted_dow`. `null`
+     *                                 ⇒ usa APP_TIMEZONE (o 'UTC'). Pensado para tests.
      */
-    public static function compute(array $payload, ?array $schema, ?string $submittedAt = null): array {
+    public static function compute(array $payload, ?array $schema, ?string $submittedAt = null, ?string $tz = null): array {
         $fields = $schema['fields'] ?? [];
         $metaF  = $schema['meta'] ?? [];
 
@@ -56,9 +58,18 @@ class Derived {
         // --- Geolocalización (reusa el parser de Geo, cubre point/line/polygon/_geolocation) ---
         $hasGeo = $schema !== null && Geo::features($payload, $schema) !== [];
 
-        // --- Hora / día del envío (de _submission_time) ---
-        $hour = $subTs !== null ? (int) date('G', $subTs) : null;   // 0–23
-        $dow  = $subTs !== null ? (int) date('w', $subTs) : null;   // 0=domingo … 6=sábado
+        // --- Hora / día del envío (de _submission_time, en la zona de visualización) ---
+        // `_submission_time` viene en UTC; lo convertimos a la zona configurada
+        // (APP_TIMEZONE) para que «hora» y «día de la semana» reflejen la hora
+        // local. La conversión es correcta por instante (respeta el DST de cada
+        // envío). Por defecto UTC ⇒ sin desplazamiento.
+        $hour = null;   // 0–23
+        $dow  = null;   // 0=domingo … 6=sábado
+        if ($subTs !== null) {
+            $local = (new DateTime('@' . $subTs))->setTimezone(self::displayTz($tz));
+            $hour = (int) $local->format('G');
+            $dow  = (int) $local->format('w');
+        }
 
         // --- Estado de validación de Kobo (objeto con uid/label, o vacío) ---
         $vs = $payload['_validation_status'] ?? null;
@@ -87,11 +98,55 @@ class Derived {
 
     // ---------- internos ----------
 
-    /** Marca de tiempo ISO de Kobo → epoch (segundos), o null. */
+    /**
+     * Marca de tiempo ISO de Kobo → epoch (segundos), o null.
+     *
+     * Ancla las cadenas SIN zona como UTC (así llega `_submission_time`),
+     * independientemente de la zona del servidor PHP. Si la cadena trae offset
+     * propio (p. ej. `start`/`end` del dispositivo), ese offset manda.
+     */
     private static function ts($v): ?int {
         if (!is_string($v) || trim($v) === '') return null;
-        $t = strtotime($v);
-        return $t === false ? null : $t;
+        try {
+            return (new DateTime($v, new DateTimeZone('UTC')))->getTimestamp();
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    /** Zona de visualización: el `$tz` explícito, o APP_TIMEZONE, o UTC como respaldo. */
+    private static function displayTz(?string $tz): DateTimeZone {
+        $id = $tz ?? (defined('APP_TIMEZONE') && APP_TIMEZONE !== '' ? APP_TIMEZONE : 'UTC');
+        try {
+            return new DateTimeZone($id);
+        } catch (Exception $e) {
+            return new DateTimeZone('UTC');
+        }
+    }
+
+    /**
+     * Metadatos de la zona de visualización para la UI:
+     *   ['id' => 'America/Havana', 'label' => 'La Habana', 'offset' => 'UTC-4', 'offset_min' => -240]
+     * El offset se calcula para «ahora», así que en zonas con DST es orientativo
+     * (cada envío sí se ubica con su offset real). `label` cae al id si no hay
+     * APP_TIMEZONE_LABEL.
+     */
+    public static function tzMeta(): array {
+        $tz  = self::displayTz(null);
+        $id  = $tz->getName();
+        $lbl = (defined('APP_TIMEZONE_LABEL') && APP_TIMEZONE_LABEL !== '') ? APP_TIMEZONE_LABEL : $id;
+        $min = (int) round($tz->getOffset(new DateTime('now', new DateTimeZone('UTC'))) / 60);
+        return ['id' => $id, 'label' => $lbl, 'offset' => self::offsetLabel($min), 'offset_min' => $min];
+    }
+
+    /** Minutos de offset → etiqueta «UTC», «UTC-5», «UTC+5:30». */
+    private static function offsetLabel(int $min): string {
+        if ($min === 0) return 'UTC';
+        $sign = $min < 0 ? '-' : '+';
+        $min  = abs($min);
+        $h    = intdiv($min, 60);
+        $m    = $min % 60;
+        return 'UTC' . $sign . $h . ($m ? ':' . str_pad((string) $m, 2, '0', STR_PAD_LEFT) : '');
     }
 
     /** ¿El valor cuenta como respondido? (no null, no cadena vacía, no array vacío). */

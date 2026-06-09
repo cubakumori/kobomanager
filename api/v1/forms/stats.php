@@ -306,6 +306,8 @@ ErrorResponse::ok([
     'duration'        => $duration,
     'by_hour'         => $byHour,
     'by_dow'          => $byDow,
+    'timezone'        => Derived::tzMeta(), // zona en que se expresan by_hour/by_dow
+
     'attachments'     => [
         'with'    => $attWith,
         'without' => $total - $attWith,

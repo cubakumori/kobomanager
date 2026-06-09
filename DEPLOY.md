@@ -78,6 +78,9 @@ define('CORS_ALLOWED_ORIGINS', ['https://yourdomain.com']);
 
 define('RESEND_API_KEY', 're_••••••');  // email (see §8); leave '' to disable
 define('MAIL_FROM', 'KoboManager <noreply@yourdomain.com>');
+
+define('APP_TIMEZONE', 'America/Havana'); // stats hour/weekday in local time (IANA; default 'UTC')
+define('APP_TIMEZONE_LABEL', 'La Habana'); // human label for the UI; '' falls back to the IANA id
 ```
 
 > **Important:** keep `CONFIG_TOKEN_KEY` somewhere safe. If it's lost or changed, the

@@ -860,6 +860,7 @@
     },
     "activityHour": "Activity by hour",
     "activityDay": "Activity by weekday",
+    "tzLabel": "{label} time ({offset})",
     "attachments": "Attachments",
     "attWith": "With attachments",
     "attWithout": "Without attachments",

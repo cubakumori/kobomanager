@@ -47,3 +47,13 @@ define('APP_URL', 'http://localhost:5173');
 define('CORS_ALLOWED_ORIGINS', ['http://localhost:5173']);
 // Entorno: 'dev' muestra detalles de error; 'prod' los oculta.
 define('APP_ENV', 'dev');
+
+// --- Zona horaria de visualización ---
+// Kobo entrega `_submission_time` en UTC. En Estadísticas, la «Actividad por
+// hora» y la «Actividad por día de la semana» se convierten a esta zona para
+// mostrarlas en hora local. Identificador IANA (p. ej. 'America/Havana',
+// 'Europe/Madrid'). Por defecto 'UTC' (sin conversión).
+define('APP_TIMEZONE', 'UTC');
+// Nombre legible para la UI (p. ej. 'La Habana', 'Madrid'). Vacío = se usa el
+// identificador IANA. La interfaz muestra «Hora de {etiqueta} (UTC±N)».
+define('APP_TIMEZONE_LABEL', '');
