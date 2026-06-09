@@ -5,6 +5,7 @@ import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 import { confirmDialog } from '../../composables/confirm'
 import Modal from '../../components/Modal.vue'
+import Skeleton from '../../components/Skeleton.vue'
 
 const { t } = useI18n()
 
@@ -148,7 +149,9 @@ onMounted(load)
       </select>
     </div>
 
-    <div v-if="loading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
+    <div v-if="loading" class="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+      <Skeleton variant="table" :rows="6" />
+    </div>
 
     <div v-else class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
       <table class="w-full whitespace-nowrap text-left text-sm">

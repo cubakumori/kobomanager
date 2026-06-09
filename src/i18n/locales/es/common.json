@@ -15,7 +15,11 @@
     "name": "Nombre",
     "role": "Rol",
     "yes": "Sí",
-    "no": "No"
+    "no": "No",
+    "theme": "Tema",
+    "theme_light": "claro",
+    "theme_dark": "oscuro",
+    "theme_auto": "automático (según el sistema)"
   },
   "nav": {
     "dashboard": "Dashboard",

@@ -6,6 +6,7 @@ import api from '../../services/api'
 import { useAuthStore, apiError } from '../../stores/auth'
 import Modal from '../../components/Modal.vue'
 import { confirmDialog } from '../../composables/confirm'
+import Skeleton from '../../components/Skeleton.vue'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -198,7 +199,7 @@ onMounted(load)
     <!-- Listado -->
     <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
       <div v-if="listError" class="p-4 text-sm text-red-700">{{ listError }}</div>
-      <div v-else-if="loading" class="p-4 text-sm text-slate-500">{{ $t('common.loading') }}</div>
+      <Skeleton v-else-if="loading" variant="table" :rows="5" />
       <table v-else class="w-full whitespace-nowrap text-left text-sm">
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
           <tr>

@@ -272,6 +272,16 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   Recoloring = editing those scales (or applying a `.theme-*` class on `<html>`). Success green
   stays on Tailwind's `green` on purpose. The mobile hamburger is themed via `.km-hamburger`
   + `--km-burger-*` tokens.
+- **Dark mode**: the `.dark` class on `<html>` remaps only the **neutrals** (`white` + the
+  `slate` scale) in `src/style.css` — brand/semantic tokens don't change, so dark mode is
+  orthogonal to `.theme-*`. `composables/darkMode.js` manages the light/dark/auto preference
+  (`localStorage`, `ThemeToggle.vue` button; an inline script in `index.html` avoids the
+  flash on load). Components that are dark **by design** in light mode (panel sidebar, public
+  mobile drawer) pin the original neutrals with the `.km-pin-neutrals` class. The `dark:`
+  variant is class-based (`@custom-variant dark`) for spot fixes (e.g. the accent table
+  header). Chart text colors re-read the slate variables and re-render on toggle.
+- **Loading skeletons**: `Skeleton.vue` (variants `table`/`lines`/`cards`) replaces the
+  "Loading…" text in the main list/detail/stats views.
 - **Reusable UI**: `Modal.vue` + `ConfirmDialog.vue` (`composables/confirm.js`), with
   `composables/dialogA11y.js` providing Escape‑to‑close, focus trap and focus restore for
   modals and drawers.

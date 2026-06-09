@@ -6,6 +6,7 @@ import router from './router'
 import i18n from './i18n'
 import { setUnauthorizedHandler } from './services/api'
 import { useAuthStore } from './stores/auth'
+import './composables/darkMode' // aplica la clase `dark` (preferencia/sistema) desde el arranque
 
 const app = createApp(App)
 const pinia = createPinia()

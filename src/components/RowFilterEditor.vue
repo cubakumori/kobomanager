@@ -320,7 +320,7 @@ defineExpose({ getValue })
                 v-for="opt in fieldOptions(cond.field)"
                 :key="opt.value"
                 class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-sm"
-                :class="cond.values.includes(opt.value) ? 'bg-accent-50 border-accent-300' : ''"
+                :class="cond.values.includes(opt.value) ? 'bg-accent-50 border-accent-300 dark:bg-accent-900/40 dark:border-accent-700' : ''"
               >
                 <input
                   type="checkbox"

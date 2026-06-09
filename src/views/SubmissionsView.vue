@@ -8,6 +8,7 @@ import { confirmDialog } from '../composables/confirm'
 import { makeLabeler } from '../composables/labels'
 import { useDerivedFormat, DERIVED_TABLE_COLS, isDerivedCol } from '../composables/derived'
 import ReviewBadge from '../components/ReviewBadge.vue'
+import Skeleton from '../components/Skeleton.vue'
 
 const { tableLabel, tableValue } = useDerivedFormat()
 
@@ -436,11 +437,11 @@ onMounted(load)
     </div>
 
     <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-      <div v-if="loading" class="p-4 text-sm text-slate-500">{{ $t('common.loading') }}</div>
+      <Skeleton v-if="loading" variant="table" :rows="10" />
       <table v-else class="w-full text-left text-sm">
-        <thead class="bg-accent-50 text-xs uppercase tracking-wider text-accent-700">
+        <thead class="bg-accent-50 text-xs uppercase tracking-wider text-accent-700 dark:bg-slate-50 dark:text-accent-300">
           <tr>
-            <th v-if="canValidate" class="sticky left-0 z-20 w-12 bg-accent-50 px-4 py-3">
+            <th v-if="canValidate" class="sticky left-0 z-20 w-12 bg-accent-50 px-4 py-3 dark:bg-slate-50">
               <input
                 type="checkbox"
                 class="h-4 w-4 align-middle"
@@ -450,7 +451,7 @@ onMounted(load)
               />
             </th>
             <th
-              class="sticky z-20 whitespace-nowrap bg-accent-50 px-4 py-3"
+              class="sticky z-20 whitespace-nowrap bg-accent-50 px-4 py-3 dark:bg-slate-50"
               :class="canValidate ? 'left-12' : 'left-0'"
             >{{ $t('submissions.colSubmitted') }}</th>
             <th v-for="c in shownColumns" :key="c" class="whitespace-nowrap px-4 py-3" :title="colFullLabel(c)">{{ colLabel(c) }}</th>

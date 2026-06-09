@@ -7,6 +7,7 @@ import { i18n, setLocale } from '../i18n'
 import { makeLabeler } from '../composables/labels'
 import LeafletMap from '../components/LeafletMap.vue'
 import AttachmentsGallery from '../components/AttachmentsGallery.vue'
+import ThemeToggle from '../components/ThemeToggle.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -200,9 +201,12 @@ onMounted(loadMeta)
           </p>
           <p v-if="meta?.form && meta?.label" class="truncate text-xs text-slate-400">{{ meta.form.name }}</p>
         </div>
-        <button class="rounded-lg px-2 py-1 text-sm font-semibold text-slate-500 hover:text-slate-900" @click="toggleLocale">
-          {{ $i18n.locale === 'es' ? 'EN' : 'ES' }}
-        </button>
+        <div class="flex shrink-0 items-center gap-1">
+          <button class="rounded-lg px-2 py-1 text-sm font-semibold text-slate-500 hover:text-slate-900" @click="toggleLocale">
+            {{ $i18n.locale === 'es' ? 'EN' : 'ES' }}
+          </button>
+          <ThemeToggle />
+        </div>
       </div>
     </header>
 

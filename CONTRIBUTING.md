@@ -55,6 +55,12 @@ overview read [`ARCHITECTURE.md`](./ARCHITECTURE.md); for setup read [`README.md
   so theming keeps working. Success/approved states use the `success-*` token (a themable green,
   default Tailwind `green`); for chart colors set in JS, read the CSS variable
   (`getComputedStyle(...).getPropertyValue('--color-success-600')`) instead of hardcoding a hex.
+- **Dark mode**: neutrals (`white`/`slate-*`) flip automatically under `.dark`, so build with
+  them and most components need nothing extra. If a component must stay dark in light mode
+  (sidebar-style surfaces), add `.km-pin-neutrals`. Use the class-based `dark:` variant only
+  for spot fixes (e.g. a light `accent-50` background that must darken). Never hardcode grays.
+- Loading states in list/detail views use `Skeleton.vue` (variants `table`/`lines`/`cards`)
+  instead of a plain "Loading…" text.
 - Reuse `Modal`/`ConfirmDialog` (via `confirmDialog(...)`) instead of native `alert/confirm`,
   so dialogs get the shared accessibility behavior.
 - Inside `<style scoped>`, `@reference "../../style.css"` (not `"tailwindcss"`) so `@apply`

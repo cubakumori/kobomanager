@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/auth'
 import { i18n, setLocale } from '../i18n'
 import Modal from './Modal.vue'
 import LoginForm from './LoginForm.vue'
+import ThemeToggle from './ThemeToggle.vue'
 import { useDialogA11y } from '../composables/dialogA11y'
 
 const router = useRouter()
@@ -73,6 +74,7 @@ const drawerLink =
           >
             {{ $i18n.locale === 'es' ? 'EN' : 'ES' }}
           </button>
+          <ThemeToggle />
           <button
             v-if="auth.isAuthenticated"
             class="whitespace-nowrap rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700"
@@ -90,8 +92,10 @@ const drawerLink =
         </nav>
 
         <!-- Botón hamburguesa (móvil) — neutro; el azul se reserva para las acciones -->
+        <div class="flex items-center gap-2 md:hidden">
+        <ThemeToggle />
         <button
-          class="km-hamburger md:hidden"
+          class="km-hamburger"
           aria-label="Menu"
           @click="showMenu = true"
         >
@@ -99,6 +103,7 @@ const drawerLink =
             <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
+        </div>
       </div>
     </header>
 
@@ -121,10 +126,11 @@ const drawerLink =
       enter-active-class="transition-transform duration-200" enter-from-class="translate-x-full"
       leave-active-class="transition-transform duration-200" leave-to-class="translate-x-full"
     >
+      <!-- km-pin-neutrals: el drawer es oscuro por diseño también en modo claro -->
       <aside
         v-if="showMenu"
         ref="drawer"
-        class="fixed right-0 top-0 z-50 flex h-screen w-64 flex-col bg-slate-900 p-3 text-white md:hidden"
+        class="km-pin-neutrals fixed right-0 top-0 z-50 flex h-screen w-64 flex-col bg-slate-900 p-3 text-white md:hidden"
         role="dialog"
         aria-modal="true"
       >

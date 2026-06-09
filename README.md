@@ -98,6 +98,14 @@ Three semantic color scales drive the UI (Tailwind v4 `@theme`):
   token from `accent` (also green) so "success" never gets tied to the brand color, and it's
   themable like the others.
 
+### Dark mode
+
+The app ships a **light / dark / auto** theme switch (sun/moon icon in the sidebar and the
+public header). "Auto" follows the system (`prefers-color-scheme`); the choice persists per
+device in `localStorage`. Dark mode only remaps the **neutral** colors (`white` + the `slate`
+scale) under the `.dark` class in `src/style.css` — brand tokens and semantic colors are
+untouched, so it composes freely with the alternate themes below.
+
 ### Change the default colors
 
 Edit the `primary` / `accent` / `success` scales (50–900) inside the `@theme { … }` block in

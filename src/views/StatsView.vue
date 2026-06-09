@@ -6,6 +6,7 @@ import api from '../services/api'
 import { apiError } from '../stores/auth'
 import { fmtDuration } from '../composables/derived'
 import StatsChart from '../components/StatsChart.vue'
+import Skeleton from '../components/Skeleton.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -227,7 +228,7 @@ onMounted(load)
     <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
       {{ error }}
     </div>
-    <div v-else-if="loading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
+    <Skeleton v-else-if="loading" variant="cards" :count="4" />
 
     <template v-else-if="stats">
       <!-- Tarjetas resumen -->

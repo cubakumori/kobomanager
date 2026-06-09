@@ -31,9 +31,13 @@ docs → commit). El usuario, además, revisará toda la app por si hay algo que
       de leído, Responder por mailto, archivar/desarchivar y eliminar con confirmación),
       columna `status` en `contact_messages`, card «Mensajes» con contador de nuevos en el
       Dashboard, auditoría de archivar/eliminar y 4 tests HTTP.
-- [ ] **(c) Modo oscuro + skeletons** — interruptor de tema claro/oscuro (definir variantes
-      oscuras de los tokens + auditar componentes) y placeholders de carga (skeletons) +
-      estados vacíos amables.
+- [x] **(c) Modo oscuro + skeletons** — HECHO: modo claro/oscuro/auto (sigue al sistema)
+      con botón en sidebar y cabecera pública, persistido por dispositivo (localStorage) y
+      sin destello al cargar (script inline). Bajo `.dark` solo se invierten los NEUTROS
+      (white + slate) → ortogonal a theme-teal/violet y sin trampas de contraste; islas
+      oscuras por diseño (sidebar, drawer) ancladas con `.km-pin-neutrals`; gráficos
+      adaptados (texto/rejilla re-renderizan al alternar). Skeletons: `Skeleton.vue`
+      (table/lines/cards) en las 12 vistas principales en vez de «Cargando…».
 - [ ] **(b) Columnas de solo-lectura + ocultar en stats agregadas** — tercer estado de campo
       (ver pero no editar) además de ocultar; y evitar fugas de campos ocultos en gráficos
       agregados derivados.
@@ -207,14 +211,13 @@ contra una cuenta KoboToolbox real:
 
 ## Optimización y UX
 
-- [ ] **Modo oscuro** y mejores estados de carga/vacío (skeletons).
-- [ ] **Filtros avanzados** adicionales en la tabla de envíos.
-- [ ] **Organización de los catálogos i18n** *(candidata, a discutir)*. Hoy todo vive en
-      `src/i18n/{es,en}.json` (cada clave en ambos + check de paridad). Valorar separar por
-      *namespace* (p. ej. `guide`) en ficheros propios y/o **cargar de forma diferida** el
-      catálogo de la Guía por ruta (vue-i18n `setLocaleMessage` + import dinámico). Solo
-      merece la pena con un 3.er idioma, si la Guía crece a documentación larga, o si el
-      peso de `/guide` importa; entonces adaptar el script de paridad al conjunto fusionado.
+- [x] **Modo oscuro** y skeletons — hechos (ver «Próxima sesión: prioridades acordadas» § (c)).
+- [ ] **Filtros avanzados** en la tabla de envíos — es la feature (d) de las prioridades
+      acordadas (ver arriba).
+- [ ] **Carga diferida del catálogo i18n de la Guía** *(la reorganización por áreas ya está
+      hecha — ver prioridades acordadas § 1)*: cargar `guide.json` bajo demanda por ruta
+      (vue-i18n `setLocaleMessage` + import dinámico). Solo merece la pena con un 3.er idioma
+      o si la Guía crece a documentación larga; adaptar entonces el check de paridad.
 
 ---
 

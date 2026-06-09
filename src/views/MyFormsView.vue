@@ -5,6 +5,7 @@ import { RouterLink } from 'vue-router'
 import api from '../services/api'
 import { useAuthStore, apiError } from '../stores/auth'
 import { confirmDialog } from '../composables/confirm'
+import Skeleton from '../components/Skeleton.vue'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -115,7 +116,9 @@ onMounted(load)
       {{ flash }}
     </div>
 
-    <div v-if="loading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
+    <div v-if="loading" class="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+      <Skeleton variant="table" :rows="6" />
+    </div>
 
     <div v-else-if="!forms.length" class="rounded-xl bg-white p-6 text-sm text-slate-400 shadow-sm ring-1 ring-slate-200">
       {{ $t('myForms.empty') }}

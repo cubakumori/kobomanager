@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '../services/api'
 import { apiError } from '../stores/auth'
+import Skeleton from '../components/Skeleton.vue'
 
 const { t, te } = useI18n()
 
@@ -152,7 +153,7 @@ onMounted(() => {
     <p class="text-sm text-slate-500">{{ $t('audit.total', { n: total }) }}</p>
 
     <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-      <div v-if="loading" class="p-4 text-sm text-slate-500">{{ $t('common.loading') }}</div>
+      <Skeleton v-if="loading" variant="table" :rows="8" />
       <table v-else class="w-full text-left text-sm">
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
           <tr>

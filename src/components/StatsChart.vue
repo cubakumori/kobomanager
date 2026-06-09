@@ -1,6 +1,7 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, watchEffect } from 'vue'
 import { Bar, Doughnut } from 'vue-chartjs'
+import { useDarkMode } from '../composables/darkMode'
 import {
   Chart as ChartJS,
   Title,
@@ -83,6 +84,9 @@ const valueLabelsPlugin = {
           return
         }
         const w = ctx.measureText(txt).width
+        // Texto FUERA de la barra: sigue al modo claro/oscuro (slate-600 se
+        // invierte bajo `.dark`, ver style.css).
+        const outsideColor = cssVar('--color-slate-600', '#475569')
         if (horiz) {
           ctx.textBaseline = 'middle'
           const inside = el.x - el.base > w + 12
@@ -91,12 +95,12 @@ const valueLabelsPlugin = {
             ctx.textAlign = 'right'
             ctx.fillText(txt, el.x - 6, el.y)
           } else {
-            ctx.fillStyle = '#475569'
+            ctx.fillStyle = outsideColor
             ctx.textAlign = 'left'
             ctx.fillText(txt, el.x + 6, el.y)
           }
         } else {
-          ctx.fillStyle = '#475569'
+          ctx.fillStyle = outsideColor
           ctx.textAlign = 'center'
           ctx.textBaseline = 'bottom'
           ctx.fillText(txt, el.x, el.y - 4)
@@ -115,8 +119,22 @@ const props = defineProps({
 })
 
 const comp = computed(() => (props.type === 'doughnut' ? Doughnut : Bar))
+
+// ---------- Modo claro/oscuro ----------
+// Los colores de texto/rejilla de Chart.js se fijan como DEFAULTS globales leyendo
+// los tokens slate (que se invierten bajo `.dark`); al cambiar el modo, el :key
+// del template recrea el gráfico para que tome los nuevos valores.
+function cssVar(name, fallback) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  return v || fallback
+}
+const { isDark } = useDarkMode()
+watchEffect(() => {
+  void isDark.value // dependencia: re-leer al alternar el modo
+  ChartJS.defaults.color = cssVar('--color-slate-500', '#64748b')
+  ChartJS.defaults.borderColor = isDark.value ? 'rgba(148, 163, 184, 0.15)' : 'rgba(0, 0, 0, 0.1)'
+})
 </script>
 
 <template>
-  <component :is="comp" :data="data" :options="options" />
-</template>
+  <component :is="comp" :key="isDark" :data="data" :options="options" /></template>

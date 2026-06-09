@@ -5,6 +5,16 @@
     <link rel="icon" type="image/png" href="/km_logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>KoboManager</title>
+    <!-- Modo oscuro sin destello: aplica la clase ANTES de cargar la app
+         (misma lógica que src/composables/darkMode.js). -->
+    <script>
+      try {
+        var kmTheme = localStorage.getItem('km.theme')
+        if (kmTheme === 'dark' || ((kmTheme === 'auto' || !kmTheme) && matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark')
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="app"></div>

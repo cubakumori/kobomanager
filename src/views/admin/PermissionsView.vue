@@ -6,6 +6,7 @@ import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 import Modal from '../../components/Modal.vue'
 import RowFilterEditor from '../../components/RowFilterEditor.vue'
+import Skeleton from '../../components/Skeleton.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -209,7 +210,7 @@ onMounted(async () => {
       v-if="selectedUserId"
       class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200"
     >
-      <div v-if="loadingPerms" class="p-4 text-sm text-slate-500">{{ $t('common.loading') }}</div>
+      <Skeleton v-if="loadingPerms" variant="table" :rows="6" />
       <template v-else>
         <table class="w-full whitespace-nowrap text-left text-sm">
           <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
@@ -359,7 +360,7 @@ onMounted(async () => {
                 v-for="f in colsFields"
                 :key="f.key"
                 class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-slate-50"
-                :class="colsHidden.includes(f.key) ? 'bg-accent-50' : ''"
+                :class="colsHidden.includes(f.key) ? 'bg-accent-50 dark:bg-accent-900/40' : ''"
               >
                 <input
                   type="checkbox"

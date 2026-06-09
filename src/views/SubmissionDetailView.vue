@@ -9,6 +9,7 @@ import { useDerivedFormat } from '../composables/derived'
 import ReviewBadge from '../components/ReviewBadge.vue'
 import LeafletMap from '../components/LeafletMap.vue'
 import AttachmentsGallery from '../components/AttachmentsGallery.vue'
+import Skeleton from '../components/Skeleton.vue'
 
 const { t } = useI18n()
 const { summaryRows } = useDerivedFormat()
@@ -197,7 +198,7 @@ onMounted(load)
     <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
       {{ error }}
     </div>
-    <div v-else-if="loading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
+    <Skeleton v-else-if="loading" variant="lines" :lines="10" />
 
     <template v-else-if="sub">
       <!-- Datos (con edición opcional) -->

@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* La variante `dark:` se activa por CLASE (la pone darkMode.js en <html>), no por
+   media query: así el usuario puede forzar claro/oscuro además del modo auto. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /*
   ───────────────────────────────────────────────────────────────────────────
   TEMA DE LA APLICACIÓN (Tailwind v4)
@@ -183,6 +187,60 @@
   --color-success-700: #15803d;
   --color-success-800: #166534;
   --color-success-900: #14532d;
+}
+
+/*
+  MODO OSCURO
+  ───────────
+  Modelo: bajo `.dark` (clase en <html>, gestionada por src/composables/darkMode.js
+  y un script inline en index.html que evita el destello al cargar) se REDEFINEN
+  SOLO LOS NEUTROS — `white` y la escala `slate` — invertidos sobre superficies
+  oscuras. Los tokens de marca (`primary`/`accent`/`success`) y los semánticos
+  (red/amber/sky…) NO cambian: los botones, badges y avisos conservan su color y
+  contraste, y el modo oscuro es ortogonal a los temas (`theme-teal`, `theme-violet`).
+
+  Jerarquía de superficies en oscuro:
+    página (slate-100 → #0f172a)  <  tarjetas (white → #1e293b)  <  hovers (slate-50 → #283548)
+
+  `color-scheme: dark` adapta los controles nativos (inputs, scrollbars, date pickers).
+*/
+.dark {
+  color-scheme: dark;
+
+  --color-white: #1e293b;
+
+  --color-slate-50:  #283548; /* hovers/cabeceras de tabla sobre tarjeta */
+  --color-slate-100: #0f172a; /* fondo de página */
+  --color-slate-200: #334155; /* bordes/rings sobre tarjeta */
+  --color-slate-300: #475569; /* bordes de inputs */
+  --color-slate-400: #94a3b8; /* texto atenuado (válido en ambos modos) */
+  --color-slate-500: #94a3b8; /* texto secundario */
+  --color-slate-600: #cbd5e1;
+  --color-slate-700: #e2e8f0;
+  --color-slate-800: #f1f5f9; /* texto base */
+  --color-slate-900: #f8fafc; /* titulares */
+}
+
+/*
+  Islas de paleta FIJA: componentes diseñados oscuros también en modo claro
+  (sidebar del panel, drawer móvil público). Esta clase RESTAURA los neutros
+  originales dentro de su subárbol para que el flip de `.dark` no los rompa
+  (las variables CSS se resuelven en el elemento que las usa, así que la
+  definición más cercana gana).
+*/
+.km-pin-neutrals {
+  --color-white: #ffffff;
+
+  --color-slate-50:  #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
 }
 
 :root {

@@ -6,6 +6,7 @@ import { apiError } from '../../stores/auth'
 import { confirmDialog } from '../../composables/confirm'
 import Modal from '../../components/Modal.vue'
 import RowFilterEditor from '../../components/RowFilterEditor.vue'
+import Skeleton from '../../components/Skeleton.vue'
 
 const { t } = useI18n()
 
@@ -258,7 +259,9 @@ onMounted(() => {
       {{ error }}
     </div>
 
-    <div v-if="loading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
+    <div v-if="loading" class="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+      <Skeleton variant="table" :rows="5" />
+    </div>
 
     <div v-else class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
       <table class="w-full whitespace-nowrap text-left text-sm">
@@ -503,7 +506,7 @@ onMounted(() => {
                 v-for="f in colsFields"
                 :key="f.key"
                 class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-slate-50"
-                :class="colsHidden.includes(f.key) ? 'bg-accent-50' : ''"
+                :class="colsHidden.includes(f.key) ? 'bg-accent-50 dark:bg-accent-900/40' : ''"
               >
                 <input type="checkbox" :checked="colsHidden.includes(f.key)" @change="toggleHidden(f.key)" />
                 <span class="min-w-0 flex-1 truncate">{{ f.label }}</span>

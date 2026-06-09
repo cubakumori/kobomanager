@@ -23,6 +23,20 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Modo oscuro (claro / oscuro / auto)**: nuevo interruptor de tema (icono sol/luna) en el
+  sidebar del panel, la cabecera pública y la vista de enlaces compartidos. «Auto» sigue al
+  sistema (`prefers-color-scheme`); la preferencia persiste por dispositivo (localStorage) y
+  un script inline en `index.html` aplica la clase antes de montar la app (sin destello).
+  Implementación: bajo `.dark` solo se invierten los **neutros** (`white` + escala `slate`)
+  en `src/style.css`; los tokens de marca (`primary`/`accent`/`success`) y los semánticos
+  (rojo/ámbar…) no cambian, así que botones y avisos conservan su contraste y el modo oscuro
+  combina con los temas `theme-teal`/`theme-violet`. Las superficies oscuras por diseño
+  (sidebar, drawer móvil) se anclan con `.km-pin-neutrals`; los gráficos re-renderizan el
+  texto/rejilla al alternar; `color-scheme: dark` adapta inputs nativos y scrollbars.
+- **Skeletons de carga**: nuevo componente `Skeleton.vue` (variantes `table`/`lines`/`cards`)
+  que sustituye el texto «Cargando…» en las vistas principales (tabla de envíos, detalle,
+  estadísticas, Mis formularios, Mi actividad y las listas de administración).
+
 - **Bandeja admin de mensajes de contacto (`/admin/messages`)**: los mensajes del formulario
   público de la página «Apoyar» (tabla `contact_messages`) ahora se leen y gestionan desde el
   panel, no solo por email. Lista paginada con filtros por estado y motivo; clic en una fila →
