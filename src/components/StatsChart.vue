@@ -10,9 +10,18 @@ import {
   CategoryScale,
   LinearScale,
   ArcElement,
+  LineController,
+  LineElement,
+  PointElement,
 } from 'chart.js'
 
-ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement)
+// LineController/LineElement/PointElement permiten datasets `type:'line'` dentro de un
+// gráfico de barras (mixto): se usa para la línea de total ACUMULADO sobre «Envíos por
+// día/mes».
+ChartJS.register(
+  Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement,
+  LineController, LineElement, PointElement,
+)
 
 // Plugin propio (sin dependencias) para dibujar el valor —y el % si se da una base—
 // sobre cada barra/segmento, no solo en el hover (clave en móvil). Solo actúa si el

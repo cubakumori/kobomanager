@@ -69,6 +69,35 @@ if ($byDay) {
     }
 }
 
+// Total ACUMULADO a lo largo de la serie temporal (para la línea acumulada del gráfico).
+$run = 0;
+foreach ($byDay as &$d) { $run += $d['count']; $d['cumulative'] = $run; }
+unset($d);
+$run = 0;
+foreach ($byMonth as &$m) { $run += $m['count']; $m['cumulative'] = $run; }
+unset($m);
+
+// Tendencia reciente: envíos de los últimos 7/30 días vs el periodo ANTERIOR equivalente
+// (relativo a ahora; respeta el scope por filas). pct = variación %, null si el periodo
+// anterior fue 0 (no se puede calcular variación → la UI muestra «—»).
+$tr = DB::run(
+    "SELECT
+        SUM(submitted_at >= NOW() - INTERVAL 7 DAY)                                          AS last7,
+        SUM(submitted_at <  NOW() - INTERVAL 7 DAY  AND submitted_at >= NOW() - INTERVAL 14 DAY) AS prev7,
+        SUM(submitted_at >= NOW() - INTERVAL 30 DAY)                                         AS last30,
+        SUM(submitted_at <  NOW() - INTERVAL 30 DAY AND submitted_at >= NOW() - INTERVAL 60 DAY) AS prev30
+     FROM submissions_cache
+     WHERE form_id = ? AND submitted_at IS NOT NULL AND $scopeSql",
+    array_merge([$formId], $scopeP)
+)->fetch();
+$pct = fn(int $cur, int $prev): ?float => $prev > 0 ? round(($cur - $prev) * 100 / $prev, 1) : null;
+$last7 = (int) ($tr['last7'] ?? 0); $prev7 = (int) ($tr['prev7'] ?? 0);
+$last30 = (int) ($tr['last30'] ?? 0); $prev30 = (int) ($tr['prev30'] ?? 0);
+$trend = [
+    'last_7' => $last7, 'prev_7' => $prev7, 'pct_7' => $pct($last7, $prev7),
+    'last_30' => $last30, 'prev_30' => $prev30, 'pct_30' => $pct($last30, $prev30),
+];
+
 // Distribución por estado de revisión: la revisión más reciente de cada envío de este formulario.
 $reviewed = DB::run(
     "SELECT r.status, COUNT(*) AS count
@@ -268,6 +297,7 @@ ErrorResponse::ok([
     'by_day'          => $byDay,
     'by_month'        => $byMonth,
     'period_granularity' => $periodGranularity, // 'day' | 'month' (>30 días de tramo)
+    'trend'           => $trend,
     'by_status'       => $byStatus,
     'by_question'     => $byQuestion,
     'by_enumerator'   => $byEnumerator,

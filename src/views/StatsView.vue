@@ -24,12 +24,37 @@ const periodIsMonth = computed(() => stats.value?.period_granularity === 'month'
 const periodSeries = computed(() =>
   periodIsMonth.value ? (stats.value?.by_month ?? []) : (stats.value?.by_day ?? []),
 )
+const ACCENT = '#059669'
 const byPeriodData = computed(() => ({
   labels: periodSeries.value.map((d) => d.date),
   datasets: [
-    { label: t('stats.submissions'), data: periodSeries.value.map((d) => d.count), backgroundColor: PRIMARY, borderRadius: 4 },
+    { type: 'bar', label: t('stats.submissions'), data: periodSeries.value.map((d) => d.count), backgroundColor: PRIMARY, borderRadius: 4, order: 2 },
+    // Línea de total acumulado sobre un eje Y secundario (derecha).
+    {
+      type: 'line',
+      label: t('stats.cumulative'),
+      data: periodSeries.value.map((d) => d.cumulative),
+      borderColor: ACCENT,
+      backgroundColor: ACCENT,
+      borderWidth: 2,
+      pointRadius: periodSeries.value.length > 40 ? 0 : 2,
+      tension: 0.25,
+      yAxisID: 'y1',
+      order: 1,
+    },
   ],
 }))
+// Gráfico mixto barra+línea con doble eje: y (conteo, izq) y y1 (acumulado, der, sin grid).
+const periodOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: { mode: 'index', intersect: false },
+  plugins: { legend: { display: true, position: 'bottom' } },
+  scales: {
+    y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: false } },
+    y1: { beginAtZero: true, position: 'right', ticks: { precision: 0 }, grid: { drawOnChartArea: false } },
+  },
+}
 
 const byStatusData = computed(() => {
   const s = stats.value?.by_status ?? { pending: 0, approved: 0, on_hold: 0, rejected: 0 }
@@ -120,6 +145,15 @@ const barValueOptions = {
   plugins: { ...barOptions.plugins, valueLabels: { enabled: true } },
 }
 
+// Tendencia: presenta la variación % (vs periodo anterior) con flecha y color.
+// pct === null (periodo anterior = 0) → «—» neutro.
+function trendInfo(pct) {
+  if (pct == null) return { text: '—', cls: 'text-slate-400', arrow: '' }
+  if (pct > 0) return { text: `+${pct}%`, cls: 'text-green-600', arrow: '▲' }
+  if (pct < 0) return { text: `${pct}%`, cls: 'text-red-600', arrow: '▼' }
+  return { text: '0%', cls: 'text-slate-400', arrow: '' }
+}
+
 // «Por enumerador» solo aporta con 2+ enumeradores reales (no si todo es «—»
 // porque los envíos no traen _submitted_by, ni con un único enumerador).
 const showEnumerator = computed(() => {
@@ -203,12 +237,36 @@ onMounted(load)
         </div>
       </div>
 
+      <!-- Tendencia reciente (vs periodo anterior equivalente) -->
+      <div v-if="stats.trend" class="grid gap-4 grid-cols-1 sm:grid-cols-2">
+        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+          <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.last7') }}</p>
+          <div class="mt-1 flex items-baseline gap-2">
+            <p class="text-2xl font-semibold text-slate-900">{{ stats.trend.last_7 }}</p>
+            <span class="text-sm font-medium" :class="trendInfo(stats.trend.pct_7).cls">
+              {{ trendInfo(stats.trend.pct_7).arrow }} {{ trendInfo(stats.trend.pct_7).text }}
+            </span>
+          </div>
+          <p class="mt-1 text-xs text-slate-400">{{ $t('stats.vsPrev', { n: stats.trend.prev_7 }) }}</p>
+        </div>
+        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+          <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.last30') }}</p>
+          <div class="mt-1 flex items-baseline gap-2">
+            <p class="text-2xl font-semibold text-slate-900">{{ stats.trend.last_30 }}</p>
+            <span class="text-sm font-medium" :class="trendInfo(stats.trend.pct_30).cls">
+              {{ trendInfo(stats.trend.pct_30).arrow }} {{ trendInfo(stats.trend.pct_30).text }}
+            </span>
+          </div>
+          <p class="mt-1 text-xs text-slate-400">{{ $t('stats.vsPrev', { n: stats.trend.prev_30 }) }}</p>
+        </div>
+      </div>
+
       <!-- Gráficos base -->
       <div class="grid gap-4 lg:grid-cols-3">
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 lg:col-span-2">
           <h2 class="mb-4 font-semibold text-slate-900">{{ periodIsMonth ? $t('stats.byMonth') : $t('stats.byDay') }}</h2>
           <div class="h-64">
-            <StatsChart v-if="periodSeries.length" type="bar" :data="byPeriodData" :options="barValueOptions" />
+            <StatsChart v-if="periodSeries.length" type="bar" :data="byPeriodData" :options="periodOptions" />
             <p v-else class="text-sm text-slate-400">{{ $t('stats.noData') }}</p>
           </div>
         </div>
