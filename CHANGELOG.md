@@ -23,6 +23,19 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Columnas de solo lectura (tercer estado de campo)**: además de ocultar una columna a un
+  usuario, ahora puede marcarse como **solo lectura** — la ve pero no puede editarla aunque
+  tenga permiso de edición en el formulario. El editor de columnas de Permisos pasa a un
+  control de tres estados por campo (Visible / Solo lectura / Oculta); el filtro se guarda
+  en el mismo JSON `field_filter` (`{hidden, readonly}`, retrocompatible — una clave oculta
+  nunca queda además como solo lectura). El backend rechaza explícitamente (422) cualquier
+  edición que toque un campo de solo lectura — nada se escribe a medias en Kobo — y el
+  detalle marca esos campos con 🔒 mostrándolos como texto no editable. Los enlaces
+  públicos no cambian (ya son de solo lectura; mantienen visible/oculto). Verificado
+  además que las **estadísticas agregadas no filtran campos ocultos** («por pregunta»
+  excluye la pregunta oculta y sus adjuntos/geo no cuentan), ahora con tests de regresión.
+  6 tests nuevos (PHPUnit 175/175).
+
 - **Modo oscuro (claro / oscuro / auto)**: nuevo interruptor de tema (icono sol/luna) en el
   sidebar del panel, la cabecera pública y la vista de enlaces compartidos. «Auto» sigue al
   sistema (`prefers-color-scheme`); la preferencia persiste por dispositivo (localStorage) y

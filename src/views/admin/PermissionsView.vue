@@ -111,16 +111,20 @@ function clearScope() {
   scopeOpen.value = false
 }
 
-// ---------- Permisos por columna (ocultar campos) ----------
+// ---------- Permisos por columna (tri-estado: visible / solo lectura / oculta) ----------
 const colsOpen = ref(false)
 const colsForm = ref(null)
 const colsFields = ref([]) // todos los campos del formulario (clave, etiqueta, tipo)
 const colsLoading = ref(false)
 const colsError = ref('')
-const colsHidden = ref([]) // copia de trabajo: claves ocultas
+const colsState = ref({}) // copia de trabajo: clave → 'readonly' | 'hidden' (ausente = visible)
+const COL_STATES = ['visible', 'readonly', 'hidden']
 
 function hiddenCount(p) {
   return p.field_filter?.hidden?.length || 0
+}
+function readonlyCount(p) {
+  return p.field_filter?.readonly?.length || 0
 }
 
 async function openCols(p) {
@@ -128,7 +132,10 @@ async function openCols(p) {
   colsOpen.value = true
   colsError.value = ''
   colsFields.value = []
-  colsHidden.value = [...(p.field_filter?.hidden || [])]
+  const state = {}
+  for (const k of p.field_filter?.hidden || []) state[k] = 'hidden'
+  for (const k of p.field_filter?.readonly || []) state[k] = 'readonly'
+  colsState.value = state
   colsLoading.value = true
   try {
     const { data } = await api.get(`/admin/forms/${p.form_id}/scope-fields`)
@@ -140,15 +147,22 @@ async function openCols(p) {
   }
 }
 
-function toggleHidden(key) {
-  const i = colsHidden.value.indexOf(key)
-  if (i === -1) colsHidden.value.push(key)
-  else colsHidden.value.splice(i, 1)
+function colState(key) {
+  return colsState.value[key] || 'visible'
 }
+function setColState(key, state) {
+  if (state === 'visible') delete colsState.value[key]
+  else colsState.value[key] = state
+}
+const restrictedCount = computed(() => Object.keys(colsState.value).length)
 
 function applyCols() {
-  const hidden = [...new Set(colsHidden.value)]
-  colsForm.value.field_filter = hidden.length ? { hidden } : null
+  const hidden = [], readonly = []
+  for (const [k, s] of Object.entries(colsState.value)) {
+    if (s === 'hidden') hidden.push(k)
+    else if (s === 'readonly') readonly.push(k)
+  }
+  colsForm.value.field_filter = hidden.length || readonly.length ? { hidden, readonly } : null
   saved.value = false
   colsOpen.value = false
 }
@@ -259,14 +273,16 @@ onMounted(async () => {
                   v-if="p.can_view"
                   type="button"
                   class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ring-1 transition"
-                  :class="hiddenCount(p)
-                    ? 'bg-accent-50 text-accent-700 ring-accent-200 hover:bg-accent-100'
+                  :class="hiddenCount(p) + readonlyCount(p)
+                    ? 'bg-accent-50 text-accent-700 ring-accent-200 hover:bg-accent-100 dark:bg-accent-900/40'
                     : 'bg-slate-50 text-slate-500 ring-slate-200 hover:bg-slate-100'"
                   @click="openCols(p)"
                 >
-                  {{ hiddenCount(p)
-                    ? $t('permissions.colsHidden', { n: hiddenCount(p) })
-                    : $t('permissions.colsAll') }}
+                  <template v-if="hiddenCount(p) + readonlyCount(p)">
+                    <span v-if="hiddenCount(p)">{{ $t('permissions.colsHidden', { n: hiddenCount(p) }) }}</span>
+                    <span v-if="readonlyCount(p)">{{ $t('permissions.colsReadonly', { n: readonlyCount(p) }) }}</span>
+                  </template>
+                  <template v-else>{{ $t('permissions.colsAll') }}</template>
                 </button>
                 <span v-else class="text-slate-300">—</span>
               </td>
@@ -353,23 +369,31 @@ onMounted(async () => {
           </div>
           <template v-else>
             <p class="text-xs text-slate-500">
-              {{ $t('permissions.colsSelected', { n: colsHidden.length }) }}
+              {{ $t('permissions.colsSelected', { n: restrictedCount }) }} ·
+              {{ $t('permissions.colsReadonlyHint') }}
             </p>
             <div class="max-h-96 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-2">
-              <label
+              <div
                 v-for="f in colsFields"
                 :key="f.key"
-                class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-slate-50"
-                :class="colsHidden.includes(f.key) ? 'bg-accent-50 dark:bg-accent-900/40' : ''"
+                class="flex flex-wrap items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-slate-50 sm:flex-nowrap"
+                :class="colState(f.key) !== 'visible' ? 'bg-accent-50 dark:bg-accent-900/40' : ''"
               >
-                <input
-                  type="checkbox"
-                  :checked="colsHidden.includes(f.key)"
-                  @change="toggleHidden(f.key)"
-                />
-                <span class="min-w-0 flex-1 truncate">{{ f.label }}</span>
+                <span class="min-w-0 flex-1 truncate" :title="f.label">{{ f.label }}</span>
                 <span class="shrink-0 text-xs text-slate-400">{{ f.type }}</span>
-              </label>
+                <span class="inline-flex shrink-0 overflow-hidden rounded-lg ring-1 ring-slate-300">
+                  <button
+                    v-for="s in COL_STATES"
+                    :key="s"
+                    type="button"
+                    class="px-2 py-1 text-xs font-medium transition"
+                    :class="colState(f.key) === s
+                      ? (s === 'hidden' ? 'bg-red-600 text-white' : s === 'readonly' ? 'bg-amber-500 text-white' : 'bg-primary-600 text-white')
+                      : 'bg-white text-slate-600 hover:bg-slate-100'"
+                    @click="setColState(f.key, s)"
+                  >{{ $t('permissions.colState_' + s) }}</button>
+                </span>
+              </div>
             </div>
           </template>
         </template>

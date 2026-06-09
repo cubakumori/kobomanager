@@ -94,4 +94,25 @@ final class EditHttpTest extends HttpTestCase
         $this->assertSame(404, $res['status']);
         @unlink($jar);
     }
+
+    public function testCannotEditReadonlyField(): void
+    {
+        $uid = $this->seedUser('viewer', 'v@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $formId = $this->seedForm($accId);
+        $this->seedSubmission($formId, 'e2', ['_id' => 5002, 'name' => 'Ana', 'dni' => '123']);
+        $this->grant($uid, $formId, view: true, edit: true, fieldFilter: ['readonly' => ['dni']]);
+        $jar = $this->login('v@test.local', 'Secret123!');
+
+        // Editar un campo de solo lectura se RECHAZA explícitamente (422), aunque
+        // vaya acompañado de campos editables: nada se escribe a medias en Kobo.
+        $res = $this->request('PUT', 'submissions/e2', ['data' => ['name' => 'Eva', 'dni' => '999']], $jar);
+        $this->assertSame(422, $res['status']);
+        $this->assertSame('VALIDATION_ERROR', $res['json']['error']['code']);
+        $row = DB::run('SELECT json_payload FROM submissions_cache WHERE submission_uid = ?', ['e2'])->fetch();
+        $payload = json_decode($row['json_payload'], true);
+        $this->assertSame('Ana', $payload['name']); // nada cambió
+        $this->assertSame('123', $payload['dni']);
+        @unlink($jar);
+    }
 }

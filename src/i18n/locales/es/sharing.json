@@ -111,7 +111,12 @@
     "colsNoFields": "Este formulario aún no tiene campos (sincroniza su esquema).",
     "colsClear": "Mostrar todas",
     "colsApply": "Aplicar",
-    "colsLoadError": "No se pudieron cargar los campos del formulario"
+    "colsLoadError": "No se pudieron cargar los campos del formulario",
+    "colsReadonly": "{n} solo lectura",
+    "colsReadonlyHint": "«Solo lectura» solo afecta a usuarios con permiso de edición.",
+    "colState_visible": "Visible",
+    "colState_readonly": "Solo lectura",
+    "colState_hidden": "Oculta"
   },
   "rowfilter": {
     "intro": "Se verán solo los envíos que cumplan el filtro. Combina condiciones con Y/O dentro de cada grupo y entre grupos.",

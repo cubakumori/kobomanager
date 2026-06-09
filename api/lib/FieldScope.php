@@ -8,8 +8,13 @@
  * del payload DESPUÉS de aplicar el scoping. Son ortogonales y componen sin conflicto
  * (p. ej. «filtra por región pero no muestres la columna región» funciona solo).
  *
- * Forma del filtro (denylist): { "hidden": ["<clave de envío>", "g_a/region", ...] }
- *   - NULL / sin claves  → sin restricción (ve todos los campos). Retrocompatible.
+ * Forma del filtro (denylist): { "hidden": [...], "readonly": [...] }
+ *   - `hidden`   → el campo NO se ve (se recorta de toda lectura).
+ *   - `readonly` → el campo SE VE pero NO se puede editar (tercer estado; solo
+ *     tiene efecto en usuarios con can_edit — los enlaces compartidos ya son de
+ *     solo lectura y no lo usan). Un campo oculto nunca está además en readonly.
+ *   - NULL / sin claves  → sin restricción. Retrocompatible: una lista pelada o
+ *     un objeto sin `readonly` siguen significando «ocultas».
  *   - cada clave es la ruta tal como aparece en el JSON del envío y en `scope-fields`
  *     (hoja `region` o ruta de grupo `g_a/region`).
  *
@@ -44,8 +49,9 @@ class FieldScope {
     }
 
     /**
-     * Normaliza un filtro crudo (de BD o enviado por el admin) a `{hidden:[...]}`,
-     * o null si no hay campos que ocultar. Acepta `{hidden:[...]}` o una lista pelada.
+     * Normaliza un filtro crudo (de BD o enviado por el admin) a
+     * `{hidden:[...], readonly:[...]}`, o null si no restringe nada. Acepta
+     * `{hidden, readonly}`, `{hidden}` o una lista pelada (= ocultas).
      */
     public static function normalize($raw): ?array {
         if (is_array($raw) && array_is_list($raw)) {
@@ -54,20 +60,25 @@ class FieldScope {
         if (!is_array($raw)) {
             return null;
         }
-        $list = $raw['hidden'] ?? null;
-        if (!is_array($list)) {
+        // Nunca se restringen metadatos de Kobo (`_*`): no son columnas de datos y
+        // varios (adjuntos, geo) se gestionan aparte en apply().
+        $clean = function ($list): array {
+            if (!is_array($list)) return [];
+            $out = [];
+            foreach ($list as $k) {
+                $k = trim((string) $k);
+                if ($k === '' || str_starts_with($k, '_')) continue;
+                $out[$k] = true;
+            }
+            return array_keys($out);
+        };
+        $hidden   = $clean($raw['hidden'] ?? null);
+        // Oculto gana a solo-lectura: una clave no puede estar en ambos.
+        $readonly = array_values(array_diff($clean($raw['readonly'] ?? null), $hidden));
+        if (!$hidden && !$readonly) {
             return null;
         }
-        $out = [];
-        foreach ($list as $k) {
-            $k = trim((string) $k);
-            // Nunca se ocultan metadatos de Kobo (`_*`): no son columnas de datos y
-            // varios (adjuntos, geo) se gestionan aparte en apply().
-            if ($k === '' || str_starts_with($k, '_')) continue;
-            $out[$k] = true;
-        }
-        $out = array_keys($out);
-        return $out ? ['hidden' => $out] : null;
+        return ['hidden' => $hidden, 'readonly' => $readonly];
     }
 
     /** Lista de claves ocultas (o [] si no hay restricción). */
@@ -78,6 +89,16 @@ class FieldScope {
     /** ¿La clave `$key` está oculta para esta regla? */
     public static function isHidden(?array $rule, string $key): bool {
         return $rule !== null && in_array($key, $rule['hidden'], true);
+    }
+
+    /** Lista de claves de solo lectura (o [] si no hay restricción). */
+    public static function readonlyFields(?array $rule): array {
+        return $rule['readonly'] ?? [];
+    }
+
+    /** ¿La clave `$key` es de solo lectura (visible pero no editable)? */
+    public static function isReadonly(?array $rule, string $key): bool {
+        return $rule !== null && in_array($key, $rule['readonly'] ?? [], true);
     }
 
     /**

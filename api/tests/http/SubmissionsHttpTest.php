@@ -67,6 +67,51 @@ final class SubmissionsHttpTest extends HttpTestCase
         @unlink($jar);
     }
 
+    public function testReadonlyFieldStaysVisibleAndIsFlagged(): void
+    {
+        $uid = $this->seedUser('viewer', 'v@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $formId = $this->seedForm($accId);
+        $this->seedSubmission($formId, 'r1', ['_id' => 1, 'name' => 'Ana', 'dni' => '123']);
+        $this->grant($uid, $formId, view: true, edit: true, fieldFilter: ['readonly' => ['dni']]);
+        $jar = $this->login('v@test.local', 'Secret123!');
+
+        // Solo lectura ≠ oculto: el campo SÍ aparece en data y el detalle lo declara.
+        $detail = $this->request('GET', 'submissions/r1', null, $jar);
+        $this->assertSame(200, $detail['status']);
+        $this->assertSame('123', $detail['json']['data']['data']['dni']);
+        $this->assertSame(['dni'], $detail['json']['data']['readonly_fields']);
+        @unlink($jar);
+    }
+
+    public function testStatsExcludeHiddenQuestionAndItsAttachments(): void
+    {
+        $uid = $this->seedUser('viewer', 'v@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $schema = json_encode(['fields' => [
+            'estado' => ['type' => 'select_one yesno', 'leaf' => 'estado'],
+            'region' => ['type' => 'select_one r', 'leaf' => 'region'],
+        ]]);
+        $formId = $this->seedForm($accId, null, $schema);
+        $this->seedSubmission($formId, 's1', [
+            '_id' => 1, 'estado' => 'si', 'region' => 'norte',
+            '_attachments' => [['uid' => 'a1', 'question_xpath' => 'estado', 'media_file_basename' => 'x.jpg', 'mimetype' => 'image/jpeg', 'download_url' => 'http://x/a1']],
+        ]);
+        $this->seedSubmission($formId, 's2', ['_id' => 2, 'estado' => 'no', 'region' => 'sur']);
+        $this->grant($uid, $formId, view: true, fieldFilter: ['hidden' => ['estado']]);
+        $jar = $this->login('v@test.local', 'Secret123!');
+
+        $res = $this->request('GET', "forms/$formId/stats", null, $jar);
+        $this->assertSame(200, $res['status']);
+        $fieldsInStats = array_column($res['json']['data']['by_question'], 'field');
+        // La pregunta oculta no aparece en los agregados; la visible sí.
+        $this->assertNotContains('estado', $fieldsInStats);
+        $this->assertContains('region', $fieldsInStats);
+        // El adjunto del campo oculto tampoco cuenta.
+        $this->assertSame(0, $res['json']['data']['attachments']['with']);
+        @unlink($jar);
+    }
+
     public function testSortByCalculatedDurationIsGlobal(): void
     {
         $this->seedUser('admin', 'admin@test.local', 'Secret123!');

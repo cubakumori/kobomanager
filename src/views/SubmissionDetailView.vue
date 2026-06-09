@@ -54,6 +54,9 @@ const editForm = ref({})
 const saving = ref(false)
 const editError = ref('')
 
+// Campos visibles pero NO editables para este usuario (tri-estado de columnas).
+const isReadonly = (k) => (sub.value?.readonly_fields || []).includes(k)
+
 // --- revisión ---
 const comment = ref('')
 const reviewing = ref(false)
@@ -237,10 +240,19 @@ onMounted(load)
         <!-- Modo edición -->
         <div v-else class="space-y-3 px-5 py-4">
           <label v-for="[k] in fields.data" :key="k" class="grid grid-cols-3 items-center gap-4">
-            <span class="text-sm font-medium text-slate-500" :title="labeler.fullLabel(k)">{{ labeler.label(k) }}</span>
+            <span class="text-sm font-medium text-slate-500" :title="labeler.fullLabel(k)">
+              {{ labeler.label(k) }}
+              <span v-if="isReadonly(k)" :title="$t('detail.readonlyField')">🔒</span>
+            </span>
+            <!-- Campo de solo lectura para este usuario: se muestra, no se edita -->
+            <span
+              v-if="isReadonly(k)"
+              class="col-span-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-500"
+              :title="$t('detail.readonlyField')"
+            >{{ labeler.value(k, sub.data[k]) }}</span>
             <!-- Desplegable con etiquetas para preguntas de opción única -->
             <select
-              v-if="labeler.on && labeler.optionsFor(k) && !labeler.isMulti(k)"
+              v-else-if="labeler.on && labeler.optionsFor(k) && !labeler.isMulti(k)"
               v-model="editForm[k]"
               class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
             >

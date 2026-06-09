@@ -38,9 +38,12 @@ docs → commit). El usuario, además, revisará toda la app por si hay algo que
       oscuras por diseño (sidebar, drawer) ancladas con `.km-pin-neutrals`; gráficos
       adaptados (texto/rejilla re-renderizan al alternar). Skeletons: `Skeleton.vue`
       (table/lines/cards) en las 12 vistas principales en vez de «Cargando…».
-- [ ] **(b) Columnas de solo-lectura + ocultar en stats agregadas** — tercer estado de campo
-      (ver pero no editar) además de ocultar; y evitar fugas de campos ocultos en gráficos
-      agregados derivados.
+- [x] **(b) Columnas de solo-lectura + ocultar en stats agregadas** — HECHO: tri-estado
+      Visible/Solo lectura/Oculta por campo en Permisos (`field_filter` = `{hidden,
+      readonly}`, retrocompatible); el backend rechaza con 422 la edición de campos de
+      solo lectura y el detalle los marca con 🔒 (texto no editable). Stats agregadas:
+      verificado que «por pregunta» ya excluía los campos ocultos (y sus adjuntos/geo);
+      se añadieron tests de regresión. Enlaces públicos sin cambios (visible/oculto).
 - [ ] **(d) Filtros avanzados en la tabla de envíos** — panel de condiciones por campo
       (campo/operador/valor, Y/O) reutilizando `RowFilterEditor` y los operadores de `RowScope`.
 

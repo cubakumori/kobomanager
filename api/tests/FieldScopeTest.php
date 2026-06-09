@@ -33,15 +33,15 @@ final class FieldScopeTest extends DbTestCase
 
     public function testNormalizeAcceptsBareListAndObject(): void
     {
-        $this->assertSame(['hidden' => ['a', 'b']], FieldScope::normalize(['a', 'b']));
-        $this->assertSame(['hidden' => ['a', 'b']], FieldScope::normalize(['hidden' => ['a', 'b']]));
+        $this->assertSame(['hidden' => ['a', 'b'], 'readonly' => []], FieldScope::normalize(['a', 'b']));
+        $this->assertSame(['hidden' => ['a', 'b'], 'readonly' => []], FieldScope::normalize(['hidden' => ['a', 'b']]));
     }
 
     public function testNormalizeDedupesAndDropsEmptyAndMeta(): void
     {
         $rule = FieldScope::normalize(['hidden' => ['region', 'region', '  ', '_submitted_by', 'g_a/edad']]);
         // duplicado fusionado; vacío y metadato (_*) descartados
-        $this->assertSame(['hidden' => ['region', 'g_a/edad']], $rule);
+        $this->assertSame(['hidden' => ['region', 'g_a/edad'], 'readonly' => []], $rule);
     }
 
     public function testNormalizeEmptyOrInvalidReturnsNull(): void
@@ -52,6 +52,38 @@ final class FieldScopeTest extends DbTestCase
         $this->assertNull(FieldScope::normalize(['hidden' => []]));
         $this->assertNull(FieldScope::normalize(['hidden' => ['_id']])); // solo metadatos
         $this->assertNull(FieldScope::normalize(['other' => ['x']]));
+        $this->assertNull(FieldScope::normalize(['hidden' => [], 'readonly' => []]));
+    }
+
+    // ---------- readonly (tercer estado: visible pero no editable) ----------
+
+    public function testNormalizeReadonly(): void
+    {
+        $rule = FieldScope::normalize(['hidden' => ['a'], 'readonly' => ['b', 'b', '_id', ' ']]);
+        $this->assertSame(['hidden' => ['a'], 'readonly' => ['b']], $rule);
+
+        // Solo readonly, sin ocultas → regla válida con hidden vacío.
+        $rule = FieldScope::normalize(['readonly' => ['b']]);
+        $this->assertSame(['hidden' => [], 'readonly' => ['b']], $rule);
+    }
+
+    public function testNormalizeHiddenWinsOverReadonly(): void
+    {
+        // Una clave en ambos: queda solo como oculta.
+        $rule = FieldScope::normalize(['hidden' => ['a'], 'readonly' => ['a', 'b']]);
+        $this->assertSame(['hidden' => ['a'], 'readonly' => ['b']], $rule);
+    }
+
+    public function testReadonlyFieldsAndIsReadonly(): void
+    {
+        $rule = FieldScope::normalize(['readonly' => ['region']]);
+        $this->assertSame(['region'], FieldScope::readonlyFields($rule));
+        $this->assertSame([], FieldScope::readonlyFields(null));
+        $this->assertTrue(FieldScope::isReadonly($rule, 'region'));
+        $this->assertFalse(FieldScope::isReadonly($rule, 'nombre'));
+        $this->assertFalse(FieldScope::isReadonly(null, 'region'));
+        // readonly NO oculta: el campo sigue visible.
+        $this->assertFalse(FieldScope::isHidden($rule, 'region'));
     }
 
     // ---------- hidden / isHidden ----------
@@ -88,14 +120,14 @@ final class FieldScopeTest extends DbTestCase
         $userId = $this->makeUser('viewer');
         $this->setFieldFilter($userId, $formId, ['hidden' => ['region']]);
         $rule = FieldScope::ruleForUser(['id' => $userId, 'role' => 'viewer'], $formId);
-        $this->assertSame(['hidden' => ['region']], $rule);
+        $this->assertSame(['hidden' => ['region'], 'readonly' => []], $rule);
     }
 
     public function testRuleForLink(): void
     {
         $this->assertNull(FieldScope::ruleForLink(['field_filter' => null]));
         $this->assertSame(
-            ['hidden' => ['dni']],
+            ['hidden' => ['dni'], 'readonly' => []],
             FieldScope::ruleForLink(['field_filter' => json_encode(['hidden' => ['dni']])])
         );
     }

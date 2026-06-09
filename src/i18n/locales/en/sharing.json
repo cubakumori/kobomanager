@@ -111,7 +111,12 @@
     "colsNoFields": "This form has no fields yet (sync its schema).",
     "colsClear": "Show all",
     "colsApply": "Apply",
-    "colsLoadError": "Could not load the form fields"
+    "colsLoadError": "Could not load the form fields",
+    "colsReadonly": "{n} read-only",
+    "colsReadonlyHint": "“Read-only” only affects users with edit permission.",
+    "colState_visible": "Visible",
+    "colState_readonly": "Read-only",
+    "colState_hidden": "Hidden"
   },
   "rowfilter": {
     "intro": "Only submissions matching the filter will be shown. Combine conditions with AND/OR within each group and across groups.",

@@ -70,7 +70,8 @@
     "noEdits": "This submission has not been edited.",
     "loadError": "Could not load the submission",
     "saveError": "Could not save (is the Kobo account valid?)",
-    "reviewError": "Could not record the review"
+    "reviewError": "Could not record the review",
+    "readonlyField": "Read-only field: you can see it but not edit it."
   },
   "review": {
     "pending": "Pending",

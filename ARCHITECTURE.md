@@ -111,6 +111,14 @@ clauseVisible()` matches only visible field paths (per‑column `LIKE` with `utf
 to stay case/accent‑insensitive; multi‑word = AND). Share links carry the same rule in
 `share_links.field_filter`.
 
+**Read‑only fields (third state)**: `field_filter` also accepts `{"readonly":[...]}` —
+fields the user *sees* but cannot edit even with `can_edit`. The permissions UI offers a
+per‑field tri‑state (Visible / Read‑only / Hidden); `normalize()` keeps the two lists
+disjoint (hidden wins). Enforcement: `PUT /submissions/{id}` rejects with 422 any edit
+touching a read‑only field (nothing is half‑written to Kobo), and the detail response
+returns `readonly_fields` so the UI renders them locked (🔒). Share links don't use
+`readonly` (they're read‑only by nature).
+
 ### Public share links (`lib/ShareLink.php`)
 Read‑only links let anyone browse a form's submissions **without a session** (M1). A
 `share_links` row carries an unguessable URL `token`, what it exposes (`expose_list` /

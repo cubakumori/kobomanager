@@ -92,6 +92,8 @@ if ($method === 'GET') {
         'reviews'        => $reviews,
         'can_edit'       => Auth::canForm($user, $formId, 'edit'),
         'can_validate'   => Auth::canForm($user, $formId, 'validate'),
+        'readonly_fields' => FieldScope::readonlyFields($fieldScope), // visibles pero no editables
+
         'label_mode'     => Settings::labelMode(),
         'field_truncate' => Settings::fieldTruncate(),
         'schema'         => $resolved,
@@ -120,6 +122,11 @@ if ($method === 'PUT') {
         // No se puede editar un campo que el usuario no ve (oculto por columna).
         if (FieldScope::isHidden($fieldScope, (string) $k)) {
             ErrorResponse::send('NOT_FOUND', 'Envío no encontrado');
+        }
+        // Campo visible pero de solo lectura para este usuario: edición rechazada
+        // explícita (nada se escribe a medias en Kobo).
+        if (FieldScope::isReadonly($fieldScope, (string) $k)) {
+            ErrorResponse::send('VALIDATION_ERROR', "Campo de solo lectura: $k");
         }
     }
 
