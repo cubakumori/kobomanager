@@ -57,12 +57,20 @@ jobs:
         with:
           mariadb-version: '11.4'
           database: kobomanager_test
-      - name: Aplicar esquema (db/*.sql)
+      - name: Crear usuario de test + aplicar esquema
+        # `root@localhost` usa el plugin unix_socket (auth por usuario del SO) → PDO no
+        # puede autenticarse como root por TCP (error 1698). Creamos un usuario dedicado
+        # con contraseña (= defaults de config.http.php). Lo damos de alta en %, localhost
+        # y 127.0.0.1 por si la resolución de 127.0.0.1↔localhost difiere. Las sentencias
+        # admin van por `sudo mysql` (socket como root del SO).
         run: |
+          sudo mysql -e "CREATE USER IF NOT EXISTS 'kobomanager'@'%' IDENTIFIED BY 'km_dev_2026'; CREATE USER IF NOT EXISTS 'kobomanager'@'localhost' IDENTIFIED BY 'km_dev_2026'; CREATE USER IF NOT EXISTS 'kobomanager'@'127.0.0.1' IDENTIFIED BY 'km_dev_2026'; GRANT ALL PRIVILEGES ON kobomanager_test.* TO 'kobomanager'@'%'; GRANT ALL PRIVILEGES ON kobomanager_test.* TO 'kobomanager'@'localhost'; GRANT ALL PRIVILEGES ON kobomanager_test.* TO 'kobomanager'@'127.0.0.1'; FLUSH PRIVILEGES;"
           for f in db/*.sql; do
             echo "-- $f"
-            mysql -h 127.0.0.1 -u root kobomanager_test < "$f"
+            sudo mysql kobomanager_test < "$f"
           done
+      - name: Comprobar conexión TCP del usuario de test
+        run: mysql -h 127.0.0.1 -P 3306 -u kobomanager -pkm_dev_2026 -e "SELECT 1" kobomanager_test
       - name: Composer install (api)
         run: cd api && composer install --no-interaction --no-progress
       - name: PHPUnit
@@ -70,6 +78,6 @@ jobs:
           TEST_DB_HOST: 127.0.0.1
           TEST_DB_PORT: '3306'
           TEST_DB_NAME: kobomanager_test
-          TEST_DB_USER: root
-          TEST_DB_PASS: ''
+          TEST_DB_USER: kobomanager
+          TEST_DB_PASS: km_dev_2026
         run: cd api && ./vendor/bin/phpunit
