@@ -119,8 +119,11 @@ the values.
 
 ## Tests (backend)
 
-Backend unit tests use **PHPUnit** (the only dev dependency — the runtime stays
+Backend tests use **PHPUnit** (the only dev dependency — the runtime stays
 dependency-free). They run against a **separate** database so your dev data is untouched.
+Two layers: unit/DB tests (transaction-per-test) and **HTTP integration tests**
+(`api/tests/http/`) that boot the real API in an ephemeral `php -S` server plus a Kobo
+stub and make real HTTP requests. Both run with `composer test`.
 
 ```bash
 # 1. One-time: create the test database and load the schema
@@ -142,7 +145,11 @@ cap, and rejection of non-HS256 tokens), rate limiting (per-IP and bucketed), se
 token encryption **and key rotation**, the geo parser, derived metrics, attachment
 classification, the submission-search projection/clause (incl. the visible-fields variant),
 row scoping, column-level permissions (`FieldScope`), and share-link
-resolution/tickets/attachment access.
+resolution/tickets/attachment access. The HTTP layer adds end-to-end coverage of
+login/JWT/logout/rate-limit, CSRF, password reset, single + batch review, list/detail/
+export with scoping and field hiding, and submission editing (against the Kobo stub).
+**Continuous integration** (GitHub Actions, no Docker) runs lint + frontend build + the
+full PHPUnit suite against MariaDB — see `.github/workflows/ci.yml`.
 
 ## Languages
 

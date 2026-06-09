@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+# Sin Docker: el job de PHP usa MariaDB instalada en el runner por ankane/setup-mariadb
+# (binarios apt, no contenedores), coherente con el stack de desarrollo (MariaDB).
+
+jobs:
+  lint:
+    name: Lint (PHP)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer
+      - name: php -l (sintaxis)
+        run: find api -name '*.php' -not -path 'api/vendor/*' -print0 | xargs -0 -n1 -P4 php -l
+      - name: composer validate
+        run: cd api && composer validate --no-check-publish --no-check-all
+
+  frontend:
+    name: Frontend (build + i18n)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install
+        run: npm ci
+      - name: i18n parity (es/en)
+        run: node scripts/check-i18n-parity.mjs
+      - name: Build
+        run: npm run build
+
+  phpunit:
+    name: PHPUnit (unit + HTTP)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql, sodium, curl, mbstring
+          tools: composer
+      - name: Setup MariaDB (sin Docker)
+        uses: ankane/setup-mariadb@v1
+        with:
+          mariadb-version: '11.4'
+          database: kobomanager_test
+      - name: Aplicar esquema (db/*.sql)
+        run: |
+          for f in db/*.sql; do
+            echo "-- $f"
+            mysql -h 127.0.0.1 -u root kobomanager_test < "$f"
+          done
+      - name: Composer install (api)
+        run: cd api && composer install --no-interaction --no-progress
+      - name: PHPUnit
+        env:
+          TEST_DB_HOST: 127.0.0.1
+          TEST_DB_PORT: '3306'
+          TEST_DB_NAME: kobomanager_test
+          TEST_DB_USER: root
+          TEST_DB_PASS: ''
+        run: cd api && ./vendor/bin/phpunit

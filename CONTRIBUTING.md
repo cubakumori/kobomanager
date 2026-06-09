@@ -10,7 +10,11 @@ overview read [`ARCHITECTURE.md`](./ARCHITECTURE.md); for setup read [`README.md
 2. Create the database and apply `db/*.sql` in order.
 3. `npm run dev` runs the PHP API (`127.0.0.1:8787`) and Vite (`localhost:5173`) together.
 4. Backend tests: `cd api && composer install && composer test` (uses a separate
-   `kobomanager_test` DB — see README).
+   `kobomanager_test` DB — see README). This runs both the unit/DB tests and the **HTTP
+   integration tests** (`api/tests/http/`), which spin up an ephemeral `php -S` server +
+   a Kobo stub automatically — no extra setup beyond the test DB. CI runs the same suite
+   plus `npm run build` and the i18n parity check (`npm run i18n:check`); see
+   `.github/workflows/ci.yml`.
 
 ## Principles
 
@@ -55,6 +59,12 @@ overview read [`ARCHITECTURE.md`](./ARCHITECTURE.md); for setup read [`README.md
 - Add/extend PHPUnit tests for backend logic (especially auth, permissions, anything
   security‑sensitive). DB tests extend `DbTestCase` (transaction‑per‑test). Keep them passing:
   `composer test`.
+- For endpoint behaviour, prefer an **HTTP integration test** (`api/tests/http/`, extend
+  `HttpTestCase`): seed with the helpers (`seedUser`/`seedForm`/`grant`/`seedSubmission`/…)
+  and call `request()` / `login()`. These commit, so they truncate the working tables in
+  `setUp`/`tearDown` — don't rely on a fixed email colliding with another suite. Anything
+  that talks to Kobo goes through the stub (`tests/kobo_stub.php`); extend it if you need a
+  new Kobo response.
 
 ## Commits & PRs
 

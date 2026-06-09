@@ -6,6 +6,25 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [Sin publicar]
 
+### Añadido
+
+- **Tests de integración HTTP**: nueva suite (`api/tests/http/`) que arranca la API real
+  (`api/index.php`) en un servidor `php -S` efímero y le hace peticiones HTTP de verdad
+  (cookies, CSRF, cabeceras, routing del front controller). Cubre el ciclo de
+  autenticación/JWT (login, `/auth/me`, logout, rate-limit), la protección CSRF, la
+  recuperación de contraseña, la revisión individual y en lote, la lectura con
+  permisos + scoping por filas (RowScope) + ocultado por columna (FieldScope), la
+  exportación CSV y la **edición** (contra un stub local de Kobo que reproduce el
+  contrato del endpoint bulk, incl. el cambio de `_uuid` y los fallos por-envío). El
+  servidor de test usa una config aislada (`KM_CONFIG` → `tests/config.http.php`,
+  BD `kobomanager_test`). 27 tests HTTP; total de la suite **150 tests**.
+- **Integración continua (GitHub Actions, sin Docker)**: workflow `.github/workflows/ci.yml`
+  con tres jobs — `lint` (`php -l` + `composer validate`), `frontend`
+  (`npm ci` + build + chequeo de paridad i18n) y `phpunit` (instala **MariaDB** con
+  `ankane/setup-mariadb`, aplica `db/*.sql` sobre `kobomanager_test` y corre las suites
+  unitarias + HTTP). Script reutilizable `scripts/check-i18n-parity.mjs`
+  (`npm run i18n:check`).
+
 ### Corregido
 
 - **Edición real de envíos contra Kobo**: verificado contra una cuenta real que la

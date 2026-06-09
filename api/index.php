@@ -8,7 +8,9 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/config.php';
+// Config: por defecto config.php (dev/prod). Los tests de integración HTTP arrancan
+// este front controller con KM_CONFIG apuntando a una config de test (BD aislada).
+require getenv('KM_CONFIG') ?: __DIR__ . '/config.php';
 require __DIR__ . '/lib/DB.php';
 require __DIR__ . '/lib/ErrorResponse.php';
 require __DIR__ . '/lib/Request.php';

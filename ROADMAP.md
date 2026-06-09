@@ -132,10 +132,13 @@ contra una cuenta KoboToolbox real:
       HTTP, `lib/Mailer.php`). Ofrecer SMTP para quien prefiera su propio servidor — choca
       con la filosofía «sin dependencias»; valorar abstraer un `MailTransport` con
       back-ends `resend`|`smtp`.
-- [ ] **Tests de integración de endpoints** (HTTP): login, CSRF y recuperación de
-      contraseña extremo a extremo (la lógica vive en los scripts de `v1/`, hoy solo
-      cubiertos a mano).
-- [ ] **CI** (lint + build + PHPUnit). *(Docker queda fuera por ahora: no se usa en el proyecto.)*
+- [x] **Tests de integración de endpoints** (HTTP) — suite `api/tests/http/` que arranca
+      la API en un `php -S` efímero (config aislada vía `KM_CONFIG`, BD `kobomanager_test`)
+      y prueba extremo a extremo: login/JWT/logout/rate-limit, CSRF, recuperación de
+      contraseña, revisión individual+lote, lectura con permisos+RowScope+FieldScope,
+      export CSV y edición (vía stub local de Kobo). 27 tests HTTP (suite total 150).
+- [x] **CI** (lint + build + PHPUnit) sin Docker — `.github/workflows/ci.yml` con tres
+      jobs; MariaDB en el runner vía `ankane/setup-mariadb` (binarios, no contenedores).
 
 ---
 

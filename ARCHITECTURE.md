@@ -271,13 +271,31 @@ Key tables: `kobo_accounts`, `users`, `user_sessions`, `forms`, `submissions_cac
 
 ## Tests
 
-PHPUnit (`api/tests/`), the only dev dependency. They run against a **separate** database
-(`kobomanager_test`); each test runs in a transaction that is rolled back. Coverage today:
-auth/permissions + JWT session lifecycle, rate limiting, settings, token encryption, geo
-parsing, derived metrics, attachment classification (`Attachments`), search projection/clause
-(`SubmissionSearch`, incl. the visible‑fields clause), row scoping, column‑level permissions
-(`FieldScope`: payload/attachment/geo stripping and schema redaction) and share‑link
-resolution/tickets/attachment access.
-Endpoint‑level (HTTP) integration
-tests are a known gap (e.g. batch review, CSV export, the audit viewer) — see
-[`ROADMAP.md`](./ROADMAP.md).
+PHPUnit (`api/tests/`), the only dev dependency. Two layers, both against a **separate**
+database (`kobomanager_test`):
+
+**Unit / DB tests** (extend `DbTestCase`): each runs in a transaction that is rolled back.
+Coverage: auth/permissions + JWT session lifecycle, rate limiting, settings, token
+encryption, geo parsing, derived metrics, attachment classification (`Attachments`), search
+projection/clause (`SubmissionSearch`, incl. the visible‑fields clause), row scoping,
+column‑level permissions (`FieldScope`: payload/attachment/geo stripping and schema
+redaction) and share‑link resolution/tickets/attachment access.
+
+**HTTP integration tests** (`api/tests/http/`, extend `HttpTestCase`): a base class boots the
+real front controller in an ephemeral `php -S` server once per run (config isolated via the
+`KM_CONFIG` env → `tests/config.http.php`; same constants the unit bootstrap uses) plus a tiny
+**Kobo stub** (`tests/kobo_stub.php`) that the test account's `server_url` points at, so the
+edit path can be exercised without real Kobo. Tests make real HTTP calls (cURL + cookie jar,
+self‑Origin to pass CSRF). Because the server runs in another process, fixtures are committed:
+each test truncates the working tables and seeds what it needs (`setUp`/`tearDown`). Coverage:
+login/`/auth/me`/logout/login rate‑limit, CSRF enforcement, password reset (forgot → seeded
+token → reset), single + batch review (incl. `can_validate` gating and RowScope 404), list/
+detail/export with RowScope + FieldScope, and submission editing (uuid migration, review
+migration, `KOBO_EDIT_FAILED` on a forced bulk failure). CI runs both layers (see below).
+
+### CI
+`.github/workflows/ci.yml` (GitHub Actions, **no Docker**) runs three jobs on push/PR:
+`lint` (`php -l` sweep + `composer validate`), `frontend` (`npm ci` + `npm run build` + i18n
+parity via `scripts/check-i18n-parity.mjs`), and `phpunit` (MariaDB provisioned on the runner
+with `ankane/setup-mariadb`, `db/*.sql` applied to `kobomanager_test`, then the full suite with
+`TEST_DB_*` env pointing at it).
