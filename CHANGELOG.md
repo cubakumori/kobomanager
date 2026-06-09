@@ -6,6 +6,21 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [Sin publicar]
 
+### Cambiado
+
+- **Reorganización de los catálogos i18n**: `src/i18n/{es,en}.json` (un fichero monolítico
+  por idioma, ~865 claves) se divide en `src/i18n/locales/{es,en}/*.json` — 10 ficheros por
+  área (`common`, `landing`, `support`, `guide`, `auth`, `account`, `submissions`, `stats`,
+  `admin`, `sharing`), cada uno con namespaces completos de primer nivel, de modo que las
+  claves siguen siendo planas por namespace y **ningún `$t(...)` del código cambia**. El
+  cargador (`src/i18n/index.js`) fusiona los ficheros con `import.meta.glob` (añadir un
+  fichero nuevo no requiere tocarlo). `scripts/check-i18n-parity.mjs` ahora recorre la
+  estructura de carpetas y además verifica que ambos locales tengan los mismos ficheros y
+  que ningún namespace esté definido dos veces. De paso se eliminan **11 claves huérfanas**
+  sin uso en el código (`common.create/account/user/back`, `nav.audit`, `nav.profile`,
+  `landing.navDonate`, `landing.soon`, `guide.backHome`, `share.readonly`,
+  `attachments.download`): 854 claves en paridad es/en.
+
 ### Añadido
 
 - **Página «Apoyar» (`/apoyar`)**: nueva página pública que reemplaza el enlace «Donar»

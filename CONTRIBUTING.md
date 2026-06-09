@@ -47,7 +47,10 @@ overview read [`ARCHITECTURE.md`](./ARCHITECTURE.md); for setup read [`README.md
 
 ### Frontend
 - **i18n is mandatory**: every user‑facing string is a key present in **both**
-  `src/i18n/es.json` and `src/i18n/en.json`. No hardcoded text.
+  `src/i18n/locales/es/` and `src/i18n/locales/en/` (one JSON file per area —
+  `common`, `auth`, `admin`, `sharing`, … — each holding whole top‑level
+  namespaces, so `$t('ns.key')` never carries a file prefix). Add new keys to
+  the matching area file in both locales. No hardcoded text.
 - Use the color **tokens** (`primary`/`accent`/`success`), not raw `blue-*`/`emerald-*`/`green-*`,
   so theming keeps working. Success/approved states use the `success-*` token (a themable green,
   default Tailwind `green`); for chart colors set in JS, read the CSS variable

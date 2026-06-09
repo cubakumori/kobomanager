@@ -1,14 +1,19 @@
 #!/usr/bin/env node
-// Verifica que los catálogos i18n es.json y en.json tengan EXACTAMENTE las mismas
-// claves (paridad). Sale con código 1 si hay desajustes. Usado por CI y en local
-// (`npm run i18n:check`).
+// Verifica que los catálogos i18n (src/i18n/locales/{es,en}/*.json) tengan
+// EXACTAMENTE las mismas claves (paridad es/en), que ambos locales tengan los
+// mismos ficheros y que ningún namespace esté definido en dos ficheros a la vez.
+// Sale con código 1 si hay desajustes. Usado por CI y en local (`npm run i18n:check`).
 
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const load = (f) => JSON.parse(readFileSync(join(root, 'src/i18n', f), 'utf8'))
+const localesDir = join(root, 'src/i18n/locales')
+const LOCALES = ['es', 'en']
+
+const listFiles = (locale) =>
+  readdirSync(join(localesDir, locale)).filter((f) => f.endsWith('.json')).sort()
 
 const flatten = (obj) => {
   const out = []
@@ -23,16 +28,44 @@ const flatten = (obj) => {
   return out.sort()
 }
 
-const es = flatten(load('es.json'))
-const en = flatten(load('en.json'))
-const missingInEn = es.filter((k) => !en.includes(k))
-const missingInEs = en.filter((k) => !es.includes(k))
-
-if (missingInEn.length || missingInEs.length) {
-  console.error('i18n desincronizado:')
-  if (missingInEn.length) console.error('  Faltan en en.json:', missingInEn)
-  if (missingInEs.length) console.error('  Faltan en es.json:', missingInEs)
-  process.exit(1)
+let failed = false
+const fail = (...msg) => {
+  console.error(...msg)
+  failed = true
 }
 
-console.log(`i18n OK: ${es.length} claves en paridad (es/en)`)
+// 1. Mismos ficheros en ambos locales.
+const [filesEs, filesEn] = LOCALES.map(listFiles)
+if (filesEs.join() !== filesEn.join()) {
+  fail('Ficheros distintos entre locales:', { es: filesEs, en: filesEn })
+}
+
+// 2. Cargar catálogos, detectando namespaces duplicados entre ficheros.
+const catalogs = {}
+for (const locale of LOCALES) {
+  const merged = {}
+  const owner = {}
+  for (const file of listFiles(locale)) {
+    const data = JSON.parse(readFileSync(join(localesDir, locale, file), 'utf8'))
+    for (const ns of Object.keys(data)) {
+      if (owner[ns]) fail(`Namespace "${ns}" duplicado en ${locale}: ${owner[ns]} y ${file}`)
+      owner[ns] = file
+      merged[ns] = data[ns]
+    }
+  }
+  catalogs[locale] = merged
+}
+
+// 3. Paridad de claves es/en.
+const es = flatten(catalogs.es)
+const en = flatten(catalogs.en)
+const missingInEn = es.filter((k) => !en.includes(k))
+const missingInEs = en.filter((k) => !es.includes(k))
+if (missingInEn.length) fail('  Faltan en en/*.json:', missingInEn)
+if (missingInEs.length) fail('  Faltan en es/*.json:', missingInEs)
+
+if (failed) {
+  console.error('i18n desincronizado')
+  process.exit(1)
+}
+console.log(`i18n OK: ${es.length} claves en paridad (es/en) en ${filesEs.length} ficheros`)

@@ -1,0 +1,55 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "areYouSure": "Are you sure?",
+    "edit": "Edit",
+    "delete": "Delete",
+    "loading": "Loading…",
+    "saving": "Saving…",
+    "saved": "Saved ✓",
+    "actions": "Actions",
+    "status": "Status",
+    "email": "Email",
+    "name": "Name",
+    "role": "Role",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "myForms": "My forms",
+    "admin": "Administration",
+    "users": "Users",
+    "accounts": "Kobo accounts",
+    "forms": "Forms",
+    "permissions": "Permissions",
+    "shares": "Sharing",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "myActivity": "My activity",
+    "logout": "Log out",
+    "goToProfile": "Go to my profile"
+  },
+  "lang": {
+    "es": "Spanish",
+    "en": "English"
+  },
+  "errors": {
+    "KOBO_TIMEOUT": "Could not reach KoboToolbox. Please try again in a few minutes.",
+    "KOBO_UNAUTHORIZED": "The Kobo account token is invalid or expired. Check it under “Kobo accounts”.",
+    "KOBO_RATE_LIMIT": "KoboToolbox is rate-limiting requests. Wait a moment and retry.",
+    "KOBO_FORM_NOT_FOUND": "The form no longer exists in KoboToolbox.",
+    "KOBO_SUBMISSION_NOT_FOUND": "The submission no longer exists in KoboToolbox.",
+    "KOBO_EDIT_FAILED": "KoboToolbox rejected the submission edit. Check the values and try again.",
+    "AUTH_RATE_LIMITED": "Too many sign-in attempts. Wait a minute and try again.",
+    "AUTH_INSUFFICIENT_PERMISSIONS": "You don't have permission to perform this action.",
+    "CSRF_BLOCKED": "The request was blocked for security (origin not allowed). Reload the page and try again.",
+    "RESET_TOKEN_INVALID": "The recovery link is invalid or has expired. Request a new one.",
+    "PASSWORD_INCORRECT": "The current password is incorrect.",
+    "SHARE_PASSWORD_REQUIRED": "This link requires a password.",
+    "RATE_LIMITED": "Too many requests. Try again in a moment.",
+    "generic": "An error occurred"
+  }
+}

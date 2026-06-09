@@ -1,0 +1,55 @@
+{
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "areYouSure": "¿Estás seguro?",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "loading": "Cargando…",
+    "saving": "Guardando…",
+    "saved": "Guardado ✓",
+    "actions": "Acciones",
+    "status": "Estado",
+    "email": "Email",
+    "name": "Nombre",
+    "role": "Rol",
+    "yes": "Sí",
+    "no": "No"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "myForms": "Mis formularios",
+    "admin": "Administración",
+    "users": "Usuarios",
+    "accounts": "Cuentas Kobo",
+    "forms": "Formularios",
+    "permissions": "Permisos",
+    "shares": "Compartir",
+    "settings": "Configuración",
+    "notifications": "Notificaciones",
+    "myActivity": "Mi actividad",
+    "logout": "Cerrar sesión",
+    "goToProfile": "Ir a mi perfil"
+  },
+  "lang": {
+    "es": "Español",
+    "en": "Inglés"
+  },
+  "errors": {
+    "KOBO_TIMEOUT": "No se pudo contactar con KoboToolbox. Inténtalo de nuevo en unos minutos.",
+    "KOBO_UNAUTHORIZED": "El token de la cuenta Kobo no es válido o ha caducado. Revísalo en «Cuentas Kobo».",
+    "KOBO_RATE_LIMIT": "KoboToolbox está limitando las peticiones. Espera un momento y reintenta.",
+    "KOBO_FORM_NOT_FOUND": "El formulario ya no existe en KoboToolbox.",
+    "KOBO_SUBMISSION_NOT_FOUND": "El envío ya no existe en KoboToolbox.",
+    "KOBO_EDIT_FAILED": "KoboToolbox rechazó la edición del envío. Revisa los valores e inténtalo de nuevo.",
+    "AUTH_RATE_LIMITED": "Demasiados intentos de inicio de sesión. Espera un minuto e inténtalo de nuevo.",
+    "AUTH_INSUFFICIENT_PERMISSIONS": "No tienes permisos para realizar esta acción.",
+    "CSRF_BLOCKED": "La petición fue bloqueada por seguridad (origen no permitido). Recarga la página e inténtalo de nuevo.",
+    "RESET_TOKEN_INVALID": "El enlace de recuperación no es válido o ha caducado. Solicita uno nuevo.",
+    "PASSWORD_INCORRECT": "La contraseña actual no es correcta.",
+    "SHARE_PASSWORD_REQUIRED": "Este enlace requiere una contraseña.",
+    "RATE_LIMITED": "Demasiadas peticiones. Inténtalo de nuevo en un momento.",
+    "generic": "Ha ocurrido un error"
+  }
+}

@@ -21,7 +21,7 @@ review (approve / on-hold / reject) flow decoupled from Kobo.
     router/index.js          flat routes; authed area wrapped by meta.shell
     stores/auth.js           Pinia store + apiError() helper
     services/api.js          axios instance (baseURL /api/v1, cookies)
-    i18n/{es,en}.json        catalogs (every string lives in BOTH)
+    i18n/locales/{es,en}/    catalogs, one file per area (every string lives in BOTH locales)
     composables/             confirm.js, labels.js, dialogA11y.js
     components/, views/
   style.css                  Tailwind v4 + theme tokens (see Theming)
@@ -261,8 +261,12 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   turns an axios error into a localized message.
 - **API**: single axios instance (`services/api.js`) with `withCredentials`; a 401 interceptor
   redirects to login (skippable for the anonymous `/auth/me` probe).
-- **i18n**: `vue-i18n`, catalogs in `src/i18n/{es,en}.json`. Every new string must be added to
-  **both** files. Effective locale = user preference → system default → `es`.
+- **i18n**: `vue-i18n`, catalogs in `src/i18n/locales/{es,en}/*.json` — one file per area
+  (`common`, `landing`, `support`, `guide`, `auth`, `account`, `submissions`, `stats`,
+  `admin`, `sharing`), each holding whole top‑level namespaces (flat keys, no file prefix in
+  `$t()`). `src/i18n/index.js` merges them via `import.meta.glob`, so adding a file needs no
+  loader change. Every new key must exist in **both** locales (`npm run i18n:check`).
+  Effective locale = user preference → system default → `es`.
 - **Theming**: Tailwind v4 `@theme` in `src/style.css` defines semantic `primary`/`accent`
   color scales as CSS variables; components use `bg-primary-600`, `text-accent-700`, etc.
   Recoloring = editing those scales (or applying a `.theme-*` class on `<html>`). Success green

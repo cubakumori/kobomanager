@@ -16,29 +16,13 @@ docs → commit). El usuario, además, revisará toda la app por si hay algo que
 
 ### 1. Reorganización de catálogos i18n (PRIMERO — fundacional)
 
-Modelo **acordado** (opción B: un fichero por área × locale). Hacerlo antes que las features,
-para que las claves nuevas nazcan en la estructura buena.
-
-- **Carpetas:** `src/i18n/locales/es/*.json` y `src/i18n/locales/en/*.json`.
-- **Reparto de ficheros** (agrupa los 32 namespaces actuales, ~865 claves; claves **planas por
-  namespace**, sin prefijo de fichero → **ningún `$t(...)` del código cambia**):
-  - `common.json` → common, nav, lang, errors
-  - `landing.json` → landing
-  - `support.json` → support
-  - `guide.json` → guide
-  - `auth.json` → login, forgot, reset
-  - `account.json` → dashboard, profile, notifications, myActivity, myForms, about
-  - `submissions.json` → submissions, detail, review, map, attachments, derived
-  - `stats.json` → stats
-  - `admin.json` → users, accounts, forms, settings, audit
-  - `sharing.json` → shares, share, permissions, rowfilter
-- **Carga:** índice con `import.meta.glob('./locales/*/*.json', { eager: true })` que fusiona
-  `{locale}/{namespace}.json` en `messages[locale][namespace]` (añadir ficheros no toca el cargador).
-- **Verificación:** actualizar `scripts/check-i18n-parity.mjs` para recorrer la estructura de
-  carpetas y comprobar paridad es/en por namespace; de paso, detectar/limpiar claves huérfanas
-  (p. ej. `nav.audit`).
-- Reparto ajustable al arrancar (p. ej. dividir `admin.json`, o sacar `permissions/rowfilter`
-  de `sharing.json`).
+- [x] **HECHO** — catálogos movidos a `src/i18n/locales/{es,en}/*.json` con el reparto
+      acordado de 10 ficheros por área (común/landing/support/guide/auth/account/
+      submissions/stats/admin/sharing; claves planas por namespace → ningún `$t()` cambió),
+      cargador con `import.meta.glob`, `check-i18n-parity.mjs` adaptado (paridad + mismos
+      ficheros + namespaces sin duplicar) y **11 claves huérfanas eliminadas** (`common.create/
+      account/user/back`, `nav.audit/profile`, `landing.navDonate/soon`, `guide.backHome`,
+      `share.readonly`, `attachments.download`). 854 claves en paridad.
 
 ### 2. Las cuatro features (en este orden, por valor/esfuerzo)
 
