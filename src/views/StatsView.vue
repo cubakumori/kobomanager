@@ -18,6 +18,12 @@ const error = ref('')
 // ---- Datos de gráficos ----
 const PRIMARY = '#2563eb'
 
+// Lee un token de color del tema (variable CSS en :root); cae al hex si aún no
+// está resuelto. Se llama dentro de los computed (tras montar) para respetar el
+// tema activo. El verde de «aprobado» / «con ubicación» sigue el token `success`.
+const themeColor = (name, fallback) =>
+  getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
+
 // Serie temporal: por día, o por mes si el tramo de envíos supera 30 días
 // (lo decide el backend en `period_granularity`).
 const periodIsMonth = computed(() => stats.value?.period_granularity === 'month')
@@ -60,7 +66,7 @@ const byStatusData = computed(() => {
   const s = stats.value?.by_status ?? { pending: 0, approved: 0, on_hold: 0, rejected: 0 }
   return {
     labels: [t('review.pending'), t('review.approved'), t('review.on_hold'), t('review.rejected')],
-    datasets: [{ data: [s.pending, s.approved, s.on_hold ?? 0, s.rejected], backgroundColor: ['#f59e0b', '#16a34a', '#0284c7', '#dc2626'] }],
+    datasets: [{ data: [s.pending, s.approved, s.on_hold ?? 0, s.rejected], backgroundColor: ['#f59e0b', themeColor('--color-success-600', '#16a34a'), '#0284c7', '#dc2626'] }],
   }
 })
 
@@ -109,7 +115,7 @@ const geoData = computed(() => {
   const g = stats.value?.geo ?? { with: 0, without: 0 }
   return {
     labels: [t('stats.geoWith'), t('stats.geoWithout')],
-    datasets: [{ data: [g.with, g.without], backgroundColor: ['#16a34a', '#e2e8f0'] }],
+    datasets: [{ data: [g.with, g.without], backgroundColor: [themeColor('--color-success-600', '#16a34a'), '#e2e8f0'] }],
   }
 })
 
@@ -160,7 +166,7 @@ const barValueOptions = {
 // pct === null (periodo anterior = 0) → «—» neutro.
 function trendInfo(pct) {
   if (pct == null) return { text: '—', cls: 'text-slate-400', arrow: '' }
-  if (pct > 0) return { text: `+${pct}%`, cls: 'text-green-600', arrow: '▲' }
+  if (pct > 0) return { text: `+${pct}%`, cls: 'text-success-600', arrow: '▲' }
   if (pct < 0) return { text: `${pct}%`, cls: 'text-red-600', arrow: '▼' }
   return { text: '0%', cls: 'text-slate-400', arrow: '' }
 }
@@ -236,7 +242,7 @@ onMounted(load)
         </div>
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.approved') }}</p>
-          <p class="mt-1 text-2xl font-semibold text-green-600">{{ stats.by_status.approved }}</p>
+          <p class="mt-1 text-2xl font-semibold text-success-600">{{ stats.by_status.approved }}</p>
         </div>
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.onHold') }}</p>

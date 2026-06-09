@@ -100,11 +100,12 @@ decisión de diseño se acuerdan al arrancar.
       —«Hora de {etiqueta} (UTC±N)»— con `APP_TIMEZONE_LABEL`. *No* se tocaron «por día/mes»
       ni «tendencias» (siguen sobre `submitted_at`); preferencia por usuario descartada para
       v1. Verificado contra el form 43 (pico desplazado a las 8 h locales, UTC-4).
-- [ ] **Color `success` como token de tema**: hoy los estados de éxito usan el `green` de
-      Tailwind a propósito (independiente del tema). Para seguir la convención de tokens
-      (`primary`/`accent`), valorar añadir una escala `success` en `style.css` y sustituir
-      los `green-*` de éxito por `success-*` (decidir si el token es tematizable o fijo, y
-      acotar el alcance del reemplazo). Actualizar `CONTRIBUTING.md` en consecuencia.
+- [x] **Color `success` como token de tema** — HECHO. Escala `success` (50–900) en `@theme`
+      con los hex de `green` de Tailwind; **tematizable** (hook en cada tema alternativo) y
+      distinta de `accent` (que también es verde). Reemplazadas las 25 clases `green-*` por
+      `success-*` y los 2 verdes hex de los gráficos leen la variable CSS del token. README
+      (3 tokens) y `CONTRIBUTING.md` actualizados. Verificado: build OK, token resuelve
+      (`--color-success-600` = `#16a34a`), «Aprobados» en verde, persiste bajo `theme-violet`.
 
 ---
 

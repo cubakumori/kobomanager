@@ -88,20 +88,22 @@ php api/cli/create_user.php <email> <password> <name> admin
 Brand colors are centralized as theme tokens in [`src/style.css`](./src/style.css), so
 recoloring the whole app means editing one place — no find-and-replace across components.
 
-Two semantic color scales drive the UI (Tailwind v4 `@theme`):
+Three semantic color scales drive the UI (Tailwind v4 `@theme`):
 
 - **`primary`** — actions, links, buttons, focus rings (default: blue).
 - **`accent`** — brand/secondary color: *My forms* cards and a form's table header
   (default: emerald green).
-
-(The "success" green used for *Saved ✓* messages stays on Tailwind's `green` on purpose,
-independent of the theme.)
+- **`success`** — success/approved states: *Saved ✓* messages, approved badges, the
+  *approved* and *with location* chart slices (default: Tailwind `green`). It's a separate
+  token from `accent` (also green) so "success" never gets tied to the brand color, and it's
+  themable like the others.
 
 ### Change the default colors
 
-Edit the `primary` / `accent` scales (50–900) inside the `@theme { … }` block in
+Edit the `primary` / `accent` / `success` scales (50–900) inside the `@theme { … }` block in
 `src/style.css`, then rebuild (`npm run build`). The utility classes (`bg-primary-600`,
-`text-accent-700`, …) resolve to these CSS variables automatically.
+`text-accent-700`, `ring-success-200`, …) resolve to these CSS variables automatically. Chart
+colors set in JS read the same variables via `getComputedStyle`.
 
 ### Switch to a bundled alternate theme
 

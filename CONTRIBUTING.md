@@ -48,8 +48,10 @@ overview read [`ARCHITECTURE.md`](./ARCHITECTURE.md); for setup read [`README.md
 ### Frontend
 - **i18n is mandatory**: every user‑facing string is a key present in **both**
   `src/i18n/es.json` and `src/i18n/en.json`. No hardcoded text.
-- Use the color **tokens** (`primary`/`accent`), not raw `blue-*`/`emerald-*`, so theming keeps
-  working. Success states use Tailwind `green` on purpose.
+- Use the color **tokens** (`primary`/`accent`/`success`), not raw `blue-*`/`emerald-*`/`green-*`,
+  so theming keeps working. Success/approved states use the `success-*` token (a themable green,
+  default Tailwind `green`); for chart colors set in JS, read the CSS variable
+  (`getComputedStyle(...).getPropertyValue('--color-success-600')`) instead of hardcoding a hex.
 - Reuse `Modal`/`ConfirmDialog` (via `confirmDialog(...)`) instead of native `alert/confirm`,
   so dialogs get the shared accessibility behavior.
 - Inside `<style scoped>`, `@reference "../../style.css"` (not `"tailwindcss"`) so `@apply`

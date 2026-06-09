@@ -23,6 +23,13 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
+- **Token de color `success`**: los estados de éxito/aprobado pasan de usar el `green-*` de
+  Tailwind directamente a una escala semántica `success` (50–900) en `@theme`, siguiendo la
+  convención de `primary`/`accent`. Es **tematizable** (cada tema alternativo puede
+  redefinirla; por defecto verde de Tailwind) y distinta de `accent` (que también es verde),
+  para que «éxito» no quede atado al color de marca. Se sustituyen las 25 clases `green-*` por
+  `success-*` y los verdes fijos de los gráficos («aprobado» / «con ubicación») leen ahora la
+  variable CSS del token.
 - **Menú lateral admin más corto**: «Auditoría» se mueve del menú a una tarjeta del panel
   (acceso poco frecuente; evita que el menú desborde la pantalla).
 - **Estadísticas**: las tarjetas de tendencia (7/30 días) no se muestran en formularios

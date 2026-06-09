@@ -144,7 +144,7 @@ onMounted(() => {
             <span class="text-right">
               <span
                 class="mr-2 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1"
-                :class="info.ok ? 'bg-green-50 text-green-700 ring-green-200' : 'bg-red-50 text-red-700 ring-red-200'"
+                :class="info.ok ? 'bg-success-50 text-success-700 ring-success-200' : 'bg-red-50 text-red-700 ring-red-200'"
               >{{ info.ok ? $t('audit.ok') : $t('audit.error') }}</span>
               <span class="text-slate-400">{{ info.at }}</span>
             </span>

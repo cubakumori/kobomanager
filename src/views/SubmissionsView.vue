@@ -392,7 +392,7 @@ onMounted(load)
     <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
       {{ error }}
     </div>
-    <p v-if="batchFlash" class="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700 ring-1 ring-green-200">
+    <p v-if="batchFlash" class="rounded-lg bg-success-50 px-3 py-2 text-sm text-success-700 ring-1 ring-success-200">
       {{ batchFlash }}
     </p>
 
@@ -409,7 +409,7 @@ onMounted(load)
       />
       <button
         :disabled="batchBusy"
-        class="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+        class="rounded-lg bg-success-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-success-700 disabled:opacity-60"
         @click="batchReview('approved')"
       >
         {{ $t('submissions.batchApprove') }}

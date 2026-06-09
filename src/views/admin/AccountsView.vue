@@ -190,7 +190,7 @@ onMounted(load)
     <div v-if="syncError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
       {{ syncError }}
     </div>
-    <div v-if="syncFlash" class="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800 ring-1 ring-green-200">
+    <div v-if="syncFlash" class="rounded-lg bg-success-50 px-3 py-2 text-sm text-success-800 ring-1 ring-success-200">
       {{ syncFlash }}
     </div>
 
@@ -214,7 +214,7 @@ onMounted(load)
             <td class="px-4 py-3 text-slate-600">{{ a.server_url }}</td>
             <td class="px-4 py-3 text-slate-600">{{ a.email }}</td>
             <td class="px-4 py-3">
-              <span :class="a.active ? 'text-green-600' : 'text-slate-400'">
+              <span :class="a.active ? 'text-success-600' : 'text-slate-400'">
                 {{ a.active ? $t('accounts.active') : $t('accounts.inactive') }}
               </span>
             </td>

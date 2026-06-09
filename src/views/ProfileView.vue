@@ -218,7 +218,7 @@ onMounted(() => {
           >
             {{ pwSaving ? $t('common.saving') : $t('profile.changePassword') }}
           </button>
-          <span v-if="pwSaved" class="text-sm text-green-600">{{ $t('profile.pwChanged') }}</span>
+          <span v-if="pwSaved" class="text-sm text-success-600">{{ $t('profile.pwChanged') }}</span>
         </div>
       </form>
     </section>
@@ -260,7 +260,7 @@ onMounted(() => {
         >
           {{ sessClosing ? $t('common.saving') : $t('profile.sessRevoke') }}
         </button>
-        <span v-if="sessClosedMsg" class="text-sm text-green-600">{{ sessClosedMsg }}</span>
+        <span v-if="sessClosedMsg" class="text-sm text-success-600">{{ sessClosedMsg }}</span>
       </div>
     </section>
   </div>

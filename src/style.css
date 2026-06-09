@@ -9,14 +9,17 @@
     • primary → color PRIMARIO: acciones, enlaces, botones, foco. (hoy: azul)
     • accent  → color SECUNDARIO / de marca: diferenciación de «Mis formularios»
                 y cabeceras de tabla de un formulario. (hoy: verde emerald)
+    • success → color de ÉXITO / estado «aprobado»: mensajes «Guardado ✓»,
+                badges de aprobado, confirmaciones. (hoy: verde de Tailwind)
 
-  Para recolorear TODA la app basta con cambiar las dos escalas de abajo
+  Para recolorear TODA la app basta con cambiar las escalas de abajo
   (por ejemplo, pegando otra paleta de Tailwind o tus propios valores).
   Tailwind genera automáticamente las utilidades a partir de estos tokens:
-  bg-primary-600, text-accent-700, ring-primary-500/30, hover:bg-primary-700, …
+  bg-primary-600, text-accent-700, ring-success-200, hover:bg-primary-700, …
 
-  Nota: el verde de «éxito» (mensajes tipo «Guardado ✓») usa la paleta `green`
-  de Tailwind a propósito, para mantenerlo independiente del color de marca.
+  Nota: `success` es un token semántico aparte de `accent` (que también es verde)
+  para que «éxito/aprobado» no quede atado al color de marca. Es tematizable
+  (cada tema puede redefinirlo abajo); por defecto usa la paleta `green` de Tailwind.
   ───────────────────────────────────────────────────────────────────────────
 */
 @theme {
@@ -43,6 +46,18 @@
   --color-accent-700: #047857;
   --color-accent-800: #065f46;
   --color-accent-900: #064e3b;
+
+  /* Éxito / aprobado — verde (paleta `green` de Tailwind) */
+  --color-success-50:  #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-200: #bbf7d0;
+  --color-success-300: #86efac;
+  --color-success-400: #4ade80;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+  --color-success-800: #166534;
+  --color-success-900: #14532d;
 }
 
 /*
@@ -85,8 +100,9 @@
 /*
   TEMAS ALTERNATIVOS
   ──────────────────
-  Cada clase redefine los tokens `primary` y `accent`. Se activan poniendo la
-  clase en el elemento <html> (ver index.html) o en tiempo de ejecución:
+  Cada clase redefine los tokens `primary`, `accent` y (opcionalmente) `success`.
+  Se activan poniendo la clase en el elemento <html> (ver index.html) o en
+  tiempo de ejecución:
       document.documentElement.classList.add('theme-teal')
   Sin clase → tema por defecto (azul + verde, definido arriba en @theme).
 
@@ -118,6 +134,18 @@
   --color-accent-700: #b45309;
   --color-accent-800: #92400e;
   --color-accent-900: #78350f;
+
+  /* Éxito — verde, distinto del acento ámbar (ajústalo aquí si lo prefieres). */
+  --color-success-50:  #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-200: #bbf7d0;
+  --color-success-300: #86efac;
+  --color-success-400: #4ade80;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+  --color-success-800: #166534;
+  --color-success-900: #14532d;
 }
 
 /* Violeta + verde esmeralda */
@@ -143,6 +171,18 @@
   --color-accent-700: #047857;
   --color-accent-800: #065f46;
   --color-accent-900: #064e3b;
+
+  /* Éxito — verde (ajústalo aquí si lo prefieres distinto del acento esmeralda). */
+  --color-success-50:  #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-200: #bbf7d0;
+  --color-success-300: #86efac;
+  --color-success-400: #4ade80;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+  --color-success-800: #166534;
+  --color-success-900: #14532d;
 }
 
 :root {

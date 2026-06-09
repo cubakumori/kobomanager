@@ -292,7 +292,7 @@ onMounted(() => {
               <span
                 class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1"
                 :class="{
-                  'bg-green-50 text-green-700 ring-green-200': linkState(link) === 'active',
+                  'bg-success-50 text-success-700 ring-success-200': linkState(link) === 'active',
                   'bg-slate-100 text-slate-500 ring-slate-200': linkState(link) === 'revoked',
                   'bg-amber-50 text-amber-700 ring-amber-200': linkState(link) === 'expired',
                 }"

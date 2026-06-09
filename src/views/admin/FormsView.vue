@@ -168,12 +168,12 @@ async function onFullResync(f) {
 }
 
 const badge = {
-  success: 'bg-green-100 text-green-700',
+  success: 'bg-success-100 text-success-700',
   error: 'bg-red-100 text-red-700',
   pending: 'bg-amber-100 text-amber-700',
 }
 const statusBadge = {
-  deployed: 'bg-green-100 text-green-700',
+  deployed: 'bg-success-100 text-success-700',
   draft: 'bg-amber-100 text-amber-700',
   archived: 'bg-slate-200 text-slate-600',
 }
@@ -221,7 +221,7 @@ onMounted(async () => {
     <div v-if="syncError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
       {{ syncError }}
     </div>
-    <div v-if="flash" class="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800 ring-1 ring-green-200">
+    <div v-if="flash" class="rounded-lg bg-success-50 px-3 py-2 text-sm text-success-800 ring-1 ring-success-200">
       {{ flash }}
     </div>
     <div v-if="syncResult" class="space-y-2">
@@ -230,7 +230,7 @@ onMounted(async () => {
         :key="r.account_id"
         class="rounded-lg px-3 py-2 text-sm ring-1"
         :class="r.status === 'success'
-          ? 'bg-green-50 text-green-800 ring-green-200'
+          ? 'bg-success-50 text-success-800 ring-success-200'
           : 'bg-red-50 text-red-800 ring-red-200'"
       >
         <span class="font-medium">{{ r.account_label }}:</span>
@@ -349,7 +349,7 @@ onMounted(async () => {
           <div class="flex min-w-0 items-center gap-2">
             <span
               class="h-2 w-2 shrink-0 rounded-full"
-              :class="s.hasError ? 'bg-red-500' : (s.lastSync ? 'bg-green-500' : 'bg-slate-300')"
+              :class="s.hasError ? 'bg-red-500' : (s.lastSync ? 'bg-success-500' : 'bg-slate-300')"
               :title="s.hasError ? $t('forms.syncStateError') : (s.lastSync ? $t('forms.syncStateOk') : $t('forms.syncStateNever'))"
             ></span>
             <span class="truncate text-sm font-medium text-slate-800">{{ s.label }}</span>

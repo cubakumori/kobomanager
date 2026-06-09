@@ -327,7 +327,7 @@ onMounted(load)
             <button
               :disabled="reviewing || sub.review_status === 'approved'"
               :title="sub.review_status === 'approved' ? $t('detail.alreadyStatus') : ''"
-              class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+              class="rounded-lg bg-success-600 px-4 py-2 text-sm font-semibold text-white hover:bg-success-700 disabled:cursor-not-allowed disabled:opacity-60"
               @click="submitReview('approved')"
             >
               {{ $t('detail.approve') }}

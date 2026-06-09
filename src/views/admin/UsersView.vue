@@ -224,7 +224,7 @@ onMounted(load)
               >{{ u.role }}</span>
             </td>
             <td class="px-4 py-3">
-              <span :class="u.active ? 'text-green-600' : 'text-slate-400'">
+              <span :class="u.active ? 'text-success-600' : 'text-slate-400'">
                 {{ u.active ? $t('users.active') : $t('users.inactive') }}
               </span>
             </td>
@@ -256,7 +256,7 @@ onMounted(load)
                 <button
                   v-if="u.id !== auth.user?.id"
                   class="font-medium hover:underline"
-                  :class="u.active ? 'text-red-600' : 'text-green-600'"
+                  :class="u.active ? 'text-red-600' : 'text-success-600'"
                   @click="toggleActive(u)"
                 >
                   {{ u.active ? $t('users.deactivate') : $t('users.activate') }}

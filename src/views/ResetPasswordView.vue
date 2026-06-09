@@ -91,7 +91,7 @@ async function onSubmit() {
         <!-- Éxito -->
         <div
           v-else-if="done"
-          class="rounded-lg bg-green-50 px-3 py-3 text-sm text-green-800 ring-1 ring-green-200"
+          class="rounded-lg bg-success-50 px-3 py-3 text-sm text-success-800 ring-1 ring-success-200"
         >
           {{ $t('reset.done') }}
         </div>
