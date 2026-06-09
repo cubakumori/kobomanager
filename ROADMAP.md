@@ -151,9 +151,10 @@ contra una cuenta KoboToolbox real:
       `_uuid` distinto (el `_id` numérico se conserva); el backend migra el `submission_uid`
       de caché y arrastra el historial de revisiones, y detecta fallos por-envío del
       endpoint bulk (HTTP 200 con `failures>0`).
-- [ ] **Envío real de email** con Resend. **Bloqueado por operación, no por código**: la
-      cadena funciona extremo a extremo, pero Resend devuelve 403 «domain not verified»
-      hasta verificar el dominio del remitente (ver `DEPLOY §8`).
+- [x] **Envío real de email** con Resend — VERIFICADO: el dominio del remitente ya está
+      verificado en Resend; el formulario de contacto de `/apoyar` entrega correctamente a
+      `CONTACT_TO` (`emailed=1`). La cadena (recuperación de contraseña, notificaciones) funciona
+      extremo a extremo en producción.
 
 ---
 

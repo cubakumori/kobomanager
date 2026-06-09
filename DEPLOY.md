@@ -165,8 +165,10 @@ requires `RESEND_API_KEY` and `MAIL_FROM` to be configured.
 KoboManager sends email through the **Resend HTTP API** (`api/lib/Mailer.php`) — no SDK
 and **no SMTP server/port** to configure. Email powers:
 
-- the **daily summary** of new submissions (cron, §7), and
-- **password recovery** (the "forgot password" flow), when enabled.
+- the **daily summary** of new submissions (cron, §7),
+- **password recovery** (the "forgot password" flow), when enabled, and
+- the **contact form** on the public `/apoyar` page (sends to `CONTACT_TO`; messages are also
+  stored in `contact_messages`, so nothing is lost even if email delivery fails).
 
 Setup:
 
@@ -177,6 +179,7 @@ Setup:
    ```php
    define('RESEND_API_KEY', 're_••••••');
    define('MAIL_FROM', 'KoboManager <noreply@yourdomain.com>'); // address at the verified domain
+   define('CONTACT_TO', 'contact@yourdomain.com');              // inbox for the /apoyar contact form
    ```
 
 If `RESEND_API_KEY` is left empty, sending is **skipped gracefully** (logged, no error):
