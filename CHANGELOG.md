@@ -38,6 +38,15 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
+- **Responsive de la tabla de envíos**: en pantallas pequeñas el título del formulario ocupa su
+  propia línea (ya no se encoge por los botones) y las acciones (Columnas, Mapa, Estadísticas,
+  Exportar) se agrupan en un único menú **«Acciones»** (nunca parten en varias filas); en
+  escritorio siguen en línea. La tabla mantiene la **primera columna fija** (checkbox + «Enviado»)
+  al desplazar en horizontal, para no perder el ancla de la fila; las celdas dejan de aplastarse
+  (`whitespace-nowrap` + truncado con tooltip en valores largos). El selector de columnas se
+  muestra como hoja centrada en móvil y anclado a la derecha en escritorio.
+- **El logotipo «KoboManager» del backend** (barra lateral y barra superior móvil) ahora enlaza
+  al *homepage*.
 - **Token de color `success`**: los estados de éxito/aprobado pasan de usar el `green-*` de
   Tailwind directamente a una escala semántica `success` (50–900) en `@theme`, siguiendo la
   convención de `primary`/`accent`. Es **tematizable** (cada tema alternativo puede

@@ -733,6 +733,7 @@
     "stats": "Estadísticas",
     "map": "Mapa",
     "mapDisabled": "Ningún envío tiene coordenadas",
+    "actions": "Acciones",
     "columns": "Columnas",
     "columnsTitle": "Columnas a mostrar",
     "columnsReset": "Restablecer",

@@ -733,6 +733,7 @@
     "stats": "Statistics",
     "map": "Map",
     "mapDisabled": "No submission has coordinates",
+    "actions": "Actions",
     "columns": "Columns",
     "columnsTitle": "Columns to show",
     "columnsReset": "Reset",

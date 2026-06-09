@@ -101,6 +101,7 @@ const labeler = computed(() => makeLabeler(schema.value, labelMode.value, fieldT
 const orderedCols = ref([]) // todas las columnas de datos en orden de presentación
 const visibleCols = ref([]) // subconjunto visible
 const colMenuOpen = ref(false)
+const actionsOpen = ref(false) // menú «Acciones» (solo móvil/tablet)
 const dragIndex = ref(null)
 let prefsForm = null // formId para el que se inicializaron las preferencias
 
@@ -190,6 +191,12 @@ function resetCols() {
   visibleCols.value = defaultVisible(dataCols)
 }
 
+// Clases compartidas de los botones de acción y de los ítems del menú móvil.
+const actionBtn =
+  'whitespace-nowrap rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50'
+const menuItem =
+  'block w-full rounded-md px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50'
+
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / perPage.value)))
 
 async function load() {
@@ -251,95 +258,89 @@ onMounted(load)
 
 <template>
   <div class="space-y-6">
-    <header>
+    <header class="relative">
       <RouterLink :to="{ name: 'forms' }" class="text-sm text-primary-600 hover:underline">
         {{ $t('submissions.back') }}
       </RouterLink>
-      <div class="mt-1 flex items-center justify-between gap-4">
-        <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ formName || $t('submissions.title') }}</h1>
-        <div class="flex shrink-0 items-center gap-2">
-          <!-- Selector de columnas -->
-          <div class="relative">
-            <button
-              class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              @click="colMenuOpen = !colMenuOpen"
-            >
-              {{ $t('submissions.columns') }}
-            </button>
-            <template v-if="colMenuOpen">
-              <!-- capa para cerrar al pulsar fuera -->
-              <div class="fixed inset-0 z-10" @click="colMenuOpen = false"></div>
-              <div class="absolute right-0 z-20 mt-1 w-72 rounded-lg border border-slate-200 bg-white p-2 shadow-lg">
-                <div class="flex items-center justify-between px-2 py-1">
-                  <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">{{ $t('submissions.columnsTitle') }}</span>
-                  <button class="text-xs font-medium text-primary-600 hover:underline" @click="resetCols">
-                    {{ $t('submissions.columnsReset') }}
-                  </button>
-                </div>
-                <p class="px-2 pb-1 text-xs text-slate-400">{{ $t('submissions.columnsHint') }}</p>
-                <ul class="max-h-72 overflow-y-auto">
-                  <li
-                    v-for="(c, i) in orderedCols"
-                    :key="c"
-                    draggable="true"
-                    class="flex cursor-move items-center gap-2 rounded-md px-2 py-1.5 hover:bg-slate-50"
-                    :class="{ 'opacity-40': dragIndex === i }"
-                    @dragstart="dragIndex = i"
-                    @dragover.prevent
-                    @drop="onDrop(i)"
-                    @dragend="dragIndex = null"
-                  >
-                    <span class="select-none text-slate-300">⠿</span>
-                    <input
-                      type="checkbox"
-                      class="h-4 w-4"
-                      :checked="visibleCols.includes(c)"
-                      @change.stop="toggleCol(c)"
-                    />
-                    <span class="truncate text-sm text-slate-700" :title="colFullLabel(c)">{{ colLabel(c) }}</span>
-                    <span
-                      v-if="isDerivedCol(c)"
-                      class="ml-auto shrink-0 rounded bg-accent-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent-700"
-                    >{{ $t('submissions.columnsCalculated') }}</span>
-                  </li>
-                  <li v-if="!orderedCols.length" class="px-2 py-2 text-sm text-slate-400">—</li>
-                </ul>
-              </div>
-            </template>
-          </div>
+      <!-- En pantallas pequeñas el título ocupa su propia línea (no se encoge) y las acciones
+           van debajo; en escritorio (lg) vuelven a la misma fila. -->
+      <div class="mt-1 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+        <h1 class="min-w-0 break-words text-2xl font-semibold tracking-tight text-slate-900">{{ formName || $t('submissions.title') }}</h1>
 
-          <RouterLink
-            v-if="hasGeo"
-            :to="{ name: 'form-map', params: { id: formId } }"
-            class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            {{ $t('submissions.map') }}
-          </RouterLink>
-          <span
-            v-else
-            class="cursor-not-allowed rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-300"
-            :title="$t('submissions.mapDisabled')"
-          >
-            {{ $t('submissions.map') }}
-          </span>
+        <!-- Acciones en escritorio: inline -->
+        <div class="hidden shrink-0 items-center gap-2 lg:flex">
+          <button :class="actionBtn" @click="colMenuOpen = !colMenuOpen">{{ $t('submissions.columns') }}</button>
+          <RouterLink v-if="hasGeo" :to="{ name: 'form-map', params: { id: formId } }" :class="actionBtn">{{ $t('submissions.map') }}</RouterLink>
+          <span v-else class="cursor-not-allowed whitespace-nowrap rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-300" :title="$t('submissions.mapDisabled')">{{ $t('submissions.map') }}</span>
+          <RouterLink :to="{ name: 'stats', params: { id: formId } }" :class="actionBtn">{{ $t('submissions.stats') }}</RouterLink>
+          <a :href="exportUrl" :class="actionBtn" :title="$t('submissions.exportHint')">{{ $t('submissions.export') }}</a>
+        </div>
 
-          <RouterLink
-            :to="{ name: 'stats', params: { id: formId } }"
-            class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        <!-- Acciones en móvil/tablet: un único menú «Acciones» (los botones nunca parten en varias filas) -->
+        <div class="relative lg:hidden">
+          <button
+            :class="actionBtn"
+            class="inline-flex items-center gap-1"
+            @click="actionsOpen = !actionsOpen"
           >
-            {{ $t('submissions.stats') }}
-          </RouterLink>
-
-          <a
-            :href="exportUrl"
-            class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            :title="$t('submissions.exportHint')"
-          >
-            {{ $t('submissions.export') }}
-          </a>
+            {{ $t('submissions.actions') }}
+            <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+          </button>
+          <template v-if="actionsOpen">
+            <div class="fixed inset-0 z-30" @click="actionsOpen = false"></div>
+            <div class="absolute left-0 z-40 mt-1 w-56 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+              <button :class="menuItem" @click="actionsOpen = false; colMenuOpen = true">{{ $t('submissions.columns') }}</button>
+              <RouterLink v-if="hasGeo" :to="{ name: 'form-map', params: { id: formId } }" :class="menuItem" @click="actionsOpen = false">{{ $t('submissions.map') }}</RouterLink>
+              <span v-else :class="[menuItem, 'cursor-not-allowed text-slate-300 hover:bg-transparent']">{{ $t('submissions.map') }}</span>
+              <RouterLink :to="{ name: 'stats', params: { id: formId } }" :class="menuItem" @click="actionsOpen = false">{{ $t('submissions.stats') }}</RouterLink>
+              <a :href="exportUrl" :class="menuItem" :title="$t('submissions.exportHint')" @click="actionsOpen = false">{{ $t('submissions.export') }}</a>
+            </div>
+          </template>
         </div>
       </div>
       <p class="mt-1 text-sm text-slate-500">{{ $t('submissions.total', { n: total }) }}</p>
+
+      <!-- Panel selector de columnas (compartido escritorio/móvil): hoja centrada en móvil,
+           anclado a la derecha de la cabecera en escritorio. -->
+      <template v-if="colMenuOpen">
+        <div class="fixed inset-0 z-40 bg-black/30 lg:bg-transparent" @click="colMenuOpen = false"></div>
+        <div class="fixed inset-x-4 top-24 z-50 mx-auto max-w-sm rounded-lg border border-slate-200 bg-white p-2 shadow-lg lg:absolute lg:inset-x-auto lg:right-0 lg:top-full lg:mx-0 lg:mt-1 lg:w-72 lg:max-w-none">
+          <div class="flex items-center justify-between px-2 py-1">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">{{ $t('submissions.columnsTitle') }}</span>
+            <button class="text-xs font-medium text-primary-600 hover:underline" @click="resetCols">
+              {{ $t('submissions.columnsReset') }}
+            </button>
+          </div>
+          <p class="px-2 pb-1 text-xs text-slate-400">{{ $t('submissions.columnsHint') }}</p>
+          <ul class="max-h-72 overflow-y-auto">
+            <li
+              v-for="(c, i) in orderedCols"
+              :key="c"
+              draggable="true"
+              class="flex cursor-move items-center gap-2 rounded-md px-2 py-1.5 hover:bg-slate-50"
+              :class="{ 'opacity-40': dragIndex === i }"
+              @dragstart="dragIndex = i"
+              @dragover.prevent
+              @drop="onDrop(i)"
+              @dragend="dragIndex = null"
+            >
+              <span class="select-none text-slate-300">⠿</span>
+              <input
+                type="checkbox"
+                class="h-4 w-4"
+                :checked="visibleCols.includes(c)"
+                @change.stop="toggleCol(c)"
+              />
+              <span class="truncate text-sm text-slate-700" :title="colFullLabel(c)">{{ colLabel(c) }}</span>
+              <span
+                v-if="isDerivedCol(c)"
+                class="ml-auto shrink-0 rounded bg-accent-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent-700"
+              >{{ $t('submissions.columnsCalculated') }}</span>
+            </li>
+            <li v-if="!orderedCols.length" class="px-2 py-2 text-sm text-slate-400">—</li>
+          </ul>
+        </div>
+      </template>
     </header>
 
     <div class="flex flex-wrap items-center gap-3">
@@ -438,7 +439,7 @@ onMounted(load)
       <table v-else class="w-full text-left text-sm">
         <thead class="bg-accent-50 text-xs uppercase tracking-wider text-accent-700">
           <tr>
-            <th v-if="canValidate" class="w-10 px-4 py-3">
+            <th v-if="canValidate" class="sticky left-0 z-20 w-12 bg-accent-50 px-4 py-3">
               <input
                 type="checkbox"
                 class="h-4 w-4 align-middle"
@@ -447,15 +448,18 @@ onMounted(load)
                 @change="toggleAllOnPage"
               />
             </th>
-            <th class="px-4 py-3">{{ $t('submissions.colSubmitted') }}</th>
-            <th v-for="c in shownColumns" :key="c" class="px-4 py-3" :title="colFullLabel(c)">{{ colLabel(c) }}</th>
+            <th
+              class="sticky z-20 whitespace-nowrap bg-accent-50 px-4 py-3"
+              :class="canValidate ? 'left-12' : 'left-0'"
+            >{{ $t('submissions.colSubmitted') }}</th>
+            <th v-for="c in shownColumns" :key="c" class="whitespace-nowrap px-4 py-3" :title="colFullLabel(c)">{{ colLabel(c) }}</th>
             <th class="px-4 py-3">{{ $t('submissions.colReview') }}</th>
             <th class="px-4 py-3"></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
-          <tr v-for="s in items" :key="s.submission_uid" class="hover:bg-slate-50">
-            <td v-if="canValidate" class="px-4 py-3">
+          <tr v-for="s in items" :key="s.submission_uid" class="group hover:bg-slate-50">
+            <td v-if="canValidate" class="sticky left-0 z-10 bg-white px-4 py-3 group-hover:bg-slate-50">
               <input
                 type="checkbox"
                 class="h-4 w-4 align-middle"
@@ -463,8 +467,16 @@ onMounted(load)
                 @change="toggleRow(s.submission_uid)"
               />
             </td>
-            <td class="whitespace-nowrap px-4 py-3 text-slate-600">{{ s.submitted_at }}</td>
-            <td v-for="c in shownColumns" :key="c" class="px-4 py-3 text-slate-700">{{ cellValue(c, s) }}</td>
+            <td
+              class="sticky z-10 whitespace-nowrap bg-white px-4 py-3 text-slate-600 group-hover:bg-slate-50"
+              :class="canValidate ? 'left-12' : 'left-0'"
+            >{{ s.submitted_at }}</td>
+            <td
+              v-for="c in shownColumns"
+              :key="c"
+              class="max-w-xs truncate whitespace-nowrap px-4 py-3 text-slate-700"
+              :title="cellValue(c, s)"
+            >{{ cellValue(c, s) }}</td>
             <td class="px-4 py-3"><ReviewBadge :status="s.review_status" /></td>
             <td class="px-4 py-3 text-right">
               <RouterLink
