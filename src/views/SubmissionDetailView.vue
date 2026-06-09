@@ -23,6 +23,7 @@ const fieldTruncate = ref(null)
 const attachments = ref([])
 const geo = ref([])
 const derived = ref(null)
+const editHistory = ref([])
 
 const labeler = computed(() => makeLabeler(schema.value, labelMode.value, fieldTruncate.value))
 
@@ -82,6 +83,14 @@ async function load() {
     attachments.value = data.data.attachments ?? []
     geo.value = data.data.geo ?? []
     derived.value = data.data.derived ?? null
+    // Historial de edición (solo quien puede editar). No bloquea el detalle si falla.
+    editHistory.value = []
+    if (data.data.can_edit) {
+      try {
+        const h = await api.get(`/submissions/${route.params.subId}/history`)
+        editHistory.value = h.data.data.edits ?? []
+      } catch { /* silencioso: el historial es secundario */ }
+    }
   } catch (e) {
     error.value = apiError(e, t('detail.loadError'))
   } finally {
@@ -364,6 +373,27 @@ onMounted(load)
           </li>
         </ul>
         <p v-else class="px-5 py-3 text-sm text-slate-400">{{ $t('detail.noReviews') }}</p>
+      </section>
+
+      <!-- Historial de edición (solo si puede editar): cambios de campos por edición,
+           reconstruidos siguiendo la cadena de _uuid. -->
+      <section v-if="sub.can_edit" class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+        <h2 class="border-b border-slate-100 px-5 py-3 font-semibold text-slate-900">{{ $t('detail.editHistory') }}</h2>
+        <ul v-if="editHistory.length" class="divide-y divide-slate-100">
+          <li v-for="(e, i) in editHistory" :key="i" class="px-5 py-3">
+            <p class="text-xs text-slate-400">{{ e.user || '—' }} · {{ e.at }}</p>
+            <ul class="mt-1 space-y-0.5 text-sm">
+              <li v-for="(c, j) in e.changes" :key="j" class="text-slate-700">
+                <span class="font-medium">{{ c.label }}:</span>
+                <span class="text-slate-400 line-through">{{ c.from || '∅' }}</span>
+                <span class="mx-1">→</span>
+                <span>{{ c.to || '∅' }}</span>
+              </li>
+              <li v-if="!e.changes.length" class="text-slate-400">—</li>
+            </ul>
+          </li>
+        </ul>
+        <p v-else class="px-5 py-3 text-sm text-slate-400">{{ $t('detail.noEdits') }}</p>
       </section>
 
       <!-- Navegación entre envíos (repetida al final) -->

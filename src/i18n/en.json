@@ -753,6 +753,8 @@
     "metadata": "Kobo metadata ({n})",
     "history": "Review history",
     "noReviews": "No reviews yet.",
+    "editHistory": "Edit history",
+    "noEdits": "This submission has not been edited.",
     "loadError": "Could not load the submission",
     "saveError": "Could not save (is the Kobo account valid?)",
     "reviewError": "Could not record the review"

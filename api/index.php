@@ -134,6 +134,7 @@ $routes = [
     'forms/:id/export'          => 'forms/export.php',
     'submissions/:id'           => 'submissions/item.php',
     'submissions/:id/review'    => 'submissions/review.php',
+    'submissions/:id/history'   => 'submissions/history.php',
     'submissions/:id/attachments/:attId' => 'submissions/attachment.php',
     // Enlaces públicos de solo lectura (sin sesión): el :token es el secreto del enlace.
     'public/share/:token'                  => 'public/share.php',
