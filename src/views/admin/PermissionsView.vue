@@ -1,12 +1,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 import Modal from '../../components/Modal.vue'
 import RowFilterEditor from '../../components/RowFilterEditor.vue'
 
 const { t } = useI18n()
+const route = useRoute()
 
 const users = ref([])
 const selectedUserId = ref('')
@@ -155,7 +157,15 @@ function clearCols() {
   colsOpen.value = false
 }
 
-onMounted(loadUsers)
+onMounted(async () => {
+  await loadUsers()
+  // Deep-link desde admin/users → «Permisos»: ?user=ID preselecciona y carga sus permisos.
+  const qUser = route.query.user
+  if (qUser && users.value.some((u) => String(u.id) === String(qUser))) {
+    selectedUserId.value = String(qUser)
+    loadPerms()
+  }
+})
 </script>
 
 <template>

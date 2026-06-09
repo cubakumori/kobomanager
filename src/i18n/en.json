@@ -256,6 +256,7 @@
     "inactive": "inactive",
     "activate": "Activate",
     "deactivate": "Deactivate",
+    "permissions": "Permissions",
     "empty": "No users.",
     "editTitle": "Edit: {name}",
     "cantDeactivateSelf": "You can't deactivate your own account",
@@ -277,6 +278,7 @@
   "accounts": {
     "title": "Kobo accounts",
     "subtitle": "Administrator credentials for each KoboToolbox server. The token is stored encrypted and never shown.",
+    "forms": "Forms",
     "newAccount": "New account",
     "label": "Label",
     "serverUrl": "Server URL",

@@ -227,6 +227,12 @@ onMounted(load)
                 >
                   {{ syncingId === a.id ? $t('accounts.syncing') : $t('accounts.sync') }}
                 </button>
+                <RouterLink
+                  :to="{ name: 'admin-forms', query: { account: a.id } }"
+                  class="font-medium text-primary-600 hover:underline"
+                >
+                  {{ $t('accounts.forms') }}
+                </RouterLink>
                 <button class="font-medium text-primary-600 hover:underline" @click="startEdit(a)">
                   {{ $t('common.edit') }}
                 </button>

@@ -13,6 +13,19 @@ const forms = ref([])
 const loading = ref(true)
 const error = ref('')
 
+// Filtro por cuenta Kobo (igual que admin/forms). Solo se ofrece si hay 2+ cuentas.
+const selectedAccount = ref('') // '' = todas
+const accounts = computed(() => {
+  const map = new Map()
+  for (const f of forms.value) if (f.account_id) map.set(f.account_id, f.account_label)
+  return [...map].map(([id, label]) => ({ id, label }))
+})
+const filteredForms = computed(() =>
+  selectedAccount.value === ''
+    ? forms.value
+    : forms.value.filter((f) => f.account_id === Number(selectedAccount.value)),
+)
+
 // Acciones que el admin habilitó para los viewers (los admin las tienen siempre).
 const actions = ref({ enketo: false, update: false, resync: false, login: false })
 const can = (a) => auth.isAdmin || !!actions.value[a]
@@ -108,9 +121,21 @@ onMounted(load)
       {{ $t('myForms.empty') }}
     </div>
 
-    <div v-else class="grid gap-4 sm:grid-cols-2">
+    <template v-else>
+      <label v-if="accounts.length > 1" class="flex items-center gap-2 text-sm text-slate-600">
+        {{ $t('forms.accountFilter') }}
+        <select
+          v-model="selectedAccount"
+          class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+        >
+          <option value="">{{ $t('forms.allAccounts') }}</option>
+          <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.label }}</option>
+        </select>
+      </label>
+
+    <div class="grid gap-4 sm:grid-cols-2">
       <div
-        v-for="f in forms"
+        v-for="f in filteredForms"
         :key="f.id"
         class="flex flex-col rounded-xl bg-accent-50 p-5 shadow-sm ring-1 ring-accent-200 transition hover:ring-accent-400"
       >
@@ -168,5 +193,6 @@ onMounted(load)
         </div>
       </div>
     </div>
+    </template>
   </div>
 </template>

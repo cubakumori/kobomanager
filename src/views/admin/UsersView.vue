@@ -237,6 +237,14 @@ onMounted(load)
                 <button class="font-medium text-primary-600 hover:underline" @click="startEdit(u)">
                   {{ $t('common.edit') }}
                 </button>
+                <!-- Permisos por formulario: solo aplican a viewers (los admin tienen acceso total). -->
+                <router-link
+                  v-if="u.role !== 'admin'"
+                  :to="{ name: 'admin-permissions', query: { user: u.id } }"
+                  class="font-medium text-primary-600 hover:underline"
+                >
+                  {{ $t('users.permissions') }}
+                </router-link>
                 <button
                   v-if="u.active_sessions"
                   class="font-medium text-amber-600 hover:underline"

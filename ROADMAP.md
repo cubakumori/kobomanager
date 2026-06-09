@@ -80,6 +80,28 @@ sesión propia** (acordar el modelo antes de codificar + verificación contra da
       con modelo acordado primero. Demanda recurrente
       ([open-source-online-dashboards/17702](https://community.kobotoolbox.org/t/open-source-online-dashboards/17702)).
 
+> **Decisión (jun-2026):** estos dos frentes mayores (cadena multi-nivel y dashboards
+> compartibles) **no se abordan ahora**; quedan supeditados a **demanda real una vez el
+> repositorio sea público**. Prioridad actual = reforzar/pulir lo ya entregado.
+
+---
+
+## Retoques priorizados (UX/pulido — próxima sesión)
+
+Mejoras pequeñas acordadas; se hacen antes que los frentes mayores. Las que tocan una
+decisión de diseño se acuerdan al arrancar.
+
+- [ ] **Zona horaria de «Actividad por hora»** en Estadísticas: hoy el gráfico no indica
+      la referencia horaria. Decidir el modelo: (a) etiquetar simplemente la referencia
+      (p. ej. «UTC»), o (b) convertir a una zona configurable mostrada «en lenguaje humano»
+      («Hora de La Habana / Madrid»), vía ajuste global y/o preferencia de usuario. Requiere
+      confirmar primero en qué zona viene `_submission_time` de Kobo.
+- [ ] **Color `success` como token de tema**: hoy los estados de éxito usan el `green` de
+      Tailwind a propósito (independiente del tema). Para seguir la convención de tokens
+      (`primary`/`accent`), valorar añadir una escala `success` en `style.css` y sustituir
+      los `green-*` de éxito por `success-*` (decidir si el token es tematizable o fijo, y
+      acotar el alcance del reemplazo). Actualizar `CONTRIBUTING.md` en consecuencia.
+
 ---
 
 ## Pendiente de validar con datos reales

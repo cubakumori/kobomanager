@@ -6,6 +6,15 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [Sin publicar]
 
+### Añadido
+
+- **Filtro por cuenta en «Mis formularios»** (`/forms`), igual que en la página admin de
+  formularios; se muestra solo si hay 2+ cuentas.
+- **Acción «Permisos» en admin/usuarios**: para cada viewer, enlace directo a la página de
+  Permisos con ese usuario ya seleccionado.
+- **Acción «Formularios» en admin/cuentas**: para cada cuenta, enlace directo a admin/forms
+  filtrado por esa cuenta.
+
 ### Cambiado
 
 - **Menú lateral admin más corto**: «Auditoría» se mueve del menú a una tarjeta del panel

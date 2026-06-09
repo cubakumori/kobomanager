@@ -1,11 +1,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 import { confirmDialog } from '../../composables/confirm'
 
 const { t } = useI18n()
+const route = useRoute()
 
 const forms = ref([])
 const accountsList = ref([])
@@ -177,7 +179,14 @@ const statusBadge = {
 }
 const statusKey = { deployed: 'forms.typeDeployed', draft: 'forms.typeDraft', archived: 'forms.typeArchived' }
 
-onMounted(load)
+onMounted(async () => {
+  await load()
+  // Deep-link desde admin/accounts → «Formularios»: ?account=ID preselecciona el filtro.
+  const qAcc = route.query.account
+  if (qAcc && accountsList.value.some((a) => String(a.id) === String(qAcc))) {
+    selectedAccount.value = String(qAcc)
+  }
+})
 </script>
 
 <template>
