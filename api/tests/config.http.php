@@ -13,11 +13,16 @@
 
 declare(strict_types=1);
 
-define('DB_HOST', getenv('TEST_DB_HOST') ?: '127.0.0.1');
-define('DB_PORT', getenv('TEST_DB_PORT') ?: '3306');
-define('DB_NAME', getenv('TEST_DB_NAME') ?: 'kobomanager_test');
-define('DB_USER', getenv('TEST_DB_USER') ?: 'kobomanager');
-define('DB_PASS', getenv('TEST_DB_PASS') ?: 'km_dev_2026');
+// Nota: usar `=== false` (no `?:`) para que un valor vacío sea respetado — en CI el root
+// de MariaDB NO tiene contraseña (TEST_DB_PASS=''), y `'' ?: 'x'` daría 'x' por error.
+$envOr = static fn(string $k, string $default): string
+    => (($v = getenv($k)) !== false) ? $v : $default;
+
+define('DB_HOST', $envOr('TEST_DB_HOST', '127.0.0.1'));
+define('DB_PORT', $envOr('TEST_DB_PORT', '3306'));
+define('DB_NAME', $envOr('TEST_DB_NAME', 'kobomanager_test'));
+define('DB_USER', $envOr('TEST_DB_USER', 'kobomanager'));
+define('DB_PASS', $envOr('TEST_DB_PASS', 'km_dev_2026'));
 
 // Clave sodium (32 bytes en hex) solo para tests.
 define('CONFIG_TOKEN_KEY', '52904b849e153a6bbe35d5f7676bf1d7f2580c78a06a5c2c1a415d57d382b9dc');
