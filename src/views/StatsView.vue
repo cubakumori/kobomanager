@@ -254,8 +254,25 @@ onMounted(load)
         </div>
       </div>
 
-      <!-- Tendencia reciente (vs periodo anterior equivalente). No se muestra en
-           formularios draft/archivados: no se espera actividad reciente. -->
+      <!-- Gráficos base -->
+      <div class="grid gap-4 lg:grid-cols-3">
+        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 lg:col-span-2">
+          <h2 class="mb-4 font-semibold text-slate-900">{{ periodIsMonth ? $t('stats.byMonth') : $t('stats.byDay') }}</h2>
+          <div class="h-64">
+            <StatsChart v-if="periodSeries.length" type="bar" :data="byPeriodData" :options="periodOptions" />
+            <p v-else class="text-sm text-slate-400">{{ $t('stats.noData') }}</p>
+          </div>
+        </div>
+        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+          <h2 class="mb-4 font-semibold text-slate-900">{{ $t('stats.byStatus') }}</h2>
+          <div class="h-64">
+            <StatsChart type="doughnut" :data="byStatusData" :options="doughnutValueOpts(stats.total)" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Tendencia reciente (vs periodo anterior equivalente), bajo la serie temporal.
+           No se muestra en formularios draft/archivados: no se espera actividad reciente. -->
       <div v-if="stats.trend && !['draft', 'archived'].includes(stats.deployment_status)" class="grid gap-4 grid-cols-1 sm:grid-cols-2">
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.last7') }}</p>
@@ -276,23 +293,6 @@ onMounted(load)
             </span>
           </div>
           <p class="mt-1 text-xs text-slate-400">{{ $t('stats.vsPrev', { n: stats.trend.prev_30 }) }}</p>
-        </div>
-      </div>
-
-      <!-- Gráficos base -->
-      <div class="grid gap-4 lg:grid-cols-3">
-        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 lg:col-span-2">
-          <h2 class="mb-4 font-semibold text-slate-900">{{ periodIsMonth ? $t('stats.byMonth') : $t('stats.byDay') }}</h2>
-          <div class="h-64">
-            <StatsChart v-if="periodSeries.length" type="bar" :data="byPeriodData" :options="periodOptions" />
-            <p v-else class="text-sm text-slate-400">{{ $t('stats.noData') }}</p>
-          </div>
-        </div>
-        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <h2 class="mb-4 font-semibold text-slate-900">{{ $t('stats.byStatus') }}</h2>
-          <div class="h-64">
-            <StatsChart type="doughnut" :data="byStatusData" :options="doughnutValueOpts(stats.total)" />
-          </div>
         </div>
       </div>
 
