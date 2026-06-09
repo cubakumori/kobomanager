@@ -43,7 +43,13 @@
     "batchConfirmTitle": "Batch review",
     "batchConfirm": "“{action}” will be applied to {n} selected submission(s). Continue?",
     "batchDone": "{n} submission(s) reviewed.",
-    "batchError": "Could not apply the batch review"
+    "batchError": "Could not apply the batch review",
+    "filters": "Filters",
+    "filtersActive": "Filters ({n})",
+    "filtersTitle": "Advanced filters",
+    "filtersIntro": "Combine per-field conditions (AND/OR groups, same operators as row scoping). Affects only the table and the exported CSV.",
+    "filtersClear": "Clear filters",
+    "filtersApply": "Apply"
   },
   "detail": {
     "back": "← Back to submissions",

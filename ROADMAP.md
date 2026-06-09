@@ -44,8 +44,12 @@ docs → commit). El usuario, además, revisará toda la app por si hay algo que
       solo lectura y el detalle los marca con 🔒 (texto no editable). Stats agregadas:
       verificado que «por pregunta» ya excluía los campos ocultos (y sus adjuntos/geo);
       se añadieron tests de regresión. Enlaces públicos sin cambios (visible/oculto).
-- [ ] **(d) Filtros avanzados en la tabla de envíos** — panel de condiciones por campo
-      (campo/operador/valor, Y/O) reutilizando `RowFilterEditor` y los operadores de `RowScope`.
+- [x] **(d) Filtros avanzados en la tabla de envíos** — HECHO: botón «Filtros» que abre
+      el `RowFilterEditor` (grupos Y/O + operadores de `RowScope`), combinado en AND con
+      el alcance obligatorio del usuario (solo restringe; campos ocultos vetados con 422),
+      persistido por formulario en localStorage y aplicado también al export CSV. Nuevo
+      endpoint de usuario `GET /forms/{id}/scope-fields` (campos visibles + valores
+      acotados al alcance). Mapa y estadísticas siguen con el alcance completo.
 
 ---
 
@@ -215,8 +219,7 @@ contra una cuenta KoboToolbox real:
 ## Optimización y UX
 
 - [x] **Modo oscuro** y skeletons — hechos (ver «Próxima sesión: prioridades acordadas» § (c)).
-- [ ] **Filtros avanzados** en la tabla de envíos — es la feature (d) de las prioridades
-      acordadas (ver arriba).
+- [x] **Filtros avanzados** en la tabla de envíos — hechos (ver prioridades acordadas § (d)).
 - [ ] **Carga diferida del catálogo i18n de la Guía** *(la reorganización por áreas ya está
       hecha — ver prioridades acordadas § 1)*: cargar `guide.json` bajo demanda por ruta
       (vue-i18n `setLocaleMessage` + import dinámico). Solo merece la pena con un 3.er idioma

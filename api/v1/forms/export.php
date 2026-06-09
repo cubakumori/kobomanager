@@ -2,7 +2,8 @@
 /**
  * GET /api/v1/forms/{id}/export   (requiere can_view)
  * Exporta los envíos del formulario a CSV (UTF-8 con BOM, abre bien en Excel).
- * Respeta el scoping por filas y los mismos filtros que la lista (search, review).
+ * Respeta el scoping por filas y los mismos filtros que la lista (search, review
+ * y el filtro avanzado `filter`): el CSV exporta exactamente lo que la tabla muestra.
  * No usa el envoltorio JSON: emite el CSV directamente como descarga.
  *
  * Columnas: submitted_at + estado de revisión + un campo por pregunta. Las
@@ -40,8 +41,22 @@ $join = 'LEFT JOIN (
           ON m.max_id = r.id
     ) lr ON lr.submission_uid = sc.submission_uid';
 
-$where  = 'WHERE sc.form_id = ? AND ' . $scopeSql;
-$params = array_merge([$formId], $scopeP);
+// Filtro avanzado del usuario: mismas reglas que en la lista (solo restringe; campos
+// ocultos vetados).
+$advFilter = null;
+$rawFilter = trim((string) ($_GET['filter'] ?? ''));
+if ($rawFilter !== '') {
+    $advFilter = RowScope::normalize(json_decode($rawFilter, true));
+    foreach (RowScope::fields($advFilter) as $f) {
+        if (FieldScope::isHidden($fieldScope, $f)) {
+            ErrorResponse::send('VALIDATION_ERROR', "El filtro usa un campo no disponible: $f");
+        }
+    }
+}
+[$advSql, $advP] = RowScope::sqlCondition($advFilter, 'sc.json_payload');
+
+$where  = 'WHERE sc.form_id = ? AND ' . $scopeSql . ' AND ' . $advSql;
+$params = array_merge([$formId], $scopeP, $advP);
 if ($search !== '') {
     [$searchSql, $searchParams] = $fieldScope !== null
         ? SubmissionSearch::clauseVisible('sc', $search, FieldScope::visiblePaths($fieldScope, $schemaRaw))

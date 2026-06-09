@@ -170,6 +170,24 @@ class RowScope {
         return (($node['match'] ?? 'all') === 'any') ? 'any' : 'all';
     }
 
+    /**
+     * Campos referenciados por una regla NORMALIZADA (únicos, en orden de aparición).
+     * Lo usa el filtro avanzado de la tabla para vetar condiciones sobre campos
+     * ocultos al usuario (FieldScope) antes de ejecutar nada.
+     */
+    public static function fields(?array $rule): array {
+        $out = [];
+        foreach (($rule['groups'] ?? []) as $g) {
+            foreach (($g['conditions'] ?? []) as $c) {
+                $f = (string) ($c['field'] ?? '');
+                if ($f !== '' && !in_array($f, $out, true)) {
+                    $out[] = $f;
+                }
+            }
+        }
+        return $out;
+    }
+
     // ───────────────────────── Traducción a SQL ─────────────────────────
 
     /**

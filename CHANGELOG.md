@@ -23,6 +23,18 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Filtros avanzados en la tabla de envíos**: nuevo botón «Filtros» junto a los filtros
+  rápidos que abre el mismo editor de condiciones del scoping por filas (grupos Y/O,
+  operadores in/nin/rangos/vacío/conjuntos sobre `select_multiple`, sugerencias de valores).
+  El filtro se combina **en AND** con el alcance por filas obligatorio del usuario (solo
+  puede restringir, nunca ampliar), se rechaza si referencia campos ocultos (422) y los
+  valores sugeridos respetan el alcance del usuario (nuevo endpoint
+  `GET /forms/{id}/scope-fields`, la variante para usuarios del de admin). Se recuerda por
+  formulario y dispositivo (localStorage `km.filter.<id>`) y **se aplica también al export
+  CSV** (exporta exactamente lo que ves); mapa y estadísticas siguen mostrando el alcance
+  completo. 3 tests de integración HTTP (PHPUnit 178/178). Verificado contra el form real
+  43 (160 → 121 envíos con un `has_any` sobre `select_multiple`; CSV con las mismas 121 filas).
+
 - **Columnas de solo lectura (tercer estado de campo)**: además de ocultar una columna a un
   usuario, ahora puede marcarse como **solo lectura** — la ve pero no puede editarla aunque
   tenga permiso de edición en el formulario. El editor de columnas de Permisos pasa a un

@@ -50,7 +50,7 @@
     "formActionsNote": "Para los viewers, el administrador habilita cada acción en «Configuración»; los administradores las tienen siempre.",
     "exploreTitle": "Explorar la tabla de envíos",
     "exploreSearch": "Búsqueda y filtros",
-    "exploreSearchBody": "Busca texto en los envíos (también por la etiqueta de las opciones, p. ej. «Femenino», no solo por su código) y filtra por estado de revisión; ordena por fecha o por una columna calculada (duración, adjuntos, ubicación) y ajusta cuántos ver por página.",
+    "exploreSearchBody": "Busca texto en los envíos (también por la etiqueta de las opciones, p. ej. «Femenino», no solo por su código) y filtra por estado de revisión; con «Filtros» puedes además combinar condiciones por campo (grupos Y/O con operadores), que se recuerdan por formulario y se aplican también al CSV exportado. Ordena por fecha o por una columna calculada (duración, adjuntos, ubicación) y ajusta cuántos ver por página.",
     "exploreColumns": "Columnas configurables",
     "exploreColumnsBody": "Elige qué columnas se muestran y reordénalas arrastrando; la preferencia se recuerda por formulario.",
     "exploreCalculated": "Columnas calculadas",

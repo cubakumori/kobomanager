@@ -43,7 +43,13 @@
     "batchConfirmTitle": "Revisión en lote",
     "batchConfirm": "Se aplicará «{action}» a {n} envío(s) seleccionado(s). ¿Continuar?",
     "batchDone": "{n} envío(s) revisados.",
-    "batchError": "No se pudo aplicar la revisión en lote"
+    "batchError": "No se pudo aplicar la revisión en lote",
+    "filters": "Filtros",
+    "filtersActive": "Filtros ({n})",
+    "filtersTitle": "Filtros avanzados",
+    "filtersIntro": "Combina condiciones por campo (grupos Y/O, mismos operadores que el alcance por filas). Solo afecta a la tabla y al CSV exportado.",
+    "filtersClear": "Quitar filtros",
+    "filtersApply": "Aplicar"
   },
   "detail": {
     "back": "← Volver a los envíos",

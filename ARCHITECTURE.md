@@ -92,6 +92,15 @@ the `\/` escape, so group‑path keys (`G01/P1_3`) are matched with an escaped J
 admin UI builds the rule with a shared `RowFilterEditor.vue` component (reused by both the
 Permissions and Share‑links editors), offering operators and value widgets per field type.
 
+**Advanced table filters** reuse the same format and engine: the submissions table (and CSV
+export) accept a user‑supplied `filter` query param (JSON, validated by `RowScope::
+normalize()`), combined **in AND** with the user's mandatory scope — it can only restrict,
+never widen. Conditions referencing fields hidden by `FieldScope` are rejected (422), and
+the editor's field/value source for non‑admins is `GET /forms/{id}/scope-fields` (visible
+fields only; suggested values constrained to the user's row scope). The filter persists
+per form/device in `localStorage` (`km.filter.<formId>`). Map and stats stay on the full
+user scope on purpose.
+
 ### Column‑level permissions (`lib/FieldScope.php`)
 Twin of row scoping: where `RowScope` decides *which submissions* are visible, `FieldScope`
 decides *which fields* leave the server. A per‑(user, form) **denylist** of hidden field keys

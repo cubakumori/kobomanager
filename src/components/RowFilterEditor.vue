@@ -16,7 +16,13 @@ import { apiError } from '../stores/auth'
 const props = defineProps({
   formId: { type: [Number, String], required: true },
   modelValue: { type: Object, default: null }, // row_filter actual (canónico o antiguo) | null
+  // Endpoint de campos/valores. Por defecto el de admin (Permisos/Enlaces); el filtro
+  // avanzado de la tabla pasa el de usuario (`/forms/{id}/scope-fields`), que excluye
+  // los campos ocultos y acota los valores sugeridos al alcance del usuario.
+  fieldsUrl: { type: String, default: '' },
 })
+
+const fieldsEndpoint = () => props.fieldsUrl || `/admin/forms/${props.formId}/scope-fields`
 
 const { t } = useI18n()
 
@@ -81,7 +87,7 @@ onMounted(async () => {
   seed()
   loading.value = true
   try {
-    const { data } = await api.get(`/admin/forms/${props.formId}/scope-fields`)
+    const { data } = await api.get(fieldsEndpoint())
     fields.value = data.data.fields
   } catch (e) {
     error.value = apiError(e, t('rowfilter.loadError'))
@@ -182,7 +188,7 @@ function setRangeValue(cond, val) {
 async function loadSuggestions(field) {
   if (!field || suggestions.value[field]) return
   try {
-    const { data } = await api.get(`/admin/forms/${props.formId}/scope-fields`, { params: { values: field } })
+    const { data } = await api.get(fieldsEndpoint(), { params: { values: field } })
     suggestions.value = { ...suggestions.value, [field]: data.data.values }
   } catch {
     suggestions.value = { ...suggestions.value, [field]: [] }

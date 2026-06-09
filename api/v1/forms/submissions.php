@@ -5,7 +5,10 @@
  * Query:
  *   page (1+), per_page (1-100), search (texto libre sobre el JSON),
  *   review (pending|approved|on_hold|rejected) → filtra por estado de revisión más reciente,
- *   sort (date_desc|date_asc) → orden por fecha de envío (por defecto, más recientes).
+ *   sort (date_desc|date_asc) → orden por fecha de envío (por defecto, más recientes),
+ *   filter (JSON, mismo formato que row_filter) → FILTRO AVANZADO del usuario; solo
+ *     RESTRINGE (se combina en AND con el scoping obligatorio) y se rechaza si
+ *     referencia campos ocultos para el usuario.
  * Cada envío incluye su estado de revisión más reciente.
  */
 
@@ -92,8 +95,23 @@ $join = 'LEFT JOIN (
           ON m.max_id = r.id
     ) lr ON lr.submission_uid = sc.submission_uid';
 
-$where  = 'WHERE sc.form_id = ? AND ' . $scopeSql;
-$params = array_merge([$formId], $scopeP);
+// Filtro avanzado del usuario (mismo formato y motor que row_filter). Solo puede
+// RESTRINGIR: se combina en AND con el scoping obligatorio. Si referencia un campo
+// oculto se rechaza (filtrar por valor revelaría información del campo).
+$advFilter = null;
+$rawFilter = trim((string) ($_GET['filter'] ?? ''));
+if ($rawFilter !== '') {
+    $advFilter = RowScope::normalize(json_decode($rawFilter, true));
+    foreach (RowScope::fields($advFilter) as $f) {
+        if (FieldScope::isHidden($fieldScope, $f)) {
+            ErrorResponse::send('VALIDATION_ERROR', "El filtro usa un campo no disponible: $f");
+        }
+    }
+}
+[$advSql, $advP] = RowScope::sqlCondition($advFilter, 'sc.json_payload');
+
+$where  = 'WHERE sc.form_id = ? AND ' . $scopeSql . ' AND ' . $advSql;
+$params = array_merge([$formId], $scopeP, $advP);
 if ($search !== '') {
     // Con columnas ocultas, la búsqueda solo casa campos visibles (no el índice
     // global, que filtraría que una fila contiene un valor oculto). Si no, FULLTEXT.

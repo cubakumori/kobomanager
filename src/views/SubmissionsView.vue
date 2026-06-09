@@ -9,6 +9,8 @@ import { makeLabeler } from '../composables/labels'
 import { useDerivedFormat, DERIVED_TABLE_COLS, isDerivedCol } from '../composables/derived'
 import ReviewBadge from '../components/ReviewBadge.vue'
 import Skeleton from '../components/Skeleton.vue'
+import Modal from '../components/Modal.vue'
+import RowFilterEditor from '../components/RowFilterEditor.vue'
 
 const { tableLabel, tableValue } = useDerivedFormat()
 
@@ -91,9 +93,54 @@ const exportUrl = computed(() => {
   const p = new URLSearchParams()
   if (search.value) p.set('search', search.value)
   if (reviewFilter.value) p.set('review', reviewFilter.value)
+  if (advFilter.value) p.set('filter', JSON.stringify(advFilter.value))
   const qs = p.toString()
   return `/api/v1/forms/${formId.value}/export${qs ? '?' + qs : ''}`
 })
+
+// --- Filtro avanzado (mismo formato y motor que el scoping por filas; solo restringe) ---
+const advFilter = ref(null)
+const advOpen = ref(false)
+const advEditor = ref(null)
+const filterKey = (id) => `km.filter.${id}`
+
+// Nº total de condiciones (suma de grupos; soporta el formato antiguo).
+function countConditions(rf) {
+  if (!rf) return 0
+  if (Array.isArray(rf.conditions)) return rf.conditions.length
+  return (rf.groups || []).reduce((n, g) => n + (g.conditions?.length || 0), 0)
+}
+const advCount = computed(() => countConditions(advFilter.value))
+
+function loadAdvFilter() {
+  try {
+    advFilter.value = JSON.parse(localStorage.getItem(filterKey(formId.value)) || 'null')
+  } catch {
+    advFilter.value = null
+  }
+}
+function saveAdvFilter() {
+  try {
+    if (advFilter.value) localStorage.setItem(filterKey(formId.value), JSON.stringify(advFilter.value))
+    else localStorage.removeItem(filterKey(formId.value))
+  } catch {
+    /* sin almacenamiento: el filtro solo durará la sesión */
+  }
+}
+function applyAdv() {
+  advFilter.value = advEditor.value?.getValue() ?? null
+  saveAdvFilter()
+  advOpen.value = false
+  page.value = 1
+  load()
+}
+function clearAdv() {
+  advFilter.value = null
+  saveAdvFilter()
+  advOpen.value = false
+  page.value = 1
+  load()
+}
 
 const labeler = computed(() => makeLabeler(schema.value, labelMode.value, fieldTruncate.value))
 
@@ -211,6 +258,7 @@ async function load() {
         search: search.value || undefined,
         review: reviewFilter.value || undefined,
         sort: sort.value,
+        filter: advFilter.value ? JSON.stringify(advFilter.value) : undefined,
       },
     })
     formName.value = data.data.form.name
@@ -246,7 +294,7 @@ watch([reviewFilter, sort, perPage], () => {
 })
 
 // Al cambiar de formulario, re-inicializar las preferencias de columnas.
-watch(formId, () => { prefsForm = null; orderedCols.value = []; visibleCols.value = [] })
+watch(formId, () => { prefsForm = null; orderedCols.value = []; visibleCols.value = []; loadAdvFilter() })
 
 function go(p) {
   if (p < 1 || p > totalPages.value) return
@@ -254,7 +302,7 @@ function go(p) {
   load()
 }
 
-onMounted(load)
+onMounted(() => { loadAdvFilter(); load() })
 </script>
 
 <template>
@@ -390,6 +438,25 @@ onMounted(load)
           <option v-for="n in perPageOptions" :key="n" :value="n">{{ n }}</option>
         </select>
       </label>
+      <div class="col-span-2 flex items-center gap-1 sm:col-auto">
+        <button
+          type="button"
+          class="w-full whitespace-nowrap rounded-lg border px-3 py-1.5 text-sm font-medium sm:w-auto"
+          :class="advCount
+            ? 'border-primary-300 bg-primary-50 text-primary-700 hover:bg-primary-100'
+            : 'border-slate-300 text-slate-700 hover:bg-slate-50'"
+          @click="advOpen = true"
+        >
+          {{ advCount ? $t('submissions.filtersActive', { n: advCount }) : $t('submissions.filters') }}
+        </button>
+        <button
+          v-if="advCount"
+          type="button"
+          class="shrink-0 rounded-lg px-2 py-1.5 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+          :title="$t('submissions.filtersClear')"
+          @click="clearAdv"
+        >×</button>
+      </div>
     </div>
 
     <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
@@ -516,5 +583,31 @@ onMounted(load)
         {{ $t('submissions.next') }}
       </button>
     </div>
+
+    <!-- Modal: filtro avanzado (reutiliza el editor del scoping por filas) -->
+    <Modal v-if="advOpen" size="xl" :title="$t('submissions.filtersTitle')" @close="advOpen = false">
+      <div class="space-y-4">
+        <p class="text-sm text-slate-500">{{ $t('submissions.filtersIntro') }}</p>
+        <RowFilterEditor
+          ref="advEditor"
+          :form-id="formId"
+          :model-value="advFilter"
+          :fields-url="`/forms/${formId}/scope-fields`"
+        />
+        <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
+          <button type="button" class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50" @click="clearAdv">
+            {{ $t('submissions.filtersClear') }}
+          </button>
+          <div class="flex gap-2">
+            <button type="button" class="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100" @click="advOpen = false">
+              {{ $t('common.cancel') }}
+            </button>
+            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700" @click="applyAdv">
+              {{ $t('submissions.filtersApply') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Modal>
   </div>
 </template>
