@@ -8,6 +8,13 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Promoción de features en la portada**: bajo las 4 tarjetas existentes se añade una sección
+  «Y mucho más» que destaca los **enlaces públicos de solo lectura** (con/sin contraseña,
+  caducidad y el mismo alcance por filas/columnas que el equipo) como tarjeta principal, y
+  presenta el resto de capacidades vendibles como chips: permisos por columna, estadísticas,
+  notificaciones por email, etiquetas legibles, mapa/geolocalización, export CSV y edición de
+  envíos. Mantiene el lenguaje visual de *pills* verdes (token `accent`), compatible con los
+  temas alternativos.
 - **Zona horaria de visualización en Estadísticas**: «Actividad por hora» y «Actividad por
   día de la semana» se muestran en hora local en lugar de UTC. Kobo entrega
   `_submission_time` en UTC; ahora se ancla explícitamente como UTC y se convierte a la zona

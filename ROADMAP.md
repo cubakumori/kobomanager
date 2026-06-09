@@ -120,12 +120,10 @@ Trabajo de portada agrupado (todo toca la landing y el pulido visual):
 
 - [ ] **Responsive** — repasar que toda la app (y en especial la landing) se vea bien en
       pantallas pequeñas.
-- [ ] **Promocionar mejor las features en el homepage** — hoy la landing destaca 4
-      (sin cuentas Kobo · revisión interna · token seguro · acceso por filas) y omite varias
-      vendibles: **enlaces públicos de solo lectura** (con/sin contraseña, caducidad, alcance
-      por filas/columnas) y **notificaciones por email** (resumen diario) como mínimo; otras
-      candidatas: permisos por columna, estadísticas, etiquetas legibles, mapa/geo, export CSV,
-      edición de envíos.
+- [x] **Promocionar mejor las features en el homepage** — HECHO: bajo las 4 tarjetas se añade
+      la sección «Y mucho más» con los **enlaces públicos de solo lectura** como tarjeta
+      destacada y el resto (permisos por columna, estadísticas, notificaciones email, etiquetas
+      legibles, mapa/geo, export CSV, edición) como chips. Estilo *pills* verdes intacto.
 - [ ] **Donación** — definir destino/método del enlace «Donar» (hoy placeholder).
 ---
 

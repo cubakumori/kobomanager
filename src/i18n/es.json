@@ -64,7 +64,18 @@
     "feat3Desc": "El token de Kobo se guarda cifrado en el servidor y nunca se expone al navegador.",
     "footer": "KoboManager — capa de gestión para KoboToolbox",
     "feat4Title": "Acceso por filas",
-    "feat4Desc": "Define qué envíos ve cada usuario —por el valor de un campo o por quién los envió—, no solo qué formularios."
+    "feat4Desc": "Define qué envíos ve cada usuario —por el valor de un campo o por quién los envió—, no solo qué formularios.",
+    "moreTitle": "Y mucho más",
+    "moreSubtitle": "Pensado para equipos que necesitan compartir y analizar datos sin renunciar al control.",
+    "feat5Title": "Enlaces públicos de solo lectura",
+    "feat5Desc": "Comparte un formulario por enlace, sin dar cuenta: opcionalmente con contraseña, fecha de caducidad y el mismo alcance por filas y columnas que aplicas a tu equipo.",
+    "chipColumns": "Permisos por columna",
+    "chipStats": "Estadísticas y panel",
+    "chipEmail": "Notificaciones por email",
+    "chipLabels": "Etiquetas legibles",
+    "chipMap": "Mapa y geolocalización",
+    "chipCsv": "Exportación a CSV",
+    "chipEdit": "Edición de envíos"
   },
   "login": {
     "subtitle": "Inicia sesión para continuar",

@@ -64,7 +64,18 @@
     "feat3Desc": "The Kobo token is stored encrypted on the server and never exposed to the browser.",
     "footer": "KoboManager — a management layer for KoboToolbox",
     "feat4Title": "Row-level access",
-    "feat4Desc": "Decide which submissions each user sees —by a field value or by who submitted them—, not just which forms."
+    "feat4Desc": "Decide which submissions each user sees —by a field value or by who submitted them—, not just which forms.",
+    "moreTitle": "And much more",
+    "moreSubtitle": "Built for teams that need to share and analyze data without giving up control.",
+    "feat5Title": "Public read-only links",
+    "feat5Desc": "Share a form by link, no account required: optionally with a password, an expiry date and the same row- and column-level scope you apply to your team.",
+    "chipColumns": "Column-level permissions",
+    "chipStats": "Statistics & dashboard",
+    "chipEmail": "Email notifications",
+    "chipLabels": "Human-readable labels",
+    "chipMap": "Map & geolocation",
+    "chipCsv": "CSV export",
+    "chipEdit": "Submission editing"
   },
   "login": {
     "subtitle": "Sign in to continue",

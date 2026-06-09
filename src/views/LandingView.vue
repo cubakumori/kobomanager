@@ -5,6 +5,10 @@ import banner from '../assets/kobomanager.png'
 // Tarjetas de características (estilo "pill" verde). La 4ª destaca el control de
 // acceso granular (permisos por filas), añadido recientemente.
 const features = [1, 2, 3, 4]
+
+// Sección «Y mucho más»: enlaces públicos como tarjeta destacada (feat5) y el
+// resto de capacidades vendibles como chips, mismo lenguaje visual verde.
+const chips = ['chipColumns', 'chipStats', 'chipEmail', 'chipLabels', 'chipMap', 'chipCsv', 'chipEdit']
 </script>
 
 <template>
@@ -71,6 +75,33 @@ const features = [1, 2, 3, 4]
         </h3>
         <p class="mt-2 text-sm text-accent-900/70">{{ $t('landing.feat' + n + 'Desc') }}</p>
       </div>
+    </section>
+
+    <!-- Y mucho más: enlace público destacado + chips de capacidades -->
+    <section class="mx-auto w-full max-w-6xl px-6 py-12">
+      <h2 class="text-center text-2xl font-bold tracking-tight text-slate-900">{{ $t('landing.moreTitle') }}</h2>
+      <p class="mx-auto mt-2 max-w-2xl text-center text-sm text-slate-600">{{ $t('landing.moreSubtitle') }}</p>
+
+      <!-- Tarjeta destacada: enlaces públicos de solo lectura -->
+      <div class="mx-auto mt-8 max-w-3xl rounded-2xl bg-accent-50 p-6 ring-1 ring-accent-200">
+        <h3 class="flex items-center gap-2 font-semibold text-accent-800">
+          <span class="h-1.5 w-1.5 rounded-full bg-accent-500"></span>
+          {{ $t('landing.feat5Title') }}
+        </h3>
+        <p class="mt-2 text-sm text-accent-900/70">{{ $t('landing.feat5Desc') }}</p>
+      </div>
+
+      <!-- Resto de capacidades como chips -->
+      <ul class="mx-auto mt-5 flex max-w-3xl flex-wrap justify-center gap-2">
+        <li
+          v-for="c in chips"
+          :key="c"
+          class="inline-flex items-center gap-2 rounded-full bg-accent-50 px-4 py-2 text-sm font-medium text-accent-800 ring-1 ring-accent-200"
+        >
+          <span class="h-1.5 w-1.5 rounded-full bg-accent-500"></span>
+          {{ $t('landing.' + c) }}
+        </li>
+      </ul>
     </section>
 
     <!-- Cómo funciona -->
