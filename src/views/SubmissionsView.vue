@@ -370,6 +370,12 @@ onMounted(load)
         >
           <option value="date_desc">{{ $t('submissions.sortNewest') }}</option>
           <option value="date_asc">{{ $t('submissions.sortOldest') }}</option>
+          <optgroup :label="$t('submissions.columnsCalculated')">
+            <option value="duration_desc">{{ $t('submissions.sortDurationDesc') }}</option>
+            <option value="duration_asc">{{ $t('submissions.sortDurationAsc') }}</option>
+            <option value="attachments_desc">{{ $t('submissions.sortAttachments') }}</option>
+            <option value="geo_desc">{{ $t('submissions.sortGeo') }}</option>
+          </optgroup>
         </select>
       </label>
       <label class="flex items-center gap-1.5 text-sm text-slate-600">

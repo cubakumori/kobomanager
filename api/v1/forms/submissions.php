@@ -35,7 +35,54 @@ $perPage = min(100, max(1, (int) ($_GET['per_page'] ?? 25)));
 $offset  = ($page - 1) * $perPage;
 $search  = trim((string) ($_GET['search'] ?? ''));
 $review  = (string) ($_GET['review'] ?? '');
-$sortDir = (($_GET['sort'] ?? 'date_desc') === 'date_asc') ? 'ASC' : 'DESC';
+
+// Geo: expresión SQL booleana «¿este envío tiene coordenadas?», respetando los campos
+// geo ocultos (un campo geo oculto no cuenta; si se ocultó alguno, tampoco el respaldo
+// _geolocation). Se reutiliza para el indicador has_geo y para ordenar por la columna geo.
+$geoFields     = Geo::geoFieldPaths($schema);
+$visibleGeo    = array_values(array_filter($geoFields, fn($gp) => !FieldScope::isHidden($fieldScope, $gp)));
+$anyGeoHidden  = count($visibleGeo) !== count($geoFields);
+$geoConds      = [];
+$geoExprParams = [];
+if (!$anyGeoHidden) {
+    $geoConds[] = "JSON_TYPE(JSON_EXTRACT(sc.json_payload, '$._geolocation[0]')) IN ('DOUBLE','INTEGER','DECIMAL')";
+}
+foreach ($visibleGeo as $gp) {
+    $geoConds[]      = "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(sc.json_payload, ?)), '') <> ''";
+    $geoExprParams[] = RowScope::jsonPath($gp);
+}
+$geoExpr = $geoConds ? '(' . implode(' OR ', $geoConds) . ')' : '0';
+
+// Orden: por fecha (date) o por una columna CALCULADA (duración, nº de adjuntos, geo),
+// expresada como SQL sobre el JSON para que el orden sea GLOBAL (toda la tabla, no solo
+// la página). El sufijo _asc/_desc fija la dirección. Los params del ORDER BY van aparte
+// (se añaden solo a la consulta de listado, no al COUNT).
+$sort = (string) ($_GET['sort'] ?? 'date_desc');
+$dir  = str_ends_with($sort, '_asc') ? 'ASC' : 'DESC';
+$sortKey = preg_replace('/_(asc|desc)$/', '', $sort);
+$orderParams = [];
+switch ($sortKey) {
+    case 'duration':
+        // Duración = end − start (claves meta del esquema, con respaldo de convención).
+        // STR_TO_DATE sobre los primeros 19 chars del ISO («YYYY-MM-DDTHH:MM:SS», sin ms
+        // ni zona): start y end comparten zona, así que la diferencia es correcta.
+        $startKey = $schema['meta']['start'] ?? 'start';
+        $endKey   = $schema['meta']['end'] ?? 'end';
+        $dt = fn() => "STR_TO_DATE(REPLACE(SUBSTRING(JSON_UNQUOTE(JSON_EXTRACT(sc.json_payload, ?)),1,19),'T',' '),'%Y-%m-%d %H:%i:%s')";
+        $orderBy     = "TIMESTAMPDIFF(SECOND, {$dt()}, {$dt()}) $dir, sc.submitted_at DESC, sc.id DESC";
+        $orderParams = [RowScope::jsonPath($startKey), RowScope::jsonPath($endKey)];
+        break;
+    case 'attachments':
+        $orderBy = "COALESCE(JSON_LENGTH(JSON_EXTRACT(sc.json_payload, '$._attachments')), 0) $dir, sc.submitted_at DESC, sc.id DESC";
+        break;
+    case 'geo':
+        $orderBy     = "$geoExpr $dir, sc.submitted_at DESC, sc.id DESC";
+        $orderParams = $geoExprParams;
+        break;
+    default: // 'date'
+        $orderBy = "sc.submitted_at $dir, sc.id $dir";
+        break;
+}
 
 // Estado de revisión más reciente por envío, para mostrar y para poder filtrar.
 $join = 'LEFT JOIN (
@@ -70,9 +117,9 @@ $rows = DB::run(
      FROM submissions_cache sc
      $join
      $where
-     ORDER BY sc.submitted_at $sortDir, sc.id $sortDir
+     ORDER BY $orderBy
      LIMIT $perPage OFFSET $offset",
-    $params
+    array_merge($params, $orderParams)
 )->fetchAll();
 
 $items = array_map(function ($r) use ($schema, $fieldScope) {
@@ -90,27 +137,13 @@ $items = array_map(function ($r) use ($schema, $fieldScope) {
 }, $rows);
 
 // ¿Algún envío tiene coordenadas? (para habilitar/deshabilitar la vista de mapa).
-// Respeta los campos geo ocultos: un campo geo oculto no cuenta y, si se ocultó
-// alguno, tampoco el respaldo `_geolocation` (coherente con FieldScope::apply).
-$geoFields  = Geo::geoFieldPaths($schema);
-$visibleGeo = array_values(array_filter($geoFields, fn($gp) => !FieldScope::isHidden($fieldScope, $gp)));
-$anyGeoHidden = count($visibleGeo) !== count($geoFields);
-$geoConds  = [];
-$geoParams = [$formId];
-if (!$anyGeoHidden) {
-    $geoConds[] = 'JSON_TYPE(JSON_EXTRACT(json_payload, \'$._geolocation[0]\')) IN (\'DOUBLE\',\'INTEGER\',\'DECIMAL\')';
-}
-foreach ($visibleGeo as $gp) {
-    $geoConds[]  = 'COALESCE(JSON_UNQUOTE(JSON_EXTRACT(json_payload, ?)), \'\') <> \'\'';
-    $geoParams[] = '$."' . str_replace(['"', '\\'], '', $gp) . '"';
-}
+// Reutiliza $geoExpr (misma alias `sc`, ya respeta los campos geo ocultos) calculado
+// arriba para no duplicar la lógica.
 $hasGeo = false;
-if ($geoConds) {
-    [$scopeSqlNa, $scopePNa] = RowScope::sqlCondition($scope, 'json_payload');
+if ($geoExpr !== '0') {
     $hasGeo = (bool) DB::run(
-        'SELECT 1 FROM submissions_cache WHERE form_id = ? AND (' . implode(' OR ', $geoConds) . ')'
-            . ' AND ' . $scopeSqlNa . ' LIMIT 1',
-        array_merge($geoParams, $scopePNa)
+        "SELECT 1 FROM submissions_cache sc WHERE sc.form_id = ? AND $geoExpr AND $scopeSql LIMIT 1",
+        array_merge([$formId], $geoExprParams, $scopeP)
     )->fetch();
 }
 

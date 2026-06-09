@@ -67,6 +67,28 @@ final class SubmissionsHttpTest extends HttpTestCase
         @unlink($jar);
     }
 
+    public function testSortByCalculatedDurationIsGlobal(): void
+    {
+        $this->seedUser('admin', 'admin@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $formId = $this->seedForm($accId); // schema null → start/end por convención
+        // Tres envíos con duraciones 10s / 1000s / 100s (start/end ISO en el payload).
+        $this->seedSubmission($formId, 'd10',   ['_id' => 1, 'start' => '2024-01-01T10:00:00', 'end' => '2024-01-01T10:00:10']);
+        $this->seedSubmission($formId, 'd1000', ['_id' => 2, 'start' => '2024-01-01T10:00:00', 'end' => '2024-01-01T10:16:40']);
+        $this->seedSubmission($formId, 'd100',  ['_id' => 3, 'start' => '2024-01-01T10:00:00', 'end' => '2024-01-01T10:01:40']);
+        $jar = $this->login('admin@test.local', 'Secret123!');
+
+        $desc = $this->request('GET', "forms/$formId/submissions?sort=duration_desc", null, $jar);
+        $this->assertSame(200, $desc['status']);
+        $order = array_map(fn($i) => $i['submission_uid'], $desc['json']['data']['items']);
+        $this->assertSame(['d1000', 'd100', 'd10'], $order);
+
+        $asc = $this->request('GET', "forms/$formId/submissions?sort=duration_asc", null, $jar);
+        $orderAsc = array_map(fn($i) => $i['submission_uid'], $asc['json']['data']['items']);
+        $this->assertSame(['d10', 'd100', 'd1000'], $orderAsc);
+        @unlink($jar);
+    }
+
     public function testExportCsvServesAttachmentWithBom(): void
     {
         $this->seedUser('admin', 'admin@test.local', 'Secret123!');
