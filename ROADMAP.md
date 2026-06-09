@@ -9,6 +9,54 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 
 ---
 
+## Próxima sesión: prioridades acordadas
+
+Orden recomendado (cada hito = su propia tanda: acordar modelo → implementar → verificar →
+docs → commit). El usuario, además, revisará toda la app por si hay algo que corregir/mejorar.
+
+### 1. Reorganización de catálogos i18n (PRIMERO — fundacional)
+
+Modelo **acordado** (opción B: un fichero por área × locale). Hacerlo antes que las features,
+para que las claves nuevas nazcan en la estructura buena.
+
+- **Carpetas:** `src/i18n/locales/es/*.json` y `src/i18n/locales/en/*.json`.
+- **Reparto de ficheros** (agrupa los 32 namespaces actuales, ~865 claves; claves **planas por
+  namespace**, sin prefijo de fichero → **ningún `$t(...)` del código cambia**):
+  - `common.json` → common, nav, lang, errors
+  - `landing.json` → landing
+  - `support.json` → support
+  - `guide.json` → guide
+  - `auth.json` → login, forgot, reset
+  - `account.json` → dashboard, profile, notifications, myActivity, myForms, about
+  - `submissions.json` → submissions, detail, review, map, attachments, derived
+  - `stats.json` → stats
+  - `admin.json` → users, accounts, forms, settings, audit
+  - `sharing.json` → shares, share, permissions, rowfilter
+- **Carga:** índice con `import.meta.glob('./locales/*/*.json', { eager: true })` que fusiona
+  `{locale}/{namespace}.json` en `messages[locale][namespace]` (añadir ficheros no toca el cargador).
+- **Verificación:** actualizar `scripts/check-i18n-parity.mjs` para recorrer la estructura de
+  carpetas y comprobar paridad es/en por namespace; de paso, detectar/limpiar claves huérfanas
+  (p. ej. `nav.audit`).
+- Reparto ajustable al arrancar (p. ej. dividir `admin.json`, o sacar `permissions/rowfilter`
+  de `sharing.json`).
+
+### 2. Las cuatro features (en este orden, por valor/esfuerzo)
+
+- [ ] **(a) Lector admin de mensajes de contacto** — vista/bandeja en el panel para leer y
+      gestionar lo que entra por `contact_messages` (hoy quedan en BD + email): lista (fecha,
+      nombre, email, organización, motivo), lectura del texto, «Responder» (mailto), marcar
+      leído/archivado, filtro por motivo. Esfuerzo bajo (la tabla ya existe).
+- [ ] **(c) Modo oscuro + skeletons** — interruptor de tema claro/oscuro (definir variantes
+      oscuras de los tokens + auditar componentes) y placeholders de carga (skeletons) +
+      estados vacíos amables.
+- [ ] **(b) Columnas de solo-lectura + ocultar en stats agregadas** — tercer estado de campo
+      (ver pero no editar) además de ocultar; y evitar fugas de campos ocultos en gráficos
+      agregados derivados.
+- [ ] **(d) Filtros avanzados en la tabla de envíos** — panel de condiciones por campo
+      (campo/operador/valor, Y/O) reutilizando `RowFilterEditor` y los operadores de `RowScope`.
+
+---
+
 ## Prioridad: roadmap 1.x
 
 Candidatas priorizadas por **(demanda real en el foro de KoboToolbox × encaje con la
@@ -133,8 +181,8 @@ Trabajo de portada agrupado (todo toca la landing y el pulido visual):
 
 ### Ideas reabribles (post-publicación)
 
-- [ ] **Lector admin de mensajes de contacto** — una vista en el panel para leer/gestionar lo
-      que entra por `contact_messages` (hoy quedan en BD + notificación por email). Pendiente.
+- [ ] **Lector admin de mensajes de contacto** — promovido a prioridad de la próxima sesión
+      (ver «Próxima sesión: prioridades acordadas» § feature (a)).
 - [ ] **«Organizaciones que usan KoboManager»** — acápite/escaparate en la landing o en
       `/apoyar` con las organizaciones que lo usan (con su permiso). Para cuando haya varias.
 ---
