@@ -118,8 +118,10 @@ decisión de diseño se acuerdan al arrancar.
 
 Trabajo de portada agrupado (todo toca la landing y el pulido visual):
 
-- [ ] **Responsive** — repasar que toda la app (y en especial la landing) se vea bien en
-      pantallas pequeñas.
+- [x] **Responsive** — VERIFICADO a 375 (móvil) y 768 (tablet): landing (+ «Y mucho más»),
+      `/apoyar` (+ formulario), panel, tabla de envíos (scroll-x local, sin overflow de página),
+      Estadísticas (KPIs 2-col, gráficos OK) y drawer móvil. Temas teal/violet revisados tras el
+      token `success` (queda verde, independiente del `primary`). Sin defectos que corregir.
 - [x] **Promocionar mejor las features en el homepage** — HECHO: bajo las 4 tarjetas se añade
       la sección «Y mucho más» con los **enlaces públicos de solo lectura** como tarjeta
       destacada y el resto (permisos por columna, estadísticas, notificaciones email, etiquetas
