@@ -260,8 +260,8 @@ onMounted(() => {
 
     <div v-if="loading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
 
-    <div v-else class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-      <table class="w-full text-left text-sm">
+    <div v-else class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+      <table class="w-full whitespace-nowrap text-left text-sm">
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
           <tr>
             <th class="px-4 py-3">{{ $t('shares.colLink') }}</th>

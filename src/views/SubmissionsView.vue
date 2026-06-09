@@ -343,18 +343,19 @@ onMounted(load)
       </template>
     </header>
 
-    <div class="flex flex-wrap items-center gap-3">
+    <!-- Filtros: rejilla de 2 columnas en móvil (búsqueda a fila completa); flex en escritorio. -->
+    <div class="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center">
       <input
         v-model="search"
         type="search"
         :placeholder="$t('submissions.search')"
-        class="w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+        class="col-span-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:col-auto sm:w-auto sm:max-w-xs"
       />
-      <label class="flex items-center gap-1.5 text-sm text-slate-600">
+      <label class="flex min-w-0 items-center gap-1.5 text-sm text-slate-600">
         {{ $t('submissions.filterReview') }}
         <select
           v-model="reviewFilter"
-          class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:w-auto"
         >
           <option value="">{{ $t('submissions.reviewAll') }}</option>
           <option value="pending">{{ $t('review.pending') }}</option>
@@ -363,11 +364,11 @@ onMounted(load)
           <option value="rejected">{{ $t('review.rejected') }}</option>
         </select>
       </label>
-      <label class="flex items-center gap-1.5 text-sm text-slate-600">
+      <label class="flex min-w-0 items-center gap-1.5 text-sm text-slate-600">
         {{ $t('submissions.sort') }}
         <select
           v-model="sort"
-          class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:w-auto"
         >
           <option value="date_desc">{{ $t('submissions.sortNewest') }}</option>
           <option value="date_asc">{{ $t('submissions.sortOldest') }}</option>
@@ -379,11 +380,11 @@ onMounted(load)
           </optgroup>
         </select>
       </label>
-      <label class="flex items-center gap-1.5 text-sm text-slate-600">
+      <label class="flex min-w-0 items-center gap-1.5 text-sm text-slate-600">
         {{ $t('submissions.perPage') }}
         <select
           v-model.number="perPage"
-          class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:w-auto"
         >
           <option v-for="n in perPageOptions" :key="n" :value="n">{{ n }}</option>
         </select>

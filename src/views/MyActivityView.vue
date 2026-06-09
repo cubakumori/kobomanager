@@ -114,35 +114,35 @@ onMounted(() => {
       <p class="mt-1 text-sm text-slate-500">{{ $t('myActivity.subtitle') }}</p>
     </header>
 
-    <!-- Filtros -->
-    <div class="flex flex-wrap items-end gap-3">
+    <!-- Filtros: rejilla de 2 columnas en móvil (evita una fila por filtro); flex en escritorio. -->
+    <div class="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-end">
       <label class="flex flex-col gap-1 text-xs text-slate-500">
         {{ $t('audit.filterAction') }}
-        <select v-model="fAction" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30">
+        <select v-model="fAction" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:w-auto">
           <option value="">{{ $t('audit.allActions') }}</option>
           <option v-for="a in actions" :key="a" :value="a">{{ actionLabel(a) }}</option>
         </select>
       </label>
       <label class="flex flex-col gap-1 text-xs text-slate-500">
         {{ $t('audit.filterForm') }}
-        <select v-model="fForm" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30">
+        <select v-model="fForm" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:w-auto">
           <option value="">{{ $t('audit.allForms') }}</option>
           <option v-for="f in forms" :key="f.id" :value="f.id">{{ f.name }}</option>
         </select>
       </label>
       <label class="flex flex-col gap-1 text-xs text-slate-500">
         {{ $t('audit.filterFrom') }}
-        <input v-model="fFrom" type="date" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30" />
+        <input v-model="fFrom" type="date" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:w-auto" />
       </label>
       <label class="flex flex-col gap-1 text-xs text-slate-500">
         {{ $t('audit.filterTo') }}
-        <input v-model="fTo" type="date" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30" />
+        <input v-model="fTo" type="date" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:w-auto" />
       </label>
       <label class="flex flex-col gap-1 text-xs text-slate-500">
         {{ $t('audit.search') }}
-        <input v-model="search" type="search" :placeholder="$t('audit.searchHint')" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30" />
+        <input v-model="search" type="search" :placeholder="$t('audit.searchHint')" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:w-auto" />
       </label>
-      <button class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50" @click="clearFilters">
+      <button class="w-full self-end rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 sm:w-auto" @click="clearFilters">
         {{ $t('audit.clear') }}
       </button>
     </div>

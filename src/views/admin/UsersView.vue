@@ -196,10 +196,10 @@ onMounted(load)
     </Modal>
 
     <!-- Listado -->
-    <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+    <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
       <div v-if="listError" class="p-4 text-sm text-red-700">{{ listError }}</div>
       <div v-else-if="loading" class="p-4 text-sm text-slate-500">{{ $t('common.loading') }}</div>
-      <table v-else class="w-full text-left text-sm">
+      <table v-else class="w-full whitespace-nowrap text-left text-sm">
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
           <tr>
             <th class="px-4 py-3">{{ $t('common.name') }}</th>

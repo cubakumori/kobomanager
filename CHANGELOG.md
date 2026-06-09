@@ -38,6 +38,14 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
+- **Responsive (2.ª pasada)**: las tablas de administración (Usuarios, Cuentas, Enlaces,
+  Formularios, Permisos) pasan de `overflow-hidden` (recortaban columnas y no se podían
+  desplazar) a desplazamiento horizontal con celdas `whitespace-nowrap` (las columnas ya no se
+  aplastan ni pierden contenido). Las barras de filtros de **«Mi actividad»** y de la **tabla de
+  envíos** se reorganizan en una rejilla de 2 columnas en móvil (menos filas) y vuelven a una
+  sola línea en escritorio. Se corrige además el centrado de **todos los modales** (`Modal.vue`
+  pasaba de `grid place-items-center` a contenido que podía exceder el ancho del viewport en
+  móvil; ahora usa flex y nunca se sale de la pantalla).
 - **Responsive de la tabla de envíos**: en pantallas pequeñas el título del formulario ocupa su
   propia línea (ya no se encoge por los botones) y las acciones (Columnas, Mapa, Estadísticas,
   Exportar) se agrupan en un único menú **«Acciones»** (nunca parten en varias filas); en
