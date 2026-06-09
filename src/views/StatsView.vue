@@ -237,8 +237,9 @@ onMounted(load)
         </div>
       </div>
 
-      <!-- Tendencia reciente (vs periodo anterior equivalente) -->
-      <div v-if="stats.trend" class="grid gap-4 grid-cols-1 sm:grid-cols-2">
+      <!-- Tendencia reciente (vs periodo anterior equivalente). No se muestra en
+           formularios draft/archivados: no se espera actividad reciente. -->
+      <div v-if="stats.trend && !['draft', 'archived'].includes(stats.deployment_status)" class="grid gap-4 grid-cols-1 sm:grid-cols-2">
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.last7') }}</p>
           <div class="mt-1 flex items-baseline gap-2">

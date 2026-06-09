@@ -27,6 +27,25 @@ ChartJS.register(
 // sobre cada barra/segmento, no solo en el hover (clave en móvil). Solo actúa si el
 // gráfico declara `options.plugins.valueLabels`; el resto de gráficos no se ven afectados.
 //   { base?: number }  base>0 → añade «(p%)»; en doughnut, base por defecto = suma del dataset.
+// ¿El color es claro? (luminancia) → para elegir texto oscuro encima. Acepta #rgb/#rrggbb
+// y rgb()/rgba(). Si no se puede interpretar, asume oscuro (texto blanco, comportamiento previo).
+function isLightColor(color) {
+  if (typeof color !== 'string') return false
+  let r, g, b
+  const hex = color.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i)
+  if (hex) {
+    let h = hex[1]
+    if (h.length === 3) h = h.split('').map((c) => c + c).join('')
+    r = parseInt(h.slice(0, 2), 16); g = parseInt(h.slice(2, 4), 16); b = parseInt(h.slice(4, 6), 16)
+  } else {
+    const m = color.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i)
+    if (!m) return false
+    r = +m[1]; g = +m[2]; b = +m[3]
+  }
+  // Luminancia perceptual (0–255). >150 ≈ claro.
+  return (0.299 * r + 0.587 * g + 0.114 * b) > 150
+}
+
 const valueLabelsPlugin = {
   id: 'valueLabels',
   afterDatasetsDraw(chart) {
@@ -53,7 +72,11 @@ const valueLabelsPlugin = {
         if (type === 'doughnut') {
           if (el.endAngle - el.startAngle < 0.3) return // segmento muy pequeño: solo en leyenda/hover
           const p = el.tooltipPosition()
-          ctx.fillStyle = '#fff'
+          // Color de texto por contraste con el segmento: blanco sobre fondo oscuro,
+          // gris oscuro sobre fondo claro (p. ej. el «sin adjuntos/sin geo» gris claro,
+          // donde el blanco antes era ilegible).
+          const bg = Array.isArray(ds.backgroundColor) ? ds.backgroundColor[i] : ds.backgroundColor
+          ctx.fillStyle = isLightColor(bg) ? '#1e293b' : '#fff'
           ctx.textAlign = 'center'
           ctx.textBaseline = 'middle'
           ctx.fillText(txt, p.x, p.y)

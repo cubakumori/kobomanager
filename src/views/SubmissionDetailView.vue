@@ -322,23 +322,28 @@ onMounted(load)
             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
           ></textarea>
           <div class="flex gap-3">
+            <!-- El botón del estado ACTUAL queda inactivo (evita re-aplicar el mismo
+                 estado, que insertaría una revisión duplicada). -->
             <button
-              :disabled="reviewing"
-              class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+              :disabled="reviewing || sub.review_status === 'approved'"
+              :title="sub.review_status === 'approved' ? $t('detail.alreadyStatus') : ''"
+              class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
               @click="submitReview('approved')"
             >
               {{ $t('detail.approve') }}
             </button>
             <button
-              :disabled="reviewing"
-              class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
+              :disabled="reviewing || sub.review_status === 'on_hold'"
+              :title="sub.review_status === 'on_hold' ? $t('detail.alreadyStatus') : ''"
+              class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
               @click="submitReview('on_hold')"
             >
               {{ $t('detail.standby') }}
             </button>
             <button
-              :disabled="reviewing"
-              class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+              :disabled="reviewing || sub.review_status === 'rejected'"
+              :title="sub.review_status === 'rejected' ? $t('detail.alreadyStatus') : ''"
+              class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
               @click="submitReview('rejected')"
             >
               {{ $t('detail.reject') }}

@@ -19,7 +19,7 @@ if (Request::method() !== 'GET') {
     ErrorResponse::send('VALIDATION_ERROR', 'Método no permitido', 405);
 }
 
-$form = DB::run('SELECT id, name, schema_json FROM forms WHERE id = ? AND active = 1', [$formId])->fetch();
+$form = DB::run('SELECT id, name, schema_json, deployment_status FROM forms WHERE id = ? AND active = 1', [$formId])->fetch();
 if (!$form) {
     ErrorResponse::send('NOT_FOUND', 'Formulario no encontrado');
 }
@@ -292,6 +292,7 @@ if ($durations) {
 
 ErrorResponse::ok([
     'form'            => ['id' => (int) $form['id'], 'name' => $form['name']],
+    'deployment_status' => $form['deployment_status'] ?? null,
     'total'           => $total,
     'last_submission' => $lastSub,
     'by_day'          => $byDay,

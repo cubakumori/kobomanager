@@ -33,6 +33,13 @@ const auth = useAuthStore()
           <p class="mt-1 text-sm text-slate-500">{{ $t('dashboard.accountsDesc') }}</p>
         </RouterLink>
         <RouterLink
+          :to="{ name: 'admin-audit' }"
+          class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:ring-primary-300"
+        >
+          <h2 class="font-semibold text-slate-900">{{ $t('dashboard.audit') }}</h2>
+          <p class="mt-1 text-sm text-slate-500">{{ $t('dashboard.auditDesc') }}</p>
+        </RouterLink>
+        <RouterLink
           :to="{ name: 'admin-settings' }"
           class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:ring-primary-300"
         >
