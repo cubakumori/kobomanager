@@ -55,8 +55,20 @@ class SubmissionSync {
                 if (!$uid) continue;
                 $seenUids[$uid] = true;
 
-                $submittedRaw = $sub['_submission_time'] ?? null;
-                $submittedAt  = $submittedRaw ? date('Y-m-d H:i:s', strtotime($submittedRaw)) : null;
+                // `_submission_time` viene de Kobo en UTC; lo proyectamos a la columna
+                // DATETIME anclado en UTC (no en la zona del servidor PHP), para que las
+                // agregaciones por día/mes/tendencia sean consistentes con la hora/día
+                // derivados y robustas en servidores con TZ ≠ UTC (ver Derived::ts).
+                $submittedAt = null;
+                if (is_string($submittedRaw = $sub['_submission_time'] ?? null) && trim($submittedRaw) !== '') {
+                    try {
+                        $submittedAt = (new DateTime($submittedRaw, new DateTimeZone('UTC')))
+                            ->setTimezone(new DateTimeZone('UTC'))
+                            ->format('Y-m-d H:i:s');
+                    } catch (Exception $e) {
+                        $submittedAt = null;
+                    }
+                }
 
                 DB::run(
                     'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, search_text, submitted_at, last_synced_at)

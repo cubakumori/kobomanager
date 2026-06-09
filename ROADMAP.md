@@ -86,7 +86,7 @@ sesión propia** (acordar el modelo antes de codificar + verificación contra da
 
 ---
 
-## Retoques priorizados (UX/pulido — próxima sesión)
+## Retoques priorizados (UX/pulido) — HECHOS
 
 Mejoras pequeñas acordadas; se hacen antes que los frentes mayores. Las que tocan una
 decisión de diseño se acuerdan al arrancar.
@@ -106,7 +106,27 @@ decisión de diseño se acuerdan al arrancar.
       `success-*` y los 2 verdes hex de los gráficos leen la variable CSS del token. README
       (3 tokens) y `CONTRIBUTING.md` actualizados. Verificado: build OK, token resuelve
       (`--color-success-600` = `#16a34a`), «Aprobados» en verde, persiste bajo `theme-violet`.
+- [x] **Robustez de zona en `submitted_at`** — HECHO (seguimiento del retoque de zona horaria).
+      `SubmissionSync` proyectaba `_submission_time`→`submitted_at` con `date()/strtotime()`,
+      dependiente de la TZ del servidor; ahora se ancla explícitamente en UTC (como
+      `Derived::ts`), para que «por día/mes» y «tendencias» sean correctas también en
+      servidores con TZ ≠ UTC. Sin migración (datos sincronizados en servidor UTC no cambian).
 
+---
+
+## Próxima sesión: portada / landing (antes de publicar)
+
+Trabajo de portada agrupado (todo toca la landing y el pulido visual):
+
+- [ ] **Responsive** — repasar que toda la app (y en especial la landing) se vea bien en
+      pantallas pequeñas.
+- [ ] **Promocionar mejor las features en el homepage** — hoy la landing destaca 4
+      (sin cuentas Kobo · revisión interna · token seguro · acceso por filas) y omite varias
+      vendibles: **enlaces públicos de solo lectura** (con/sin contraseña, caducidad, alcance
+      por filas/columnas) y **notificaciones por email** (resumen diario) como mínimo; otras
+      candidatas: permisos por columna, estadísticas, etiquetas legibles, mapa/geo, export CSV,
+      edición de envíos.
+- [ ] **Donación** — definir destino/método del enlace «Donar» (hoy placeholder).
 ---
 
 ## Pendiente de validar con datos reales

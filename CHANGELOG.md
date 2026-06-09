@@ -34,9 +34,16 @@ Todos los cambios notables de KoboManager. El formato sigue
   (acceso poco frecuente; evita que el menú desborde la pantalla).
 - **Estadísticas**: las tarjetas de tendencia (7/30 días) no se muestran en formularios
   *draft*/*archivados* (no se espera actividad reciente).
+- **Estadísticas — orden**: «Estado de revisión» pasa delante de «Envíos por mes», y las
+  tarjetas de tendencia (7/30 días) bajan justo detrás de la serie temporal a la que se
+  refieren; así en pantallas pequeñas (apiladas) quedan inmediatamente tras «Envíos por mes».
 
 ### Corregido
 
+- **Zona horaria de `submitted_at`**: al sincronizar, la proyección de `_submission_time` a la
+  columna `submitted_at` se anclaba con la zona del servidor PHP; ahora se ancla en UTC (como
+  el resto del manejo temporal), para que «por día/mes» y «tendencias» sean correctas también
+  en servidores con zona horaria distinta de UTC.
 - **Revisión**: el botón del estado actual queda inactivo, evitando re-aplicar el mismo
   estado (que insertaba una revisión duplicada).
 - **Gráficos**: el valor mostrado sobre cada porción del donut elige color por contraste,
