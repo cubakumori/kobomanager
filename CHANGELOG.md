@@ -6,6 +6,20 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [Sin publicar]
 
+### Cambiado
+
+- **Menú lateral admin más corto**: «Auditoría» se mueve del menú a una tarjeta del panel
+  (acceso poco frecuente; evita que el menú desborde la pantalla).
+- **Estadísticas**: las tarjetas de tendencia (7/30 días) no se muestran en formularios
+  *draft*/*archivados* (no se espera actividad reciente).
+
+### Corregido
+
+- **Revisión**: el botón del estado actual queda inactivo, evitando re-aplicar el mismo
+  estado (que insertaba una revisión duplicada).
+- **Gráficos**: el valor mostrado sobre cada porción del donut elige color por contraste,
+  legible también sobre las porciones claras («sin adjuntos» / «sin ubicación»).
+
 ### Añadido
 
 - **Estadísticas con tendencias**: la serie temporal (por día/mes) añade una línea de
