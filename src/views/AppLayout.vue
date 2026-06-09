@@ -42,7 +42,7 @@ useDialogA11y(drawer, () => { open.value = false }, open)
       <!-- Barra superior (solo móvil) — marca a la izquierda y hamburguesa neutra a la
            derecha (control de navegación; el azul se reserva para las acciones). -->
       <header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
-        <span class="text-lg font-semibold tracking-tight text-slate-900">KoboManager</span>
+        <RouterLink to="/" class="text-lg font-semibold tracking-tight text-slate-900 transition-colors hover:text-primary-700">KoboManager</RouterLink>
         <button
           class="km-hamburger"
           aria-label="Menu"

@@ -30,7 +30,11 @@ const linkActive = 'bg-primary-600 text-white'
 <template>
   <aside class="flex h-screen w-60 flex-col bg-slate-900 text-white">
     <div class="flex items-center justify-between px-5 py-5">
-      <span class="text-lg font-semibold tracking-tight">KoboManager</span>
+      <RouterLink
+        to="/"
+        class="text-lg font-semibold tracking-tight transition-colors hover:text-primary-300"
+        @click="emit('navigate')"
+      >KoboManager</RouterLink>
       <button
         class="rounded-lg p-1 text-slate-300 hover:bg-slate-700/60 hover:text-white lg:hidden"
         aria-label="Cerrar menú"

@@ -67,7 +67,7 @@
     "feat4Title": "Row-level access",
     "feat4Desc": "Decide which submissions each user sees —by a field value or by who submitted them—, not just which forms.",
     "moreTitle": "And much more",
-    "moreSubtitle": "Built for teams that need to share and analyze data without giving up control.",
+    "moreSubtitle": "Built for teams that need to share and analyze data without giving up control and security.",
     "feat5Title": "Public read-only links",
     "feat5Desc": "Share a form by link, no account required: optionally with a password, an expiry date and the same row- and column-level scope you apply to your team.",
     "chipColumns": "Column-level permissions",
