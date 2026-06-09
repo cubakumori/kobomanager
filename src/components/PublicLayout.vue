@@ -62,10 +62,10 @@ const drawerLink =
             :to="{ name: 'guide' }"
             class="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
           >{{ $t('landing.navTutorials') }}</RouterLink>
-          <span
-            class="cursor-not-allowed whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-slate-400"
-            :title="$t('landing.soon')"
-          >{{ $t('landing.navDonate') }}</span>
+          <RouterLink
+            :to="{ name: 'support' }"
+            class="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          >{{ $t('landing.navSupport') }}</RouterLink>
           <button
             class="rounded-lg px-2 py-2 text-sm font-semibold text-slate-500 hover:text-slate-900"
             title="ES / EN"
@@ -144,9 +144,9 @@ const drawerLink =
           <RouterLink :to="{ name: 'guide' }" :class="drawerLink" @click="showMenu = false">
             {{ $t('landing.navTutorials') }}
           </RouterLink>
-          <span :class="[drawerLink, 'cursor-not-allowed text-slate-500 hover:bg-transparent hover:text-slate-500']">
-            {{ $t('landing.navDonate') }}
-          </span>
+          <RouterLink :to="{ name: 'support' }" :class="drawerLink" @click="showMenu = false">
+            {{ $t('landing.navSupport') }}
+          </RouterLink>
           <button :class="[drawerLink, 'w-full text-left']" @click="toggleLocale">
             {{ $i18n.locale === 'es' ? 'English' : 'Español' }}
           </button>

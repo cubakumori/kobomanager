@@ -40,6 +40,9 @@ define('COOKIE_SAMESITE', 'Lax');
 // --- Email (Resend) ---
 define('RESEND_API_KEY', '');
 define('MAIL_FROM', 'KoboManager <noreply@tudominio.com>');
+// Destino de los mensajes del formulario de contacto público (página «Apoyar»).
+// Vacío = no se intenta notificar por email (el mensaje igual se guarda en BD).
+define('CONTACT_TO', 'contacto@tudominio.com');
 
 // --- App ---
 define('APP_URL', 'http://localhost:5173');

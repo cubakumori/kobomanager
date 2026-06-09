@@ -6,7 +6,7 @@
  * Si RESEND_API_KEY está vacío, no envía y devuelve false (útil en desarrollo).
  */
 class Mailer {
-    public static function send(string $to, string $subject, string $html, ?string $text = null): bool {
+    public static function send(string $to, string $subject, string $html, ?string $text = null, ?string $replyTo = null): bool {
         if (RESEND_API_KEY === '') {
             error_log("Mailer: RESEND_API_KEY no configurado; email a $to no enviado.");
             return false;
@@ -20,6 +20,11 @@ class Mailer {
         ];
         if ($text !== null) {
             $payload['text'] = $text;
+        }
+        // Reply-To: útil en el formulario de contacto para responder al visitante
+        // directamente (el remitente real sigue siendo MAIL_FROM, dominio verificado).
+        if ($replyTo !== null && $replyTo !== '') {
+            $payload['reply_to'] = $replyTo;
         }
 
         $ch = curl_init('https://api.resend.com/emails');

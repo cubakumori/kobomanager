@@ -8,6 +8,14 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Página «Apoyar» (`/apoyar`)**: nueva página pública que reemplaza el enlace «Donar»
+  (antes inerte, «Próximamente») por «Apoyar» en el nav y el menú móvil. Reúne: uso libre +
+  cómo obtener la app (repo GitHub y Guía), **donaciones** (PayPal y Ko-fi), **servicios**
+  (instalación llave en mano, soporte, desarrollos a medida, formación) y un **formulario de
+  contacto** con motivo (consulta / contratar / propuesta / organización que la usa). Cada
+  mensaje se guarda en la tabla `contact_messages` (fuente de verdad) y se intenta una
+  notificación por email best-effort a `CONTACT_TO` con Reply-To del remitente; endpoint
+  público `POST /api/v1/public/contact`, rate-limited (5/h por IP). 5 tests de integración HTTP.
 - **Promoción de features en la portada**: bajo las 4 tarjetas existentes se añade una sección
   «Y mucho más» que destaca los **enlaces públicos de solo lectura** (con/sin contraseña,
   caducidad y el mismo alcance por filas/columnas que el equipo) como tarjeta principal, y

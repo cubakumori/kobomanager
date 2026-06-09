@@ -143,6 +143,8 @@ $routes = [
     'public/share/:token/submissions/:uid' => 'public/share_submission.php',
     'public/share/:token/submissions/:uid/attachments/:attId' => 'public/share_attachment.php',
     'public/share/:token/map'              => 'public/share_map.php',
+    // Formulario de contacto público (página «Apoyar»): sin sesión.
+    'public/contact'                       => 'public/contact.php',
 ];
 
 /** Empareja la ruta solicitada contra los patrones; devuelve [archivo, params] o [null, []]. */

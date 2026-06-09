@@ -124,7 +124,17 @@ Trabajo de portada agrupado (todo toca la landing y el pulido visual):
       la sección «Y mucho más» con los **enlaces públicos de solo lectura** como tarjeta
       destacada y el resto (permisos por columna, estadísticas, notificaciones email, etiquetas
       legibles, mapa/geo, export CSV, edición) como chips. Estilo *pills* verdes intacto.
-- [ ] **Donación** — definir destino/método del enlace «Donar» (hoy placeholder).
+- [x] **Donación / Apoyo** — HECHO: el enlace «Donar» (placeholder) pasa a **«Apoyar»** y abre
+      la nueva página `/apoyar` (uso libre + descargar, donaciones PayPal/Ko-fi, servicios y
+      formulario de contacto). Los mensajes se guardan en `contact_messages` + notificación
+      email best-effort.
+
+### Ideas reabribles (post-publicación)
+
+- [ ] **Lector admin de mensajes de contacto** — una vista en el panel para leer/gestionar lo
+      que entra por `contact_messages` (hoy quedan en BD + notificación por email). Pendiente.
+- [ ] **«Organizaciones que usan KoboManager»** — acápite/escaparate en la landing o en
+      `/apoyar` con las organizaciones que lo usan (con su permiso). Para cuando haya varias.
 ---
 
 ## Pendiente de validar con datos reales

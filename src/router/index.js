@@ -11,6 +11,7 @@ const routes = [
   { path: '/forgot-password', name: 'forgot-password', component: () => import('../views/ForgotPasswordView.vue'), meta: { public: true } },
   { path: '/reset-password', name: 'reset-password', component: () => import('../views/ResetPasswordView.vue'), meta: { public: true } },
   { path: '/guide', name: 'guide', component: () => import('../views/GuideView.vue'), meta: { public: true, shellWhenAuthed: true } },
+  { path: '/apoyar', name: 'support', component: () => import('../views/SupportView.vue'), meta: { public: true, shellWhenAuthed: true } },
   { path: '/s/:token', name: 'share', component: () => import('../views/PublicShareView.vue'), meta: { public: true } },
 
   { path: '/dashboard', name: 'dashboard', component: () => import('../views/DashboardView.vue'), meta: shell() },
