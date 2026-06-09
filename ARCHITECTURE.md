@@ -287,7 +287,8 @@ a fresh database you drop and re‑apply all files. Runtime‑configurable behav
 Key tables: `kobo_accounts`, `users`, `user_sessions`, `forms`, `submissions_cache`,
 `submission_reviews`, `user_form_permissions`, `notification_config`, `audit_log`,
 `login_attempts`, `rate_hits`, `settings`, `password_resets`, `share_links`,
-`contact_messages` (mensajes del formulario público de contacto de la página «Apoyar»).
+`contact_messages` (messages from the public contact form on the «Apoyar» page; admins read
+and manage them from the `/admin/messages` inbox — statuses `new`/`read`/`archived`).
 
 ## Tests
 

@@ -244,6 +244,34 @@
     "action_download_attachment": "Attachment downloaded",
     "action_share_create": "Share link created",
     "action_share_revoke": "Share link revoked",
-    "action_share_delete": "Share link deleted"
+    "action_share_delete": "Share link deleted",
+    "action_contact_message_archive": "Contact message archived",
+    "action_contact_message_delete": "Contact message deleted"
+  },
+  "messages": {
+    "title": "Contact messages",
+    "subtitle": "Inbox for the contact form on the “Support” page.",
+    "newCount": "{n} new",
+    "loadError": "Messages could not be loaded.",
+    "updateError": "The message could not be updated.",
+    "deleteError": "The message could not be deleted.",
+    "allStatuses": "All statuses",
+    "statusNew": "New",
+    "statusRead": "Read",
+    "statusArchived": "Archived",
+    "allTopics": "All topics",
+    "colDate": "Date",
+    "colFrom": "From",
+    "colTopic": "Topic",
+    "colStatus": "Status",
+    "empty": "No messages.",
+    "readTitle": "Message",
+    "org": "Organization",
+    "notEmailed": "The email notification for this message was not sent.",
+    "archive": "Archive",
+    "unarchive": "Unarchive",
+    "reply": "Reply",
+    "confirmDeleteTitle": "Delete message",
+    "confirmDelete": "The message will be permanently deleted. Continue?"
   }
 }

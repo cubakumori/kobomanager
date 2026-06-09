@@ -26,10 +26,11 @@ docs → commit). El usuario, además, revisará toda la app por si hay algo que
 
 ### 2. Las cuatro features (en este orden, por valor/esfuerzo)
 
-- [ ] **(a) Lector admin de mensajes de contacto** — vista/bandeja en el panel para leer y
-      gestionar lo que entra por `contact_messages` (hoy quedan en BD + email): lista (fecha,
-      nombre, email, organización, motivo), lectura del texto, «Responder» (mailto), marcar
-      leído/archivado, filtro por motivo. Esfuerzo bajo (la tabla ya existe).
+- [x] **(a) Lector admin de mensajes de contacto** — HECHO: bandeja `/admin/messages`
+      (lista paginada + filtros por estado/motivo, modal de lectura con marcado automático
+      de leído, Responder por mailto, archivar/desarchivar y eliminar con confirmación),
+      columna `status` en `contact_messages`, card «Mensajes» con contador de nuevos en el
+      Dashboard, auditoría de archivar/eliminar y 4 tests HTTP.
 - [ ] **(c) Modo oscuro + skeletons** — interruptor de tema claro/oscuro (definir variantes
       oscuras de los tokens + auditar componentes) y placeholders de carga (skeletons) +
       estados vacíos amables.

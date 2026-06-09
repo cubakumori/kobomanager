@@ -244,6 +244,34 @@
     "action_download_attachment": "Adjunto descargado",
     "action_share_create": "Enlace creado",
     "action_share_revoke": "Enlace revocado",
-    "action_share_delete": "Enlace eliminado"
+    "action_share_delete": "Enlace eliminado",
+    "action_contact_message_archive": "Mensaje de contacto archivado",
+    "action_contact_message_delete": "Mensaje de contacto eliminado"
+  },
+  "messages": {
+    "title": "Mensajes de contacto",
+    "subtitle": "Bandeja del formulario de contacto de la página «Apoyar».",
+    "newCount": "{n} nuevos",
+    "loadError": "No se pudieron cargar los mensajes.",
+    "updateError": "No se pudo actualizar el mensaje.",
+    "deleteError": "No se pudo eliminar el mensaje.",
+    "allStatuses": "Todos los estados",
+    "statusNew": "Nuevo",
+    "statusRead": "Leído",
+    "statusArchived": "Archivado",
+    "allTopics": "Todos los motivos",
+    "colDate": "Fecha",
+    "colFrom": "Remitente",
+    "colTopic": "Motivo",
+    "colStatus": "Estado",
+    "empty": "No hay mensajes.",
+    "readTitle": "Mensaje",
+    "org": "Organización",
+    "notEmailed": "La notificación por email de este mensaje no llegó a enviarse.",
+    "archive": "Archivar",
+    "unarchive": "Desarchivar",
+    "reply": "Responder",
+    "confirmDeleteTitle": "Eliminar mensaje",
+    "confirmDelete": "El mensaje se eliminará definitivamente. ¿Continuar?"
   }
 }

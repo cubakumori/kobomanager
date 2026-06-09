@@ -15,7 +15,9 @@
     "about": "Acerca de Kobo",
     "aboutDesc": "Qué es KoboToolbox, cómo crear una cuenta y dónde obtener tu API token.",
     "guide": "Guía de uso",
-    "guideDesc": "Cómo funciona la app: roles, flujo de trabajo y preguntas frecuentes."
+    "guideDesc": "Cómo funciona la app: roles, flujo de trabajo y preguntas frecuentes.",
+    "messages": "Mensajes",
+    "messagesDesc": "Lee y gestiona los mensajes del formulario de contacto."
   },
   "profile": {
     "title": "Mi perfil",

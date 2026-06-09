@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS contact_messages (
     message     TEXT NOT NULL,
     ip          VARCHAR(45)  NULL,
     emailed     TINYINT(1)   NOT NULL DEFAULT 0,         -- 1 si la notificación por email salió
+    status      VARCHAR(16)  NOT NULL DEFAULT 'new',     -- new|read|archived (bandeja admin)
     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_created (created_at)
+    INDEX idx_created (created_at),
+    INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

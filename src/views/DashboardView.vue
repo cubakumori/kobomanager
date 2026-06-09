@@ -1,8 +1,22 @@
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { RouterLink } from 'vue-router'
+import api from '../services/api'
 
 const auth = useAuthStore()
+
+// Contador de mensajes de contacto nuevos (solo admin; best-effort).
+const newMessages = ref(0)
+onMounted(async () => {
+  if (!auth.isAdmin) return
+  try {
+    const { data } = await api.get('/admin/messages', { params: { per_page: 1 } })
+    newMessages.value = data.data.new_count
+  } catch {
+    /* la card funciona igual sin contador */
+  }
+})
 </script>
 
 <template>
@@ -38,6 +52,19 @@ const auth = useAuthStore()
         >
           <h2 class="font-semibold text-slate-900">{{ $t('dashboard.audit') }}</h2>
           <p class="mt-1 text-sm text-slate-500">{{ $t('dashboard.auditDesc') }}</p>
+        </RouterLink>
+        <RouterLink
+          :to="{ name: 'admin-messages' }"
+          class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:ring-primary-300"
+        >
+          <h2 class="flex items-center gap-2 font-semibold text-slate-900">
+            {{ $t('dashboard.messages') }}
+            <span
+              v-if="newMessages"
+              class="inline-flex rounded-full bg-primary-600 px-2 py-0.5 text-xs font-semibold text-white"
+            >{{ newMessages }}</span>
+          </h2>
+          <p class="mt-1 text-sm text-slate-500">{{ $t('dashboard.messagesDesc') }}</p>
         </RouterLink>
         <RouterLink
           :to="{ name: 'admin-settings' }"

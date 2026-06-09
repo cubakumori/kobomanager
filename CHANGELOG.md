@@ -23,6 +23,17 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Bandeja admin de mensajes de contacto (`/admin/messages`)**: los mensajes del formulario
+  público de la página «Apoyar» (tabla `contact_messages`) ahora se leen y gestionan desde el
+  panel, no solo por email. Lista paginada con filtros por estado y motivo; clic en una fila →
+  modal con el mensaje completo (al abrirlo se marca **leído** automáticamente), botón
+  **Responder** (mailto con asunto prellenado), **archivar/desarchivar** y **eliminar** con
+  confirmación. La tabla gana la columna `status` (`new`/`read`/`archived`, DDL canónico en
+  `db/009_contact_messages.sql`). Nueva card «Mensajes» en el Dashboard admin con contador de
+  no leídos. Archivar y eliminar quedan auditados (`contact_message_archive`/`_delete`); el
+  paso a leído no se audita para no generar ruido. Endpoints admin `GET /admin/messages`
+  (filtros + `new_count`) y `PUT`/`DELETE /admin/messages/{id}`. 4 tests de integración HTTP.
+
 - **Página «Apoyar» (`/apoyar`)**: nueva página pública que reemplaza el enlace «Donar»
   (antes inerte, «Próximamente») por «Apoyar» en el nav y el menú móvil. Reúne: uso libre +
   cómo obtener la app (repo GitHub y Guía), **donaciones** (PayPal y Ko-fi), **servicios**

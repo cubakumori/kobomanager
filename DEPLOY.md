@@ -168,7 +168,8 @@ and **no SMTP server/port** to configure. Email powers:
 - the **daily summary** of new submissions (cron, §7),
 - **password recovery** (the "forgot password" flow), when enabled, and
 - the **contact form** on the public `/apoyar` page (sends to `CONTACT_TO`; messages are also
-  stored in `contact_messages`, so nothing is lost even if email delivery fails).
+  stored in `contact_messages`, so nothing is lost even if email delivery fails — admins can
+  read and manage them from the in-app inbox at `/admin/messages`).
 
 Setup:
 
