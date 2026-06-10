@@ -4,9 +4,9 @@
 //
 // Diseño (alineado con la página «Apoyar»): titular centrado, tarjetas GRISES
 // (bg-slate-50, flipan solas en oscuro) y tintes solo en secciones clave —
-// Flujo y Seguridad en azul, Datos y Actualizar/Resync en celeste, Compartir
-// en verde (única que conserva icono). En escritorio, las secciones cortas se
-// emparejan a dos columnas.
+// Flujo y Seguridad en azul, Datos en celeste, Actualizar/Resync y Compartir
+// en verde (este último, único con icono). En escritorio, las secciones cortas
+// se emparejan a dos columnas.
 const flowSteps = [1, 2, 3, 4]
 </script>
 
@@ -52,9 +52,9 @@ const flowSteps = [1, 2, 3, 4]
       <p class="text-sm text-slate-500">{{ $t('guide.formActionsNote') }}</p>
     </section>
 
-    <!-- Actualizar vs Resync (celeste) -->
-    <section class="space-y-3 rounded-2xl bg-sky-50 p-6 ring-1 ring-sky-200 dark:bg-sky-950/30 dark:ring-sky-900">
-      <h2 class="font-semibold text-sky-900 dark:text-sky-300">{{ $t('guide.syncTitle') }}</h2>
+    <!-- Actualizar vs Resync (verde) -->
+    <section class="space-y-3 rounded-2xl bg-accent-50 p-6 ring-1 ring-accent-200 dark:bg-accent-900/25 dark:ring-accent-800">
+      <h2 class="font-semibold text-accent-900 dark:text-accent-300">{{ $t('guide.syncTitle') }}</h2>
       <p class="text-sm text-slate-600">{{ $t('guide.syncIntro') }}</p>
       <div class="grid gap-3 sm:grid-cols-2">
         <div class="rounded-lg bg-white/70 p-4 ring-1 ring-white/60 dark:ring-white/10">
