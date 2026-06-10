@@ -305,8 +305,15 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   Chart text colors re-read the slate variables and re-render on toggle. The landing banner
   swaps to a night WebP variant.
 - **Loading skeletons**: `Skeleton.vue` (variants `table`/`lines`/`cards`) replaces the
-  "Loading…" text in the main list/detail/stats views (initial load only; filter-driven
-  refreshes keep the table dimmed instead of flashing).
+  "Loading…" text in the main list/detail/stats views (initial load only — a `loaded` flag
+  per view; filter-driven refreshes keep the table dimmed instead of flashing).
+- **Frozen table columns**: the global `table_freeze` setting (`first` default | `none`,
+  admin Settings, served by public `GET /config`) pins the first column of every table on
+  horizontal scroll. `composables/appConfig.js` fetches/caches it (localStorage) and
+  exposes `useTableFreeze()`; each table applies a conditional sticky class to its first
+  `th`/`td` (solid background + `group-hover`, capped at ~40% of the viewport width on
+  small screens). In the submissions table the second pinned column ("Submitted") only
+  freezes from 540 px up.
 - **PWA / offline**: `vite-plugin-pwa` in `injectManifest` mode with a hand-written service
   worker (`src/sw.js`): app shell precached, SPA navigations fall back to `index.html`
   (denylisting `/api` so CSV/attachment downloads hit the network), API GETs cached

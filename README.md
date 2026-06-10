@@ -71,8 +71,10 @@ Open http://localhost:5173. The dashboard shows the result of `/api/v1/health`.
 Standalone scripts if needed: `npm run dev:api`, `npm run dev:web`, `npm run build`.
 
 > A `predev` step frees ports `8787`/`5173` automatically before starting (so a leftover
-> server doesn't cause *"Address already in use"*). It uses `lsof`/`kill` (macOS/Linux);
-> on Windows, remove it or stop the previous process manually.
+> server doesn't cause *"Address already in use"*), and `prepreview` does the same for
+> `4173` before `npm run preview` (the production build, where the PWA service worker is
+> testable). They use `lsof`/`kill` (macOS/Linux); on Windows, remove them or stop the
+> previous process manually.
 
 ### 3. Create the first administrator
 

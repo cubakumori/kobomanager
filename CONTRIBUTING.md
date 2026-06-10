@@ -63,7 +63,14 @@ overview read [`ARCHITECTURE.md`](./ARCHITECTURE.md); for setup read [`README.md
   (sidebar-style surfaces), add `.km-pin-neutrals`. Use the class-based `dark:` variant only
   for spot fixes (e.g. a light `accent-50` background that must darken). Never hardcode grays.
 - Loading states in list/detail views use `Skeleton.vue` (variants `table`/`lines`/`cards`)
-  instead of a plain "Loading…" text.
+  instead of a plain "Loading…" text. In filterable lists, gate the skeleton behind a
+  `loaded` flag (first successful load) so filter changes don't flash it; dim the table
+  (`opacity-60` + transition) while refreshing.
+- New tables follow the **frozen-column pattern**: import `useTableFreeze()`
+  (`composables/appConfig.js`) and give the first `th`/`td` a conditional
+  `freezeFirst() ? 'sticky left-0 z-10 bg-…' : ''` class (solid background, plus
+  `group`/`group-hover` when rows highlight on hover, and a `max-w-[calc(40vw-2rem)]`
+  cap with `truncate` on small screens for wide first cells).
 - Reuse `Modal`/`ConfirmDialog` (via `confirmDialog(...)`) instead of native `alert/confirm`,
   so dialogs get the shared accessibility behavior.
 - Inside `<style scoped>`, `@reference "../../style.css"` (not `"tailwindcss"`) so `@apply`
