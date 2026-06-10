@@ -8,10 +8,12 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
-- **Guía de uso rediseñada**: las secciones pasan de tarjetas blancas planas a **tarjetas
-  tintadas** estilo «Apoyar» — paleta suave rotando (verde, azul, ámbar, celeste) con
-  cabeceras tipo *pill* (punto de color), sub-tarjetas translúcidas y variantes para el
-  modo oscuro. El texto del cuerpo se mantiene en gris para no fatigar la lectura.
+- **Guía de uso rediseñada**: cada sección lleva un **chip de icono** con color suave por
+  área; dos tarjetas clave van **destacadas con tinte** (el flujo de trabajo en azul y los
+  enlaces compartidos en verde) y, en escritorio, las secciones cortas se emparejan a
+  **dos columnas** (Notificaciones+PWA, Contraseñas+Auditoría) para romper la columna
+  larga de texto. Fondos neutros en el resto, variantes para modo oscuro y cuerpo en gris
+  para no fatigar la lectura.
 
 - **Pulido responsive (revisión pre-publicación)**: tanda de mejoras para pantallas
   pequeñas, aplicadas de forma consistente en todos los tamaños.

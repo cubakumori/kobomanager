@@ -2,18 +2,19 @@
 // Cuerpo de la «Guía de uso», sin cromo de página: se reutiliza tanto dentro del
 // shell autenticado como en la página pública (envuelto por PublicLayout).
 //
-// Diseño: tarjetas TINTADAS estilo «Apoyar» — cada sección rota por una paleta
-// suave (accent/primary/ámbar/sky) con cabecera de punto tipo pill; el cuerpo
-// queda en slate para no cansar con tanto texto. Tintes con variante dark.
+// Diseño: tarjetas NEUTRAS con un chip de icono por sección (color suave por
+// área), DOS tarjetas destacadas con tinte (el flujo de trabajo y los enlaces
+// compartidos, lo esencial de la app) y parejas a dos columnas en escritorio
+// para las secciones cortas. El cuerpo queda en gris para lectura larga.
 const flowSteps = [1, 2, 3, 4]
 
-const TINTS = [
-  { card: 'bg-accent-50 ring-accent-200 dark:bg-accent-900/25 dark:ring-accent-800', head: 'text-accent-800 dark:text-accent-300', dot: 'bg-accent-500' },
-  { card: 'bg-primary-50 ring-primary-200 dark:bg-primary-900/25 dark:ring-primary-800', head: 'text-primary-800 dark:text-primary-300', dot: 'bg-primary-500' },
-  { card: 'bg-amber-50 ring-amber-200 dark:bg-amber-950/30 dark:ring-amber-900', head: 'text-amber-800 dark:text-amber-300', dot: 'bg-amber-500' },
-  { card: 'bg-sky-50 ring-sky-200 dark:bg-sky-950/30 dark:ring-sky-900', head: 'text-sky-800 dark:text-sky-300', dot: 'bg-sky-500' },
-]
-const tint = (i) => TINTS[i % TINTS.length]
+// Clases del chip de icono (cuadradito redondeado con emoji).
+const CHIP = {
+  slate: 'bg-slate-100 dark:bg-slate-50',
+  primary: 'bg-primary-100 dark:bg-primary-900/40',
+  accent: 'bg-accent-100 dark:bg-accent-900/40',
+  sky: 'bg-sky-100 dark:bg-sky-950/50',
+}
 </script>
 
 <template>
@@ -24,19 +25,19 @@ const tint = (i) => TINTS[i % TINTS.length]
     </div>
 
     <!-- Roles -->
-    <section class="space-y-3 rounded-2xl p-6 ring-1" :class="tint(0).card">
-      <h2 class="flex items-center gap-2 font-semibold" :class="tint(0).head">
-        <span class="h-1.5 w-1.5 rounded-full" :class="tint(0).dot"></span>
+    <section class="space-y-3 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <h2 class="flex items-center gap-2.5 font-semibold text-slate-900">
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base" :class="CHIP.slate">👥</span>
         {{ $t('guide.rolesTitle') }}
       </h2>
-      <p class="text-sm text-slate-700"><strong>{{ $t('guide.roleAdmin') }}:</strong> {{ $t('guide.roleAdminBody') }}</p>
-      <p class="text-sm text-slate-700"><strong>{{ $t('guide.roleViewer') }}:</strong> {{ $t('guide.roleViewerBody') }}</p>
+      <p class="text-sm text-slate-600"><strong>{{ $t('guide.roleAdmin') }}:</strong> {{ $t('guide.roleAdminBody') }}</p>
+      <p class="text-sm text-slate-600"><strong>{{ $t('guide.roleViewer') }}:</strong> {{ $t('guide.roleViewerBody') }}</p>
     </section>
 
-    <!-- Flujo -->
-    <section class="space-y-4 rounded-2xl p-6 ring-1" :class="tint(1).card">
-      <h2 class="flex items-center gap-2 font-semibold" :class="tint(1).head">
-        <span class="h-1.5 w-1.5 rounded-full" :class="tint(1).dot"></span>
+    <!-- Flujo (DESTACADA: tinte primary) -->
+    <section class="space-y-4 rounded-2xl bg-primary-50 p-6 ring-1 ring-primary-200 dark:bg-primary-900/25 dark:ring-primary-800">
+      <h2 class="flex items-center gap-2.5 font-semibold text-primary-900 dark:text-primary-300">
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base" :class="CHIP.primary">🧭</span>
         {{ $t('guide.flowTitle') }}
       </h2>
       <ol class="space-y-3">
@@ -51,34 +52,34 @@ const tint = (i) => TINTS[i % TINTS.length]
     </section>
 
     <!-- Acciones sobre un formulario -->
-    <section class="space-y-2 rounded-2xl p-6 ring-1" :class="tint(2).card">
-      <h2 class="flex items-center gap-2 font-semibold" :class="tint(2).head">
-        <span class="h-1.5 w-1.5 rounded-full" :class="tint(2).dot"></span>
+    <section class="space-y-2 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <h2 class="flex items-center gap-2.5 font-semibold text-slate-900">
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base" :class="CHIP.sky">⚡</span>
         {{ $t('guide.formActionsTitle') }}
       </h2>
-      <p class="text-sm text-slate-700">{{ $t('guide.formActionsIntro') }}</p>
-      <ul class="list-disc space-y-1 pl-5 text-sm text-slate-700">
+      <p class="text-sm text-slate-600">{{ $t('guide.formActionsIntro') }}</p>
+      <ul class="list-disc space-y-1 pl-5 text-sm text-slate-600">
         <li><strong>{{ $t('guide.faEnketo') }}:</strong> {{ $t('guide.faEnketoBody') }}</li>
         <li><strong>{{ $t('guide.faUpdate') }}:</strong> {{ $t('guide.faUpdateBody') }}</li>
         <li><strong>{{ $t('guide.faResync') }}:</strong> {{ $t('guide.faResyncBody') }}</li>
         <li><strong>{{ $t('guide.faLogin') }}:</strong> {{ $t('guide.faLoginBody') }}</li>
       </ul>
-      <p class="text-sm text-slate-600">{{ $t('guide.formActionsNote') }}</p>
+      <p class="text-sm text-slate-500">{{ $t('guide.formActionsNote') }}</p>
     </section>
 
     <!-- Actualizar vs Resync -->
-    <section class="space-y-3 rounded-2xl p-6 ring-1" :class="tint(3).card">
-      <h2 class="flex items-center gap-2 font-semibold" :class="tint(3).head">
-        <span class="h-1.5 w-1.5 rounded-full" :class="tint(3).dot"></span>
+    <section class="space-y-3 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <h2 class="flex items-center gap-2.5 font-semibold text-slate-900">
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base" :class="CHIP.sky">🔄</span>
         {{ $t('guide.syncTitle') }}
       </h2>
-      <p class="text-sm text-slate-700">{{ $t('guide.syncIntro') }}</p>
+      <p class="text-sm text-slate-600">{{ $t('guide.syncIntro') }}</p>
       <div class="grid gap-3 sm:grid-cols-2">
-        <div class="rounded-lg bg-white/70 p-4 ring-1 ring-white/60 dark:ring-white/10">
+        <div class="rounded-lg bg-slate-50 p-4 ring-1 ring-slate-200">
           <h3 class="text-sm font-semibold text-slate-800">{{ $t('guide.syncUpdate') }}</h3>
           <p class="mt-1 text-sm text-slate-600">{{ $t('guide.syncUpdateBody') }}</p>
         </div>
-        <div class="rounded-lg bg-white/70 p-4 ring-1 ring-white/60 dark:ring-white/10">
+        <div class="rounded-lg bg-slate-50 p-4 ring-1 ring-slate-200">
           <h3 class="text-sm font-semibold text-slate-800">{{ $t('guide.syncResync') }}</h3>
           <p class="mt-1 text-sm text-slate-600">{{ $t('guide.syncResyncBody') }}</p>
         </div>
@@ -86,12 +87,12 @@ const tint = (i) => TINTS[i % TINTS.length]
     </section>
 
     <!-- Explorar la tabla de envíos -->
-    <section class="space-y-2 rounded-2xl p-6 ring-1" :class="tint(0).card">
-      <h2 class="flex items-center gap-2 font-semibold" :class="tint(0).head">
-        <span class="h-1.5 w-1.5 rounded-full" :class="tint(0).dot"></span>
+    <section class="space-y-2 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <h2 class="flex items-center gap-2.5 font-semibold text-slate-900">
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base" :class="CHIP.primary">🔎</span>
         {{ $t('guide.exploreTitle') }}
       </h2>
-      <ul class="list-disc space-y-1 pl-5 text-sm text-slate-700">
+      <ul class="list-disc space-y-1 pl-5 text-sm text-slate-600">
         <li><strong>{{ $t('guide.exploreSearch') }}:</strong> {{ $t('guide.exploreSearchBody') }}</li>
         <li><strong>{{ $t('guide.exploreColumns') }}:</strong> {{ $t('guide.exploreColumnsBody') }}</li>
         <li><strong>{{ $t('guide.exploreCalculated') }}:</strong> {{ $t('guide.exploreCalculatedBody') }}</li>
@@ -100,12 +101,12 @@ const tint = (i) => TINTS[i % TINTS.length]
     </section>
 
     <!-- Funciones de datos -->
-    <section class="space-y-2 rounded-2xl p-6 ring-1" :class="tint(1).card">
-      <h2 class="flex items-center gap-2 font-semibold" :class="tint(1).head">
-        <span class="h-1.5 w-1.5 rounded-full" :class="tint(1).dot"></span>
+    <section class="space-y-2 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <h2 class="flex items-center gap-2.5 font-semibold text-slate-900">
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base" :class="CHIP.accent">🗂️</span>
         {{ $t('guide.dataTitle') }}
       </h2>
-      <ul class="list-disc space-y-1 pl-5 text-sm text-slate-700">
+      <ul class="list-disc space-y-1 pl-5 text-sm text-slate-600">
         <li><strong>{{ $t('guide.dataLabels') }}:</strong> {{ $t('guide.dataLabelsBody') }}</li>
         <li><strong>{{ $t('guide.dataAttachments') }}:</strong> {{ $t('guide.dataAttachmentsBody') }}</li>
         <li><strong>{{ $t('guide.dataScope') }}:</strong> {{ $t('guide.dataScopeBody') }}</li>
@@ -114,23 +115,23 @@ const tint = (i) => TINTS[i % TINTS.length]
       </ul>
     </section>
 
-    <!-- Revisión y productividad -->
-    <section class="space-y-2 rounded-2xl p-6 ring-1" :class="tint(2).card">
-      <h2 class="flex items-center gap-2 font-semibold" :class="tint(2).head">
-        <span class="h-1.5 w-1.5 rounded-full" :class="tint(2).dot"></span>
+    <!-- Revisión -->
+    <section class="space-y-2 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <h2 class="flex items-center gap-2.5 font-semibold text-slate-900">
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base" :class="CHIP.accent">✅</span>
         {{ $t('guide.reviewTitle') }}
       </h2>
-      <ul class="list-disc space-y-1 pl-5 text-sm text-slate-700">
+      <ul class="list-disc space-y-1 pl-5 text-sm text-slate-600">
         <li><strong>{{ $t('guide.reviewSingle') }}:</strong> {{ $t('guide.reviewSingleBody') }}</li>
         <li><strong>{{ $t('guide.reviewBatch') }}:</strong> {{ $t('guide.reviewBatchBody') }}</li>
         <li><strong>{{ $t('guide.reviewExport') }}:</strong> {{ $t('guide.reviewExportBody') }}</li>
       </ul>
     </section>
 
-    <!-- Compartir: enlaces de solo lectura -->
-    <section class="space-y-2 rounded-2xl p-6 ring-1" :class="tint(3).card">
-      <h2 class="flex items-center gap-2 font-semibold" :class="tint(3).head">
-        <span class="h-1.5 w-1.5 rounded-full" :class="tint(3).dot"></span>
+    <!-- Compartir (DESTACADA: tinte accent) -->
+    <section class="space-y-2 rounded-2xl bg-accent-50 p-6 ring-1 ring-accent-200 dark:bg-accent-900/25 dark:ring-accent-800">
+      <h2 class="flex items-center gap-2.5 font-semibold text-accent-900 dark:text-accent-300">
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base" :class="CHIP.accent">🔗</span>
         {{ $t('guide.shareTitle') }}
       </h2>
       <p class="text-sm text-slate-700">{{ $t('guide.shareIntro') }}</p>
@@ -141,51 +142,53 @@ const tint = (i) => TINTS[i % TINTS.length]
       </ul>
     </section>
 
-    <!-- Notificaciones -->
-    <section class="space-y-2 rounded-2xl p-6 ring-1" :class="tint(0).card">
-      <h2 class="flex items-center gap-2 font-semibold" :class="tint(0).head">
-        <span class="h-1.5 w-1.5 rounded-full" :class="tint(0).dot"></span>
-        {{ $t('guide.notifTitle') }}
-      </h2>
-      <p class="text-sm text-slate-700">{{ $t('guide.notifBody') }}</p>
-    </section>
+    <!-- Pareja corta: Notificaciones + PWA -->
+    <div class="grid gap-6 lg:grid-cols-2">
+      <section class="space-y-2 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <h2 class="flex items-center gap-2.5 font-semibold text-slate-900">
+          <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base" :class="CHIP.primary">✉️</span>
+          {{ $t('guide.notifTitle') }}
+        </h2>
+        <p class="text-sm text-slate-600">{{ $t('guide.notifBody') }}</p>
+      </section>
 
-    <!-- PWA / sin conexión -->
-    <section class="space-y-2 rounded-2xl p-6 ring-1" :class="tint(1).card">
-      <h2 class="flex items-center gap-2 font-semibold" :class="tint(1).head">
-        <span class="h-1.5 w-1.5 rounded-full" :class="tint(1).dot"></span>
-        {{ $t('guide.offlineTitle') }}
-      </h2>
-      <p class="text-sm text-slate-700">{{ $t('guide.offlineBody') }}</p>
-    </section>
+      <section class="space-y-2 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <h2 class="flex items-center gap-2.5 font-semibold text-slate-900">
+          <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base" :class="CHIP.sky">📶</span>
+          {{ $t('guide.offlineTitle') }}
+        </h2>
+        <p class="text-sm text-slate-600">{{ $t('guide.offlineBody') }}</p>
+      </section>
+    </div>
 
-    <!-- Contraseñas -->
-    <section class="space-y-2 rounded-2xl p-6 ring-1" :class="tint(2).card">
-      <h2 class="flex items-center gap-2 font-semibold" :class="tint(2).head">
-        <span class="h-1.5 w-1.5 rounded-full" :class="tint(2).dot"></span>
-        {{ $t('guide.pwTitle') }}
-      </h2>
-      <p class="text-sm text-slate-700">{{ $t('guide.pwChangeBody') }}</p>
-      <p class="text-sm text-slate-700">{{ $t('guide.pwForgotBody') }}</p>
-    </section>
+    <!-- Pareja corta: Contraseñas + Auditoría -->
+    <div class="grid gap-6 lg:grid-cols-2">
+      <section class="space-y-2 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <h2 class="flex items-center gap-2.5 font-semibold text-slate-900">
+          <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base" :class="CHIP.slate">🔑</span>
+          {{ $t('guide.pwTitle') }}
+        </h2>
+        <p class="text-sm text-slate-600">{{ $t('guide.pwChangeBody') }}</p>
+        <p class="text-sm text-slate-600">{{ $t('guide.pwForgotBody') }}</p>
+      </section>
 
-    <!-- Auditoría y estado del sistema (admin) -->
-    <section class="space-y-2 rounded-2xl p-6 ring-1" :class="tint(3).card">
-      <h2 class="flex items-center gap-2 font-semibold" :class="tint(3).head">
-        <span class="h-1.5 w-1.5 rounded-full" :class="tint(3).dot"></span>
-        {{ $t('guide.auditTitle') }}
-      </h2>
-      <p class="text-sm text-slate-700">{{ $t('guide.auditBody') }}</p>
-      <p class="text-sm text-slate-700">{{ $t('guide.auditSelfBody') }}</p>
-    </section>
+      <section class="space-y-2 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <h2 class="flex items-center gap-2.5 font-semibold text-slate-900">
+          <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base" :class="CHIP.slate">📜</span>
+          {{ $t('guide.auditTitle') }}
+        </h2>
+        <p class="text-sm text-slate-600">{{ $t('guide.auditBody') }}</p>
+        <p class="text-sm text-slate-600">{{ $t('guide.auditSelfBody') }}</p>
+      </section>
+    </div>
 
     <!-- Seguridad y privacidad -->
-    <section class="space-y-2 rounded-2xl p-6 ring-1" :class="tint(0).card">
-      <h2 class="flex items-center gap-2 font-semibold" :class="tint(0).head">
-        <span class="h-1.5 w-1.5 rounded-full" :class="tint(0).dot"></span>
+    <section class="space-y-2 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <h2 class="flex items-center gap-2.5 font-semibold text-slate-900">
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base" :class="CHIP.primary">🛡️</span>
         {{ $t('guide.secTitle') }}
       </h2>
-      <ul class="list-disc space-y-1 pl-5 text-sm text-slate-700">
+      <ul class="list-disc space-y-1 pl-5 text-sm text-slate-600">
         <li><strong>{{ $t('guide.secToken') }}:</strong> {{ $t('guide.secTokenBody') }}</li>
         <li><strong>{{ $t('guide.secSessions') }}:</strong> {{ $t('guide.secSessionsBody') }}</li>
         <li><strong>{{ $t('guide.secScope') }}:</strong> {{ $t('guide.secScopeBody') }}</li>
