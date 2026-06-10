@@ -58,15 +58,29 @@ Upload to the server:
 
 1. The **contents** of `dist/` → to the public root (`index.html`, `assets/`, …).
 2. The whole `api/` folder → under the public root (`/api`).
-3. The `db/` folder (migrations) if you'll apply them from the server.
+3. The `db/` folder — these are the **schema files** that §4 runs once to create the
+   tables. Upload it only if you'll run §4 from a shell **on the server** (you can
+   delete it afterwards; the app never reads it at runtime). If you'd rather pipe the
+   SQL from your machine over SSH, skip the upload (see §4).
 
 > Do not upload `node_modules/`, `src/`, or your development `api/config.php`.
 
 ## 4. Database
 
+`db/*.sql` is the complete schema, meant to be applied **once, in filename order**, on
+an empty database (there are no incremental migrations to track). From a shell on the
+server, with the `db/` folder uploaded:
+
 ```bash
 mysql -e "CREATE DATABASE kobomanager CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 for f in db/*.sql; do mysql kobomanager < "$f"; done
+```
+
+Or from your local machine, without uploading `db/` at all:
+
+```bash
+ssh user@server 'mysql -e "CREATE DATABASE kobomanager CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"'
+for f in db/*.sql; do ssh user@server mysql kobomanager < "$f"; done
 ```
 
 Create a dedicated MySQL user with privileges only on `kobomanager`.
