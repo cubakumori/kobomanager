@@ -78,7 +78,9 @@ Quedan como ideas reabribles si aparece una necesidad real.
       acciones que romperían la demo o filtrarían el token: cuentas Kobo, usuarios/
       contraseñas, settings y edición de envíos; el resto —revisión, filtros, export,
       shares— queda abierto) + instancia con cuenta Kobo desechable, datos 100 % sintéticos
-      y cron de reset desde dump semilla. Alternativa exprés mientras tanto: un **enlace
+      y cron de reset desde dump semilla. Al implementarlo, la parte genérica (config,
+      seed, cron, hardening) se documenta en `DEPLOY.md` («Running a demo instance») para
+      que cualquiera monte su propia demo. Alternativa exprés mientras tanto: un **enlace
       público de solo lectura** real + capturas/GIF en el README.
 
 ---
