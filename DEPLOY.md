@@ -11,6 +11,19 @@ Guide for deploying to a VPS or hosting with **Apache + PHP 8.1+ + MySQL/MariaDB
 
 ## 2. Layout on the server
 
+### Domain, subdomain or subfolder?
+
+KoboManager must be served from the **root of an origin** — a domain
+(`https://kobomanager.example`) or a subdomain (`https://demo.example.org`). Both work
+with the exact same procedure in this guide; the only differences are the DNS record,
+the vhost `DocumentRoot`/`server_name` and the values you put in `APP_URL` /
+`CORS_ALLOWED_ORIGINS` (and the HTTPS certificate covering that hostname).
+
+Installing under a **subfolder** (`https://example.org/kobomanager/`) is **not
+supported**: the SPA build, the router, the API client (`/api/v1/...`) and the PWA
+service-worker scope all assume the site root. If you only have one domain, use a
+subdomain instead — it is also cleaner to move or retire later.
+
 The compiled frontend lives in the public root and the backend in `/api`:
 
 ```
@@ -332,20 +345,42 @@ create it with `php api/cli/create_user.php`, which skips that validation). A ni
 touch is a second, viewer-role user with a row filter and hidden/read-only columns
 configured, so visitors can log in with each one and compare.
 
+### Setup order (the flag goes last)
+
+The demo locks apply to **everyone, admins included** — there is no "owner bypass". So
+prepare the instance with `DEMO_MODE` **off** (or the constants absent), because setup
+needs exactly the actions the demo blocks (connecting the Kobo account, creating users,
+changing settings, manual sync):
+
+1. Install normally (§§1–10) with `DEMO_MODE = false`.
+2. Connect the disposable Kobo account, sync, create the demo users, permissions,
+   an example share link, settings — leave everything the way visitors should find it.
+3. Take the seed dump (below), add the reset cron, set `DEMO_MODE = true`.
+4. Only then publish the URL.
+
+To adjust something later, do the same loop over SSH: flip the flag off, change what
+you need, regenerate the seed dump, flip it back on.
+
 ### Periodic reset
 
-1. Set the demo up the way you want visitors to find it (accounts synced, users,
-   permissions, an example share link…), then take a seed dump:
+1. With the demo ready, take a seed dump:
    ```bash
    mysqldump --single-transaction kobomanager > /opt/km-demo/seed.sql
    ```
-2. Add a cron aligned with `DEMO_RESET_MINUTES`:
+   Keep it **outside the web root**, readable only by the cron user — and keep an
+   off-server copy of `seed.sql` + `config.php` (hours of setup live in that pair; the
+   `CONFIG_TOKEN_KEY` in the config is the only thing that can decrypt the Kobo token
+   stored in the dump).
+2. Add a cron aligned with `DEMO_RESET_MINUTES` (schedule the §7 sync crons at other
+   minutes — e.g. reset at `0`, submissions sync at `15,30,45` — so a sync never runs
+   mid-restore):
    ```cron
    0 * * * *  mysql kobomanager < /opt/km-demo/seed.sql >/dev/null 2>&1
    ```
    The dump restores users, permissions, reviews, share links, settings and the
    submissions cache. The encrypted Kobo token lives in the DB, so it is restored as-is
-   (the server's `CONFIG_TOKEN_KEY` does not change).
+   (the server's `CONFIG_TOKEN_KEY` does not change). `DEMO_MODE` itself lives in
+   `config.php`, not in the DB — the reset never touches it.
 
 ### Demo hardening notes
 
@@ -353,8 +388,11 @@ configured, so visitors can log in with each one and compare.
   real (not even anonymized) data. Its token is low-value, and demo mode hides it anyway.
 - Leave `RESEND_API_KEY` empty: the mailer is a no-op and the demo sends no email.
 - The built-in rate limits (login, contact form, share links) stay active.
-- Consider `Disallow:` in `robots.txt` (or a `noindex` meta) so the demo does not compete
-  with your real site in search results.
+- `robots.txt`: if the demo runs alongside a separate project website, consider
+  `Disallow:` (or a `noindex` meta) so the demo does not compete with it in search
+  results. If the demo **is** your public site (its landing page doubles as the project
+  homepage), leave it indexable — everything beyond the landing requires login and is
+  not crawlable anyway.
 - The audit viewer (Dashboard → Audit) is a handy way to watch what visitors try.
 - If the demo gets abused, shorten the reset cycle (15–30 min) — the welcome dialog
   follows `DEMO_RESET_MINUTES` automatically.
