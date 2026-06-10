@@ -29,7 +29,7 @@
     "demoModalBody": "Some actions are disabled and the data is restored every {minutes} min.",
     "demoModalLoginIntro": "You can sign in with:",
     "demoModalAdmin": "Administrator: {creds}",
-    "demoModalViewer": "Viewer (limited access): {creds}",
+    "demoModalViewer": "Viewer: {creds}",
     "demoModalOk": "Got it"
   },
   "nav": {

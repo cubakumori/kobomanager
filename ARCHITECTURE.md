@@ -182,7 +182,7 @@ throttling never trips the login throttle. `ShareLink::throttle()` uses the `sha
 cap public share GETs at 240 req/60 s per IP (anti‑scraping/DoS on a leaked link).
 
 ### Demo mode (`lib/Demo.php`)
-Optional `DEMO_MODE` / `DEMO_RESET_MINUTES` / `DEMO_LOGIN_HINT` constants (guarded with
+Optional `DEMO_MODE` / `DEMO_RESET_MINUTES` / `DEMO_LOGIN_ADMIN`+`DEMO_LOGIN_VIEWER` constants (guarded with
 `defined()`, so existing configs behave as demo off) turn the instance into a public
 sandbox: `GET /config` exposes the three values, the frontend shows a welcome dialog on
 the homepage plus a clickable **DEMO** badge next to the brand, and blocked buttons are

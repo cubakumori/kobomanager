@@ -20,7 +20,7 @@ Todos los cambios notables de KoboManager. El formato sigue
 - **Credenciales de la demo por rol**: `DEMO_LOGIN_HINT` se sustituye por
   `DEMO_LOGIN_ADMIN` + `DEMO_LOGIN_VIEWER` ('' = línea oculta); el modal pone la
   etiqueta del rol traducida al idioma del visitante («Administrador: …» /
-  «Viewer (acceso limitado): …»).
+  «Viewer: …»).
 
 - **Modo demo integrado (`DEMO_MODE`)**: nuevas constantes opcionales `DEMO_MODE`,
   `DEMO_RESET_MINUTES` y `DEMO_LOGIN_ADMIN`/`DEMO_LOGIN_VIEWER` en `api/config.php` (con guard `defined()`,
