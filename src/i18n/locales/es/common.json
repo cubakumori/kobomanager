@@ -19,7 +19,8 @@
     "theme": "Tema",
     "theme_light": "claro",
     "theme_dark": "oscuro",
-    "theme_auto": "automático (según el sistema)"
+    "theme_auto": "automático (según el sistema)",
+    "offline": "Sin conexión — se muestran los últimos datos consultados; los cambios requieren conexión."
   },
   "nav": {
     "dashboard": "Dashboard",

@@ -83,6 +83,8 @@
     "secSessions": "Sesiones",
     "secSessionsBody": "El acceso usa una sesión en cookie segura que se renueva con el uso (hasta un límite); desde tu perfil puedes cerrar las demás sesiones si no las reconoces, y el administrador puede cerrar de forma remota todas las de un usuario.",
     "secScope": "Acceso mínimo",
-    "secScopeBody": "Cada usuario ve solo los formularios —y, con el acceso por filas, solo los envíos— que el administrador le asigna."
+    "secScopeBody": "Cada usuario ve solo los formularios —y, con el acceso por filas, solo los envíos— que el administrador le asigna.",
+    "offlineTitle": "Instalar la app y trabajar con mala conexión",
+    "offlineBody": "KoboManager es una aplicación web progresiva (PWA): desde el navegador puedes «Instalar la app» y abrirla como una aplicación más. La interfaz queda guardada en el dispositivo (abre al instante aunque la red falle) y lo que ya hayas consultado (listas, detalles, estadísticas) puede releerse sin conexión. Editar, revisar o sincronizar sí requieren conexión — un aviso te indica cuándo no la hay. Al cerrar sesión, los datos guardados en el dispositivo se borran."
   }
 }

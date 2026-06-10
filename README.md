@@ -164,6 +164,16 @@ export with scoping and field hiding, and submission editing (against the Kobo s
 **Continuous integration** (GitHub Actions, no Docker) runs lint + frontend build + the
 full PHPUnit suite against MariaDB — see `.github/workflows/ci.yml`.
 
+## Offline / PWA
+
+KoboManager is a **progressive web app**: it can be installed from the browser ("Install
+app") and tolerates poor connectivity. The app shell is precached (it opens instantly even
+without network) and API reads are cached with a network-first strategy — anything already
+viewed (lists, details, stats) can be re-read offline or while the server is unreachable,
+with a visible "offline" notice. Writes (editing, reviewing, syncing) require a connection.
+On logout the cached data is wiped from the device; the strategy lives in
+[`src/sw.js`](./src/sw.js).
+
 ## Languages
 
 The interface is available in **Spanish** and **English**. The admin sets the default

@@ -305,7 +305,16 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   Chart text colors re-read the slate variables and re-render on toggle. The landing banner
   swaps to a night WebP variant.
 - **Loading skeletons**: `Skeleton.vue` (variants `table`/`lines`/`cards`) replaces the
-  "Loading…" text in the main list/detail/stats views.
+  "Loading…" text in the main list/detail/stats views (initial load only; filter-driven
+  refreshes keep the table dimmed instead of flashing).
+- **PWA / offline**: `vite-plugin-pwa` in `injectManifest` mode with a hand-written service
+  worker (`src/sw.js`): app shell precached, SPA navigations fall back to `index.html`
+  (denylisting `/api` so CSV/attachment downloads hit the network), API GETs cached
+  network-first (4 s timeout; attachments in a separate bounded `CacheFirst` cache), and a
+  custom plugin treats **5xx as network failure** so both *client offline* and *server down*
+  fall back to the last seen data. Only 200s are cached. `composables/offline.js` exposes
+  `isOnline` (banner in `App.vue`) and `clearDataCaches()`, called on logout so no sensitive
+  data outlives the session on shared devices. The SW is build-only (disabled in dev).
 - **Reusable UI**: `Modal.vue` + `ConfirmDialog.vue` (`composables/confirm.js`), with
   `composables/dialogA11y.js` providing Escape‑to‑close, focus trap and focus restore for
   modals and drawers.

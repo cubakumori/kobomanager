@@ -30,6 +30,18 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **PWA / soporte de mala conectividad**: KoboManager es ahora una **aplicación web
+  progresiva** — instalable desde el navegador (manifest + iconos), con el *shell* de la
+  app precacheado (abre al instante incluso sin red) y los GET del API cacheados con
+  estrategia *network-first* (timeout 4 s; adjuntos en caché aparte y acotada): lo ya
+  consultado (listas, detalle, estadísticas) puede **releerse sin conexión o con el
+  servidor caído** — un plugin propio del service worker trata los 5xx como fallo de red
+  para cubrir ambos casos. Las escrituras siguen requiriendo conexión y un aviso global
+  indica cuándo no la hay. **Privacidad**: al cerrar sesión se borran las cachés de datos
+  del dispositivo (el shell se conserva). Service worker propio (`src/sw.js`, modo
+  `injectManifest` de `vite-plugin-pwa`, solo en build); sección nueva en la Guía y notas
+  de despliegue (`Cache-Control` de `sw.js`) en `DEPLOY.md`.
+
 - **Filtros avanzados en la tabla de envíos**: nuevo botón «Filtros» junto a los filtros
   rápidos que abre el mismo editor de condiciones del scoping por filas (grupos Y/O,
   operadores in/nin/rangos/vacío/conjuntos sobre `select_multiple`, sugerencias de valores).

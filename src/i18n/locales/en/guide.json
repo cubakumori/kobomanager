@@ -83,6 +83,8 @@
     "secSessions": "Sessions",
     "secSessionsBody": "Access uses a secure cookie session that renews with use (up to a cap); from your profile you can close your other sessions if you don't recognize them, and the admin can remotely close all of a user's sessions.",
     "secScope": "Least access",
-    "secScopeBody": "Each user sees only the forms —and, with row access, only the submissions— the admin assigns them."
+    "secScopeBody": "Each user sees only the forms —and, with row access, only the submissions— the admin assigns them.",
+    "offlineTitle": "Install the app and work with poor connectivity",
+    "offlineBody": "KoboManager is a progressive web app (PWA): from the browser you can “Install app” and open it like a native one. The interface is stored on the device (it opens instantly even when the network fails) and anything you already viewed (lists, details, statistics) can be re-read offline. Editing, reviewing or syncing do require a connection — a notice tells you when there is none. Logging out wipes the data stored on the device."
   }
 }

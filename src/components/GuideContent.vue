@@ -111,6 +111,12 @@ const flowSteps = [1, 2, 3, 4]
       <p class="text-sm text-slate-600">{{ $t('guide.notifBody') }}</p>
     </section>
 
+    <!-- PWA / sin conexión -->
+    <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-2">
+      <h2 class="font-semibold text-slate-900">{{ $t('guide.offlineTitle') }}</h2>
+      <p class="text-sm text-slate-600">{{ $t('guide.offlineBody') }}</p>
+    </section>
+
     <!-- Contraseñas -->
     <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-2">
       <h2 class="font-semibold text-slate-900">{{ $t('guide.pwTitle') }}</h2>

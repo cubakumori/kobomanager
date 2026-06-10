@@ -17,12 +17,20 @@ The compiled frontend lives in the public root and the backend in `/api`:
 /public_html            (or /var/www/html)
   index.html            ← Vue build (dist/)
   assets/               ← Vue build (dist/assets)
+  sw.js, registerSW.js, manifest.webmanifest   ← PWA (service worker + manifest)
   .htaccess             ← SPA rewrite (see §6)
   /api                  ← PHP backend (upload as-is)
     config.php          ← create on the server, NOT committed
     .htaccess
     index.php, lib/, v1/, cron/, cli/
 ```
+
+> **PWA note**: the build ships a service worker (`sw.js`) that precaches the app shell and
+> caches API GETs so the app stays usable on flaky connections. Serve `sw.js` with
+> `Cache-Control: no-cache` (or a short max-age) so updates roll out promptly — with Apache,
+> e.g. `<Files "sw.js"> Header set Cache-Control "no-cache" </Files>`; with nginx, a
+> `location = /sw.js { add_header Cache-Control "no-cache"; }` block. Everything under
+> `assets/` is content-hashed and safe to cache aggressively.
 
 ## 3. Build and upload
 

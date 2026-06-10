@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import api from '../services/api'
 import i18n, { setLocale } from '../i18n'
+import { clearDataCaches } from '../composables/offline'
 
 // Traduce un error de Axios a un mensaje legible. Si hay traducción para el código
 // de error, se usa; si no, el mensaje del backend; si no, un genérico.
@@ -37,6 +38,9 @@ export const useAuthStore = defineStore('auth', {
         await api.post('/auth/logout')
       } finally {
         this.user = null
+        // PWA: al cerrar sesión se borran las cachés de datos del service
+        // worker (API/adjuntos) para no dejar datos sensibles en el dispositivo.
+        clearDataCaches()
       }
     },
     async fetchMe() {

@@ -19,7 +19,8 @@
     "theme": "Theme",
     "theme_light": "light",
     "theme_dark": "dark",
-    "theme_auto": "auto (follow system)"
+    "theme_auto": "auto (follow system)",
+    "offline": "Offline — showing the last data you viewed; changes require a connection."
   },
   "nav": {
     "dashboard": "Dashboard",
