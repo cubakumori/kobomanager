@@ -27,7 +27,10 @@ export const useAuthStore = defineStore('auth', {
   },
   actions: {
     async login(email, password) {
-      const { data } = await api.post('/auth/login', { email, password })
+      // skipAuthRedirect: un login FALLIDO devuelve 401 y el interceptor global
+      // no debe sacar al usuario del formulario (modal de la portada o /login);
+      // el propio formulario muestra el error.
+      const { data } = await api.post('/auth/login', { email, password }, { skipAuthRedirect: true })
       this.user = data.data
       this.checked = true
       setLocale(this.user?.locale)

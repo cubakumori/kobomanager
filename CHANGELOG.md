@@ -13,7 +13,9 @@ Todos los cambios notables de KoboManager. El formato sigue
   retrocompatibles: una config sin ellas = demo desactivada) para montar una instancia
   pública de demostración. Con el flag activo:
   - `GET /config` expone `demo_mode`, `demo_reset_minutes` y `demo_login_hint`; el
-    frontend muestra un **banner global** con el ciclo de reset y las credenciales.
+    frontend muestra un **modal de bienvenida** en la portada (una vez por visita,
+    con el ciclo de reset y las credenciales) y un badge **DEMO** junto a la marca
+    en portada/páginas públicas, login, sidebar y barra móvil.
   - La API **bloquea en un punto central** (403 con el nuevo código `DEMO_LOCKED`,
     i18n es/en) las acciones que romperían la demo o filtrarían secretos: CRUD de
     cuentas Kobo (protege el token), CRUD de usuarios + contraseñas + revocación de
@@ -25,8 +27,15 @@ Todos los cambios notables de KoboManager. El formato sigue
     export, enlaces compartidos, estadísticas, mapa, idioma, tema…) sigue operativo.
   - Tests de integración HTTP con un servidor propio bajo `DEMO_MODE=true`
     (`DemoModeHttpTest`; `HttpTestCase` ahora soporta una config por clase de test).
-  - `DEPLOY.md`: nueva sección **«Running a demo instance»** (config, dump semilla +
-    cron de reset, notas de hardening).
+  - `DEPLOY.md`: nueva sección **«Running a demo instance»** (config, usuarios demo,
+    dump semilla + cron de reset, notas de hardening).
+
+### Arreglado
+
+- **Login fallido ya no expulsa del formulario**: el interceptor global de 401
+  redirigía a `/login` también cuando el 401 era la respuesta del propio intento de
+  login (p. ej. desde el modal de la portada); ahora el error se muestra en el
+  formulario («Credenciales incorrectas»).
 
 ## [1.3.0] - 2026-06-11
 

@@ -6,6 +6,7 @@ import { i18n, setLocale } from '../i18n'
 import Modal from './Modal.vue'
 import LoginForm from './LoginForm.vue'
 import ThemeToggle from './ThemeToggle.vue'
+import DemoBadge from './DemoBadge.vue'
 import { useDialogA11y } from '../composables/dialogA11y'
 
 const router = useRouter()
@@ -45,8 +46,9 @@ const drawerLink =
     <!-- Barra superior (idéntica en portada y páginas públicas) -->
     <header class="sticky top-0 z-30 border-b border-slate-200/60 bg-white/70 backdrop-blur">
       <div class="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-3">
-        <RouterLink to="/" class="text-lg font-semibold tracking-tight text-slate-900 hover:text-primary-700">
+        <RouterLink to="/" class="inline-flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-900 hover:text-primary-700">
           KoboManager
+          <DemoBadge />
         </RouterLink>
 
         <!-- Nav escritorio -->
@@ -135,7 +137,7 @@ const drawerLink =
         aria-modal="true"
       >
         <div class="flex items-center justify-between px-2 py-2">
-          <span class="text-lg font-semibold tracking-tight">KoboManager</span>
+          <span class="inline-flex items-center gap-2 text-lg font-semibold tracking-tight">KoboManager <DemoBadge variant="dark" /></span>
           <button class="rounded-lg p-1 text-slate-300 hover:bg-slate-700/60 hover:text-white" aria-label="Cerrar" @click="showMenu = false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
               <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />

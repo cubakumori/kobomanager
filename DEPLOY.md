@@ -294,15 +294,17 @@ demo off):
 
 ```php
 // --- Public demo ---
-define('DEMO_MODE', true);          // banner + sensitive actions blocked
-define('DEMO_RESET_MINUTES', 60);   // informative: shown in the banner
-define('DEMO_LOGIN_HINT', 'admin@demo / demo1234'); // shown in the banner ('' = hidden)
+define('DEMO_MODE', true);          // demo notice + sensitive actions blocked
+define('DEMO_RESET_MINUTES', 60);   // informative: shown in the welcome dialog
+define('DEMO_LOGIN_HINT', 'admin@demo.org / demo1234'); // shown in the dialog ('' = hidden)
 ```
 
 With the flag on, `GET /api/v1/config` exposes `demo_mode`, and the frontend shows a
-global banner ("Public demo — … data is restored every N min. Sign in with …") and
-disables the blocked buttons with a tooltip. The API enforces the same list centrally
-(403 `DEMO_LOCKED`), so direct requests are covered too. Blocked in demo:
+welcome dialog on the homepage — once per visit — with the reset cycle and the login
+hint, plus a small **DEMO** badge next to the brand everywhere (public pages, login
+page and the app shell). Blocked buttons are disabled with a tooltip, and the API
+enforces the same list centrally (403 `DEMO_LOCKED`), so direct requests are covered
+too. Blocked in demo:
 
 - **Kobo accounts** — create/edit/delete (protects the API token of the demo account).
 - **Users** — create/edit/deactivate, password changes (own and others'), and revoking
@@ -317,6 +319,16 @@ disables the blocked buttons with a tooltip. The API enforces the same list cent
 Everything else stays enabled on purpose — it is what the demo is for: browsing, search
 and filters, single and batch review, CSV export, statistics, the map, creating and
 revoking share links, language and theme… All of it is local and restored by the reset.
+
+### Demo users
+
+Create the account(s) you publish in `DEMO_LOGIN_HINT` **before** enabling the demo —
+the hint is plain text, it does not create anything. Note that the app validates emails
+with PHP's `FILTER_VALIDATE_EMAIL`, which requires a dotted domain: an address like
+`admin@demo` cannot be created from the admin UI (use `admin@demo.org` instead, or
+create it with `php api/cli/create_user.php`, which skips that validation). A nice
+touch is a second, viewer-role user with a row filter and hidden/read-only columns
+configured, so visitors can log in with each one and compare.
 
 ### Periodic reset
 
@@ -342,5 +354,5 @@ revoking share links, language and theme… All of it is local and restored by t
 - Consider `Disallow:` in `robots.txt` (or a `noindex` meta) so the demo does not compete
   with your real site in search results.
 - The audit viewer (Dashboard → Audit) is a handy way to watch what visitors try.
-- If the demo gets abused, shorten the reset cycle (15–30 min) — the banner follows
-  `DEMO_RESET_MINUTES` automatically.
+- If the demo gets abused, shorten the reset cycle (15–30 min) — the welcome dialog
+  follows `DEMO_RESET_MINUTES` automatically.

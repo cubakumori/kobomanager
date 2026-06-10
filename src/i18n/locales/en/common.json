@@ -22,9 +22,13 @@
     "theme_auto": "auto (follow system)",
     "offline": "Offline — showing the last data you viewed; changes require a connection.",
     "clear": "Clear",
-    "demoBanner": "🧪 Public demo — some actions are disabled and the data is restored every {minutes} min.",
-    "demoBannerLogin": "Sign in with {hint}.",
-    "demoDisabled": "Not available in the demo: this action is disabled to protect the demo instance."
+    "demoDisabled": "Not available in the demo: this action is disabled to protect the demo instance.",
+    "demoBadge": "DEMO",
+    "demoBadgeTitle": "Public demo instance",
+    "demoModalTitle": "Public demo",
+    "demoModalBody": "Some actions are disabled and the data is restored every {minutes} min.",
+    "demoModalLogin": "Sign in with {hint}.",
+    "demoModalOk": "Got it"
   },
   "nav": {
     "dashboard": "Dashboard",

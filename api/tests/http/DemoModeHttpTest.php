@@ -26,7 +26,7 @@ final class DemoModeHttpTest extends HttpTestCase
         $cfg = $res['json']['data'];
         $this->assertTrue($cfg['demo_mode']);
         $this->assertSame(45, $cfg['demo_reset_minutes']);
-        $this->assertSame('admin@demo / demo1234', $cfg['demo_login_hint']);
+        $this->assertSame('admin@demo.org / demo1234', $cfg['demo_login_hint']);
     }
 
     public function testBlockedActionsReturnDemoLocked(): void

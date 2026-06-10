@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import DemoBadge from './DemoBadge.vue'
 
 const emit = defineEmits(['navigate'])
 const auth = useAuthStore()
@@ -33,9 +34,9 @@ const linkActive = 'bg-primary-600 text-white'
     <div class="flex items-center justify-between px-5 py-5">
       <RouterLink
         to="/"
-        class="text-lg font-semibold tracking-tight transition-colors hover:text-primary-300"
+        class="inline-flex items-center gap-2 text-lg font-semibold tracking-tight transition-colors hover:text-primary-300"
         @click="emit('navigate')"
-      >KoboManager</RouterLink>
+      >KoboManager <DemoBadge variant="dark" /></RouterLink>
       <div class="flex items-center gap-1">
         <button
           class="hidden rounded-lg p-1.5 text-slate-300 hover:bg-slate-700/60 hover:text-white lg:block"

@@ -22,9 +22,13 @@
     "theme_auto": "automático (según el sistema)",
     "offline": "Sin conexión — se muestran los últimos datos consultados; los cambios requieren conexión.",
     "clear": "Limpiar",
-    "demoBanner": "🧪 Demo pública — algunas acciones están deshabilitadas y los datos se restauran cada {minutes} min.",
-    "demoBannerLogin": "Entra con {hint}.",
-    "demoDisabled": "No disponible en la demo: esta acción está deshabilitada para proteger la instancia de demostración."
+    "demoDisabled": "No disponible en la demo: esta acción está deshabilitada para proteger la instancia de demostración.",
+    "demoBadge": "DEMO",
+    "demoBadgeTitle": "Instancia pública de demostración",
+    "demoModalTitle": "Demo pública",
+    "demoModalBody": "Algunas acciones están deshabilitadas y los datos se restauran cada {minutes} min.",
+    "demoModalLogin": "Entra con {hint}.",
+    "demoModalOk": "Entendido"
   },
   "nav": {
     "dashboard": "Dashboard",
