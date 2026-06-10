@@ -66,18 +66,32 @@ Upload to the server:
    runtime has **no** PHP dependencies; those exist only to run the test suite). Uploading them anyway is not a security problem — the
    `api/.htaccess` denies direct access to `lib|cron|cli|tests|vendor` and everything is
    routed through `index.php` — just dead weight.
-3. The `db/` folder — these are the **schema files** that §4 runs once to create the
-   tables. Upload it only if you'll run §4 from a shell **on the server** (you can
-   delete it afterwards; the app never reads it at runtime). If you'd rather pipe the
-   SQL from your machine over SSH, skip the upload (see §4).
+3. The `db/` folder — the **schema files** that §4 applies once to create the tables
+   (used by the installer too). Upload it if you'll run the installer or the SQL from a
+   shell **on the server** (deletable afterwards; the app never reads it at runtime).
+   If you'd rather pipe the SQL from your machine over SSH, skip the upload (see §4).
 
 > Do not upload `node_modules/`, `src/`, or your development `api/config.php`.
 
 ## 4. Database
 
-`db/*.sql` is the complete schema, meant to be applied **once, in filename order**, on
-an empty database (there are no incremental migrations to track). From a shell on the
-server, with the `db/` folder uploaded:
+Create an empty database and a dedicated MySQL user with privileges only on it. Then,
+the easy path — with `api/config.php` already filled in (§5) and the `db/` folder
+uploaded, the **installer** checks the requirements, applies the schema and creates
+your first administrator in one go:
+
+```bash
+php api/cli/install.php
+# or non-interactively:
+php api/cli/install.php --admin admin@yourdomain.com 'StrongPassword' 'Admin Name'
+```
+
+Re-running it is safe (an installed schema is left untouched), and `--clean` deletes
+the no-longer-needed `db/` folder afterwards.
+
+**Manual alternative.** `db/*.sql` is the complete schema, meant to be applied
+**once, in filename order**, on an empty database (there are no incremental
+migrations to track). From a shell on the server, with the `db/` folder uploaded:
 
 ```bash
 mysql -e "CREATE DATABASE kobomanager CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
@@ -90,8 +104,6 @@ Or from your local machine, without uploading `db/` at all:
 ssh user@server 'mysql -e "CREATE DATABASE kobomanager CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"'
 for f in db/*.sql; do ssh user@server mysql kobomanager < "$f"; done
 ```
-
-Create a dedicated MySQL user with privileges only on `kobomanager`.
 
 ## 5. Configuration (`api/config.php`)
 
@@ -144,7 +156,8 @@ define('APP_TIMEZONE_LABEL', 'La Habana'); // human label for the UI; '' falls b
 > HTTPS origin** (e.g. `https://yourdomain.com`). If the app is served from several
 > hostnames (e.g. with and without `www`), add each one.
 
-Create the first administrator (creating users via the API requires being an admin):
+If you didn't use the installer (§4), create the first administrator by hand
+(creating users via the API requires being an admin):
 
 ```bash
 php api/cli/create_user.php admin@yourdomain.com 'StrongPassword' 'Admin Name' admin
@@ -430,10 +443,7 @@ you need, regenerate the seed dump, flip it back on.
 
 ### Periodic reset
 
-1. With the demo ready, take a seed dump **of the demo instance's database** (it must
-   be born there: among other things it contains the Kobo token encrypted with **that
-   server's** `CONFIG_TOKEN_KEY` — a dump of a database built elsewhere would carry a
-   token the server cannot decrypt):
+1. With the demo ready, take a seed dump of the demo database:
    ```bash
    mkdir -p /opt/km-demo
    mysqldump --single-transaction kobomanager > /opt/km-demo/seed.sql
@@ -443,6 +453,16 @@ you need, regenerate the seed dump, flip it back on.
    cron user — and keep an off-server copy of `seed.sql` + `config.php` (hours of setup
    live in that pair; the `CONFIG_TOKEN_KEY` in the config is the only thing that can
    decrypt the Kobo token stored in the dump).
+
+   **Preparing the seed on another machine.** The dump is portable with ONE condition:
+   the Kobo token inside it is encrypted with the `CONFIG_TOKEN_KEY` of the instance
+   that created it, so the demo server must use the **same** `CONFIG_TOKEN_KEY`. With
+   that in place you can build the whole demo comfortably on your dev machine (Kobo
+   account, sync, users, permissions, the privacy cleanup above), dump it there, upload
+   `seed.sql` and load it once on the server (`mysql kobomanager < seed.sql`). Caveat
+   when dumping from **MariaDB** for a **MySQL** server: recent MariaDB `mysqldump`
+   prepends a `/*!999999\- enable the sandbox mode */` line that MySQL rejects — delete
+   that first line (`sed -i '1{/999999/d}' seed.sql`) before importing.
 2. Add a cron aligned with `DEMO_RESET_MINUTES` (schedule the §7 sync crons at other
    minutes — e.g. reset at `0`, submissions sync at `15,30,45` — so a sync never runs
    mid-restore):

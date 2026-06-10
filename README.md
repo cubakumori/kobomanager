@@ -44,6 +44,8 @@ as-is (see [`DEPLOY.md`](./DEPLOY.md)).
 mysql -e "CREATE DATABASE IF NOT EXISTS kobomanager CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 # Apply all schema files in order (they ARE the full schema — no incremental migrations)
 for f in db/*.sql; do mysql kobomanager < "$f"; done
+# …or let the installer do schema + first admin in one go (after filling api/config.php):
+#   php api/cli/install.php
 ```
 
 > In this repo `api/config.php` already exists with development keys. Do **not** commit

@@ -8,6 +8,16 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Instalador CLI** (`php api/cli/install.php`): con `api/config.php` relleno, un solo
+  comando verifica los requisitos (PHP 8.1+, extensiones, claves de 64 hex, conexión a
+  la BD), aplica el esquema si la base de datos está vacía (con esquema parcial aborta
+  pidiendo recrearla), crea el primer administrador (interactivo o `--admin email pass
+  nombre`) y sugiere borrar `db/` (`--clean` lo hace; se niega en un checkout de
+  desarrollo). Idempotente: re-ejecutarlo no toca un esquema ya instalado. `DEPLOY.md`
+  §4 lo ofrece como vía principal (la manual queda como alternativa) y §13 documenta
+  además cómo **preparar la semilla de la demo en otra máquina** (compartiendo
+  `CONFIG_TOKEN_KEY`) y el aviso del dump MariaDB→MySQL (línea «sandbox»).
+
 - **Modo demo integrado (`DEMO_MODE`)**: nuevas constantes opcionales `DEMO_MODE`,
   `DEMO_RESET_MINUTES` y `DEMO_LOGIN_HINT` en `api/config.php` (con guard `defined()`,
   retrocompatibles: una config sin ellas = demo desactivada) para montar una instancia
