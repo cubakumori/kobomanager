@@ -4,8 +4,11 @@ import { useI18n } from 'vue-i18n'
 import api from '../services/api'
 import { apiError } from '../stores/auth'
 import Skeleton from '../components/Skeleton.vue'
+import Modal from '../components/Modal.vue'
+import { useTableFreeze } from '../composables/appConfig'
 
 const { t, te } = useI18n()
+const { freezeFirst } = useTableFreeze()
 
 // --- Registro de actividad propio (GET /audit/me) ---
 const items = ref([])
@@ -16,12 +19,22 @@ const actions = ref([])
 const loading = ref(true)
 const error = ref('')
 
-// Filtros (sin filtro por usuario: siempre eres tú)
+// Filtros aplicados (sin filtro por usuario: siempre eres tú). La búsqueda vive
+// FUERA del modal (siempre a mano); el resto se edita en el modal de filtros.
 const fAction = ref('')
 const fForm = ref('')
 const fFrom = ref('')
 const fTo = ref('')
 const search = ref('')
+
+// Borrador del modal: solo se aplica al pulsar «Aplicar».
+const filtersOpen = ref(false)
+const draft = ref({ action: '', form: '', from: '', to: '' })
+
+const filterCount = computed(
+  () => [fAction.value, fForm.value, fFrom.value, fTo.value].filter(Boolean).length,
+)
+const canClear = computed(() => filterCount.value > 0 || search.value !== '')
 
 // Opciones del desplegable de formularios: los formularios propios del usuario.
 const forms = ref([])
@@ -65,19 +78,30 @@ async function load() {
   }
 }
 
+function openFilters() {
+  draft.value = { action: fAction.value, form: fForm.value, from: fFrom.value, to: fTo.value }
+  filtersOpen.value = true
+}
+function applyFilters() {
+  fAction.value = draft.value.action
+  fForm.value = draft.value.form
+  fFrom.value = draft.value.from
+  fTo.value = draft.value.to
+  filtersOpen.value = false
+  page.value = 1
+  load()
+}
 function clearFilters() {
   fAction.value = ''
   fForm.value = ''
   fFrom.value = ''
   fTo.value = ''
-  search.value = ''
-}
-
-// Filtros (salvo búsqueda) recargan desde la primera página.
-watch([fAction, fForm, fFrom, fTo], () => {
+  search.value = '' // su watch recarga
+  filtersOpen.value = false
   page.value = 1
   load()
-})
+}
+
 let searchTimer
 watch(search, () => {
   clearTimeout(searchTimer)
@@ -115,36 +139,31 @@ onMounted(() => {
       <p class="mt-1 text-sm text-slate-500">{{ $t('myActivity.subtitle') }}</p>
     </header>
 
-    <!-- Filtros: rejilla de 2 columnas en móvil (evita una fila por filtro); flex en escritorio. -->
-    <div class="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-end">
-      <label class="flex flex-col gap-1 text-xs text-slate-500">
-        {{ $t('audit.filterAction') }}
-        <select v-model="fAction" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:w-auto">
-          <option value="">{{ $t('audit.allActions') }}</option>
-          <option v-for="a in actions" :key="a" :value="a">{{ actionLabel(a) }}</option>
-        </select>
-      </label>
-      <label class="flex flex-col gap-1 text-xs text-slate-500">
-        {{ $t('audit.filterForm') }}
-        <select v-model="fForm" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:w-auto">
-          <option value="">{{ $t('audit.allForms') }}</option>
-          <option v-for="f in forms" :key="f.id" :value="f.id">{{ f.name }}</option>
-        </select>
-      </label>
-      <label class="flex flex-col gap-1 text-xs text-slate-500">
-        {{ $t('audit.filterFrom') }}
-        <input v-model="fFrom" type="date" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:w-auto" />
-      </label>
-      <label class="flex flex-col gap-1 text-xs text-slate-500">
-        {{ $t('audit.filterTo') }}
-        <input v-model="fTo" type="date" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:w-auto" />
-      </label>
-      <label class="flex flex-col gap-1 text-xs text-slate-500">
-        {{ $t('audit.search') }}
-        <input v-model="search" type="search" :placeholder="$t('audit.searchHint')" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:w-auto" />
-      </label>
-      <button class="w-full self-end rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 sm:w-auto" @click="clearFilters">
-        {{ $t('audit.clear') }}
+    <!-- Una sola fila: búsqueda siempre a mano; el resto de filtros, en un modal. -->
+    <div class="flex items-center gap-2">
+      <input
+        v-model="search"
+        type="search"
+        :placeholder="$t('audit.searchHint')"
+        class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:max-w-xs"
+      />
+      <button
+        type="button"
+        class="shrink-0 whitespace-nowrap rounded-lg border px-3 py-1.5 text-sm font-medium"
+        :class="filterCount
+          ? 'border-primary-300 bg-primary-50 text-primary-700 hover:bg-primary-100 dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-300 dark:hover:bg-primary-900/50'
+          : 'border-slate-300 text-slate-700 hover:bg-slate-50'"
+        @click="openFilters"
+      >
+        {{ filterCount ? $t('submissions.filtersActive', { n: filterCount }) : $t('submissions.filters') }}
+      </button>
+      <button
+        type="button"
+        class="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+        :disabled="!canClear"
+        @click="clearFilters"
+      >
+        {{ $t('common.clear') }}
       </button>
     </div>
 
@@ -157,17 +176,20 @@ onMounted(() => {
       <table v-else class="w-full text-left text-sm transition-opacity" :class="loading ? 'opacity-60' : ''">
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
           <tr>
-            <th class="px-4 py-3">{{ $t('audit.colDate') }}</th>
+            <th class="px-4 py-3" :class="freezeFirst() ? 'sticky left-0 z-10 bg-slate-50' : ''">{{ $t('audit.colDate') }}</th>
             <th class="px-4 py-3">{{ $t('audit.colAction') }}</th>
             <th class="px-4 py-3">{{ $t('audit.colForm') }}</th>
             <th class="px-4 py-3">{{ $t('audit.colDetail') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
-          <tr v-for="r in items" :key="r.id" class="align-top hover:bg-slate-50">
-            <td class="whitespace-nowrap px-4 py-3 text-slate-500">{{ r.created_at }}</td>
+          <tr v-for="r in items" :key="r.id" class="group align-top hover:bg-slate-50">
+            <td
+              class="whitespace-nowrap px-4 py-3 text-slate-500"
+              :class="freezeFirst() ? 'sticky left-0 z-10 bg-white group-hover:bg-slate-50' : ''"
+            >{{ r.created_at }}</td>
             <td class="px-4 py-3">
-              <span class="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">{{ actionLabel(r.action) }}</span>
+              <span class="inline-flex whitespace-nowrap rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">{{ actionLabel(r.action) }}</span>
             </td>
             <td class="px-4 py-3 text-slate-600">{{ r.form_name || '—' }}</td>
             <td class="px-4 py-3 text-xs text-slate-500">
@@ -192,5 +214,49 @@ onMounted(() => {
         {{ $t('audit.next') }}
       </button>
     </div>
+
+    <!-- Modal: filtros (acción / formulario / fechas) -->
+    <Modal v-if="filtersOpen" :title="$t('submissions.filters')" @close="filtersOpen = false">
+      <div class="space-y-4">
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-slate-700">{{ $t('audit.filterAction') }}</span>
+          <select v-model="draft.action" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30">
+            <option value="">{{ $t('audit.allActions') }}</option>
+            <option v-for="a in actions" :key="a" :value="a">{{ actionLabel(a) }}</option>
+          </select>
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-slate-700">{{ $t('audit.filterForm') }}</span>
+          <select v-model="draft.form" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30">
+            <option value="">{{ $t('audit.allForms') }}</option>
+            <option v-for="f in forms" :key="f.id" :value="f.id">{{ f.name }}</option>
+          </select>
+        </label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block">
+            <span class="mb-1 block text-sm font-medium text-slate-700">{{ $t('audit.filterFrom') }}</span>
+            <input v-model="draft.from" type="date" class="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30" />
+          </label>
+          <label class="block">
+            <span class="mb-1 block text-sm font-medium text-slate-700">{{ $t('audit.filterTo') }}</span>
+            <input v-model="draft.to" type="date" class="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30" />
+          </label>
+        </div>
+
+        <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
+          <button type="button" class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40" :disabled="!canClear" @click="clearFilters">
+            {{ $t('common.clear') }}
+          </button>
+          <div class="flex gap-2">
+            <button type="button" class="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100" @click="filtersOpen = false">
+              {{ $t('common.cancel') }}
+            </button>
+            <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700" @click="applyFilters">
+              {{ $t('submissions.filtersApply') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Modal>
   </div>
 </template>

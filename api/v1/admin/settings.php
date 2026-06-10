@@ -29,6 +29,8 @@ if (Request::method() === 'GET') {
         'default_theme'              => Settings::defaultTheme(),
         'valid_themes'               => Settings::VALID_THEMES,
         'show_theme_toggle'          => Settings::showThemeToggle(),
+        'table_freeze'               => Settings::tableFreeze(),
+        'valid_table_freeze'         => Settings::VALID_TABLE_FREEZE,
     ]);
 }
 
@@ -73,6 +75,15 @@ if (Request::method() === 'PUT') {
     if (array_key_exists('show_theme_toggle', $body)) {
         Settings::set('show_theme_toggle', (bool) $body['show_theme_toggle']);
         $out['show_theme_toggle'] = (bool) $body['show_theme_toggle'];
+    }
+
+    if (array_key_exists('table_freeze', $body)) {
+        $tf = (string) $body['table_freeze'];
+        if (!in_array($tf, Settings::VALID_TABLE_FREEZE, true)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Modo de congelado no válido');
+        }
+        Settings::set('table_freeze', $tf);
+        $out['table_freeze'] = $tf;
     }
 
     if (array_key_exists('label_mode', $body)) {

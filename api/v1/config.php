@@ -11,4 +11,5 @@ ErrorResponse::ok([
     'viewer_actions'         => Settings::viewerActions(),
     'default_theme'          => Settings::defaultTheme(),
     'show_theme_toggle'      => Settings::showThemeToggle(),
+    'table_freeze'           => Settings::tableFreeze(),
 ]);

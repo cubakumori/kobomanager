@@ -183,7 +183,11 @@
     "theme": "Tema por defecto",
     "themeDesc": "Tema visual inicial del sitio (claro, oscuro o automático según el sistema). Quien ya haya elegido tema con el selector conserva su elección.",
     "themeToggle": "Mostrar selector de tema",
-    "themeToggleHint": "Si se desactiva, el botón sol/luna de la portada y el ajuste de tema del perfil se ocultan; todos los que no hayan elegido tema ven el tema por defecto."
+    "themeToggleHint": "Si se desactiva, el botón sol/luna de la portada y el ajuste de tema del perfil se ocultan; todos los que no hayan elegido tema ven el tema por defecto.",
+    "tableFreeze": "Tablas: columnas congeladas",
+    "tableFreezeDesc": "Al desplazar una tabla lateralmente, la primera columna puede quedar fija como referencia.",
+    "tableFreeze_first": "Congelar la primera columna",
+    "tableFreeze_none": "No congelar"
   },
   "audit": {
     "title": "Auditoría",

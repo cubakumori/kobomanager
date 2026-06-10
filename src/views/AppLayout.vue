@@ -1,12 +1,21 @@
 <script setup>
 import { ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import AppSidebar from '../components/AppSidebar.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import { useDialogA11y } from '../composables/dialogA11y'
+import { useAuthStore } from '../stores/auth'
 
 const open = ref(false)
 const route = useRoute()
+const router = useRouter()
+const auth = useAuthStore()
+
+// Cerrar sesión desde la barra superior móvil (en escritorio vive en el sidebar).
+async function onLogout() {
+  await auth.logout()
+  router.push('/')
+}
 // Al navegar, cerrar el sidebar móvil.
 watch(() => route.fullPath, () => { open.value = false })
 
@@ -43,15 +52,29 @@ useDialogA11y(drawer, () => { open.value = false }, open)
            derecha (control de navegación; el azul se reserva para las acciones). -->
       <header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
         <RouterLink to="/" class="text-lg font-semibold tracking-tight text-slate-900 transition-colors hover:text-primary-700">KoboManager</RouterLink>
-        <button
-          class="km-hamburger"
-          aria-label="Menu"
-          @click="open = true"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
-            <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
+        <div class="flex items-center gap-2">
+          <!-- Cerrar sesión: a la izquierda de la hamburguesa (mismo hueco que el
+               selector de tema en la portada) -->
+          <button
+            class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+            :title="$t('nav.logout')"
+            :aria-label="$t('nav.logout')"
+            @click="onLogout"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H3" />
+            </svg>
+          </button>
+          <button
+            class="km-hamburger"
+            aria-label="Menu"
+            @click="open = true"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
+              <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
       </header>
 
       <main class="flex-1 overflow-y-auto">

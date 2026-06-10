@@ -38,6 +38,16 @@ final class SettingsTest extends DbTestCase
         $this->assertFalse(Settings::showThemeToggle());
     }
 
+    public function testTableFreeze(): void
+    {
+        $this->assertSame('first', Settings::tableFreeze()); // por defecto
+        Settings::set('table_freeze', 'none');
+        $this->assertSame('none', Settings::tableFreeze());
+        // Valor desconocido → vuelve al por defecto.
+        Settings::set('table_freeze', 'all');
+        $this->assertSame('first', Settings::tableFreeze());
+    }
+
     public function testSyncStatusesSanitizes(): void
     {
         Settings::set('sync_deployment_statuses', ['deployed', 'bogus', 'draft']);

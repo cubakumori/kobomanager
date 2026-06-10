@@ -11,10 +11,13 @@ import ReviewBadge from '../components/ReviewBadge.vue'
 import Skeleton from '../components/Skeleton.vue'
 import Modal from '../components/Modal.vue'
 import RowFilterEditor from '../components/RowFilterEditor.vue'
+import { useTableFreeze } from '../composables/appConfig'
 
 const { tableLabel, tableValue } = useDerivedFormat()
 
 const { t } = useI18n()
+const { freezeFirst } = useTableFreeze()
+const viewOpen = ref(false) // modal «Vista» (revisión / orden / por página)
 const route = useRoute()
 const formId = computed(() => Number(route.params.id))
 
@@ -392,56 +395,29 @@ onMounted(() => { loadAdvFilter(); load() })
       </template>
     </header>
 
-    <!-- Filtros: rejilla de 2 columnas en móvil (búsqueda a fila completa); flex en escritorio. -->
-    <div class="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center">
+    <!-- Una sola fila: búsqueda a mano; revisión/orden/por página en el modal «Vista»;
+         condiciones avanzadas en el modal «Filtros». -->
+    <div class="flex items-center gap-2">
       <input
         v-model="search"
         type="search"
         :placeholder="$t('submissions.search')"
-        class="col-span-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:col-auto sm:w-auto sm:max-w-xs"
+        class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:max-w-xs"
       />
-      <label class="flex min-w-0 items-center gap-1.5 text-sm text-slate-600">
-        {{ $t('submissions.filterReview') }}
-        <select
-          v-model="reviewFilter"
-          class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:w-auto"
-        >
-          <option value="">{{ $t('submissions.reviewAll') }}</option>
-          <option value="pending">{{ $t('review.pending') }}</option>
-          <option value="approved">{{ $t('review.approved') }}</option>
-          <option value="on_hold">{{ $t('review.on_hold') }}</option>
-          <option value="rejected">{{ $t('review.rejected') }}</option>
-        </select>
-      </label>
-      <label class="flex min-w-0 items-center gap-1.5 text-sm text-slate-600">
-        {{ $t('submissions.sort') }}
-        <select
-          v-model="sort"
-          class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:w-auto"
-        >
-          <option value="date_desc">{{ $t('submissions.sortNewest') }}</option>
-          <option value="date_asc">{{ $t('submissions.sortOldest') }}</option>
-          <optgroup :label="$t('submissions.columnsCalculated')">
-            <option value="duration_desc">{{ $t('submissions.sortDurationDesc') }}</option>
-            <option value="duration_asc">{{ $t('submissions.sortDurationAsc') }}</option>
-            <option value="attachments_desc">{{ $t('submissions.sortAttachments') }}</option>
-            <option value="geo_desc">{{ $t('submissions.sortGeo') }}</option>
-          </optgroup>
-        </select>
-      </label>
-      <label class="flex min-w-0 items-center gap-1.5 text-sm text-slate-600">
-        {{ $t('submissions.perPage') }}
-        <select
-          v-model.number="perPage"
-          class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:w-auto"
-        >
-          <option v-for="n in perPageOptions" :key="n" :value="n">{{ n }}</option>
-        </select>
-      </label>
-      <div class="col-span-2 flex items-center gap-1 sm:col-auto">
+      <button
+        type="button"
+        class="shrink-0 whitespace-nowrap rounded-lg border px-3 py-1.5 text-sm font-medium"
+        :class="reviewFilter
+          ? 'border-primary-300 bg-primary-50 text-primary-700 hover:bg-primary-100 dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-300 dark:hover:bg-primary-900/50'
+          : 'border-slate-300 text-slate-700 hover:bg-slate-50'"
+        @click="viewOpen = true"
+      >
+        {{ $t('submissions.viewOptions') }}
+      </button>
+      <div class="flex shrink-0 items-center gap-1">
         <button
           type="button"
-          class="w-full whitespace-nowrap rounded-lg border px-3 py-1.5 text-sm font-medium sm:w-auto"
+          class="whitespace-nowrap rounded-lg border px-3 py-1.5 text-sm font-medium"
           :class="advCount
             ? 'border-primary-300 bg-primary-50 text-primary-700 hover:bg-primary-100 dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-300 dark:hover:bg-primary-900/50'
             : 'border-slate-300 text-slate-700 hover:bg-slate-50'"
@@ -508,7 +484,7 @@ onMounted(() => { loadAdvFilter(); load() })
       <table v-else class="w-full text-left text-sm transition-opacity" :class="loading ? 'opacity-60' : ''">
         <thead class="bg-accent-50 text-xs uppercase tracking-wider text-accent-700 dark:bg-slate-50 dark:text-accent-300">
           <tr>
-            <th v-if="canValidate" class="sticky left-0 z-20 w-12 bg-accent-50 px-4 py-3 dark:bg-slate-50">
+            <th v-if="canValidate" class="w-12 px-4 py-3" :class="freezeFirst() ? 'sticky left-0 z-20 bg-accent-50 dark:bg-slate-50' : ''">
               <input
                 type="checkbox"
                 class="h-4 w-4 align-middle"
@@ -518,8 +494,8 @@ onMounted(() => { loadAdvFilter(); load() })
               />
             </th>
             <th
-              class="sticky z-20 whitespace-nowrap bg-accent-50 px-4 py-3 dark:bg-slate-50"
-              :class="canValidate ? 'left-12' : 'left-0'"
+              class="whitespace-nowrap px-4 py-3"
+              :class="freezeFirst() ? ['sticky z-20 bg-accent-50 dark:bg-slate-50', canValidate ? 'left-12' : 'left-0'] : ''"
             >{{ $t('submissions.colSubmitted') }}</th>
             <th v-for="c in shownColumns" :key="c" class="whitespace-nowrap px-4 py-3" :title="colFullLabel(c)">{{ colLabel(c) }}</th>
             <th class="px-4 py-3">{{ $t('submissions.colReview') }}</th>
@@ -528,7 +504,7 @@ onMounted(() => { loadAdvFilter(); load() })
         </thead>
         <tbody class="divide-y divide-slate-100">
           <tr v-for="s in items" :key="s.submission_uid" class="group hover:bg-slate-50">
-            <td v-if="canValidate" class="sticky left-0 z-10 bg-white px-4 py-3 group-hover:bg-slate-50">
+            <td v-if="canValidate" class="px-4 py-3" :class="freezeFirst() ? 'sticky left-0 z-10 bg-white group-hover:bg-slate-50' : ''">
               <input
                 type="checkbox"
                 class="h-4 w-4 align-middle"
@@ -537,8 +513,8 @@ onMounted(() => { loadAdvFilter(); load() })
               />
             </td>
             <td
-              class="sticky z-10 whitespace-nowrap bg-white px-4 py-3 text-slate-600 group-hover:bg-slate-50"
-              :class="canValidate ? 'left-12' : 'left-0'"
+              class="whitespace-nowrap px-4 py-3 text-slate-600"
+              :class="freezeFirst() ? ['sticky z-10 bg-white group-hover:bg-slate-50', canValidate ? 'left-12' : 'left-0'] : ''"
             >{{ s.submitted_at }}</td>
             <td
               v-for="c in shownColumns"
@@ -583,6 +559,55 @@ onMounted(() => { loadAdvFilter(); load() })
         {{ $t('submissions.next') }}
       </button>
     </div>
+
+    <!-- Modal: opciones de vista (revisión / orden / por página); aplican al instante -->
+    <Modal v-if="viewOpen" :title="$t('submissions.viewOptionsTitle')" @close="viewOpen = false">
+      <div class="space-y-4">
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-slate-700">{{ $t('submissions.filterReview') }}</span>
+          <select
+            v-model="reviewFilter"
+            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          >
+            <option value="">{{ $t('submissions.reviewAll') }}</option>
+            <option value="pending">{{ $t('review.pending') }}</option>
+            <option value="approved">{{ $t('review.approved') }}</option>
+            <option value="on_hold">{{ $t('review.on_hold') }}</option>
+            <option value="rejected">{{ $t('review.rejected') }}</option>
+          </select>
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-slate-700">{{ $t('submissions.sort') }}</span>
+          <select
+            v-model="sort"
+            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          >
+            <option value="date_desc">{{ $t('submissions.sortNewest') }}</option>
+            <option value="date_asc">{{ $t('submissions.sortOldest') }}</option>
+            <optgroup :label="$t('submissions.columnsCalculated')">
+              <option value="duration_desc">{{ $t('submissions.sortDurationDesc') }}</option>
+              <option value="duration_asc">{{ $t('submissions.sortDurationAsc') }}</option>
+              <option value="attachments_desc">{{ $t('submissions.sortAttachments') }}</option>
+              <option value="geo_desc">{{ $t('submissions.sortGeo') }}</option>
+            </optgroup>
+          </select>
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-slate-700">{{ $t('submissions.perPage') }}</span>
+          <select
+            v-model.number="perPage"
+            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          >
+            <option v-for="n in perPageOptions" :key="n" :value="n">{{ n }}</option>
+          </select>
+        </label>
+        <div class="flex justify-end border-t border-slate-100 pt-4">
+          <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700" @click="viewOpen = false">
+            {{ $t('common.confirm') }}
+          </button>
+        </div>
+      </div>
+    </Modal>
 
     <!-- Modal: filtro avanzado (reutiliza el editor del scoping por filas) -->
     <Modal v-if="advOpen" size="xl" :title="$t('submissions.filtersTitle')" @close="advOpen = false">

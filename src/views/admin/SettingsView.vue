@@ -5,6 +5,7 @@ import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 import { useAuthStore } from '../../stores/auth'
 import { setLocale } from '../../i18n'
+import { useTableFreeze } from '../../composables/appConfig'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -21,6 +22,9 @@ const auditSelfViewEnabled = ref(false)
 const defaultTheme = ref('auto')
 const validThemes = ref(['light', 'dark', 'auto'])
 const showThemeToggle = ref(true)
+const { tableFreeze: appTableFreeze } = useTableFreeze()
+const tableFreeze = ref('first')
+const validTableFreeze = ref(['first', 'none'])
 const mailConfigured = ref(false)
 const viewerActions = ref({ enketo: false, update: false, resync: false, login: false })
 const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login']
@@ -51,6 +55,8 @@ async function load() {
     defaultTheme.value = data.data.default_theme
     validThemes.value = data.data.valid_themes ?? validThemes.value
     showThemeToggle.value = data.data.show_theme_toggle
+    tableFreeze.value = data.data.table_freeze
+    validTableFreeze.value = data.data.valid_table_freeze ?? validTableFreeze.value
     mailConfigured.value = data.data.mail_configured
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     sharePasswordPolicy.value = data.data.share_password_policy
@@ -91,6 +97,7 @@ async function save() {
       audit_self_view_enabled: auditSelfViewEnabled.value,
       default_theme: defaultTheme.value,
       show_theme_toggle: showThemeToggle.value,
+      table_freeze: tableFreeze.value,
       viewer_actions: viewerActions.value,
       share_password_policy: sharePasswordPolicy.value,
       share_attachments_policy: shareAttachmentsPolicy.value,
@@ -106,6 +113,12 @@ async function save() {
     if (data.data.audit_self_view_enabled != null) auditSelfViewEnabled.value = data.data.audit_self_view_enabled
     if (data.data.default_theme != null) defaultTheme.value = data.data.default_theme
     if (data.data.show_theme_toggle != null) showThemeToggle.value = data.data.show_theme_toggle
+    if (data.data.table_freeze != null) {
+      tableFreeze.value = data.data.table_freeze
+      // Reflejar el cambio en esta misma pestaña (módulo reactivo + caché local).
+      appTableFreeze.value = data.data.table_freeze
+      try { localStorage.setItem('km.cfg.tableFreeze', data.data.table_freeze) } catch { /* noop */ }
+    }
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     if (data.data.share_password_policy) sharePasswordPolicy.value = data.data.share_password_policy
     if (data.data.share_attachments_policy) shareAttachmentsPolicy.value = data.data.share_attachments_policy
@@ -201,6 +214,21 @@ onMounted(load)
             <span class="block text-xs text-slate-400">{{ $t('settings.themeToggleHint') }}</span>
           </span>
         </label>
+      </section>
+
+      <!-- Congelado de columnas en tablas -->
+      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.tableFreeze') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.tableFreezeDesc') }}</p>
+        </div>
+        <select
+          v-model="tableFreeze"
+          class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          @change="saved = false"
+        >
+          <option v-for="tf in validTableFreeze" :key="tf" :value="tf">{{ $t('settings.tableFreeze_' + tf) }}</option>
+        </select>
       </section>
 
       <!-- Etiquetas en tabla y detalles -->

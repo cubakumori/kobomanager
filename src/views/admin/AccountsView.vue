@@ -6,8 +6,10 @@ import { apiError } from '../../stores/auth'
 import Modal from '../../components/Modal.vue'
 import { confirmDialog } from '../../composables/confirm'
 import Skeleton from '../../components/Skeleton.vue'
+import { useTableFreeze } from '../../composables/appConfig'
 
 const { t } = useI18n()
+const { freezeFirst } = useTableFreeze()
 
 const accounts = ref([])
 const loading = ref(true)
@@ -202,7 +204,7 @@ onMounted(load)
       <table v-else class="w-full whitespace-nowrap text-left text-sm">
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
           <tr>
-            <th class="px-4 py-3">{{ $t('accounts.label') }}</th>
+            <th class="px-4 py-3" :class="freezeFirst() ? 'sticky left-0 z-10 bg-slate-50' : ''">{{ $t('accounts.label') }}</th>
             <th class="px-4 py-3">{{ $t('accounts.serverUrl') }}</th>
             <th class="px-4 py-3">{{ $t('common.email') }}</th>
             <th class="px-4 py-3">{{ $t('common.status') }}</th>
@@ -211,7 +213,7 @@ onMounted(load)
         </thead>
         <tbody class="divide-y divide-slate-100">
           <tr v-for="a in accounts" :key="a.id">
-            <td class="px-4 py-3 font-medium text-slate-900">{{ a.label }}</td>
+            <td class="px-4 py-3 font-medium text-slate-900" :class="freezeFirst() ? 'sticky left-0 z-10 bg-white' : ''"><div class="max-w-[calc(40vw-2rem)] truncate sm:max-w-none" :title="a.label">{{ a.label }}</div></td>
             <td class="px-4 py-3 text-slate-600">{{ a.server_url }}</td>
             <td class="px-4 py-3 text-slate-600">{{ a.email }}</td>
             <td class="px-4 py-3">

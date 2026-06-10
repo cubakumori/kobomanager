@@ -6,8 +6,10 @@ import { apiError } from '../../stores/auth'
 import { confirmDialog } from '../../composables/confirm'
 import Modal from '../../components/Modal.vue'
 import Skeleton from '../../components/Skeleton.vue'
+import { useTableFreeze } from '../../composables/appConfig'
 
 const { t } = useI18n()
+const { freezeFirst } = useTableFreeze()
 
 const items = ref([])
 const total = ref(0)
@@ -157,7 +159,7 @@ onMounted(load)
       <table class="w-full whitespace-nowrap text-left text-sm">
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
           <tr>
-            <th class="px-4 py-3">{{ $t('messages.colDate') }}</th>
+            <th class="px-4 py-3" :class="freezeFirst() ? 'sticky left-0 z-10 bg-slate-50' : ''">{{ $t('messages.colDate') }}</th>
             <th class="px-4 py-3">{{ $t('messages.colFrom') }}</th>
             <th class="px-4 py-3">{{ $t('messages.colTopic') }}</th>
             <th class="px-4 py-3">{{ $t('messages.colStatus') }}</th>
@@ -167,11 +169,11 @@ onMounted(load)
           <tr
             v-for="msg in items"
             :key="msg.id"
-            class="cursor-pointer hover:bg-slate-50"
+            class="group cursor-pointer hover:bg-slate-50"
             :class="msg.status === 'new' ? 'bg-primary-50/40 dark:bg-primary-900/15' : ''"
             @click="open(msg)"
           >
-            <td class="px-4 py-3 text-slate-600">{{ fmtDate(msg.created_at) }}</td>
+            <td class="px-4 py-3 text-slate-600" :class="freezeFirst() ? 'sticky left-0 z-10 bg-white group-hover:bg-slate-50' : ''">{{ fmtDate(msg.created_at) }}</td>
             <td class="px-4 py-3">
               <p class="font-medium text-slate-900" :class="msg.status === 'new' ? 'font-semibold' : ''">{{ msg.name }}</p>
               <p class="text-xs text-slate-400">{{ msg.email }}<span v-if="msg.org"> · {{ msg.org }}</span></p>

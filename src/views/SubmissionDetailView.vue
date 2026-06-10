@@ -171,7 +171,7 @@ onMounted(load)
           :to="{ name: 'submissions', params: { id: route.params.id } }"
           class="text-sm text-primary-600 hover:underline"
         >
-          {{ $t('detail.back') }}
+          <span class="hidden min-[412px]:inline">{{ $t('detail.back') }}</span><span class="min-[412px]:hidden">{{ $t('detail.backShort') }}</span>
         </RouterLink>
         <!-- Navegación entre envíos -->
         <div class="flex items-center gap-1">
@@ -180,13 +180,13 @@ onMounted(load)
             :to="toPrev || undefined"
             class="rounded-lg border px-2.5 py-1 text-sm font-medium"
             :class="toPrev ? 'border-slate-300 text-slate-700 hover:bg-slate-50' : 'cursor-not-allowed border-slate-200 text-slate-300'"
-          >{{ $t('detail.prev') }}</component>
+          ><span class="hidden min-[412px]:inline">{{ $t('detail.prev') }}</span><span class="min-[412px]:hidden" :aria-label="$t('detail.prev')">←</span></component>
           <component
             :is="toNext ? 'RouterLink' : 'span'"
             :to="toNext || undefined"
             class="rounded-lg border px-2.5 py-1 text-sm font-medium"
             :class="toNext ? 'border-slate-300 text-slate-700 hover:bg-slate-50' : 'cursor-not-allowed border-slate-200 text-slate-300'"
-          >{{ $t('detail.next') }}</component>
+          ><span class="hidden min-[412px]:inline">{{ $t('detail.next') }}</span><span class="min-[412px]:hidden" :aria-label="$t('detail.next')">→</span></component>
         </div>
       </div>
       <div class="mt-1 flex items-center gap-3">
@@ -334,13 +334,15 @@ onMounted(load)
             :placeholder="$t('detail.comment')"
             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
           ></textarea>
-          <div class="flex gap-3">
+          <!-- Botonera en tonos suaves (pastel) en ambos temas; en pantallas estrechas
+               se compacta y «Rechazar» pasa a icono ✕ (con title/aria-label). -->
+          <div class="flex gap-2 sm:gap-3">
             <!-- El botón del estado ACTUAL queda inactivo (evita re-aplicar el mismo
                  estado, que insertaría una revisión duplicada). -->
             <button
               :disabled="reviewing || sub.review_status === 'approved'"
               :title="sub.review_status === 'approved' ? $t('detail.alreadyStatus') : ''"
-              class="rounded-lg bg-success-600 px-4 py-2 text-sm font-semibold text-white hover:bg-success-700 disabled:cursor-not-allowed disabled:opacity-60"
+              class="whitespace-nowrap rounded-lg bg-success-100 px-3 py-2 text-sm font-semibold text-success-800 ring-1 ring-success-300 hover:bg-success-200 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-success-900/40 dark:text-success-300 dark:ring-success-800 dark:hover:bg-success-900/60 sm:px-4"
               @click="submitReview('approved')"
             >
               {{ $t('detail.approve') }}
@@ -348,18 +350,20 @@ onMounted(load)
             <button
               :disabled="reviewing || sub.review_status === 'on_hold'"
               :title="sub.review_status === 'on_hold' ? $t('detail.alreadyStatus') : ''"
-              class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+              class="whitespace-nowrap rounded-lg bg-sky-100 px-3 py-2 text-sm font-semibold text-sky-800 ring-1 ring-sky-300 hover:bg-sky-200 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-sky-950/50 dark:text-sky-300 dark:ring-sky-900 dark:hover:bg-sky-950/70 sm:px-4"
               @click="submitReview('on_hold')"
             >
               {{ $t('detail.standby') }}
             </button>
             <button
               :disabled="reviewing || sub.review_status === 'rejected'"
-              :title="sub.review_status === 'rejected' ? $t('detail.alreadyStatus') : ''"
-              class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+              :title="sub.review_status === 'rejected' ? $t('detail.alreadyStatus') : $t('detail.reject')"
+              :aria-label="$t('detail.reject')"
+              class="whitespace-nowrap rounded-lg bg-red-100 px-3 py-2 text-sm font-semibold text-red-800 ring-1 ring-red-300 hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-red-950/50 dark:text-red-300 dark:ring-red-900 dark:hover:bg-red-950/70 sm:px-4"
               @click="submitReview('rejected')"
             >
-              {{ $t('detail.reject') }}
+              <span class="hidden sm:inline">{{ $t('detail.reject') }}</span>
+              <span class="sm:hidden" aria-hidden="true">✕</span>
             </button>
           </div>
         </div>
@@ -420,7 +424,7 @@ onMounted(load)
           :to="{ name: 'submissions', params: { id: route.params.id } }"
           class="text-sm text-primary-600 hover:underline"
         >
-          {{ $t('detail.back') }}
+          <span class="hidden min-[412px]:inline">{{ $t('detail.back') }}</span><span class="min-[412px]:hidden">{{ $t('detail.backShort') }}</span>
         </RouterLink>
         <div class="flex items-center gap-1">
           <component
@@ -428,13 +432,13 @@ onMounted(load)
             :to="toPrev || undefined"
             class="rounded-lg border px-2.5 py-1 text-sm font-medium"
             :class="toPrev ? 'border-slate-300 text-slate-700 hover:bg-slate-50' : 'cursor-not-allowed border-slate-200 text-slate-300'"
-          >{{ $t('detail.prev') }}</component>
+          ><span class="hidden min-[412px]:inline">{{ $t('detail.prev') }}</span><span class="min-[412px]:hidden" :aria-label="$t('detail.prev')">←</span></component>
           <component
             :is="toNext ? 'RouterLink' : 'span'"
             :to="toNext || undefined"
             class="rounded-lg border px-2.5 py-1 text-sm font-medium"
             :class="toNext ? 'border-slate-300 text-slate-700 hover:bg-slate-50' : 'cursor-not-allowed border-slate-200 text-slate-300'"
-          >{{ $t('detail.next') }}</component>
+          ><span class="hidden min-[412px]:inline">{{ $t('detail.next') }}</span><span class="min-[412px]:hidden" :aria-label="$t('detail.next')">→</span></component>
         </div>
       </div>
     </template>

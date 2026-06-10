@@ -174,6 +174,20 @@ class Settings {
         return (bool) self::get('show_theme_toggle', self::DEFAULT_SHOW_THEME_TOGGLE);
     }
 
+    /**
+     * Congelado de columnas en las tablas de la interfaz al hacer scroll lateral:
+     *   'first' → la primera columna queda fija (por defecto)
+     *   'none'  → ninguna columna fija
+     */
+    public const VALID_TABLE_FREEZE = ['first', 'none'];
+    private const DEFAULT_TABLE_FREEZE = 'first';
+
+    /** Modo de congelado de columnas en tablas ('first'|'none'). */
+    public static function tableFreeze(): string {
+        $v = self::get('table_freeze', self::DEFAULT_TABLE_FREEZE);
+        return in_array($v, self::VALID_TABLE_FREEZE, true) ? $v : self::DEFAULT_TABLE_FREEZE;
+    }
+
     public const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login'];
 
     /**

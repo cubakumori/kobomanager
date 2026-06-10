@@ -50,7 +50,7 @@
     "formActionsNote": "For viewers, the admin enables each action in “Settings”; admins always have them.",
     "exploreTitle": "Exploring the submissions table",
     "exploreSearch": "Search and filters",
-    "exploreSearchBody": "Search text across submissions (also by option labels, e.g. “Female”, not just codes) and filter by review status; with “Filters” you can also combine per-field conditions (AND/OR groups with operators), remembered per form and applied to the exported CSV too. Sort by date or a calculated column (duration, attachments, location) and adjust the page size.",
+    "exploreSearchBody": "Search text across submissions (also by option labels, e.g. “Female”, not just codes); under “Display” you pick the review-status filter, the sort order (by date or a calculated column: duration, attachments, location) and the page size; and “Filters” lets you combine per-field conditions (AND/OR groups with operators), remembered per form and applied to the exported CSV too.",
     "exploreColumns": "Configurable columns",
     "exploreColumnsBody": "Choose which columns are shown and reorder them by dragging; the preference is remembered per form.",
     "exploreCalculated": "Calculated columns",

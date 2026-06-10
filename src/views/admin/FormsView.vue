@@ -6,8 +6,10 @@ import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 import { confirmDialog } from '../../composables/confirm'
 import Skeleton from '../../components/Skeleton.vue'
+import { useTableFreeze } from '../../composables/appConfig'
 
 const { t } = useI18n()
+const { freezeFirst } = useTableFreeze()
 const route = useRoute()
 
 const forms = ref([])
@@ -249,7 +251,7 @@ onMounted(async () => {
       <table v-else class="w-full whitespace-nowrap text-left text-sm">
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
           <tr>
-            <th class="px-4 py-3">{{ $t('forms.colForm') }}</th>
+            <th class="px-4 py-3" :class="freezeFirst() ? 'sticky left-0 z-10 bg-slate-50' : ''">{{ $t('forms.colForm') }}</th>
             <th class="px-4 py-3">{{ $t('forms.colAccount') }}</th>
             <th class="px-4 py-3">{{ $t('forms.colType') }}</th>
             <th class="px-4 py-3">{{ $t('forms.colSync') }}</th>
@@ -259,13 +261,18 @@ onMounted(async () => {
         </thead>
         <tbody class="divide-y divide-slate-100">
           <tr v-for="f in filteredForms" :key="f.id" :class="{ 'bg-slate-50/60': !f.active }">
-            <td class="px-4 py-3 font-medium text-slate-900">
-              {{ f.name }}
-              <span
-                v-if="!f.active"
-                class="ml-1 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600"
-                :title="$t('forms.inactiveTitle')"
-              >{{ $t('forms.inactive') }}</span>
+            <td
+              class="px-4 py-3 font-medium text-slate-900"
+              :class="freezeFirst() ? ['sticky left-0 z-10', f.active ? 'bg-white' : 'bg-slate-50'] : ''"
+            >
+              <div class="max-w-[calc(40vw-2rem)] truncate sm:max-w-none" :title="f.name">
+                {{ f.name }}
+                <span
+                  v-if="!f.active"
+                  class="ml-1 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600"
+                  :title="$t('forms.inactiveTitle')"
+                >{{ $t('forms.inactive') }}</span>
+              </div>
             </td>
             <td class="px-4 py-3 text-slate-600">{{ f.account_label }}</td>
             <td class="px-4 py-3">

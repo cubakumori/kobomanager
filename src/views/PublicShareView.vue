@@ -7,8 +7,10 @@ import { i18n, setLocale } from '../i18n'
 import { makeLabeler } from '../composables/labels'
 import LeafletMap from '../components/LeafletMap.vue'
 import AttachmentsGallery from '../components/AttachmentsGallery.vue'
+import { useTableFreeze } from '../composables/appConfig'
 
 const { t } = useI18n()
+const { freezeFirst } = useTableFreeze()
 const route = useRoute()
 const router = useRouter()
 const token = computed(() => String(route.params.token))
@@ -334,14 +336,14 @@ onMounted(loadMeta)
               <table class="w-full text-left text-sm">
                 <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
                   <tr>
-                    <th class="px-4 py-3">{{ $t('share.colSubmitted') }}</th>
+                    <th class="px-4 py-3" :class="freezeFirst() ? 'sticky left-0 z-10 bg-slate-50' : ''">{{ $t('share.colSubmitted') }}</th>
                     <th v-for="c in columns" :key="c" class="px-4 py-3" :title="labeler.fullLabel(c)">{{ labeler.label(c) }}</th>
                     <th v-if="meta.expose_detail" class="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                  <tr v-for="it in list.items" :key="it.submission_uid" class="hover:bg-slate-50">
-                    <td class="whitespace-nowrap px-4 py-3 text-slate-500">{{ it.submitted_at }}</td>
+                  <tr v-for="it in list.items" :key="it.submission_uid" class="group hover:bg-slate-50">
+                    <td class="whitespace-nowrap px-4 py-3 text-slate-500" :class="freezeFirst() ? 'sticky left-0 z-10 bg-white group-hover:bg-slate-50' : ''">{{ it.submitted_at }}</td>
                     <td v-for="c in columns" :key="c" class="px-4 py-3 text-slate-800">{{ labeler.value(c, it.data[c]) }}</td>
                     <td v-if="meta.expose_detail" class="px-4 py-3 text-right">
                       <button class="text-sm font-medium text-primary-600 hover:underline" @click="go({ sub: it.submission_uid })">

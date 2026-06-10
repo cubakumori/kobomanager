@@ -49,7 +49,9 @@
     "filtersTitle": "Advanced filters",
     "filtersIntro": "Combine per-field conditions (AND/OR groups, same operators as row scoping). Affects only the table and the exported CSV.",
     "filtersClear": "Clear filters",
-    "filtersApply": "Apply"
+    "filtersApply": "Apply",
+    "viewOptions": "Display",
+    "viewOptionsTitle": "Display options"
   },
   "detail": {
     "back": "← Back to submissions",
@@ -77,7 +79,8 @@
     "loadError": "Could not load the submission",
     "saveError": "Could not save (is the Kobo account valid?)",
     "reviewError": "Could not record the review",
-    "readonlyField": "Read-only field: you can see it but not edit it."
+    "readonlyField": "Read-only field: you can see it but not edit it.",
+    "backShort": "← Submissions"
   },
   "review": {
     "pending": "Pending",

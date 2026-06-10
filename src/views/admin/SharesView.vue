@@ -7,8 +7,10 @@ import { confirmDialog } from '../../composables/confirm'
 import Modal from '../../components/Modal.vue'
 import RowFilterEditor from '../../components/RowFilterEditor.vue'
 import Skeleton from '../../components/Skeleton.vue'
+import { useTableFreeze } from '../../composables/appConfig'
 
 const { t } = useI18n()
+const { freezeFirst } = useTableFreeze()
 
 const links = ref([])
 const forms = ref([])
@@ -267,7 +269,7 @@ onMounted(() => {
       <table class="w-full whitespace-nowrap text-left text-sm">
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
           <tr>
-            <th class="px-4 py-3">{{ $t('shares.colLink') }}</th>
+            <th class="px-4 py-3" :class="freezeFirst() ? 'sticky left-0 z-10 bg-slate-50' : ''">{{ $t('shares.colLink') }}</th>
             <th class="px-4 py-3">{{ $t('shares.colExposes') }}</th>
             <th class="px-4 py-3">{{ $t('shares.colState') }}</th>
             <th class="px-4 py-3">{{ $t('shares.colVisits') }}</th>
@@ -276,9 +278,10 @@ onMounted(() => {
         </thead>
         <tbody class="divide-y divide-slate-100">
           <tr v-for="link in links" :key="link.id">
-            <td class="px-4 py-3">
-              <p class="font-medium text-slate-900">{{ link.label || link.form.name }}</p>
-              <p class="text-xs text-slate-400">{{ link.form.name }}</p>
+            <td class="px-4 py-3" :class="freezeFirst() ? 'sticky left-0 z-10 bg-white' : ''">
+              <div class="max-w-[calc(40vw-2rem)] sm:max-w-none">
+              <p class="truncate font-medium text-slate-900" :title="link.label || link.form.name">{{ link.label || link.form.name }}</p>
+              <p class="truncate text-xs text-slate-400">{{ link.form.name }}</p>
               <div class="mt-1 flex flex-wrap items-center gap-1.5">
                 <code class="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">/s/{{ link.token.slice(0, 10) }}…</code>
                 <span v-if="link.has_password" class="text-xs text-amber-600 dark:text-amber-400">🔒 {{ $t('shares.withPassword') }}</span>
@@ -288,6 +291,7 @@ onMounted(() => {
                 <span v-if="link.field_filter" class="text-xs text-accent-700 dark:text-accent-300">
                   {{ $t('permissions.colsHidden', { n: link.field_filter.hidden.length }) }}
                 </span>
+              </div>
               </div>
             </td>
             <td class="px-4 py-3 text-slate-600">{{ exposesText(link) }}</td>

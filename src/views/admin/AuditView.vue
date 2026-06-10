@@ -4,7 +4,9 @@ import { useI18n } from 'vue-i18n'
 import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 import Skeleton from '../../components/Skeleton.vue'
+import { useTableFreeze } from '../../composables/appConfig'
 
+const { freezeFirst } = useTableFreeze()
 const { t, te } = useI18n()
 
 // --- Estado del sistema (/health ampliado para admin) ---
@@ -221,7 +223,7 @@ onMounted(() => {
       <table v-else class="w-full text-left text-sm transition-opacity" :class="loading ? 'opacity-60' : ''">
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
           <tr>
-            <th class="px-4 py-3">{{ $t('audit.colDate') }}</th>
+            <th class="px-4 py-3" :class="freezeFirst() ? 'sticky left-0 z-10 bg-slate-50' : ''">{{ $t('audit.colDate') }}</th>
             <th class="px-4 py-3">{{ $t('audit.colAction') }}</th>
             <th class="px-4 py-3">{{ $t('audit.colUser') }}</th>
             <th class="px-4 py-3">{{ $t('audit.colForm') }}</th>
@@ -229,8 +231,8 @@ onMounted(() => {
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
-          <tr v-for="r in items" :key="r.id" class="align-top hover:bg-slate-50">
-            <td class="whitespace-nowrap px-4 py-3 text-slate-500">{{ r.created_at }}</td>
+          <tr v-for="r in items" :key="r.id" class="group align-top hover:bg-slate-50">
+            <td class="whitespace-nowrap px-4 py-3 text-slate-500" :class="freezeFirst() ? 'sticky left-0 z-10 bg-white group-hover:bg-slate-50' : ''">{{ r.created_at }}</td>
             <td class="px-4 py-3">
               <span class="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">{{ actionLabel(r.action) }}</span>
             </td>

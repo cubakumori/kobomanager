@@ -183,7 +183,11 @@
     "theme": "Default theme",
     "themeDesc": "Initial site theme (light, dark, or auto following the system). Anyone who already picked a theme with the selector keeps their choice.",
     "themeToggle": "Show theme selector",
-    "themeToggleHint": "When disabled, the sun/moon button on the homepage and the theme setting in the profile are hidden; everyone without a chosen theme sees the default theme."
+    "themeToggleHint": "When disabled, the sun/moon button on the homepage and the theme setting in the profile are hidden; everyone without a chosen theme sees the default theme.",
+    "tableFreeze": "Tables: frozen columns",
+    "tableFreezeDesc": "When a table scrolls sideways, the first column can stay pinned as a reference.",
+    "tableFreeze_first": "Freeze the first column",
+    "tableFreeze_none": "Do not freeze"
   },
   "audit": {
     "title": "Audit log",

@@ -36,18 +36,31 @@ const linkActive = 'bg-primary-600 text-white'
         class="text-lg font-semibold tracking-tight transition-colors hover:text-primary-300"
         @click="emit('navigate')"
       >KoboManager</RouterLink>
-      <button
-        class="rounded-lg p-1 text-slate-300 hover:bg-slate-700/60 hover:text-white lg:hidden"
-        aria-label="Cerrar menú"
-        @click="emit('navigate')"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
-          <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
-        </svg>
-      </button>
+      <div class="flex items-center gap-1">
+        <button
+          class="rounded-lg p-1.5 text-slate-300 hover:bg-slate-700/60 hover:text-white"
+          :title="$t('nav.logout')"
+          :aria-label="$t('nav.logout')"
+          @click="onLogout"
+        >
+          <!-- Salir (flecha saliendo del marco) -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H3" />
+          </svg>
+        </button>
+        <button
+          class="rounded-lg p-1 text-slate-300 hover:bg-slate-700/60 hover:text-white lg:hidden"
+          aria-label="Cerrar menú"
+          @click="emit('navigate')"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
+            <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
     </div>
 
-    <nav class="flex-1 space-y-1 px-3">
+    <nav class="min-h-0 flex-1 space-y-1 overflow-y-auto px-3">
       <RouterLink
         :to="{ name: 'dashboard' }"
         :class="[linkBase, $route.name === 'dashboard' ? linkActive : linkInactive]"
@@ -117,11 +130,11 @@ const linkActive = 'bg-primary-600 text-white'
       </template>
     </nav>
 
-    <div class="border-t border-slate-700/60 p-3">
+    <div class="shrink-0 border-t border-slate-700/60 p-3">
       <RouterLink
         :to="{ name: 'profile' }"
         :title="$t('nav.goToProfile')"
-        class="mb-2 flex items-center gap-3 rounded-lg px-1 py-2 transition-colors hover:bg-slate-700/60"
+        class="flex items-center gap-3 rounded-lg px-1 py-2 transition-colors hover:bg-slate-700/60"
         :class="{ 'bg-slate-700/60': $route.name === 'profile' }"
       >
         <div class="flex h-9 w-9 items-center justify-center rounded-full bg-primary-600 text-sm font-semibold">
@@ -132,12 +145,6 @@ const linkActive = 'bg-primary-600 text-white'
           <p class="truncate text-xs text-slate-400">{{ auth.user?.role }}</p>
         </div>
       </RouterLink>
-      <button
-        class="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white"
-        @click="onLogout"
-      >
-        {{ $t('nav.logout') }}
-      </button>
     </div>
   </aside>
 </template>

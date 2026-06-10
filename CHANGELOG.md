@@ -8,6 +8,26 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
+- **Pulido responsive (revisión pre-publicación)**: tanda de mejoras para pantallas
+  pequeñas, aplicadas de forma consistente en todos los tamaños.
+  - **Cerrar sesión reubicado**: sale del fondo del sidebar (allí queda solo el bloque de
+    perfil) y pasa a un icono arriba — junto a la marca en el sidebar (escritorio/drawer)
+    y, en móvil, en la barra superior a la izquierda de la hamburguesa. El menú del
+    sidebar además hace scroll en pantallas bajas (<568 px) sin tapar el bloque de perfil.
+  - **Filtros compactados en una sola fila**: en «Mi actividad», búsqueda + botón
+    «Filtros» (con contador) + «Limpiar» (inactivo sin filtros), con acción/formulario/
+    fechas en un modal; en la tabla de envíos, búsqueda + **«Vista»** (modal con revisión,
+    orden y por página) + «Filtros» — de 3-5 filas de controles a una.
+  - **Congelado de columnas en todas las tablas** + nuevo ajuste global «Tablas: columnas
+    congeladas» (No congelar / Primera columna, por defecto congelada): envíos, actividad,
+    auditoría, usuarios, cuentas, formularios, permisos, enlaces, mensajes y la vista
+    pública de enlaces compartidos. En pantallas pequeñas la primera columna se acota al
+    ~40 % del ancho visible (con elipsis y tooltip).
+  - **Detalle de envío compacto en pantallas estrechas**: «Volver/Anterior/Siguiente» se
+    abrevian (←/→) por debajo de 412 px (arriba y abajo), la botonera de revisión cabe en
+    una línea («Rechazar» pasa a icono ✕ en <640 px, con tooltip) y los tres botones usan
+    **tonos suaves tipo pastel** en ambos temas en lugar de colores sólidos intensos.
+
 - **Imágenes optimizadas y limpieza de assets**: el banner de la portada pasa de PNG
   (1926×1320, 1,6 MB) a **WebP a 1000 px** (~87 KB; la variante nocturna ~57 KB) y el
   logo de 600×600 (298 KB) a **256×256 PNG cuantizado (~9 KB)** — en total ~3,4 MB menos

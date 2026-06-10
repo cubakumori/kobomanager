@@ -7,8 +7,10 @@ import { apiError } from '../../stores/auth'
 import Modal from '../../components/Modal.vue'
 import RowFilterEditor from '../../components/RowFilterEditor.vue'
 import Skeleton from '../../components/Skeleton.vue'
+import { useTableFreeze } from '../../composables/appConfig'
 
 const { t } = useI18n()
+const { freezeFirst } = useTableFreeze()
 const route = useRoute()
 
 const users = ref([])
@@ -229,7 +231,7 @@ onMounted(async () => {
         <table class="w-full whitespace-nowrap text-left text-sm">
           <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
             <tr>
-              <th class="px-4 py-3">{{ $t('permissions.colForm') }}</th>
+              <th class="px-4 py-3" :class="freezeFirst() ? 'sticky left-0 z-10 bg-slate-50' : ''">{{ $t('permissions.colForm') }}</th>
               <th class="px-4 py-3 text-center">{{ $t('permissions.colView') }}</th>
               <th class="px-4 py-3 text-center">{{ $t('permissions.colEdit') }}</th>
               <th class="px-4 py-3 text-center">{{ $t('permissions.colValidate') }}</th>
@@ -239,9 +241,11 @@ onMounted(async () => {
           </thead>
           <tbody class="divide-y divide-slate-100">
             <tr v-for="p in visiblePerms" :key="p.form_id">
-              <td class="px-4 py-3">
-                <p class="font-medium text-slate-900">{{ p.name }}</p>
-                <p class="text-xs text-slate-400">{{ p.account_label }}</p>
+              <td class="px-4 py-3" :class="freezeFirst() ? 'sticky left-0 z-10 bg-white' : ''">
+                <div class="max-w-[calc(40vw-2rem)] sm:max-w-none">
+                  <p class="truncate font-medium text-slate-900" :title="p.name">{{ p.name }}</p>
+                  <p class="truncate text-xs text-slate-400">{{ p.account_label }}</p>
+                </div>
               </td>
               <td class="px-4 py-3 text-center">
                 <input type="checkbox" v-model="p.can_view" @change="saved = false" />
