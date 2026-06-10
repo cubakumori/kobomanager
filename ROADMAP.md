@@ -62,6 +62,25 @@ Quedan como ideas reabribles si aparece una necesidad real.
 
 ---
 
+## Publicación (en torno a hacer público el repo)
+
+- [ ] **Disclaimer de no afiliación** — texto visible («KoboManager is an independent
+      open-source project and is not affiliated with, endorsed by, or sponsored by
+      KoboToolbox or Rakuten Kobo.») en el footer de las páginas públicas (traducido es/en),
+      en el README y en «Acerca de Kobo». Mitiga el riesgo de marca de llevar «Kobo» en el
+      nombre (dos marcas distintas: KoboToolbox y Rakuten Kobo).
+- [ ] **Dominio propio** — `kobomanager.org` y `.com` comprobados LIBRES (jun-2026, whois).
+      Registrar al menos el .org antes de difundir el repo para que README/landing apunten
+      a algo estable.
+- [ ] **Demo pública** (p. ej. `demo.kobomanager.org`) — instancia pequeña con cuenta Kobo
+      DESECHABLE y datos 100 % sintéticos (jamás datos reales), usuarios demo publicados
+      (admin sandbox + viewer), banner «demo — los datos se restauran cada hora», cron que
+      restaura la BD desde un dump semilla, email desactivado. Alternativa exprés mientras
+      tanto: un **enlace público de solo lectura** real (feature ya existente) + capturas/GIF
+      en el README.
+
+---
+
 ## Ideas reabribles (post-publicación)
 
 - [ ] **«Organizaciones que usan KoboManager»** — acápite/escaparate en la landing o en
