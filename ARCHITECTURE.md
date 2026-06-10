@@ -47,7 +47,9 @@ emits **security headers** (`X-Content-Type-Options: nosniff`, `X-Frame-Options:
 `Referrer-Policy: no-referrer`, and `Strict-Transport-Security` over HTTPS), enforces CSRF,
 resolves the path after `/api/v1/` against a **routes table** (patterns with `:param`
 segments) and `require`s the matching script in `v1/`. Dynamic params are read via
-`Request::param()`. Each endpoint script checks the HTTP method itself.
+`Request::param()`. Each endpoint script checks the HTTP method itself. When demo mode is
+on, a central denylist (`Demo::blocks`, keyed by route pattern + method) answers 403
+`DEMO_LOCKED` before the endpoint script runs.
 
 ### Responses
 `ErrorResponse::ok($data)` and `ErrorResponse::send($code, $msg?, $status?)` emit the JSON
@@ -178,6 +180,17 @@ share unlock — supports `clear()` on success) and a generic **bucketed** `rate
 (`tooManyBucket`/`hitBucket`, with opportunistic pruning) kept separate so public‑read
 throttling never trips the login throttle. `ShareLink::throttle()` uses the `share` bucket to
 cap public share GETs at 240 req/60 s per IP (anti‑scraping/DoS on a leaked link).
+
+### Demo mode (`lib/Demo.php`)
+Optional `DEMO_MODE` / `DEMO_RESET_MINUTES` / `DEMO_LOGIN_HINT` constants (guarded with
+`defined()`, so existing configs behave as demo off) turn the instance into a public
+sandbox: `GET /config` exposes the three values, the frontend shows a welcome dialog on
+the homepage plus a clickable **DEMO** badge next to the brand, and blocked buttons are
+disabled with a tooltip. Enforcement is central: a route-pattern + method denylist in the
+front controller returns 403 `DEMO_LOCKED` for anything that would break the demo or leak
+secrets (Kobo account CRUD, user/password/session management, global settings, submission
+editing, manual sync). Everything local that a periodic DB reset restores stays enabled.
+Operational guide (seed dump, reset cron, hardening): `DEPLOY.md` §13.
 
 ### Attachment proxies & CSV hardening
 The attachment proxies (`submissions/{id}/attachments/...` and the public share one) stream

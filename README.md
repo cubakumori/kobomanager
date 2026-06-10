@@ -5,7 +5,8 @@ them view, edit and validate submissions without needing a KoboToolbox account.
 
 - Changelog: [`CHANGELOG.md`](./CHANGELOG.md)
 - Pending work and future ideas: [`ROADMAP.md`](./ROADMAP.md)
-- Production deployment: [`DEPLOY.md`](./DEPLOY.md)
+- Production deployment: [`DEPLOY.md`](./DEPLOY.md) — including how to run your own
+  public **demo instance** (`DEMO_MODE`)
 
 ## Who it's for
 

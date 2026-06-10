@@ -89,6 +89,8 @@ define('MAIL_FROM', 'KoboManager <noreply@yourdomain.com>');
 
 define('APP_TIMEZONE', 'America/Havana'); // stats hour/weekday in local time (IANA; default 'UTC')
 define('APP_TIMEZONE_LABEL', 'La Habana'); // human label for the UI; '' falls back to the IANA id
+
+// Optional — public demo instance (DEMO_MODE, DEMO_RESET_MINUTES, DEMO_LOGIN_HINT): see §13.
 ```
 
 > **Important:** keep `CONFIG_TOKEN_KEY` somewhere safe. If it's lost or changed, the
