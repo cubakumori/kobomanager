@@ -111,10 +111,8 @@ const drawerLink =
     <slot :open-login="openLogin" :authenticated="auth.isAuthenticated" :go-dashboard="() => router.push('/dashboard')" />
 
     <!-- Footer -->
-    <footer class="mt-auto space-y-1.5 border-t border-slate-200/70 px-6 py-6 text-center text-xs text-slate-400">
-      <p>{{ $t('landing.footer') }}</p>
-      <!-- Disclaimer de no afiliación (mitiga el riesgo de marca de llevar «Kobo» en el nombre) -->
-      <p class="mx-auto max-w-2xl">{{ $t('landing.disclaimer') }}</p>
+    <footer class="mt-auto border-t border-slate-200/70 px-6 py-6 text-center text-xs text-slate-400">
+      {{ $t('landing.footer') }}
     </footer>
 
     <!-- Drawer móvil (desde la derecha), estilo coherente con el sidebar del backend -->

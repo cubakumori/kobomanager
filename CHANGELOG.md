@@ -10,8 +10,8 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
-- **Disclaimer de no afiliación**: visible en el footer de las páginas públicas (es/en),
-  en el README y en «Acerca de Kobo» — KoboManager es un proyecto independiente, no
+- **Disclaimer de no afiliación**: nota ámbar bajo «Cómo funciona» en la portada (es/en)
+  y sección *Disclaimer* en el README — KoboManager es un proyecto independiente, no
   afiliado a, respaldado ni patrocinado por KoboToolbox ni Rakuten Kobo.
 
 ### Cambiado

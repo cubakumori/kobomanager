@@ -122,5 +122,12 @@ const chips = ['chipColumns', 'chipStats', 'chipEmail', 'chipLabels', 'chipMap',
         </div>
       </div>
     </section>
+
+    <!-- Disclaimer de no afiliación (solo en la portada) -->
+    <div class="mx-auto w-full max-w-6xl px-6 pb-10">
+      <p class="mx-auto max-w-3xl rounded-xl bg-amber-50 px-4 py-3 text-center text-xs text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900">
+        {{ $t('landing.disclaimer') }}
+      </p>
+    </div>
   </PublicLayout>
 </template>

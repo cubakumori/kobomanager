@@ -64,8 +64,8 @@ Quedan como ideas reabribles si aparece una necesidad real.
 
 ## Publicación (en torno a hacer público el repo)
 
-- [x] **Disclaimer de no afiliación** — HECHO: en el footer de las páginas públicas
-      (es/en), en el README (sección Disclaimer) y al pie de «Acerca de Kobo».
+- [x] **Disclaimer de no afiliación** — HECHO: nota ámbar bajo «Cómo funciona» en la
+      portada (es/en) y sección Disclaimer en el README.
 - [ ] **Dominio propio** — `kobomanager.org` y `.com` comprobados LIBRES (jun-2026, whois).
       Registrar al menos el .org antes de difundir el repo para que README/landing apunten
       a algo estable.
