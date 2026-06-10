@@ -31,7 +31,7 @@ The compiled frontend lives in the public root and the backend in `/api`:
   index.html            ← Vue build (dist/)
   assets/               ← Vue build (dist/assets)
   sw.js, registerSW.js, manifest.webmanifest   ← PWA (service worker + manifest)
-  .htaccess             ← SPA rewrite (see §6)
+  .htaccess             ← SPA rewrite — shipped inside dist/ (Apache; see §6)
   /api                  ← PHP backend (upload as-is)
     config.php          ← create on the server, NOT committed
     .htaccess
@@ -39,9 +39,9 @@ The compiled frontend lives in the public root and the backend in `/api`:
 ```
 
 > **PWA note**: the build ships a service worker (`sw.js`) that precaches the app shell and
-> caches API GETs so the app stays usable on flaky connections. Serve `sw.js` with
-> `Cache-Control: no-cache` (or a short max-age) so updates roll out promptly — with Apache,
-> e.g. `<Files "sw.js"> Header set Cache-Control "no-cache" </Files>`; with nginx, a
+> caches API GETs so the app stays usable on flaky connections. `sw.js` must be served with
+> `Cache-Control: no-cache` (or a short max-age) so updates roll out promptly — on Apache
+> the shipped root `.htaccess` already does it; on nginx add a
 > `location = /sw.js { add_header Cache-Control "no-cache"; }` block. Everything under
 > `assets/` is content-hashed and safe to cache aggressively.
 
@@ -57,6 +57,9 @@ npm run build          # generates dist/
 Upload to the server:
 
 1. The **contents** of `dist/` → to the public root (`index.html`, `assets/`, …).
+   This includes a ready-to-use root **`.htaccess`** (SPA rewrite + `sw.js` cache
+   header) — mind that dotfiles are easy to miss when copying, and see §6 if you need
+   to edit it (or if you serve with nginx, which ignores it).
 2. The `api/` folder → under the public root (`/api`). You can safely skip the
    development-only baggage: `api/vendor/`, `api/tests/`, `phpunit.xml` and
    `composer.json`/`composer.lock` (the runtime has **no** PHP dependencies; those exist
@@ -143,11 +146,11 @@ php api/cli/create_user.php admin@yourdomain.com 'StrongPassword' 'Admin Name' a
 
 ## 6. SPA rewrite (root `.htaccess`)
 
-> The build does **not** generate this file — create it by hand in the public root.
-> Without it the landing page loads, but reloading any internal route (`/dashboard`,
-> `/forms/…`) returns a 404.
-
-Serve the API and, for everything else, return `index.html` (SPA routes):
+The build **ships** the root `.htaccess` inside `dist/` (source: `public/.htaccess`),
+so on Apache there is nothing to create — just make sure the dotfile actually got
+copied (`ls -a` in the public root; without it the landing page loads but reloading
+any internal route like `/dashboard` returns a 404, and service-worker updates roll
+out slowly). What it does, in case you need to edit it:
 
 ```apache
 <IfModule mod_rewrite.c>
@@ -158,6 +161,13 @@ Serve the API and, for everything else, return `index.html` (SPA routes):
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule ^ index.html [L]
+</IfModule>
+
+# PWA: sw.js must revalidate promptly; assets/ are content-hashed (cache hard).
+<IfModule mod_headers.c>
+  <Files "sw.js">
+    Header set Cache-Control "no-cache"
+  </Files>
 </IfModule>
 ```
 
@@ -416,6 +426,10 @@ you need, regenerate the seed dump, flip it back on.
   results. If the demo **is** your public site (its landing page doubles as the project
   homepage), leave it indexable — everything beyond the landing requires login and is
   not crawlable anyway.
+- If the server has **phpMyAdmin** (or any DB admin panel), lock it down — IP allowlist
+  or HTTP auth at least, or remove it once set up. On a publicly advertised demo it is
+  the most-scanned door, and it can read the whole demo database regardless of
+  `DEMO_MODE`.
 - The audit viewer (Dashboard → Audit) is a handy way to watch what visitors try.
 - If the demo gets abused, shorten the reset cycle (15–30 min) — the welcome dialog
   follows `DEMO_RESET_MINUTES` automatically.

@@ -83,6 +83,14 @@ Quedan como ideas reabribles si aparece una necesidad real.
         reset, hardening) para que cualquiera monte su propia demo.
   - [ ] **Instancia**: VPS + dominio + cuenta Kobo desechable con datos 100 % sintéticos
         + usuarios/permisos/share de ejemplo + dump semilla + cron de reset.
+- [ ] **Release «deploy-ready» en GitHub** *(idea del QA de instalación, jun-2026)*: zip
+      adjunto a cada release con EXACTAMENTE lo que se sube al servidor — contenido de
+      `dist/` (incluido el `.htaccess` raíz) + `api/` podado (sin vendor/tests/composer/
+      phpunit) + `db/` — de modo que instalar sea: descomprimir en el webroot, crear
+      `api/config.php` desde el example, aplicar `db/*.sql` y (Apache) listo. Implementar
+      como job de GitHub Actions al pushear un tag (build + zip + attach al release);
+      hacerlo DESPUÉS del QA de la instalación manual, para que el zip encode el layout
+      ya verificado. DEPLOY §3 ofrecería entonces dos vías: release zip o build propio.
 
 ---
 

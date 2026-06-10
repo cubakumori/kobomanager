@@ -1,0 +1,21 @@
+# KoboManager — .htaccess de la raíz pública (Apache).
+# Vite lo copia tal cual a dist/, así que llega al servidor junto al build.
+# En nginx este archivo se ignora: replica las reglas según DEPLOY.md §6.
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # /api va aparte (tiene su propio .htaccess con el front controller)
+  RewriteRule ^api/ - [L]
+  # Si el archivo no existe, servir la SPA (rutas internas del router)
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# PWA: el service worker debe revalidarse pronto para que las actualizaciones
+# lleguen; assets/ va con hash de contenido y puede cachearse agresivamente.
+<IfModule mod_headers.c>
+  <Files "sw.js">
+    Header set Cache-Control "no-cache"
+  </Files>
+</IfModule>
