@@ -24,7 +24,7 @@ The frontend lives at the repo root (same as in deployment); the backend in `/ap
 ```
 /            Vue 3 + Vite (SPA): index.html, src/, public/, vite.config.js
 /api         PHP 8 backend (REST API)
-/db          SQL migrations
+/db          SQL schema (001 = all tables, 002 = settings defaults)
 ```
 
 On deployment, the `dist/` build goes to the server root and `/api` is uploaded

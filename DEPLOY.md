@@ -255,14 +255,17 @@ send anything. Handy for staging.
 ## 10. Subsequent updates
 
 1. `npm run build` locally.
-2. Replace `index.html` + `assets/` in the root and the `api/` folder (without touching `config.php`).
-3. Apply any new `db/` files. Note that `db/*.sql` uses `CREATE TABLE IF NOT EXISTS`, so on an
-   **existing** database column/index changes are not picked up by re‑applying them — pre‑1.0 the
-   intended path is to recreate the database from `db/*.sql` and re‑sync, or apply the schema
-   change by hand. For the M4a search column specifically, after adding
-   `submissions_cache.search_text` + its `FULLTEXT` index, backfill cached rows once with
-   `php api/cli/rebuild_search_text.php` (new submissions fill it automatically on sync).
-```
+2. Replace the **contents of `dist/`** in the public root (`index.html`, `assets/`,
+   `sw.js`, manifest — and the root `.htaccess` if it changed) and the `api/` folder
+   (without touching `config.php`).
+3. Schema changes, if the release notes mention any: they ship as **edits to the
+   canonical `CREATE TABLE`s** in `db/001_schema.sql`, so re‑applying the file on an
+   existing database does nothing (`CREATE TABLE IF NOT EXISTS` skips existing tables).
+   Either apply the change by hand (the changelog states what changed), or recreate the
+   database from `db/*.sql` and re‑sync from Kobo.
+4. PWA note: the **first** load after an update still serves the previous version from
+   the service‑worker precache (the new one activates in the background) — reload once
+   before judging the deploy.
 
 ## 11. Backups
 
