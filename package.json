@@ -10,7 +10,8 @@
     "dev:api": "php -S 127.0.0.1:8787 api/index.php",
     "dev:web": "vite",
     "build": "vite build",
-    "preview": "vite preview",
+    "prepreview": "lsof -ti:4173 -sTCP:LISTEN 2>/dev/null | xargs kill 2>/dev/null || true",
+    "preview": "vite preview --port 4173 --strictPort",
     "i18n:check": "node scripts/check-i18n-parity.mjs"
   },
   "dependencies": {
