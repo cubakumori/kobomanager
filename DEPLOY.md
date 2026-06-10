@@ -426,10 +426,14 @@ you need, regenerate the seed dump, flip it back on.
   results. If the demo **is** your public site (its landing page doubles as the project
   homepage), leave it indexable — everything beyond the landing requires login and is
   not crawlable anyway.
-- If the server has **phpMyAdmin** (or any DB admin panel), lock it down — IP allowlist
-  or HTTP auth at least, or remove it once set up. On a publicly advertised demo it is
-  the most-scanned door, and it can read the whole demo database regardless of
-  `DEMO_MODE`.
+- If the server has **phpMyAdmin** (or any DB admin panel), remember it is a second,
+  independent door to the same database: bots scan every domain for `/phpmyadmin`-like
+  URLs around the clock, and whoever gets in talks straight to MySQL — full read/write
+  on the demo DB, bypassing the app and `DEMO_MODE` entirely. Either restrict who can
+  reach it (an IP allowlist — `Require ip <your-ip>` in its Apache config — or HTTP
+  basic auth in front of its login), or simply **remove it once setup is done**
+  (`apt remove phpmyadmin`); reinstalling it the day you need it takes minutes, and
+  what is not there cannot be attacked.
 - The audit viewer (Dashboard → Audit) is a handy way to watch what visitors try.
 - If the demo gets abused, shorten the reset cycle (15–30 min) — the welcome dialog
   follows `DEMO_RESET_MINUTES` automatically.
