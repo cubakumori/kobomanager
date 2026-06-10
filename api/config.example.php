@@ -46,7 +46,9 @@ define('CONTACT_TO', 'contacto@tudominio.com');
 
 // --- App ---
 define('APP_URL', 'http://localhost:5173');
-// Orígenes permitidos para CORS (frontend en dev).
+// Orígenes permitidos para CORS (frontend en dev). Añade 'http://localhost:4173'
+// si vas a probar el BUILD con `vite preview` (necesario para la PWA: el service
+// worker solo se genera en build, no en dev).
 define('CORS_ALLOWED_ORIGINS', ['http://localhost:5173']);
 // Entorno: 'dev' muestra detalles de error; 'prod' los oculta.
 define('APP_ENV', 'dev');

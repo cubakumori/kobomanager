@@ -9,6 +9,9 @@ overview read [`ARCHITECTURE.md`](./ARCHITECTURE.md); for setup read [`README.md
    keys; see README).
 2. Create the database and apply `db/*.sql` in order.
 3. `npm run dev` runs the PHP API (`127.0.0.1:8787`) and Vite (`localhost:5173`) together.
+   To test the **PWA** (service worker, offline reads) you need the build: `npm run build`
+   then `npx vite preview --port 4173` (the SW is disabled in dev on purpose), and add
+   `http://localhost:4173` to `CORS_ALLOWED_ORIGINS` in your local `api/config.php`.
 4. Backend tests: `cd api && composer install && composer test` (uses a separate
    `kobomanager_test` DB — see README). This runs both the unit/DB tests and the **HTTP
    integration tests** (`api/tests/http/`), which spin up an ephemeral `php -S` server +

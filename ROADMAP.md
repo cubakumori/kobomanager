@@ -72,12 +72,14 @@ Quedan como ideas reabribles si aparece una necesidad real.
 - [ ] **Dominio propio** — `kobomanager.org` y `.com` comprobados LIBRES (jun-2026, whois).
       Registrar al menos el .org antes de difundir el repo para que README/landing apunten
       a algo estable.
-- [ ] **Demo pública** (p. ej. `demo.kobomanager.org`) — instancia pequeña con cuenta Kobo
-      DESECHABLE y datos 100 % sintéticos (jamás datos reales), usuarios demo publicados
-      (admin sandbox + viewer), banner «demo — los datos se restauran cada hora», cron que
-      restaura la BD desde un dump semilla, email desactivado. Alternativa exprés mientras
-      tanto: un **enlace público de solo lectura** real (feature ya existente) + capturas/GIF
-      en el README.
+- [ ] **Demo pública** (p. ej. `demo.kobomanager.org`) — plan completo en
+      `my.docs/PUBLICDEMO.md` (privado). Enfoque elegido: **modo demo integrado en la app**
+      (`DEMO_MODE` en config → banner servido por `/config`, error `DEMO_LOCKED` 403 en
+      acciones que romperían la demo o filtrarían el token: cuentas Kobo, usuarios/
+      contraseñas, settings y edición de envíos; el resto —revisión, filtros, export,
+      shares— queda abierto) + instancia con cuenta Kobo desechable, datos 100 % sintéticos
+      y cron de reset desde dump semilla. Alternativa exprés mientras tanto: un **enlace
+      público de solo lectura** real + capturas/GIF en el README.
 
 ---
 
