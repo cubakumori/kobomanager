@@ -11,4 +11,5 @@ require __DIR__ . '/config.http.php';
 
 define('DEMO_MODE', true);
 define('DEMO_RESET_MINUTES', 45);
-define('DEMO_LOGIN_HINT', 'admin@demo.org / demo1234');
+define('DEMO_LOGIN_ADMIN', 'admin@demo.org / demo1234');
+define('DEMO_LOGIN_VIEWER', 'viewer@demo.org / demo1234');

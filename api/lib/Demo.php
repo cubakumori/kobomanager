@@ -34,9 +34,18 @@ class Demo {
         return defined('DEMO_RESET_MINUTES') ? max(1, (int) DEMO_RESET_MINUTES) : 60;
     }
 
-    /** Credenciales de la demo para mostrar en el banner ('' = no se muestran). */
-    public static function loginHint(): string {
-        return defined('DEMO_LOGIN_HINT') ? (string) DEMO_LOGIN_HINT : '';
+    /**
+     * Credenciales de la demo a mostrar al visitante, POR ROL ('' = no se
+     * muestra esa línea). Texto libre tipo 'email / contraseña'; la etiqueta
+     * del rol la pone el frontend traducida al idioma del visitante. Los
+     * usuarios deben EXISTIR en la instancia (el texto no crea nada).
+     */
+    public static function loginAdmin(): string {
+        return defined('DEMO_LOGIN_ADMIN') ? (string) DEMO_LOGIN_ADMIN : '';
+    }
+
+    public static function loginViewer(): string {
+        return defined('DEMO_LOGIN_VIEWER') ? (string) DEMO_LOGIN_VIEWER : '';
     }
 
     /**

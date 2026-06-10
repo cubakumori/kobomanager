@@ -17,9 +17,13 @@ Todos los cambios notables de KoboManager. El formato sigue
   §4 lo ofrece como vía principal (la manual queda como alternativa) y §13 documenta
   además cómo **preparar la semilla de la demo en otra máquina** (compartiendo
   `CONFIG_TOKEN_KEY`) y el aviso del dump MariaDB→MySQL (línea «sandbox»).
+- **Credenciales de la demo por rol**: `DEMO_LOGIN_HINT` se sustituye por
+  `DEMO_LOGIN_ADMIN` + `DEMO_LOGIN_VIEWER` ('' = línea oculta); el modal pone la
+  etiqueta del rol traducida al idioma del visitante («Administrador: …» /
+  «Viewer (acceso limitado): …»).
 
 - **Modo demo integrado (`DEMO_MODE`)**: nuevas constantes opcionales `DEMO_MODE`,
-  `DEMO_RESET_MINUTES` y `DEMO_LOGIN_HINT` en `api/config.php` (con guard `defined()`,
+  `DEMO_RESET_MINUTES` y `DEMO_LOGIN_ADMIN`/`DEMO_LOGIN_VIEWER` en `api/config.php` (con guard `defined()`,
   retrocompatibles: una config sin ellas = demo desactivada) para montar una instancia
   pública de demostración. Con el flag activo:
   - `GET /config` expone `demo_mode`, `demo_reset_minutes` y `demo_login_hint`; el

@@ -27,8 +27,9 @@
     "demoBadgeTitle": "Demo pública — pulsa para ver las limitaciones y los datos de acceso",
     "demoModalTitle": "Demo pública",
     "demoModalBody": "Algunas acciones están deshabilitadas y los datos se restauran cada {minutes} min.",
-    "demoModalLogin": "Entra con {hint}.",
     "demoModalLoginIntro": "Puedes entrar con:",
+    "demoModalAdmin": "Administrador: {creds}",
+    "demoModalViewer": "Viewer (acceso limitado): {creds}",
     "demoModalOk": "Entendido"
   },
   "nav": {

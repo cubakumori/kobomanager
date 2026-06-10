@@ -21,7 +21,8 @@ const tableFreeze = ref(VALID.includes(cached) ? cached : 'first')
 // quede pegado en una instancia normal (y viceversa); un parpadeo es aceptable.
 const demoMode = ref(false)
 const demoResetMinutes = ref(60)
-const demoLoginHint = ref('')
+const demoLoginAdmin = ref('')
+const demoLoginViewer = ref('')
 
 publicApi
   .get('/config')
@@ -33,7 +34,8 @@ publicApi
     }
     demoMode.value = !!data.data.demo_mode
     demoResetMinutes.value = Number(data.data.demo_reset_minutes) || 60
-    demoLoginHint.value = String(data.data.demo_login_hint || '')
+    demoLoginAdmin.value = String(data.data.demo_login_admin || '')
+    demoLoginViewer.value = String(data.data.demo_login_viewer || '')
   })
   .catch(() => { /* sin red: vale el valor cacheado o el default */ })
 
@@ -43,7 +45,7 @@ export function useTableFreeze() {
   return { tableFreeze, freezeFirst }
 }
 
-/** Modo demo (reactivo): flag, minutos del ciclo de reset y credenciales a mostrar. */
+/** Modo demo (reactivo): flag, minutos del ciclo de reset y credenciales por rol. */
 export function useDemoMode() {
-  return { demoMode, demoResetMinutes, demoLoginHint }
+  return { demoMode, demoResetMinutes, demoLoginAdmin, demoLoginViewer }
 }

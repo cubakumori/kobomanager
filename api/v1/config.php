@@ -14,5 +14,6 @@ ErrorResponse::ok([
     'table_freeze'           => Settings::tableFreeze(),
     'demo_mode'              => Demo::enabled(),
     'demo_reset_minutes'     => Demo::resetMinutes(),
-    'demo_login_hint'        => Demo::loginHint(),
+    'demo_login_admin'       => Demo::loginAdmin(),
+    'demo_login_viewer'      => Demo::loginViewer(),
 ]);

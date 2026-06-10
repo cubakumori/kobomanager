@@ -27,8 +27,9 @@
     "demoBadgeTitle": "Public demo — click for limitations and access info",
     "demoModalTitle": "Public demo",
     "demoModalBody": "Some actions are disabled and the data is restored every {minutes} min.",
-    "demoModalLogin": "Sign in with {hint}.",
     "demoModalLoginIntro": "You can sign in with:",
+    "demoModalAdmin": "Administrator: {creds}",
+    "demoModalViewer": "Viewer (limited access): {creds}",
     "demoModalOk": "Got it"
   },
   "nav": {

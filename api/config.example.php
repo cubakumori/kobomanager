@@ -61,12 +61,13 @@ define('APP_ENV', 'dev');
 define('DEMO_MODE', false);
 // Minutos del ciclo de reset (solo informativo: se muestra en el banner).
 define('DEMO_RESET_MINUTES', 60);
-// Credenciales de la demo que la portada ofrece al visitante. Texto libre;
-// VARIOS accesos separados por «|» se muestran como lista, p. ej.:
-//   'Admin: admin@demo.org / demo1234|Viewer (acceso limitado): viewer@demo.org / demo1234'
-// Los usuarios deben EXISTIR (créalos desde la app; el email necesita dominio
-// con punto). Vacío = no se muestran.
-define('DEMO_LOGIN_HINT', '');
+// Credenciales de la demo que la portada ofrece al visitante, POR ROL (la
+// etiqueta «Administrador»/«Viewer» la pone la app, traducida). Texto libre
+// tipo 'email / contraseña'; vacío = esa línea no se muestra. Los usuarios
+// deben EXISTIR (créalos desde la app; el email necesita dominio con punto).
+// Convención sugerida (la que usa DEPLOY.md §13):
+define('DEMO_LOGIN_ADMIN', '');   // p. ej. 'admin@demo.org / demo1234'
+define('DEMO_LOGIN_VIEWER', '');  // p. ej. 'viewer@demo.org / demo1234'
 
 // --- Zona horaria de visualización ---
 // Kobo entrega `_submission_time` en UTC. En Estadísticas, la «Actividad por

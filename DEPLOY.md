@@ -143,7 +143,7 @@ define('MAIL_FROM', 'KoboManager <noreply@yourdomain.com>');
 define('APP_TIMEZONE', 'America/Havana'); // stats hour/weekday in local time (IANA; default 'UTC')
 define('APP_TIMEZONE_LABEL', 'La Habana'); // human label for the UI; '' falls back to the IANA id
 
-// Optional — public demo instance (DEMO_MODE, DEMO_RESET_MINUTES, DEMO_LOGIN_HINT): see §13.
+// Optional — public demo instance (DEMO_MODE, DEMO_RESET_MINUTES, DEMO_LOGIN_ADMIN/VIEWER): see §13.
 ```
 
 > **Important:** keep `CONFIG_TOKEN_KEY` somewhere safe. If it's lost or changed, the
@@ -359,21 +359,17 @@ real features) without letting them break it or read your secrets.
 
 ### What `DEMO_MODE` does
 
-In `api/config.php` (all three constants are optional — a config without them behaves as
+In `api/config.php` (all the constants are optional — a config without them behaves as
 demo off):
 
 ```php
 // --- Public demo ---
 define('DEMO_MODE', true);          // demo notice + sensitive actions blocked
 define('DEMO_RESET_MINUTES', 60);   // informative: shown in the welcome dialog
-define('DEMO_LOGIN_HINT', 'admin@demo.org / demo1234'); // shown in the dialog ('' = hidden)
-```
-
-`DEMO_LOGIN_HINT` is free text; to advertise **several accounts** (say, an admin and a
-restricted viewer) separate them with `|` and the dialog renders them as a list:
-
-```php
-define('DEMO_LOGIN_HINT', 'Admin: admin@demo.org / demo1234|Viewer (limited): viewer@demo.org / demo1234');
+// Credentials shown in the dialog, per role ('' hides that line). The app adds the
+// role label translated to the visitor's language.
+define('DEMO_LOGIN_ADMIN', 'admin@demo.org / demo1234');
+define('DEMO_LOGIN_VIEWER', 'viewer@demo.org / demo1234');
 ```
 
 With the flag on, `GET /api/v1/config` exposes `demo_mode`, and the frontend shows a
@@ -399,14 +395,14 @@ revoking share links, language and theme… All of it is local and restored by t
 
 ### Demo users
 
-Create the account(s) you publish in `DEMO_LOGIN_HINT` **before** enabling the demo —
-the hint is plain text, it does not create anything. Note that the app validates emails
+Create the account(s) you publish in `DEMO_LOGIN_ADMIN`/`DEMO_LOGIN_VIEWER` **before**
+enabling the demo — those constants are plain text, they do not create anything. Note that the app validates emails
 with PHP's `FILTER_VALIDATE_EMAIL`, which requires a dotted domain: an address like
 `admin@demo` cannot be created from the admin UI (use `admin@demo.org` instead, or
 create it with `php api/cli/create_user.php`, which skips that validation). A nice
 touch is a second, viewer-role user with a row filter and hidden/read-only columns
-configured, so visitors can log in with each one and compare — advertise both via the
-`|` separator in `DEMO_LOGIN_HINT` (above).
+configured, so visitors can log in with each one and compare — advertise it via
+`DEMO_LOGIN_VIEWER` (above).
 
 **Keep your real identity out of the seed.** Demo visitors sign in as an *admin*, so
 they see everything an admin sees: the user list (names and emails), the audit trail
