@@ -413,14 +413,19 @@ you need, regenerate the seed dump, flip it back on.
 
 ### Periodic reset
 
-1. With the demo ready, take a seed dump:
+1. With the demo ready, take a seed dump **of the demo instance's database** (it must
+   be born there: among other things it contains the Kobo token encrypted with **that
+   server's** `CONFIG_TOKEN_KEY` — a dump of a database built elsewhere would carry a
+   token the server cannot decrypt):
    ```bash
+   mkdir -p /opt/km-demo
    mysqldump --single-transaction kobomanager > /opt/km-demo/seed.sql
    ```
-   Keep it **outside the web root**, readable only by the cron user — and keep an
-   off-server copy of `seed.sql` + `config.php` (hours of setup live in that pair; the
-   `CONFIG_TOKEN_KEY` in the config is the only thing that can decrypt the Kobo token
-   stored in the dump).
+   (Equivalent: export the database from phpMyAdmin or any client connected to it and
+   place the file at that path.) Keep it **outside the web root**, readable only by the
+   cron user — and keep an off-server copy of `seed.sql` + `config.php` (hours of setup
+   live in that pair; the `CONFIG_TOKEN_KEY` in the config is the only thing that can
+   decrypt the Kobo token stored in the dump).
 2. Add a cron aligned with `DEMO_RESET_MINUTES` (schedule the §7 sync crons at other
    minutes — e.g. reset at `0`, submissions sync at `15,30,45` — so a sync never runs
    mid-restore):

@@ -83,6 +83,14 @@ Quedan como ideas reabribles si aparece una necesidad real.
         reset, hardening) para que cualquiera monte su propia demo.
   - [ ] **Instancia**: VPS + dominio + cuenta Kobo desechable con datos 100 % sintéticos
         + usuarios/permisos/share de ejemplo + dump semilla + cron de reset.
+- [ ] **Semilla y reset de la demo gestionados por la app** *(idea del usuario en el QA,
+      jun-2026)*: hoy la demo exige `mysqldump` + cron SQL a mano (DEPLOY §13). En su
+      lugar: botón admin «Generar semilla de la demo» (exporta la BD a una ruta
+      configurada, p. ej. `DEMO_SEED_PATH`; disponible solo con `DEMO_MODE` apagado,
+      coherente con el bucle de mantenimiento) + cron `api/cron/demo_reset.php` (como
+      los de sync) que restaura esa semilla cada `DEMO_RESET_MINUTES`. Retos: dump y
+      restore desde PHP sin `mysqldump` (multi-statement, FK checks, tamaño) y restaurar
+      «en caliente» con visitantes activos. Eliminaría todo el SQL manual de §13.
 - [ ] **Release «deploy-ready» en GitHub** *(idea del QA de instalación, jun-2026)*: zip
       adjunto a cada release con EXACTAMENTE lo que se sube al servidor — contenido de
       `dist/` (incluido el `.htaccess` raíz) + `api/` podado (sin vendor/tests/composer/
