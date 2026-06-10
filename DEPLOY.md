@@ -57,7 +57,12 @@ npm run build          # generates dist/
 Upload to the server:
 
 1. The **contents** of `dist/` → to the public root (`index.html`, `assets/`, …).
-2. The whole `api/` folder → under the public root (`/api`).
+2. The `api/` folder → under the public root (`/api`). You can safely skip the
+   development-only baggage: `api/vendor/`, `api/tests/`, `phpunit.xml` and
+   `composer.json`/`composer.lock` (the runtime has **no** PHP dependencies; those exist
+   only to run the test suite). Uploading them anyway is not a security problem — the
+   `api/.htaccess` denies direct access to `lib|cron|cli|tests|vendor` and everything is
+   routed through `index.php` — just dead weight.
 3. The `db/` folder — these are the **schema files** that §4 runs once to create the
    tables. Upload it only if you'll run §4 from a shell **on the server** (you can
    delete it afterwards; the app never reads it at runtime). If you'd rather pipe the
@@ -137,6 +142,10 @@ php api/cli/create_user.php admin@yourdomain.com 'StrongPassword' 'Admin Name' a
 ```
 
 ## 6. SPA rewrite (root `.htaccess`)
+
+> The build does **not** generate this file — create it by hand in the public root.
+> Without it the landing page loads, but reloading any internal route (`/dashboard`,
+> `/forms/…`) returns a 404.
 
 Serve the API and, for everything else, return `index.html` (SPA routes):
 
