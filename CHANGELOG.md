@@ -8,6 +8,11 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
+- **Guía de uso rediseñada**: las secciones pasan de tarjetas blancas planas a **tarjetas
+  tintadas** estilo «Apoyar» — paleta suave rotando (verde, azul, ámbar, celeste) con
+  cabeceras tipo *pill* (punto de color), sub-tarjetas translúcidas y variantes para el
+  modo oscuro. El texto del cuerpo se mantiene en gris para no fatigar la lectura.
+
 - **Pulido responsive (revisión pre-publicación)**: tanda de mejoras para pantallas
   pequeñas, aplicadas de forma consistente en todos los tamaños.
   - **Cerrar sesión reubicado**: sale del fondo del sidebar (allí queda solo el bloque de
@@ -27,6 +32,14 @@ Todos los cambios notables de KoboManager. El formato sigue
     abrevian (←/→) por debajo de 412 px (arriba y abajo), la botonera de revisión cabe en
     una línea («Rechazar» pasa a icono ✕ en <640 px, con tooltip) y los tres botones usan
     **tonos suaves tipo pastel** en ambos temas en lugar de colores sólidos intensos.
+  - **Segunda tanda**: en la tabla de envíos, la segunda columna congelada («Enviado»)
+    solo se fija a partir de 540 px de ancho (debajo queda fija solo la primera, y las
+    columnas congeladas nunca superan ~la mitad de la pantalla); el icono de cerrar
+    sesión desaparece del encabezado del sidebar en móvil (ya está en la barra superior);
+    el login duplica el logo (regenerado a más resolución) y centra el conjunto en el alto
+    *visible* (`100dvh`, también en recuperar/restablecer contraseña); y el «flashazo» al
+    cambiar filtros con lista vacía queda eliminado (el esqueleto solo aparece en la
+    primera carga real, en envíos, mensajes, auditoría y actividad).
 
 - **Imágenes optimizadas y limpieza de assets**: el banner de la portada pasa de PNG
   (1926×1320, 1,6 MB) a **WebP a 1000 px** (~87 KB; la variante nocturna ~57 KB) y el

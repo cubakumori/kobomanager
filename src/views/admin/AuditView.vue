@@ -28,6 +28,7 @@ const page = ref(1)
 const perPage = ref(25)
 const actions = ref([])
 const loading = ref(true)
+const loaded = ref(false) // primera carga completada (el skeleton solo aparece antes)
 const error = ref('')
 
 // Filtros
@@ -76,6 +77,7 @@ async function load() {
       },
     })
     items.value = data.data.items
+    loaded.value = true
     total.value = data.data.total
     actions.value = data.data.actions
   } catch (e) {
@@ -219,7 +221,7 @@ onMounted(() => {
     <p class="text-sm text-slate-500">{{ $t('audit.total', { n: total }) }}</p>
 
     <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-      <Skeleton v-if="loading && !items.length" variant="table" :rows="10" />
+      <Skeleton v-if="loading && !loaded" variant="table" :rows="10" />
       <table v-else class="w-full text-left text-sm transition-opacity" :class="loading ? 'opacity-60' : ''">
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
           <tr>

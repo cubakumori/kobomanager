@@ -38,7 +38,7 @@ const linkActive = 'bg-primary-600 text-white'
       >KoboManager</RouterLink>
       <div class="flex items-center gap-1">
         <button
-          class="rounded-lg p-1.5 text-slate-300 hover:bg-slate-700/60 hover:text-white"
+          class="hidden rounded-lg p-1.5 text-slate-300 hover:bg-slate-700/60 hover:text-white lg:block"
           :title="$t('nav.logout')"
           :aria-label="$t('nav.logout')"
           @click="onLogout"

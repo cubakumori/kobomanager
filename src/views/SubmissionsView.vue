@@ -31,6 +31,7 @@ const search = ref('')
 const reviewFilter = ref('') // '' = todos
 const sort = ref('date_desc')
 const loading = ref(true)
+const loaded = ref(false) // primera carga completada (el skeleton solo aparece antes)
 const error = ref('')
 const schema = ref(null)
 const labelMode = ref('raw')
@@ -266,6 +267,7 @@ async function load() {
     })
     formName.value = data.data.form.name
     items.value = data.data.items
+    loaded.value = true
     total.value = data.data.total
     schema.value = data.data.schema ?? null
     labelMode.value = data.data.label_mode ?? 'raw'
@@ -480,7 +482,7 @@ onMounted(() => { loadAdvFilter(); load() })
     </div>
 
     <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-      <Skeleton v-if="loading && !items.length" variant="table" :rows="10" />
+      <Skeleton v-if="loading && !loaded" variant="table" :rows="10" />
       <table v-else class="w-full text-left text-sm transition-opacity" :class="loading ? 'opacity-60' : ''">
         <thead class="bg-accent-50 text-xs uppercase tracking-wider text-accent-700 dark:bg-slate-50 dark:text-accent-300">
           <tr>
@@ -495,7 +497,7 @@ onMounted(() => { loadAdvFilter(); load() })
             </th>
             <th
               class="whitespace-nowrap px-4 py-3"
-              :class="freezeFirst() ? ['sticky z-20 bg-accent-50 dark:bg-slate-50', canValidate ? 'left-12' : 'left-0'] : ''"
+              :class="freezeFirst() ? (canValidate ? 'min-[540px]:sticky min-[540px]:left-12 z-20 bg-accent-50 dark:bg-slate-50' : 'sticky left-0 z-20 bg-accent-50 dark:bg-slate-50') : ''"
             >{{ $t('submissions.colSubmitted') }}</th>
             <th v-for="c in shownColumns" :key="c" class="whitespace-nowrap px-4 py-3" :title="colFullLabel(c)">{{ colLabel(c) }}</th>
             <th class="px-4 py-3">{{ $t('submissions.colReview') }}</th>
@@ -514,7 +516,7 @@ onMounted(() => { loadAdvFilter(); load() })
             </td>
             <td
               class="whitespace-nowrap px-4 py-3 text-slate-600"
-              :class="freezeFirst() ? ['sticky z-10 bg-white group-hover:bg-slate-50', canValidate ? 'left-12' : 'left-0'] : ''"
+              :class="freezeFirst() ? (canValidate ? 'min-[540px]:sticky min-[540px]:left-12 z-10 bg-white group-hover:bg-slate-50' : 'sticky left-0 z-10 bg-white group-hover:bg-slate-50') : ''"
             >{{ s.submitted_at }}</td>
             <td
               v-for="c in shownColumns"

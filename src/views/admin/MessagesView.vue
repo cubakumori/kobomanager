@@ -15,6 +15,7 @@ const items = ref([])
 const total = ref(0)
 const newCount = ref(0)
 const loading = ref(true)
+const loaded = ref(false) // primera carga completada (el skeleton solo aparece antes)
 const error = ref('')
 
 const statusFilter = ref('new') // la bandeja abre mostrando lo nuevo
@@ -33,6 +34,7 @@ async function load() {
       params: { page: page.value, per_page: perPage, status: statusFilter.value, topic: topicFilter.value },
     })
     items.value = data.data.items
+    loaded.value = true
     total.value = data.data.total
     newCount.value = data.data.new_count
   } catch (e) {
@@ -151,7 +153,7 @@ onMounted(load)
       </select>
     </div>
 
-    <div v-if="loading && !items.length" class="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+    <div v-if="loading && !loaded" class="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
       <Skeleton variant="table" :rows="6" />
     </div>
 

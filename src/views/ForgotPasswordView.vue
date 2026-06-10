@@ -30,7 +30,7 @@ async function onSubmit() {
 </script>
 
 <template>
-  <div class="grid min-h-screen place-items-center bg-slate-100 px-4 py-10">
+  <div class="grid min-h-dvh place-items-center bg-slate-100 px-4 py-10">
     <div class="w-full max-w-sm">
       <RouterLink to="/" class="mx-auto mb-5 block w-fit">
         <img :src="logo" alt="KoboManager" class="h-20 w-20" />
