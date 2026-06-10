@@ -208,4 +208,10 @@ see [`LICENSE`](./LICENSE). In short: you may use, study, modify and redistribut
 you run a modified version as a network service you must offer your users its source code.
 The copyright holder may also offer the software under separate commercial terms.
 
+## Disclaimer
+
+KoboManager is an independent open-source project and is **not affiliated with, endorsed
+by, or sponsored by** [KoboToolbox](https://www.kobotoolbox.org) or Rakuten Kobo.
+"KoboToolbox" and "Kobo" are trademarks of their respective owners.
+
 Copyright (C) 2026 Ernesto Ortiz and KoboManager contributors.

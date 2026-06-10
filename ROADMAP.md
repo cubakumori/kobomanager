@@ -64,11 +64,8 @@ Quedan como ideas reabribles si aparece una necesidad real.
 
 ## Publicación (en torno a hacer público el repo)
 
-- [ ] **Disclaimer de no afiliación** — texto visible («KoboManager is an independent
-      open-source project and is not affiliated with, endorsed by, or sponsored by
-      KoboToolbox or Rakuten Kobo.») en el footer de las páginas públicas (traducido es/en),
-      en el README y en «Acerca de Kobo». Mitiga el riesgo de marca de llevar «Kobo» en el
-      nombre (dos marcas distintas: KoboToolbox y Rakuten Kobo).
+- [x] **Disclaimer de no afiliación** — HECHO: en el footer de las páginas públicas
+      (es/en), en el README (sección Disclaimer) y al pie de «Acerca de Kobo».
 - [ ] **Dominio propio** — `kobomanager.org` y `.com` comprobados LIBRES (jun-2026, whois).
       Registrar al menos el .org antes de difundir el repo para que README/landing apunten
       a algo estable.

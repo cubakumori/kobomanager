@@ -35,6 +35,7 @@
     "chipLabels": "Human-readable labels",
     "chipMap": "Map & geolocation",
     "chipCsv": "CSV export",
-    "chipEdit": "Submission editing"
+    "chipEdit": "Submission editing",
+    "disclaimer": "KoboManager is an independent open-source project and is not affiliated with, endorsed by, or sponsored by KoboToolbox or Rakuten Kobo."
   }
 }

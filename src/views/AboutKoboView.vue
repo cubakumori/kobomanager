@@ -87,5 +87,8 @@ const auth = useAuthStore()
         </RouterLink>
       </div>
     </section>
+
+    <!-- Disclaimer de no afiliación -->
+    <p class="px-1 text-center text-xs text-slate-400">{{ $t('landing.disclaimer') }}</p>
   </div>
 </template>
