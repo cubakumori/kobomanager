@@ -34,7 +34,7 @@ as-is (see [`DEPLOY.md`](./DEPLOY.md)).
 
 - PHP 8.1+ with the `sodium` and `pdo_mysql` extensions
 - MySQL / MariaDB
-- Node.js 18+ and npm
+- Node.js 22+ and npm (the build itself runs on 20.19+, but the dev runner needs 22+)
 
 ## Getting started (development)
 
