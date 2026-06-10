@@ -1,5 +1,6 @@
--- KoboManager — Configuración global + estado de despliegue de formularios
+-- KoboManager — Configuración global (clave/valor)
 -- Aplicar con: mysql kobomanager < db/003_settings_and_form_status.sql
+-- (forms.deployment_status vive en el CREATE TABLE de db/001_schema.sql)
 
 -- Ajustes globales clave/valor (p. ej. qué estados de Kobo se sincronizan).
 CREATE TABLE IF NOT EXISTS settings (
@@ -11,6 +12,3 @@ CREATE TABLE IF NOT EXISTS settings (
 -- Por defecto: solo formularios desplegados.
 INSERT INTO settings (`key`, `value`) VALUES ('sync_deployment_statuses', '["deployed"]')
     ON DUPLICATE KEY UPDATE `key` = `key`;
-
--- Estado de despliegue de cada formulario (deployed/draft/archived), tal como en Kobo.
-ALTER TABLE forms ADD COLUMN IF NOT EXISTS deployment_status VARCHAR(20) NULL AFTER server_url;

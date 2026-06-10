@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS users (
     email           VARCHAR(255) NOT NULL UNIQUE,
     password_hash   VARCHAR(255) NOT NULL,
     role            ENUM('admin', 'viewer') NOT NULL DEFAULT 'viewer',
+    -- Idioma preferido del usuario (NULL = usar el idioma por defecto del sistema).
+    locale          VARCHAR(5) NULL,
     active          TINYINT(1) DEFAULT 1,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -47,6 +49,12 @@ CREATE TABLE IF NOT EXISTS forms (
     kobo_asset_uid      VARCHAR(50) NOT NULL,
     name                VARCHAR(255) NOT NULL,
     server_url          VARCHAR(255) NOT NULL,
+    -- Estado de despliegue en Kobo (deployed/draft/archived).
+    deployment_status   VARCHAR(20) NULL,
+    -- Esquema XLSForm normalizado (preguntas y opciones, multi-idioma) descargado del
+    -- asset en Kobo para mostrar etiquetas legibles. Se refresca en cada sincronización.
+    schema_json         JSON NULL,
+    schema_synced_at    DATETIME NULL,
     last_synced_at      DATETIME,
     -- Marca de la primera/última sincronización de ENVÍOS (la pone SubmissionSync).
     -- NULL = el formulario se descubrió pero aún no se han traído sus envíos → la UI
@@ -99,9 +107,17 @@ CREATE TABLE IF NOT EXISTS user_form_permissions (
     can_view        TINYINT(1) DEFAULT 1,
     can_edit        TINYINT(1) DEFAULT 0,
     can_validate    TINYINT(1) DEFAULT 0,
+    -- Scoping por filas: restringe qué envíos ve/edita/valida este usuario en este
+    -- formulario, sin tocar las capacidades. NULL = sin restricción. Objeto JSON con
+    -- grupos a 2 niveles (AND/OR + operadores); ver lib/RowScope:
+    --   { "match":"all|any",
+    --     "groups":[ { "match":"all|any",
+    --       "conditions":[ {"field":"<clave>","op":"in|nin|lt|lte|gt|gte|empty|not_empty|has_any|has_all|has_none","values":[...]} ] } ] }
+    -- `all`=AND, `any`=OR. Fail-closed: `in` con `values` vacío no deja pasar la fila.
+    -- Se sigue leyendo el formato antiguo {conditions:[{field,values}]} (solo-AND).
+    row_filter      JSON NULL,
     -- Permisos a nivel de columna: campos OCULTOS a este viewer en este formulario.
     -- {"hidden":["clave","g_a/region"]} o NULL = ve todos los campos. Ver lib/FieldScope.
-    -- (El scoping por filas `row_filter` lo añade db/007_row_scope.sql.)
     field_filter    JSON NULL,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
