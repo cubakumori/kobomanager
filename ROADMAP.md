@@ -107,6 +107,17 @@ Quedan como ideas reabribles si aparece una necesidad real.
 
 ## Operación y mantenimiento
 
+- [ ] **Instalador CLI (`php api/cli/install.php`)** *(idea surgida en el QA de la
+      instalación limpia, jun-2026)*: con `config.php` ya rellenado, un único comando que
+      (1) verifique requisitos (PHP 8.1+, sodium, pdo_mysql, conexión a la BD, claves no
+      placeholder), (2) detecte si la BD ya está instalada (tablas presentes) y si no
+      aplique `db/*.sql` en orden, (3) cree el primer usuario admin de forma interactiva
+      (hoy `cli/create_user.php` aparte), y (4) al terminar SUGIERA borrar `db/` del
+      servidor (borrado opcional con flag `--clean`, nunca automático: en la vía SSH la
+      carpeta ni siquiera está, y un script que borra archivos por su cuenta sorprende).
+      Siempre CLI — un instalador web sería una superficie de ataque clásica. Reduciría
+      los §§4 y 5 de DEPLOY a «rellena config.php y ejecuta el instalador».
+
 - [ ] **Transporte de correo alternativo (SMTP)**: hoy el envío es solo vía Resend (API
       HTTP, `lib/Mailer.php`). Ofrecer SMTP para quien prefiera su propio servidor — choca
       con la filosofía «sin dependencias»; valorar abstraer un `MailTransport` con
