@@ -36,7 +36,7 @@
     "dataScope": "Acceso por filas",
     "dataScopeBody": "El administrador puede limitar, por usuario y formulario, qué envíos se ven (p. ej. por una región o por el enumerador que los envió); el resto queda oculto también al editar o validar. Se pueden combinar varias condiciones con Y/O y usar operadores (igual a, distinto de, rangos de número o fecha, vacío/con valor, opción múltiple).",
     "dataColumns": "Ocultar columnas",
-    "dataColumnsBody": "El administrador también puede ocultar campos concretos a un usuario (p. ej. datos identificativos): no aparecen en la tabla, el detalle, las estadísticas, la búsqueda ni la exportación, y tampoco en un enlace compartido configurado así.",
+    "dataColumnsBody": "El administrador también puede, campo por campo, ocultar columnas a un usuario (p. ej. datos identificativos) o marcarlas de solo lectura (se ven pero no se pueden editar). Una columna oculta no aparece en la tabla, el detalle, las estadísticas, la búsqueda ni la exportación, y tampoco en un enlace compartido configurado así.",
     "formActionsTitle": "Acciones sobre un formulario",
     "formActionsIntro": "Desde «Mis formularios», cada formulario ofrece varias acciones rápidas:",
     "faEnketo": "Ver (formulario público)",

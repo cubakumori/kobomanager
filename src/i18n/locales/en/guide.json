@@ -36,7 +36,7 @@
     "dataScope": "Row-level access",
     "dataScopeBody": "Admins can limit, per user and form, which submissions are visible (e.g. by a region or the enumerator who sent them); the rest stays hidden when editing or validating too. Several conditions can be combined with AND/OR and use operators (equals, not equals, number or date ranges, empty/has value, multiple choice).",
     "dataColumns": "Hide columns",
-    "dataColumnsBody": "Admins can also hide specific fields from a user (e.g. identifying data): they don't appear in the table, detail, statistics, search or export, nor in a share link configured that way.",
+    "dataColumnsBody": "The administrator can also, field by field, hide columns from a user (e.g. identifying data) or mark them read-only (visible but not editable). A hidden column does not appear in the table, detail, statistics, search or export, nor in a share link configured that way.",
     "formActionsTitle": "Actions on a form",
     "formActionsIntro": "From “My forms”, each form offers a few quick actions:",
     "faEnketo": "View (public form)",
