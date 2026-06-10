@@ -116,7 +116,9 @@ Quedan como ideas reabribles si aparece una necesidad real.
 ## Operación y mantenimiento
 
 - [ ] **Instalador CLI (`php api/cli/install.php`)** *(idea surgida en el QA de la
-      instalación limpia, jun-2026)*: con `config.php` ya rellenado, un único comando que
+      instalación limpia, jun-2026; PRIORIDAD CONFIRMADA por el usuario durante la
+      instalación real: crear el primer admin por CLI es la fricción más clara para
+      perfiles menos técnicos)*: con `config.php` ya rellenado, un único comando que
       (1) verifique requisitos (PHP 8.1+, sodium, pdo_mysql, conexión a la BD, claves no
       placeholder), (2) detecte si la BD ya está instalada (tablas presentes) y si no
       aplique `db/*.sql` en orden, (3) cree el primer usuario admin de forma interactiva
