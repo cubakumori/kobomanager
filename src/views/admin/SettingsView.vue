@@ -6,6 +6,7 @@ import { apiError } from '../../stores/auth'
 import { useAuthStore } from '../../stores/auth'
 import { setLocale } from '../../i18n'
 import { useTableFreeze, useDemoMode } from '../../composables/appConfig'
+import Skeleton from '../../components/Skeleton.vue'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -148,7 +149,7 @@ onMounted(load)
     <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
       {{ error }}
     </div>
-    <div v-if="loading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
+    <Skeleton v-if="loading" variant="lines" :lines="6" />
 
     <template v-else>
       <!-- Tipos a sincronizar -->
