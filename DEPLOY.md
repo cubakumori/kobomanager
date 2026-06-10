@@ -395,6 +395,23 @@ touch is a second, viewer-role user with a row filter and hidden/read-only colum
 configured, so visitors can log in with each one and compare — advertise both via the
 `|` separator in `DEMO_LOGIN_HINT` (above).
 
+**Keep your real identity out of the seed.** Demo visitors sign in as an *admin*, so
+they see everything an admin sees: the user list (names and emails), the audit trail
+and per-user session info (IP, browser). Therefore the demo database must contain
+**only** the published demo users:
+
+- Make the demo admin itself (`admin@demo.org`) the first user you create, and do the
+  whole setup logged in as that account — don't create a personal admin on this
+  instance (if you already did, delete it before the seed, with `DEMO_MODE` still off).
+- Just before taking the seed dump, empty the tables that carry your setup trail and
+  connection metadata (the demo refills them as visitors use it):
+  ```sql
+  TRUNCATE user_sessions; TRUNCATE login_attempts; TRUNCATE rate_hits;
+  TRUNCATE password_resets; TRUNCATE audit_log; TRUNCATE contact_messages;
+  ```
+  (Truncating `user_sessions` logs everyone out, you included — sign in again after
+  the dump. Skip `contact_messages` if you seeded an example message on purpose.)
+
 ### Setup order (the flag goes last)
 
 The demo locks apply to **everyone, admins included** — there is no "owner bypass". So
