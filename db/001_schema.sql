@@ -1,6 +1,8 @@
--- KoboManager — Esquema inicial (Fase 0)
--- Motor: MySQL / MariaDB
+-- KoboManager — Esquema COMPLETO (todas las tablas).
+-- Motor: MySQL 5.7+ / MariaDB. Solo DDL canónico (CREATE TABLE): se aplica UNA
+-- vez sobre una base de datos vacía; no hay migraciones incrementales.
 -- Aplicar con: mysql kobomanager < db/001_schema.sql
+-- (Los valores por defecto de `settings` van en db/002_defaults.sql.)
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
@@ -146,6 +148,88 @@ CREATE TABLE IF NOT EXISTS audit_log (
     detail          JSON,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3.10 Rate limiting de login (por IP)
+CREATE TABLE IF NOT EXISTS login_attempts (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    ip          VARCHAR(45) NOT NULL,
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_ip_time (ip, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Rate limiting genérico por "bucket" (p. ej. lectura de enlaces públicos de share).
+-- Separado de login_attempts para no cruzar el throttle de login con el de lectura.
+CREATE TABLE IF NOT EXISTS rate_hits (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    bucket      VARCHAR(32) NOT NULL,
+    ip          VARCHAR(45) NOT NULL,
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_bucket_ip_time (bucket, ip, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3.11 Configuración global clave/valor (los defaults se siembran en db/002_defaults.sql)
+CREATE TABLE IF NOT EXISTS settings (
+    `key`       VARCHAR(64) PRIMARY KEY,
+    `value`     TEXT,
+    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3.12 Recuperación de contraseña por email (tokens de un solo uso; solo se
+--      guarda el HASH sha256 del token; gobernado por `password_reset_enabled`)
+CREATE TABLE IF NOT EXISTS password_resets (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id     INT UNSIGNED NOT NULL,
+    token_hash  CHAR(64) NOT NULL UNIQUE,          -- sha256 hex del token en claro
+    expires_at  DATETIME NOT NULL,
+    used_at     DATETIME DEFAULT NULL,             -- se fija al consumir el token
+    ip          VARCHAR(45),                       -- IP que solicitó el reset
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user (user_id),
+    INDEX idx_expires (expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3.13 Enlaces públicos de solo lectura (token en URL, contraseña opcional,
+--      scoping por filas/columnas; ver lib/ShareLink y la cabecera histórica en git)
+CREATE TABLE IF NOT EXISTS share_links (
+    id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    token             VARCHAR(64) NOT NULL UNIQUE,          -- secreto en la URL (/s/<token>)
+    form_id           INT UNSIGNED NOT NULL,
+    created_by        INT UNSIGNED NOT NULL,                -- usuario admin que lo creó
+    label             VARCHAR(255) NULL,                    -- nombre interno para el panel
+    expose_list       TINYINT(1) NOT NULL DEFAULT 1,        -- mostrar lista de envíos
+    expose_detail     TINYINT(1) NOT NULL DEFAULT 1,        -- permitir ver el detalle de un envío
+    expose_map        TINYINT(1) NOT NULL DEFAULT 0,        -- mostrar mapa
+    expose_attachments TINYINT(1) NOT NULL DEFAULT 0,       -- exponer adjuntos (solo si el enlace tiene contraseña; ver `share_attachments_policy`)
+    row_filter        JSON NULL,                            -- {match,groups:[{match,conditions:[{field,op,values}]}]} o NULL (ver lib/RowScope; lee también el formato antiguo {conditions:[...]})
+    field_filter      JSON NULL,                            -- {hidden:["clave",...]} o NULL: columnas ocultas en este enlace (ver lib/FieldScope)
+    password_hash     VARCHAR(255) NULL,                    -- NULL = acceso solo por token
+    expires_at        DATETIME NULL,                        -- NULL = sin caducidad
+    revoked_at        DATETIME NULL,                        -- no NULL = revocado (deja de funcionar)
+    last_accessed_at  DATETIME NULL,
+    access_count      INT UNSIGNED NOT NULL DEFAULT 0,
+    created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (form_id)    REFERENCES forms(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_form (form_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3.14 Mensajes del formulario de contacto público (/apoyar): fuente de verdad
+--      aunque el email best-effort a CONTACT_TO falle (ver api/v1/public/contact.php)
+CREATE TABLE IF NOT EXISTS contact_messages (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name        VARCHAR(120) NOT NULL,
+    email       VARCHAR(255) NOT NULL,
+    org         VARCHAR(160) NULL,                       -- organización (opcional)
+    topic       VARCHAR(32)  NOT NULL DEFAULT 'general', -- general|hire|proposal|using
+    message     TEXT NOT NULL,
+    ip          VARCHAR(45)  NULL,
+    emailed     TINYINT(1)   NOT NULL DEFAULT 0,         -- 1 si la notificación por email salió
+    status      VARCHAR(16)  NOT NULL DEFAULT 'new',     -- new|read|archived (bandeja admin)
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_created (created_at),
+    INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

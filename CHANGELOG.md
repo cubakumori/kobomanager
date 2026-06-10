@@ -37,10 +37,11 @@ Todos los cambios notables de KoboManager. El formato sigue
   arrastraban `ALTER TABLE … ADD COLUMN IF NOT EXISTS`, sintaxis exclusiva de MariaDB
   que MySQL rechaza (#1064). Las seis columnas (forms.deployment_status/schema_json/
   schema_synced_at, users.locale, user_form_permissions.row_filter) viven ahora en los
-  `CREATE TABLE` canónicos de 001 — coherente con la decisión «sin migraciones
-  incrementales» — y 007 desaparece (su documentación del formato de row_filter se
-  movió a 001). Verificado: BD recreada desde cero = paridad exacta de esquema con la
-  BD de desarrollo, PHPUnit 185/185.
+  `CREATE TABLE` canónicos — coherente con la decisión «sin migraciones
+  incrementales» — y los 9 archivos históricos se CONSOLIDAN en dos:
+  `db/001_schema.sql` (todas las tablas) y `db/002_defaults.sql` (defaults de
+  `settings`, idempotentes). Verificado: BD recreada desde cero = paridad exacta de
+  esquema con la BD de desarrollo, PHPUnit 185/185.
 
 - **Login fallido ya no expulsa del formulario**: el interceptor global de 401
   redirigía a `/login` también cuando el 401 era la respuesta del propio intento de

@@ -31,14 +31,15 @@ overview read [`ARCHITECTURE.md`](./ARCHITECTURE.md); for setup read [`README.md
 
 ## Conventions
 
-- **No incremental migrations** (pre‑public). The full schema = all `db/*.sql` applied in
-  order; never `ALTER`. Edit the **canonical `CREATE TABLE`** where the table lives: add new
-  columns there (e.g. `user_form_permissions.field_filter`, `forms.submissions_synced_at`,
-  `submissions_cache.search_text`, `share_links.expose_attachments`), and
-  add a sibling table to its thematic file (e.g. `rate_hits` next to `login_attempts` in
-  `db/002`) or, for a new area, a new `db/NNN_name.sql` — all with `CREATE TABLE IF NOT EXISTS`.
-  To pick up a change on an existing DB you recreate it (or apply the same DDL by hand in
-  dev/test). Runtime‑configurable behavior goes in the `settings` table, not the schema.
+- **No incremental migrations** (pre‑public). The schema lives in TWO files:
+  `db/001_schema.sql` (every `CREATE TABLE`, canonical) and `db/002_defaults.sql`
+  (idempotent `INSERT`s seeding the `settings` defaults); never `ALTER`, and **only
+  portable DDL** — it must run on both MySQL 5.7+ and MariaDB (no MariaDB‑only syntax
+  like `ADD COLUMN IF NOT EXISTS`). New column → edit the canonical `CREATE TABLE`;
+  new table → add it to `001` with `CREATE TABLE IF NOT EXISTS`; new setting default →
+  `002`. To pick up a change on an existing DB you recreate it (or apply the same DDL
+  by hand in dev/test). Runtime‑configurable behavior goes in the `settings` table,
+  not the schema.
 
 ### Backend
 - One class per file in `lib/`, no namespaces (autoloaded by classmap for tests).

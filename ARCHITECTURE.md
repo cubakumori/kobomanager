@@ -341,11 +341,12 @@ to a new one (key rotation; see `DEPLOY.md §12`).
 
 ## Database
 
-MySQL/MariaDB. **Pre‑public policy: there are no incremental migrations.** The schema is the
-set of `db/*.sql` files applied **in order** — together they are the full schema. New tables
-are added as new `db/NNN_*.sql` files using `CREATE TABLE IF NOT EXISTS` (not `ALTER`); to get
-a fresh database you drop and re‑apply all files. Runtime‑configurable behavior lives in the
-`settings` table, not in schema changes.
+MySQL 5.7+/MariaDB. **There are no incremental migrations.** The schema lives in two files
+applied in order: `db/001_schema.sql` (all `CREATE TABLE`s, canonical) and
+`db/002_defaults.sql` (idempotent seeds for `settings`). Only portable DDL — it must run on
+both MySQL and MariaDB. New columns are added to the canonical `CREATE TABLE` (never
+`ALTER`); to get a fresh database you drop and re‑apply both files. Runtime‑configurable
+behavior lives in the `settings` table, not in schema changes.
 
 Key tables: `kobo_accounts`, `users`, `user_sessions`, `forms`, `submissions_cache`,
 `submission_reviews`, `user_form_permissions`, `notification_config`, `audit_log`,
