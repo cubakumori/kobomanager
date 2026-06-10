@@ -177,8 +177,7 @@ Trabajo de portada agrupado (todo toca la landing y el pulido visual):
 
 ### Ideas reabribles (post-publicación)
 
-- [ ] **Lector admin de mensajes de contacto** — promovido a prioridad de la próxima sesión
-      (ver «Próxima sesión: prioridades acordadas» § feature (a)).
+- [x] **Lector admin de mensajes de contacto** — hecho (ver prioridades acordadas § feature (a)).
 - [ ] **«Organizaciones que usan KoboManager»** — acápite/escaparate en la landing o en
       `/apoyar` con las organizaciones que lo usan (con su permiso). Para cuando haya varias.
 ---
