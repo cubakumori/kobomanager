@@ -28,6 +28,7 @@
     "demoModalTitle": "Public demo",
     "demoModalBody": "Some actions are disabled and the data is restored every {minutes} min.",
     "demoModalLogin": "Sign in with {hint}.",
+    "demoModalLoginIntro": "You can sign in with:",
     "demoModalOk": "Got it"
   },
   "nav": {

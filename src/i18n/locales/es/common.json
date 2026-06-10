@@ -28,6 +28,7 @@
     "demoModalTitle": "Demo pública",
     "demoModalBody": "Algunas acciones están deshabilitadas y los datos se restauran cada {minutes} min.",
     "demoModalLogin": "Entra con {hint}.",
+    "demoModalLoginIntro": "Puedes entrar con:",
     "demoModalOk": "Entendido"
   },
   "nav": {

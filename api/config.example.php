@@ -61,9 +61,11 @@ define('APP_ENV', 'dev');
 define('DEMO_MODE', false);
 // Minutos del ciclo de reset (solo informativo: se muestra en el banner).
 define('DEMO_RESET_MINUTES', 60);
-// Credenciales de la demo que la portada ofrece al visitante («Entra con …»),
-// p. ej. 'admin@demo.org / demo1234'. El usuario debe EXISTIR (créalo desde la
-// app; el email necesita dominio con punto). Vacío = no se muestran.
+// Credenciales de la demo que la portada ofrece al visitante. Texto libre;
+// VARIOS accesos separados por «|» se muestran como lista, p. ej.:
+//   'Admin: admin@demo.org / demo1234|Viewer (acceso limitado): viewer@demo.org / demo1234'
+// Los usuarios deben EXISTIR (créalos desde la app; el email necesita dominio
+// con punto). Vacío = no se muestran.
 define('DEMO_LOGIN_HINT', '');
 
 // --- Zona horaria de visualización ---

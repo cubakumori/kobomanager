@@ -116,7 +116,13 @@ define('SESSION_REFRESH_THRESHOLD', JWT_TTL / 2);  // renew the cookie when less
 
 define('COOKIE_SECURE', true);          // ← true in production (HTTPS)
 define('APP_ENV', 'prod');              // hides error details
+// APP_URL builds absolute links sent OUTSIDE the app (e.g. the password-reset link in
+// emails) — a wrong value here won't break browsing, it breaks those links.
 define('APP_URL', 'https://yourdomain.com');
+// In a single-domain install (frontend and /api on the same origin) the browser never
+// does CORS, so the site works even before touching this; the list matters if the
+// frontend ever lives on another origin (as in dev) and as part of the CSRF check.
+// Keep it set to your public HTTPS origin(s) anyway.
 define('CORS_ALLOWED_ORIGINS', ['https://yourdomain.com']);
 
 define('RESEND_API_KEY', 're_••••••');  // email (see §8); leave '' to disable
@@ -350,6 +356,13 @@ define('DEMO_RESET_MINUTES', 60);   // informative: shown in the welcome dialog
 define('DEMO_LOGIN_HINT', 'admin@demo.org / demo1234'); // shown in the dialog ('' = hidden)
 ```
 
+`DEMO_LOGIN_HINT` is free text; to advertise **several accounts** (say, an admin and a
+restricted viewer) separate them with `|` and the dialog renders them as a list:
+
+```php
+define('DEMO_LOGIN_HINT', 'Admin: admin@demo.org / demo1234|Viewer (limited): viewer@demo.org / demo1234');
+```
+
 With the flag on, `GET /api/v1/config` exposes `demo_mode`, and the frontend shows a
 welcome dialog on every homepage load with the reset cycle and the login hint, plus a
 small **DEMO** badge next to the brand everywhere (public pages, login page and the
@@ -379,7 +392,8 @@ with PHP's `FILTER_VALIDATE_EMAIL`, which requires a dotted domain: an address l
 `admin@demo` cannot be created from the admin UI (use `admin@demo.org` instead, or
 create it with `php api/cli/create_user.php`, which skips that validation). A nice
 touch is a second, viewer-role user with a row filter and hidden/read-only columns
-configured, so visitors can log in with each one and compare.
+configured, so visitors can log in with each one and compare — advertise both via the
+`|` separator in `DEMO_LOGIN_HINT` (above).
 
 ### Setup order (the flag goes last)
 
