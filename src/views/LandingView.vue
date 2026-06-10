@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import PublicLayout from '../components/PublicLayout.vue'
-import Modal from '../components/Modal.vue'
+import DemoModal from '../components/DemoModal.vue'
 import { useDarkMode } from '../composables/darkMode'
 import { useDemoMode } from '../composables/appConfig'
 import bannerDay from '../assets/kobomanager.webp'
@@ -10,18 +10,12 @@ import bannerNight from '../assets/kobomanager_night.webp'
 // Banner del hero: variante diurna o nocturna según el tema activo.
 const { isDark } = useDarkMode()
 
-// Modal de bienvenida de la demo: solo en la portada y una vez por visita
-// (sessionStorage). demoMode llega async de /config → watch con immediate.
-const { demoMode, demoResetMinutes, demoLoginHint } = useDemoMode()
-const DEMO_SEEN_KEY = 'km.demo.modalSeen'
+// Modal de bienvenida de la demo: en CADA carga de la portada (y reabrible en
+// cualquier momento desde el badge «DEMO» de la marca). demoMode llega async
+// de /config → watch con immediate.
+const { demoMode } = useDemoMode()
 const showDemoModal = ref(false)
-watch(demoMode, (v) => {
-  if (v && !sessionStorage.getItem(DEMO_SEEN_KEY)) showDemoModal.value = true
-}, { immediate: true })
-function dismissDemoModal() {
-  sessionStorage.setItem(DEMO_SEEN_KEY, '1')
-  showDemoModal.value = false
-}
+watch(demoMode, (v) => { if (v) showDemoModal.value = true }, { immediate: true })
 
 // Tarjetas de características (estilo "pill" verde). La 4ª destaca el control de
 // acceso granular (permisos por filas), añadido recientemente.
@@ -34,26 +28,8 @@ const chips = ['chipColumns', 'chipStats', 'chipEmail', 'chipLabels', 'chipMap',
 
 <template>
   <PublicLayout v-slot="{ openLogin, authenticated, goDashboard }">
-    <!-- Aviso de demo (cerrarlo lo marca como visto para esta visita) -->
-    <Modal v-if="showDemoModal" :title="$t('common.demoModalTitle')" @close="dismissDemoModal">
-      <div class="space-y-4">
-        <p class="text-sm text-slate-600">
-          {{ $t('common.demoModalBody', { minutes: demoResetMinutes }) }}
-        </p>
-        <p
-          v-if="demoLoginHint"
-          class="rounded-lg bg-primary-50 px-3 py-2 text-sm font-medium text-primary-800 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:text-primary-300 dark:ring-primary-800"
-        >
-          {{ $t('common.demoModalLogin', { hint: demoLoginHint }) }}
-        </p>
-        <button
-          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
-          @click="dismissDemoModal"
-        >
-          {{ $t('common.demoModalOk') }}
-        </button>
-      </div>
-    </Modal>
+    <!-- Aviso de demo (sale en cada carga; también se abre desde el badge DEMO) -->
+    <DemoModal v-if="showDemoModal" @close="showDemoModal = false" />
 
     <!-- Hero -->
     <main class="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center gap-10 px-6 py-12 lg:flex-row lg:py-20">

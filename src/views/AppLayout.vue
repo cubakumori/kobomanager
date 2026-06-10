@@ -52,7 +52,10 @@ useDialogA11y(drawer, () => { open.value = false }, open)
       <!-- Barra superior (solo móvil) — marca a la izquierda y hamburguesa neutra a la
            derecha (control de navegación; el azul se reserva para las acciones). -->
       <header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
-        <RouterLink to="/" class="inline-flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-900 transition-colors hover:text-primary-700">KoboManager <DemoBadge /></RouterLink>
+        <div class="flex items-center gap-2">
+          <RouterLink to="/" class="text-lg font-semibold tracking-tight text-slate-900 transition-colors hover:text-primary-700">KoboManager</RouterLink>
+          <DemoBadge />
+        </div>
         <div class="flex items-center gap-2">
           <!-- Cerrar sesión: a la izquierda de la hamburguesa (mismo hueco que el
                selector de tema en la portada) -->

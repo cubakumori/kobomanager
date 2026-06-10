@@ -300,11 +300,11 @@ define('DEMO_LOGIN_HINT', 'admin@demo.org / demo1234'); // shown in the dialog (
 ```
 
 With the flag on, `GET /api/v1/config` exposes `demo_mode`, and the frontend shows a
-welcome dialog on the homepage — once per visit — with the reset cycle and the login
-hint, plus a small **DEMO** badge next to the brand everywhere (public pages, login
-page and the app shell). Blocked buttons are disabled with a tooltip, and the API
-enforces the same list centrally (403 `DEMO_LOCKED`), so direct requests are covered
-too. Blocked in demo:
+welcome dialog on every homepage load with the reset cycle and the login hint, plus a
+small **DEMO** badge next to the brand everywhere (public pages, login page and the
+app shell) — clicking the badge reopens that dialog at any time. Blocked buttons are
+disabled with a tooltip, and the API enforces the same list centrally (403
+`DEMO_LOCKED`), so direct requests are covered too. Blocked in demo:
 
 - **Kobo accounts** — create/edit/delete (protects the API token of the demo account).
 - **Users** — create/edit/deactivate, password changes (own and others'), and revoking

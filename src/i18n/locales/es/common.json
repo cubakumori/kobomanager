@@ -24,7 +24,7 @@
     "clear": "Limpiar",
     "demoDisabled": "No disponible en la demo: esta acción está deshabilitada para proteger la instancia de demostración.",
     "demoBadge": "DEMO",
-    "demoBadgeTitle": "Instancia pública de demostración",
+    "demoBadgeTitle": "Demo pública — pulsa para ver las limitaciones y los datos de acceso",
     "demoModalTitle": "Demo pública",
     "demoModalBody": "Algunas acciones están deshabilitadas y los datos se restauran cada {minutes} min.",
     "demoModalLogin": "Entra con {hint}.",

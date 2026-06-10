@@ -13,9 +13,10 @@ Todos los cambios notables de KoboManager. El formato sigue
   retrocompatibles: una config sin ellas = demo desactivada) para montar una instancia
   pública de demostración. Con el flag activo:
   - `GET /config` expone `demo_mode`, `demo_reset_minutes` y `demo_login_hint`; el
-    frontend muestra un **modal de bienvenida** en la portada (una vez por visita,
-    con el ciclo de reset y las credenciales) y un badge **DEMO** junto a la marca
-    en portada/páginas públicas, login, sidebar y barra móvil.
+    frontend muestra un **modal de bienvenida** en cada carga de la portada (con el
+    ciclo de reset y las credenciales) y un badge **DEMO** junto a la marca en
+    portada/páginas públicas, login, sidebar y barra móvil; el badge es un botón
+    que reabre ese modal en cualquier momento.
   - La API **bloquea en un punto central** (403 con el nuevo código `DEMO_LOCKED`,
     i18n es/en) las acciones que romperían la demo o filtrarían secretos: CRUD de
     cuentas Kobo (protege el token), CRUD de usuarios + contraseñas + revocación de

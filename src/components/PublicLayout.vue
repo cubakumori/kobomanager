@@ -46,10 +46,12 @@ const drawerLink =
     <!-- Barra superior (idéntica en portada y páginas públicas) -->
     <header class="sticky top-0 z-30 border-b border-slate-200/60 bg-white/70 backdrop-blur">
       <div class="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-3">
-        <RouterLink to="/" class="inline-flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-900 hover:text-primary-700">
-          KoboManager
+        <div class="flex items-center gap-2">
+          <RouterLink to="/" class="text-lg font-semibold tracking-tight text-slate-900 hover:text-primary-700">
+            KoboManager
+          </RouterLink>
           <DemoBadge />
-        </RouterLink>
+        </div>
 
         <!-- Nav escritorio -->
         <nav class="hidden items-center gap-2 md:flex">

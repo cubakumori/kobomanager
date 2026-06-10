@@ -23,7 +23,10 @@ function onSuccess() {
 
       <div class="space-y-5 rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
         <div class="text-center">
-          <h1 class="inline-flex items-center gap-2 text-xl font-semibold tracking-tight text-slate-900">KoboManager <DemoBadge /></h1>
+          <div class="flex items-center justify-center gap-2">
+            <h1 class="text-xl font-semibold tracking-tight text-slate-900">KoboManager</h1>
+            <DemoBadge />
+          </div>
           <p class="mt-1 text-sm text-slate-500">{{ $t('login.subtitle') }}</p>
         </div>
         <LoginForm @success="onSuccess" />
