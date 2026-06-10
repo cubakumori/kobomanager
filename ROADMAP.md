@@ -115,8 +115,14 @@ Quedan como ideas reabribles si aparece una necesidad real.
       (hoy `cli/create_user.php` aparte), y (4) al terminar SUGIERA borrar `db/` del
       servidor (borrado opcional con flag `--clean`, nunca automático: en la vía SSH la
       carpeta ni siquiera está, y un script que borra archivos por su cuenta sorprende).
-      Siempre CLI — un instalador web sería una superficie de ataque clásica. Reduciría
-      los §§4 y 5 de DEPLOY a «rellena config.php y ejecuta el instalador».
+      CLI primero. Variante **web** estilo WordPress (idea del usuario) como posible capa
+      posterior, solo con TODAS las mitigaciones: se niega a correr si ya hay instalación
+      (tabla users no vacía / `install.lock` presente), se autodeshabilita al terminar e
+      instruye borrar el fichero del servidor. Aun así el beneficio es limitado: lo duro
+      (dominio, vhost, HTTPS, subir archivos, crear BD+usuario MySQL, config.php) exige
+      igualmente acceso al servidor, que es lo único que el CLI necesita. Cualquiera de
+      las dos reduciría los §§4 y 5 de DEPLOY a «rellena config.php y ejecuta el
+      instalador».
 
 - [ ] **Transporte de correo alternativo (SMTP)**: hoy el envío es solo vía Resend (API
       HTTP, `lib/Mailer.php`). Ofrecer SMTP para quien prefiera su propio servidor — choca
