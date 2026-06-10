@@ -70,4 +70,23 @@ final class AuthHttpTest extends HttpTestCase
         $this->assertSame(429, $res['status']);
         $this->assertSame('AUTH_RATE_LIMITED', $res['json']['error']['code']);
     }
+
+    public function testConfigWithoutDemoConstantsReportsDemoOff(): void
+    {
+        // Retrocompatibilidad: la config de test base NO define DEMO_MODE (como
+        // cualquier config.php anterior) → la API reporta demo off y las acciones
+        // de la denylist (p. ej. cambiar la contraseña propia) siguen abiertas.
+        $res = $this->request('GET', 'config');
+        $this->assertSame(200, $res['status']);
+        $this->assertFalse($res['json']['data']['demo_mode']);
+
+        $this->seedUser('viewer', 'pw@test.local', 'Secret123!');
+        $jar = $this->login('pw@test.local', 'Secret123!');
+        $res = $this->request('POST', 'profile/password', [
+            'current_password' => 'Secret123!',
+            'new_password'     => 'Another123!',
+        ], $jar);
+        $this->assertSame(200, $res['status'], $res['raw']);
+        @unlink($jar);
+    }
 }

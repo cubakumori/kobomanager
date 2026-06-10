@@ -6,10 +6,12 @@ import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 import { confirmDialog } from '../../composables/confirm'
 import Skeleton from '../../components/Skeleton.vue'
-import { useTableFreeze } from '../../composables/appConfig'
+import { useTableFreeze, useDemoMode } from '../../composables/appConfig'
 
 const { t } = useI18n()
 const { freezeFirst } = useTableFreeze()
+// En demo la sync manual contra Kobo está bloqueada (cuota de la cuenta demo).
+const { demoMode } = useDemoMode()
 const route = useRoute()
 
 const forms = ref([])
@@ -200,8 +202,9 @@ onMounted(async () => {
         <p class="mt-1 text-sm text-slate-500">{{ $t('forms.subtitle') }}</p>
       </div>
       <button
-        :disabled="syncing"
+        :disabled="demoMode || syncing"
         class="shrink-0 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+        :title="demoMode ? $t('common.demoDisabled') : undefined"
         @click="onSync"
       >
         {{ syncing ? $t('forms.syncing') : (selectedAccount ? $t('forms.syncAccount') : $t('forms.syncAll')) }}
@@ -313,17 +316,17 @@ onMounted(async () => {
                   {{ $t('forms.login') }}
                 </a>
                 <button
-                  :disabled="updatingId === f.id"
-                  class="font-medium text-primary-600 hover:underline disabled:opacity-50"
-                  :title="$t('forms.updateTitle')"
+                  :disabled="demoMode || updatingId === f.id"
+                  class="font-medium text-primary-600 hover:underline disabled:opacity-50 disabled:no-underline"
+                  :title="demoMode ? $t('common.demoDisabled') : $t('forms.updateTitle')"
                   @click="onUpdateForm(f)"
                 >
                   {{ updatingId === f.id ? $t('forms.updating') : $t('forms.update') }}
                 </button>
                 <button
-                  :disabled="fullSyncId === f.id"
-                  class="font-medium text-primary-600 hover:underline disabled:opacity-50"
-                  :title="$t('forms.resyncTitle')"
+                  :disabled="demoMode || fullSyncId === f.id"
+                  class="font-medium text-primary-600 hover:underline disabled:opacity-50 disabled:no-underline"
+                  :title="demoMode ? $t('common.demoDisabled') : $t('forms.resyncTitle')"
                   @click="onFullResync(f)"
                 >
                   {{ fullSyncId === f.id ? $t('forms.resyncing') : $t('forms.resync') }}

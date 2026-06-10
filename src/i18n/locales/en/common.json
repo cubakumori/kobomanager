@@ -21,7 +21,10 @@
     "theme_dark": "dark",
     "theme_auto": "auto (follow system)",
     "offline": "Offline — showing the last data you viewed; changes require a connection.",
-    "clear": "Clear"
+    "clear": "Clear",
+    "demoBanner": "🧪 Public demo — some actions are disabled and the data is restored every {minutes} min.",
+    "demoBannerLogin": "Sign in with {hint}.",
+    "demoDisabled": "Not available in the demo: this action is disabled to protect the demo instance."
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -56,6 +59,7 @@
     "PASSWORD_INCORRECT": "The current password is incorrect.",
     "SHARE_PASSWORD_REQUIRED": "This link requires a password.",
     "RATE_LIMITED": "Too many requests. Try again in a moment.",
-    "generic": "An error occurred"
+    "generic": "An error occurred",
+    "DEMO_LOCKED": "This action is disabled in the demo."
   }
 }

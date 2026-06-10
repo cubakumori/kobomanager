@@ -70,15 +70,17 @@ Quedan como ideas reabribles si aparece una necesidad real.
       Registrar al menos el .org antes de difundir el repo para que README/landing apunten
       a algo estable.
 - [ ] **Demo pública** (p. ej. `demo.kobomanager.org`) — plan completo en
-      `my.docs/PUBLICDEMO.md` (privado). Enfoque elegido: **modo demo integrado en la app**
-      (`DEMO_MODE` en config → banner servido por `/config`, error `DEMO_LOCKED` 403 en
-      acciones que romperían la demo o filtrarían el token: cuentas Kobo, usuarios/
-      contraseñas, settings y edición de envíos; el resto —revisión, filtros, export,
-      shares— queda abierto) + instancia con cuenta Kobo desechable, datos 100 % sintéticos
-      y cron de reset desde dump semilla. Al implementarlo, la parte genérica (config,
-      seed, cron, hardening) se documenta en `DEPLOY.md` («Running a demo instance») para
-      que cualquiera monte su propia demo. Alternativa exprés mientras tanto: un **enlace
-      público de solo lectura** real + capturas/GIF en el README.
+      `my.docs/PUBLICDEMO.md` (privado).
+  - [x] **Modo demo integrado en la app — HECHO**: `DEMO_MODE` + `DEMO_RESET_MINUTES` +
+        `DEMO_LOGIN_HINT` en config (opcionales, retrocompatibles), banner global servido
+        por `/config`, error `DEMO_LOCKED` 403 centralizado en el router para las acciones
+        que romperían la demo o filtrarían el token (cuentas Kobo, usuarios/contraseñas/
+        sesiones, settings, edición de envíos y sync manual); el resto —revisión, filtros,
+        export, shares, stats, mapa— queda abierto. Botones deshabilitados con aviso.
+        Documentado en `DEPLOY.md` §13 «Running a demo instance» (config, seed, cron de
+        reset, hardening) para que cualquiera monte su propia demo.
+  - [ ] **Instancia**: VPS + dominio + cuenta Kobo desechable con datos 100 % sintéticos
+        + usuarios/permisos/share de ejemplo + dump semilla + cron de reset.
 
 ---
 

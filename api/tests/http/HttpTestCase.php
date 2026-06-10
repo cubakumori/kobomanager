@@ -19,12 +19,13 @@ use PHPUnit\Framework\TestCase;
  */
 abstract class HttpTestCase extends TestCase
 {
-    private static ?string $apiBase = null;
-    private static ?string $koboBase = null;
-    /** @var resource|null */
-    private static $apiProc = null;
-    /** @var resource|null */
-    private static $koboProc = null;
+    /**
+     * Servidores efímeros por ARCHIVO DE CONFIG: las clases que necesitan otra
+     * config (p. ej. DEMO_MODE) sobreescriben configFile() y reciben su propio
+     * par de servidores, compartido entre todas las clases con la misma config.
+     * @var array<string, array{apiBase:string, koboBase:string, apiProc:resource, koboProc:resource}>
+     */
+    private static array $servers = [];
 
     protected ?string $jar = null;
 
@@ -35,12 +36,18 @@ abstract class HttpTestCase extends TestCase
         'notification_config', 'contact_messages', 'forms', 'kobo_accounts', 'users', 'settings',
     ];
 
-    public static function apiBase(): string { self::ensureServers(); return self::$apiBase; }
-    public static function koboBase(): string { self::ensureServers(); return self::$koboBase; }
+    /** Config (constantes) con la que arranca el servidor efímero de la clase. */
+    protected static function configFile(): string
+    {
+        return dirname(__DIR__) . '/config.http.php';
+    }
+
+    public static function apiBase(): string { return self::ensureServers(static::configFile())['apiBase']; }
+    public static function koboBase(): string { return self::ensureServers(static::configFile())['koboBase']; }
 
     protected function setUp(): void
     {
-        self::ensureServers();
+        self::ensureServers(static::configFile());
         $this->resetDb();
         $this->jar = tempnam(sys_get_temp_dir(), 'kmjar');
     }
@@ -57,30 +64,36 @@ abstract class HttpTestCase extends TestCase
 
     // ---------- Servidores efímeros ----------
 
-    private static function ensureServers(): void
+    /** @return array{apiBase:string, koboBase:string} */
+    private static function ensureServers(string $config): array
     {
-        if (self::$apiProc !== null) {
-            return;
+        if (isset(self::$servers[$config])) {
+            return self::$servers[$config];
         }
         $apiDir = dirname(__DIR__, 2); // .../api
 
         $env = getenv();
-        $env['KM_CONFIG'] = $apiDir . '/tests/config.http.php';
+        $env['KM_CONFIG'] = $config;
 
         $apiPort  = self::freePort();
         $koboPort = self::freePort();
-        self::$apiBase  = "http://127.0.0.1:$apiPort";
-        self::$koboBase = "http://127.0.0.1:$koboPort";
+        $entry = [
+            'apiBase'  => "http://127.0.0.1:$apiPort",
+            'koboBase' => "http://127.0.0.1:$koboPort",
+            'apiProc'  => self::spawn("php -S 127.0.0.1:$apiPort index.php", $apiDir, $env),
+            'koboProc' => self::spawn("php -S 127.0.0.1:$koboPort tests/kobo_stub.php", $apiDir, $env),
+        ];
+        self::$servers[$config] = $entry;
 
-        self::$apiProc  = self::spawn("php -S 127.0.0.1:$apiPort index.php", $apiDir, $env);
-        self::$koboProc = self::spawn("php -S 127.0.0.1:$koboPort tests/kobo_stub.php", $apiDir, $env);
+        if (count(self::$servers) === 1) {
+            register_shutdown_function([self::class, 'stopServers']);
+        }
 
-        register_shutdown_function([self::class, 'stopServers']);
-
-        if (!self::waitForHealth(self::$apiBase . '/api/v1/health', 5.0)) {
+        if (!self::waitForHealth($entry['apiBase'] . '/api/v1/health', 5.0)) {
             self::stopServers();
             throw new RuntimeException('El servidor API de test no respondió a /health');
         }
+        return $entry;
     }
 
     /** @return resource */
@@ -96,13 +109,15 @@ abstract class HttpTestCase extends TestCase
 
     public static function stopServers(): void
     {
-        foreach (['apiProc', 'koboProc'] as $p) {
-            if (is_resource(self::$$p)) {
-                proc_terminate(self::$$p);
-                proc_close(self::$$p);
-                self::$$p = null;
+        foreach (self::$servers as $entry) {
+            foreach (['apiProc', 'koboProc'] as $p) {
+                if (is_resource($entry[$p])) {
+                    proc_terminate($entry[$p]);
+                    proc_close($entry[$p]);
+                }
             }
         }
+        self::$servers = [];
     }
 
     private static function freePort(): int
@@ -141,8 +156,9 @@ abstract class HttpTestCase extends TestCase
     protected function request(string $method, string $path, ?array $body = null, ?string $jar = null): array
     {
         $jar ??= $this->jar;
-        $url = self::$apiBase . '/api/v1/' . ltrim($path, '/');
-        $headers = ['Origin: ' . self::$apiBase, 'Accept: application/json'];
+        $base = self::apiBase();
+        $url = $base . '/api/v1/' . ltrim($path, '/');
+        $headers = ['Origin: ' . $base, 'Accept: application/json'];
 
         $ch = curl_init($url);
         $opts = [
@@ -198,7 +214,7 @@ abstract class HttpTestCase extends TestCase
     /** Cuenta Kobo de prueba; por defecto apunta al stub (para la edición). */
     protected function seedAccount(?string $serverUrl = null): int
     {
-        $serverUrl ??= self::$koboBase;
+        $serverUrl ??= self::koboBase();
         DB::run(
             'INSERT INTO kobo_accounts (label, server_url, email, api_token) VALUES (?, ?, ?, ?)',
             ['acc', $serverUrl, 'a@test.local', TokenVault::encrypt('test-token')]

@@ -5,6 +5,7 @@ import { useRoute, useRouter, RouterLink } from 'vue-router'
 import api from '../services/api'
 import { apiError } from '../stores/auth'
 import { makeLabeler } from '../composables/labels'
+import { useDemoMode } from '../composables/appConfig'
 import { useDerivedFormat } from '../composables/derived'
 import ReviewBadge from '../components/ReviewBadge.vue'
 import LeafletMap from '../components/LeafletMap.vue'
@@ -13,6 +14,9 @@ import Skeleton from '../components/Skeleton.vue'
 
 const { t } = useI18n()
 const { summaryRows } = useDerivedFormat()
+// En demo la edición de envíos está bloqueada (escribe en la cuenta Kobo real
+// y el reset periódico no lo desharía); la revisión sí está permitida.
+const { demoMode } = useDemoMode()
 const route = useRoute()
 const router = useRouter()
 const sub = ref(null)
@@ -210,7 +214,9 @@ onMounted(load)
           <h2 class="font-semibold text-slate-900">{{ $t('detail.data') }}</h2>
           <button
             v-if="sub.can_edit && !editing"
-            class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            :disabled="demoMode"
+            class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-transparent"
+            :title="demoMode ? $t('common.demoDisabled') : undefined"
             @click="startEdit"
           >
             {{ $t('common.edit') }}

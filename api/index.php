@@ -19,6 +19,7 @@ require __DIR__ . '/lib/Auth.php';
 require __DIR__ . '/lib/Audit.php';
 require __DIR__ . '/lib/RateLimit.php';
 require __DIR__ . '/lib/Settings.php';
+require __DIR__ . '/lib/Demo.php';
 require __DIR__ . '/lib/KoboClient.php';
 require __DIR__ . '/lib/FormSchema.php';
 require __DIR__ . '/lib/Geo.php';
@@ -150,7 +151,7 @@ $routes = [
     'public/contact'                       => 'public/contact.php',
 ];
 
-/** Empareja la ruta solicitada contra los patrones; devuelve [archivo, params] o [null, []]. */
+/** Empareja la ruta solicitada contra los patrones; devuelve [archivo, params, patrón] o [null, [], null]. */
 function match_route(string $route, array $routes): array {
     $reqSegments = $route === '' ? [] : explode('/', $route);
     foreach ($routes as $pattern => $file) {
@@ -167,14 +168,19 @@ function match_route(string $route, array $routes): array {
                 break;
             }
         }
-        if ($ok) return [$file, $params];
+        if ($ok) return [$file, $params, $pattern];
     }
-    return [null, []];
+    return [null, [], null];
 }
 
 try {
-    [$file, $params] = match_route($route, $routes);
+    [$file, $params, $pattern] = match_route($route, $routes);
     if ($file !== null) {
+        // Modo demo: las acciones sensibles se cortan aquí, ANTES de delegar
+        // en el endpoint (denylist central por patrón de ruta + método).
+        if (Demo::blocks($pattern, $method)) {
+            ErrorResponse::send('DEMO_LOCKED');
+        }
         Request::$params = $params;
         require __DIR__ . '/v1/' . $file;
     } else {

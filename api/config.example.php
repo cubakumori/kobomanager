@@ -53,6 +53,18 @@ define('CORS_ALLOWED_ORIGINS', ['http://localhost:5173']);
 // Entorno: 'dev' muestra detalles de error; 'prod' los oculta.
 define('APP_ENV', 'dev');
 
+// --- Demo pública (opcional) ---
+// true → instancia de DEMOSTRACIÓN: banner global visible y acciones sensibles
+// bloqueadas (CRUD de cuentas Kobo y usuarios, contraseñas y sesiones, ajustes
+// globales, edición de envíos y sync manual). Pensado junto a un cron que
+// restaura la BD desde un dump semilla. Ver DEPLOY.md «Running a demo instance».
+define('DEMO_MODE', false);
+// Minutos del ciclo de reset (solo informativo: se muestra en el banner).
+define('DEMO_RESET_MINUTES', 60);
+// Credenciales de la demo que el banner ofrece al visitante («Entra con …»).
+// Vacío = no se muestran (publícalas donde prefieras).
+define('DEMO_LOGIN_HINT', '');
+
 // --- Zona horaria de visualización ---
 // Kobo entrega `_submission_time` en UTC. En Estadísticas, la «Actividad por
 // hora» y la «Actividad por día de la semana» se convierten a esta zona para

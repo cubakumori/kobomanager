@@ -5,7 +5,7 @@ import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 import { useAuthStore } from '../../stores/auth'
 import { setLocale } from '../../i18n'
-import { useTableFreeze } from '../../composables/appConfig'
+import { useTableFreeze, useDemoMode } from '../../composables/appConfig'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -23,6 +23,8 @@ const defaultTheme = ref('auto')
 const validThemes = ref(['light', 'dark', 'auto'])
 const showThemeToggle = ref(true)
 const { tableFreeze: appTableFreeze } = useTableFreeze()
+// En demo los ajustes globales son de solo lectura (PUT bloqueado).
+const { demoMode } = useDemoMode()
 const tableFreeze = ref('first')
 const validTableFreeze = ref(['first', 'none'])
 const mailConfigured = ref(false)
@@ -414,8 +416,9 @@ onMounted(load)
 
       <div class="flex items-center gap-3">
         <button
-          :disabled="saving"
+          :disabled="demoMode || saving"
           class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+          :title="demoMode ? $t('common.demoDisabled') : undefined"
           @click="save"
         >
           {{ saving ? $t('common.saving') : $t('common.save') }}

@@ -21,7 +21,10 @@
     "theme_dark": "oscuro",
     "theme_auto": "automático (según el sistema)",
     "offline": "Sin conexión — se muestran los últimos datos consultados; los cambios requieren conexión.",
-    "clear": "Limpiar"
+    "clear": "Limpiar",
+    "demoBanner": "🧪 Demo pública — algunas acciones están deshabilitadas y los datos se restauran cada {minutes} min.",
+    "demoBannerLogin": "Entra con {hint}.",
+    "demoDisabled": "No disponible en la demo: esta acción está deshabilitada para proteger la instancia de demostración."
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -56,6 +59,7 @@
     "PASSWORD_INCORRECT": "La contraseña actual no es correcta.",
     "SHARE_PASSWORD_REQUIRED": "Este enlace requiere una contraseña.",
     "RATE_LIMITED": "Demasiadas peticiones. Inténtalo de nuevo en un momento.",
-    "generic": "Ha ocurrido un error"
+    "generic": "Ha ocurrido un error",
+    "DEMO_LOCKED": "Esta acción está deshabilitada en la demo."
   }
 }

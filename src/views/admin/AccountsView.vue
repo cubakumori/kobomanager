@@ -6,10 +6,13 @@ import { apiError } from '../../stores/auth'
 import Modal from '../../components/Modal.vue'
 import { confirmDialog } from '../../composables/confirm'
 import Skeleton from '../../components/Skeleton.vue'
-import { useTableFreeze } from '../../composables/appConfig'
+import { useTableFreeze, useDemoMode } from '../../composables/appConfig'
 
 const { t } = useI18n()
 const { freezeFirst } = useTableFreeze()
+// En demo, el CRUD de cuentas y la sync manual están bloqueados (protege el
+// token y la cuota de la cuenta Kobo): botones deshabilitados con aviso.
+const { demoMode } = useDemoMode()
 
 const accounts = ref([])
 const loading = ref(true)
@@ -139,7 +142,9 @@ onMounted(load)
         <p class="mt-1 text-sm text-slate-500">{{ $t('accounts.subtitle') }}</p>
       </div>
       <button
-        class="shrink-0 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+        class="shrink-0 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
+        :disabled="demoMode"
+        :title="demoMode ? $t('common.demoDisabled') : undefined"
         @click="startCreate"
       >
         {{ $t('accounts.newAccount') }}
@@ -224,8 +229,9 @@ onMounted(load)
             <td class="px-4 py-3">
               <div class="flex items-center justify-end gap-3">
                 <button
-                  :disabled="syncingId === a.id"
-                  class="font-medium text-primary-600 hover:underline disabled:opacity-50"
+                  :disabled="demoMode || syncingId === a.id"
+                  class="font-medium text-primary-600 hover:underline disabled:opacity-50 disabled:no-underline"
+                  :title="demoMode ? $t('common.demoDisabled') : undefined"
                   @click="syncAccount(a)"
                 >
                   {{ syncingId === a.id ? $t('accounts.syncing') : $t('accounts.sync') }}
@@ -236,12 +242,19 @@ onMounted(load)
                 >
                   {{ $t('accounts.forms') }}
                 </RouterLink>
-                <button class="font-medium text-primary-600 hover:underline" @click="startEdit(a)">
+                <button
+                  class="font-medium text-primary-600 hover:underline disabled:opacity-50 disabled:no-underline"
+                  :disabled="demoMode"
+                  :title="demoMode ? $t('common.demoDisabled') : undefined"
+                  @click="startEdit(a)"
+                >
                   {{ $t('common.edit') }}
                 </button>
                 <button
                   v-if="a.forms_count === 0"
-                  class="font-medium text-red-600 dark:text-red-400 hover:underline"
+                  class="font-medium text-red-600 dark:text-red-400 hover:underline disabled:opacity-50 disabled:no-underline"
+                  :disabled="demoMode"
+                  :title="demoMode ? $t('common.demoDisabled') : undefined"
                   @click="removeAccount(a)"
                 >
                   {{ $t('common.delete') }}

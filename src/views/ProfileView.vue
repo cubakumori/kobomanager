@@ -6,9 +6,13 @@ import { useAuthStore, apiError } from '../stores/auth'
 import { setLocale } from '../i18n'
 import { confirmDialog } from '../composables/confirm'
 import { useDarkMode } from '../composables/darkMode'
+import { useDemoMode } from '../composables/appConfig'
 
 const { t } = useI18n()
 const auth = useAuthStore()
+// En demo, cambiar la contraseña y cerrar sesiones están bloqueados (el
+// usuario demo es compartido entre visitantes); el idioma sí se puede cambiar.
+const { demoMode } = useDemoMode()
 
 const error = ref('')
 
@@ -240,8 +244,9 @@ onMounted(() => {
         <div class="flex items-center gap-3 pt-1">
           <button
             type="submit"
-            :disabled="pwSaving"
+            :disabled="demoMode || pwSaving"
             class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+            :title="demoMode ? $t('common.demoDisabled') : undefined"
           >
             {{ pwSaving ? $t('common.saving') : $t('profile.changePassword') }}
           </button>
@@ -281,8 +286,9 @@ onMounted(() => {
       <div class="flex items-center gap-3 pt-1">
         <button
           type="button"
-          :disabled="sessClosing || sessions.length <= 1"
+          :disabled="demoMode || sessClosing || sessions.length <= 1"
           class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 disabled:opacity-60"
+          :title="demoMode ? $t('common.demoDisabled') : undefined"
           @click="closeOtherSessions"
         >
           {{ sessClosing ? $t('common.saving') : $t('profile.sessRevoke') }}

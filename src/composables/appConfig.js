@@ -16,6 +16,13 @@ const VALID = ['first', 'none']
 const cached = localStorage.getItem(CACHE_KEY)
 const tableFreeze = ref(VALID.includes(cached) ? cached : 'first')
 
+// Modo demo (instancia pública de demostración): banner global + acciones
+// sensibles deshabilitadas. Sin caché local: que un banner de demo nunca se
+// quede pegado en una instancia normal (y viceversa); un parpadeo es aceptable.
+const demoMode = ref(false)
+const demoResetMinutes = ref(60)
+const demoLoginHint = ref('')
+
 publicApi
   .get('/config')
   .then(({ data }) => {
@@ -24,6 +31,9 @@ publicApi
       tableFreeze.value = v
       localStorage.setItem(CACHE_KEY, v)
     }
+    demoMode.value = !!data.data.demo_mode
+    demoResetMinutes.value = Number(data.data.demo_reset_minutes) || 60
+    demoLoginHint.value = String(data.data.demo_login_hint || '')
   })
   .catch(() => { /* sin red: vale el valor cacheado o el default */ })
 
@@ -31,4 +41,9 @@ publicApi
 export function useTableFreeze() {
   const freezeFirst = () => tableFreeze.value === 'first'
   return { tableFreeze, freezeFirst }
+}
+
+/** Modo demo (reactivo): flag, minutos del ciclo de reset y credenciales a mostrar. */
+export function useDemoMode() {
+  return { demoMode, demoResetMinutes, demoLoginHint }
 }

@@ -7,10 +7,13 @@ import { useAuthStore, apiError } from '../../stores/auth'
 import Modal from '../../components/Modal.vue'
 import { confirmDialog } from '../../composables/confirm'
 import Skeleton from '../../components/Skeleton.vue'
-import { useTableFreeze } from '../../composables/appConfig'
+import { useTableFreeze, useDemoMode } from '../../composables/appConfig'
 
 const { t } = useI18n()
 const { freezeFirst } = useTableFreeze()
+// En demo el CRUD de usuarios y la revocación de sesiones están bloqueados
+// (el usuario demo es compartido): botones deshabilitados con aviso.
+const { demoMode } = useDemoMode()
 const auth = useAuthStore()
 const router = useRouter()
 
@@ -144,7 +147,9 @@ onMounted(load)
         <p class="mt-1 text-sm text-slate-500">{{ $t('users.subtitle') }}</p>
       </div>
       <button
-        class="shrink-0 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+        class="shrink-0 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
+        :disabled="demoMode"
+        :title="demoMode ? $t('common.demoDisabled') : undefined"
         @click="startCreate"
       >
         {{ $t('users.newUser') }}
@@ -239,7 +244,12 @@ onMounted(load)
             </td>
             <td class="px-4 py-3">
               <div class="flex items-center justify-end gap-3">
-                <button class="font-medium text-primary-600 hover:underline" @click="startEdit(u)">
+                <button
+                  class="font-medium text-primary-600 hover:underline disabled:opacity-50 disabled:no-underline"
+                  :disabled="demoMode"
+                  :title="demoMode ? $t('common.demoDisabled') : undefined"
+                  @click="startEdit(u)"
+                >
                   {{ $t('common.edit') }}
                 </button>
                 <!-- Permisos por formulario: solo aplican a viewers (los admin tienen acceso total). -->
@@ -252,16 +262,19 @@ onMounted(load)
                 </router-link>
                 <button
                   v-if="u.active_sessions"
-                  class="font-medium text-amber-600 dark:text-amber-400 hover:underline"
-                  :title="$t('users.revokeSessionsTitle')"
+                  class="font-medium text-amber-600 dark:text-amber-400 hover:underline disabled:opacity-50 disabled:no-underline"
+                  :disabled="demoMode"
+                  :title="demoMode ? $t('common.demoDisabled') : $t('users.revokeSessionsTitle')"
                   @click="revokeSessions(u)"
                 >
                   {{ $t('users.revokeSessions') }}
                 </button>
                 <button
                   v-if="u.id !== auth.user?.id"
-                  class="font-medium hover:underline"
+                  class="font-medium hover:underline disabled:opacity-50 disabled:no-underline"
                   :class="u.active ? 'text-red-600 dark:text-red-400' : 'text-success-600 dark:text-success-400'"
+                  :disabled="demoMode"
+                  :title="demoMode ? $t('common.demoDisabled') : undefined"
                   @click="toggleActive(u)"
                 >
                   {{ u.active ? $t('users.deactivate') : $t('users.activate') }}

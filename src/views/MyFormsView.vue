@@ -5,10 +5,13 @@ import { RouterLink } from 'vue-router'
 import api from '../services/api'
 import { useAuthStore, apiError } from '../stores/auth'
 import { confirmDialog } from '../composables/confirm'
+import { useDemoMode } from '../composables/appConfig'
 import Skeleton from '../components/Skeleton.vue'
 
 const { t } = useI18n()
 const auth = useAuthStore()
+// En demo la sync manual contra Kobo está bloqueada (cuota de la cuenta demo).
+const { demoMode } = useDemoMode()
 
 const forms = ref([])
 const loading = ref(true)
@@ -177,18 +180,18 @@ onMounted(load)
           </a>
           <button
             v-if="can('update')"
-            :disabled="busyId === f.id"
-            class="font-medium text-accent-800 hover:underline dark:text-accent-300 disabled:opacity-50"
-            :title="$t('forms.updateTitle')"
+            :disabled="demoMode || busyId === f.id"
+            class="font-medium text-accent-800 hover:underline dark:text-accent-300 disabled:opacity-50 disabled:no-underline"
+            :title="demoMode ? $t('common.demoDisabled') : $t('forms.updateTitle')"
             @click="onUpdate(f, false)"
           >
             {{ busyId === f.id ? $t('forms.updating') : $t('forms.update') }}
           </button>
           <button
             v-if="can('resync')"
-            :disabled="busyId === f.id"
-            class="font-medium text-accent-800 hover:underline dark:text-accent-300 disabled:opacity-50"
-            :title="$t('forms.resyncTitle')"
+            :disabled="demoMode || busyId === f.id"
+            class="font-medium text-accent-800 hover:underline dark:text-accent-300 disabled:opacity-50 disabled:no-underline"
+            :title="demoMode ? $t('common.demoDisabled') : $t('forms.resyncTitle')"
             @click="onUpdate(f, true)"
           >
             {{ busyId === f.id ? $t('forms.resyncing') : $t('forms.resync') }}

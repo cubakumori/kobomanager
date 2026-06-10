@@ -12,4 +12,7 @@ ErrorResponse::ok([
     'default_theme'          => Settings::defaultTheme(),
     'show_theme_toggle'      => Settings::showThemeToggle(),
     'table_freeze'           => Settings::tableFreeze(),
+    'demo_mode'              => Demo::enabled(),
+    'demo_reset_minutes'     => Demo::resetMinutes(),
+    'demo_login_hint'        => Demo::loginHint(),
 ]);

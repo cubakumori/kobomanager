@@ -280,3 +280,67 @@ is already on the new key — finish step 6 to match them. If you must go back t
 swap the two keys (`CONFIG_TOKEN_KEY` = new, `CONFIG_TOKEN_KEY_NEW` = old) and run the CLI
 again, then promote the old key. As a last resort, restore the DB + `config.php` from the
 backup taken in step 1.
+
+## 13. Running a demo instance
+
+KoboManager ships with a built-in **demo mode** so you can run a public sandbox of your
+own (a throwaway instance where visitors log in with shared credentials and click around
+real features) without letting them break it or read your secrets.
+
+### What `DEMO_MODE` does
+
+In `api/config.php` (all three constants are optional — a config without them behaves as
+demo off):
+
+```php
+// --- Public demo ---
+define('DEMO_MODE', true);          // banner + sensitive actions blocked
+define('DEMO_RESET_MINUTES', 60);   // informative: shown in the banner
+define('DEMO_LOGIN_HINT', 'admin@demo / demo1234'); // shown in the banner ('' = hidden)
+```
+
+With the flag on, `GET /api/v1/config` exposes `demo_mode`, and the frontend shows a
+global banner ("Public demo — … data is restored every N min. Sign in with …") and
+disables the blocked buttons with a tooltip. The API enforces the same list centrally
+(403 `DEMO_LOCKED`), so direct requests are covered too. Blocked in demo:
+
+- **Kobo accounts** — create/edit/delete (protects the API token of the demo account).
+- **Users** — create/edit/deactivate, password changes (own and others'), and revoking
+  sessions (including your own: the demo user is shared, closing its sessions would log
+  out other visitors). The password-recovery flow is blocked as well.
+- **Global settings** (`PUT /admin/settings`).
+- **Submission editing** — it writes to the real Kobo account; the local DB reset would
+  not undo it.
+- **Manual sync against Kobo** ("Update"/"Resync"/account discovery) — saves the demo
+  account's API quota. The server-side cron jobs (§7) keep syncing normally.
+
+Everything else stays enabled on purpose — it is what the demo is for: browsing, search
+and filters, single and batch review, CSV export, statistics, the map, creating and
+revoking share links, language and theme… All of it is local and restored by the reset.
+
+### Periodic reset
+
+1. Set the demo up the way you want visitors to find it (accounts synced, users,
+   permissions, an example share link…), then take a seed dump:
+   ```bash
+   mysqldump --single-transaction kobomanager > /opt/km-demo/seed.sql
+   ```
+2. Add a cron aligned with `DEMO_RESET_MINUTES`:
+   ```cron
+   0 * * * *  mysql kobomanager < /opt/km-demo/seed.sql >/dev/null 2>&1
+   ```
+   The dump restores users, permissions, reviews, share links, settings and the
+   submissions cache. The encrypted Kobo token lives in the DB, so it is restored as-is
+   (the server's `CONFIG_TOKEN_KEY` does not change).
+
+### Demo hardening notes
+
+- Use a **dedicated, disposable KoboToolbox account** with 100 % synthetic data — never
+  real (not even anonymized) data. Its token is low-value, and demo mode hides it anyway.
+- Leave `RESEND_API_KEY` empty: the mailer is a no-op and the demo sends no email.
+- The built-in rate limits (login, contact form, share links) stay active.
+- Consider `Disallow:` in `robots.txt` (or a `noindex` meta) so the demo does not compete
+  with your real site in search results.
+- The audit viewer (Dashboard → Audit) is a handy way to watch what visitors try.
+- If the demo gets abused, shorten the reset cycle (15–30 min) — the banner follows
+  `DEMO_RESET_MINUTES` automatically.

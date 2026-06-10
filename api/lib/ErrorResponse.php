@@ -15,6 +15,7 @@ class ErrorResponse {
         'AUTH_INVALID_TOKEN'            => [401, 'Sesión inválida o expirada'],
         'AUTH_INSUFFICIENT_PERMISSIONS' => [403, 'No tienes permisos suficientes'],
         'CSRF_BLOCKED'                  => [403, 'Origen de la petición no permitido'],
+        'DEMO_LOCKED'                   => [403, 'Esta acción está deshabilitada en la demo'],
         'AUTH_RATE_LIMITED'             => [429, 'Demasiados intentos. Espera un minuto e inténtalo de nuevo.'],
         'VALIDATION_ERROR'              => [422, 'Datos de entrada inválidos'],
         'RESET_TOKEN_INVALID'           => [400, 'El enlace de recuperación no es válido o ha caducado'],
