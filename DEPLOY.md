@@ -61,9 +61,9 @@ Upload to the server:
    header) — mind that dotfiles are easy to miss when copying, and see §6 if you need
    to edit it (or if you serve with nginx, which ignores it).
 2. The `api/` folder → under the public root (`/api`). You can safely skip the
-   development-only baggage: `api/vendor/`, `api/tests/`, `phpunit.xml` and
-   `composer.json`/`composer.lock` (the runtime has **no** PHP dependencies; those exist
-   only to run the test suite). Uploading them anyway is not a security problem — the
+   development-only baggage: `api/vendor/`, `api/tests/`, the hidden
+   `api/.phpunit.cache/`, `phpunit.xml` and `composer.json`/`composer.lock` (the
+   runtime has **no** PHP dependencies; those exist only to run the test suite). Uploading them anyway is not a security problem — the
    `api/.htaccess` denies direct access to `lib|cron|cli|tests|vendor` and everything is
    routed through `index.php` — just dead weight.
 3. The `db/` folder — these are the **schema files** that §4 runs once to create the
