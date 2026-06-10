@@ -153,8 +153,8 @@ onMounted(() => {
     <p class="text-sm text-slate-500">{{ $t('audit.total', { n: total }) }}</p>
 
     <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-      <Skeleton v-if="loading" variant="table" :rows="8" />
-      <table v-else class="w-full text-left text-sm">
+      <Skeleton v-if="loading && !items.length" variant="table" :rows="8" />
+      <table v-else class="w-full text-left text-sm transition-opacity" :class="loading ? 'opacity-60' : ''">
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
           <tr>
             <th class="px-4 py-3">{{ $t('audit.colDate') }}</th>

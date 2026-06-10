@@ -167,8 +167,8 @@ const barValueOptions = {
 // pct === null (periodo anterior = 0) → «—» neutro.
 function trendInfo(pct) {
   if (pct == null) return { text: '—', cls: 'text-slate-400', arrow: '' }
-  if (pct > 0) return { text: `+${pct}%`, cls: 'text-success-600', arrow: '▲' }
-  if (pct < 0) return { text: `${pct}%`, cls: 'text-red-600', arrow: '▼' }
+  if (pct > 0) return { text: `+${pct}%`, cls: 'text-success-600 dark:text-success-400', arrow: '▲' }
+  if (pct < 0) return { text: `${pct}%`, cls: 'text-red-600 dark:text-red-400', arrow: '▼' }
   return { text: '0%', cls: 'text-slate-400', arrow: '' }
 }
 
@@ -239,11 +239,11 @@ onMounted(load)
         </div>
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.pending') }}</p>
-          <p class="mt-1 text-2xl font-semibold text-amber-600">{{ stats.by_status.pending }}</p>
+          <p class="mt-1 text-2xl font-semibold text-amber-600 dark:text-amber-400">{{ stats.by_status.pending }}</p>
         </div>
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.approved') }}</p>
-          <p class="mt-1 text-2xl font-semibold text-success-600">{{ stats.by_status.approved }}</p>
+          <p class="mt-1 text-2xl font-semibold text-success-600 dark:text-success-400">{{ stats.by_status.approved }}</p>
         </div>
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.onHold') }}</p>
@@ -251,7 +251,7 @@ onMounted(load)
         </div>
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.rejected') }}</p>
-          <p class="mt-1 text-2xl font-semibold text-red-600">{{ stats.by_status.rejected }}</p>
+          <p class="mt-1 text-2xl font-semibold text-red-600 dark:text-red-400">{{ stats.by_status.rejected }}</p>
         </div>
       </div>
 

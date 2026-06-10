@@ -15,7 +15,7 @@ const newCount = ref(0)
 const loading = ref(true)
 const error = ref('')
 
-const statusFilter = ref('')
+const statusFilter = ref('new') // la bandeja abre mostrando lo nuevo
 const topicFilter = ref('')
 const page = ref(1)
 const perPage = 25
@@ -149,11 +149,11 @@ onMounted(load)
       </select>
     </div>
 
-    <div v-if="loading" class="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+    <div v-if="loading && !items.length" class="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
       <Skeleton variant="table" :rows="6" />
     </div>
 
-    <div v-else class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+    <div v-else class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200 transition-opacity" :class="loading ? 'opacity-60' : ''">
       <table class="w-full whitespace-nowrap text-left text-sm">
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
           <tr>
@@ -224,13 +224,13 @@ onMounted(load)
           <p v-if="current.org"><span class="text-slate-500">{{ $t('messages.org') }}:</span> {{ current.org }}</p>
           <p><span class="text-slate-500">{{ $t('messages.colTopic') }}:</span> {{ topicLabel(current.topic) }}</p>
           <p><span class="text-slate-500">{{ $t('messages.colDate') }}:</span> {{ current.created_at }}</p>
-          <p v-if="!current.emailed" class="text-xs text-amber-600">{{ $t('messages.notEmailed') }}</p>
+          <p v-if="!current.emailed" class="text-xs text-amber-600 dark:text-amber-400">{{ $t('messages.notEmailed') }}</p>
         </div>
 
         <p class="whitespace-pre-wrap break-words text-sm text-slate-800">{{ current.message }}</p>
 
         <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-4">
-          <button class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40" @click="remove(current)">
+          <button class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40" @click="remove(current)">
             {{ $t('common.delete') }}
           </button>
           <div class="flex flex-wrap gap-2">

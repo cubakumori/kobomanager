@@ -245,7 +245,7 @@ onMounted(() => {
           >
             {{ pwSaving ? $t('common.saving') : $t('profile.changePassword') }}
           </button>
-          <span v-if="pwSaved" class="text-sm text-success-600">{{ $t('profile.pwChanged') }}</span>
+          <span v-if="pwSaved" class="text-sm text-success-600 dark:text-success-400">{{ $t('profile.pwChanged') }}</span>
         </div>
       </form>
     </section>
@@ -282,12 +282,12 @@ onMounted(() => {
         <button
           type="button"
           :disabled="sessClosing || sessions.length <= 1"
-          class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+          class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 disabled:opacity-60"
           @click="closeOtherSessions"
         >
           {{ sessClosing ? $t('common.saving') : $t('profile.sessRevoke') }}
         </button>
-        <span v-if="sessClosedMsg" class="text-sm text-success-600">{{ sessClosedMsg }}</span>
+        <span v-if="sessClosedMsg" class="text-sm text-success-600 dark:text-success-400">{{ sessClosedMsg }}</span>
       </div>
     </section>
   </div>

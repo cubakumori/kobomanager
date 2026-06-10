@@ -392,7 +392,7 @@ onMounted(load)
         >
           {{ saving ? $t('common.saving') : $t('common.save') }}
         </button>
-        <span v-if="saved" class="text-sm text-success-600">{{ $t('common.saved') }}</span>
+        <span v-if="saved" class="text-sm text-success-600 dark:text-success-400">{{ $t('common.saved') }}</span>
       </div>
     </template>
   </div>

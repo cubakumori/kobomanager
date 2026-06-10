@@ -493,7 +493,7 @@ onMounted(() => { loadAdvFilter(); load() })
       </button>
       <button
         :disabled="batchBusy"
-        class="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+        class="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 disabled:opacity-60"
         @click="batchReview('rejected')"
       >
         {{ $t('submissions.batchReject') }}
@@ -504,8 +504,8 @@ onMounted(() => { loadAdvFilter(); load() })
     </div>
 
     <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-      <Skeleton v-if="loading" variant="table" :rows="10" />
-      <table v-else class="w-full text-left text-sm">
+      <Skeleton v-if="loading && !items.length" variant="table" :rows="10" />
+      <table v-else class="w-full text-left text-sm transition-opacity" :class="loading ? 'opacity-60' : ''">
         <thead class="bg-accent-50 text-xs uppercase tracking-wider text-accent-700 dark:bg-slate-50 dark:text-accent-300">
           <tr>
             <th v-if="canValidate" class="sticky left-0 z-20 w-12 bg-accent-50 px-4 py-3 dark:bg-slate-50">
@@ -595,7 +595,7 @@ onMounted(() => { loadAdvFilter(); load() })
           :fields-url="`/forms/${formId}/scope-fields`"
         />
         <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
-          <button type="button" class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40" @click="clearAdv">
+          <button type="button" class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40" @click="clearAdv">
             {{ $t('submissions.filtersClear') }}
           </button>
           <div class="flex gap-2">

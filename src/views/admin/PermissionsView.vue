@@ -258,7 +258,7 @@ onMounted(async () => {
                   type="button"
                   class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ring-1 transition"
                   :class="conditionCount(p)
-                    ? 'bg-accent-50 text-accent-700 ring-accent-200 hover:bg-accent-100'
+                    ? 'bg-accent-50 text-accent-700 ring-accent-200 hover:bg-accent-100 dark:bg-accent-900/30 dark:text-accent-300 dark:ring-accent-800 dark:hover:bg-accent-900/50'
                     : 'bg-slate-50 text-slate-500 ring-slate-200 hover:bg-slate-100'"
                   @click="openScope(p)"
                 >
@@ -301,7 +301,7 @@ onMounted(async () => {
           >
             {{ saving ? $t('common.saving') : $t('permissions.save') }}
           </button>
-          <span v-if="saved" class="text-sm text-success-600">{{ $t('common.saved') }}</span>
+          <span v-if="saved" class="text-sm text-success-600 dark:text-success-400">{{ $t('common.saved') }}</span>
         </div>
       </template>
     </div>
@@ -323,7 +323,7 @@ onMounted(async () => {
         <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
           <button
             type="button"
-            class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
             @click="clearScope"
           >
             {{ $t('permissions.scopeClear') }}
@@ -388,7 +388,7 @@ onMounted(async () => {
                     type="button"
                     class="px-2 py-1 text-xs font-medium transition"
                     :class="colState(f.key) === s
-                      ? (s === 'hidden' ? 'bg-red-600 text-white' : s === 'readonly' ? 'bg-amber-500 text-white' : 'bg-primary-600 text-white')
+                      ? (s === 'hidden' ? 'bg-red-600 text-white dark:bg-red-700' : s === 'readonly' ? 'bg-amber-500 text-white dark:bg-amber-600' : 'bg-primary-600 text-white')
                       : 'bg-white text-slate-600 hover:bg-slate-100'"
                     @click="setColState(f.key, s)"
                   >{{ $t('permissions.colState_' + s) }}</button>
@@ -401,7 +401,7 @@ onMounted(async () => {
         <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
           <button
             type="button"
-            class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
             @click="clearCols"
           >
             {{ $t('permissions.colsClear') }}

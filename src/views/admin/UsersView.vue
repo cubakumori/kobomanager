@@ -198,7 +198,7 @@ onMounted(load)
 
     <!-- Listado -->
     <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-      <div v-if="listError" class="p-4 text-sm text-red-700">{{ listError }}</div>
+      <div v-if="listError" class="p-4 text-sm text-red-700 dark:text-red-400">{{ listError }}</div>
       <Skeleton v-else-if="loading" variant="table" :rows="5" />
       <table v-else class="w-full whitespace-nowrap text-left text-sm">
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
@@ -221,11 +221,11 @@ onMounted(load)
             <td class="px-4 py-3">
               <span
                 class="rounded-full px-2 py-0.5 text-xs font-medium"
-                :class="u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'"
+                :class="u.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300' : 'bg-slate-100 text-slate-600'"
               >{{ u.role }}</span>
             </td>
             <td class="px-4 py-3">
-              <span :class="u.active ? 'text-success-600' : 'text-slate-400'">
+              <span :class="u.active ? 'text-success-600 dark:text-success-400' : 'text-slate-400'">
                 {{ u.active ? $t('users.active') : $t('users.inactive') }}
               </span>
             </td>
@@ -248,7 +248,7 @@ onMounted(load)
                 </router-link>
                 <button
                   v-if="u.active_sessions"
-                  class="font-medium text-amber-600 hover:underline"
+                  class="font-medium text-amber-600 dark:text-amber-400 hover:underline"
                   :title="$t('users.revokeSessionsTitle')"
                   @click="revokeSessions(u)"
                 >
@@ -257,7 +257,7 @@ onMounted(load)
                 <button
                   v-if="u.id !== auth.user?.id"
                   class="font-medium hover:underline"
-                  :class="u.active ? 'text-red-600' : 'text-success-600'"
+                  :class="u.active ? 'text-red-600 dark:text-red-400' : 'text-success-600 dark:text-success-400'"
                   @click="toggleActive(u)"
                 >
                   {{ u.active ? $t('users.deactivate') : $t('users.activate') }}

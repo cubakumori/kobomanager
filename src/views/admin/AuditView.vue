@@ -160,7 +160,7 @@ onMounted(() => {
           <div class="flex justify-between"><dt class="text-slate-500">{{ $t('audit.forms') }}</dt><dd>{{ health.sync.forms_active }} / {{ health.sync.forms_total }}</dd></div>
           <div class="flex justify-between">
             <dt class="text-slate-500">{{ $t('audit.withErrors') }}</dt>
-            <dd :class="health.sync.forms_error ? 'font-semibold text-red-600' : ''">{{ health.sync.forms_error }}</dd>
+            <dd :class="health.sync.forms_error ? 'font-semibold text-red-600 dark:text-red-400' : ''">{{ health.sync.forms_error }}</dd>
           </div>
           <div class="flex justify-between"><dt class="text-slate-500">{{ $t('audit.submissions') }}</dt><dd>{{ health.sync.submissions }}</dd></div>
           <div class="flex justify-between"><dt class="text-slate-500">{{ $t('audit.lastSync') }}</dt><dd>{{ health.sync.last_synced_at || '—' }}</dd></div>
@@ -217,8 +217,8 @@ onMounted(() => {
     <p class="text-sm text-slate-500">{{ $t('audit.total', { n: total }) }}</p>
 
     <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-      <Skeleton v-if="loading" variant="table" :rows="10" />
-      <table v-else class="w-full text-left text-sm">
+      <Skeleton v-if="loading && !items.length" variant="table" :rows="10" />
+      <table v-else class="w-full text-left text-sm transition-opacity" :class="loading ? 'opacity-60' : ''">
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
           <tr>
             <th class="px-4 py-3">{{ $t('audit.colDate') }}</th>

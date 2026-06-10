@@ -179,7 +179,7 @@ function reset() {
           ></textarea>
         </label>
 
-        <p v-if="error" class="text-sm font-medium text-red-600">{{ $t(error) }}</p>
+        <p v-if="error" class="text-sm font-medium text-red-600 dark:text-red-400">{{ $t(error) }}</p>
 
         <div>
           <button

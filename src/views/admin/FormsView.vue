@@ -244,7 +244,7 @@ onMounted(async () => {
 
     <!-- Listado -->
     <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-      <div v-if="listError" class="p-4 text-sm text-red-700">{{ listError }}</div>
+      <div v-if="listError" class="p-4 text-sm text-red-700 dark:text-red-400">{{ listError }}</div>
       <Skeleton v-else-if="loading" variant="table" :rows="6" />
       <table v-else class="w-full whitespace-nowrap text-left text-sm">
         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
@@ -280,7 +280,7 @@ onMounted(async () => {
               <span class="rounded-full px-2 py-0.5 text-xs font-medium" :class="badge[f.sync_status]">
                 {{ f.sync_status }}
               </span>
-              <p v-if="f.sync_status === 'error' && f.last_sync_error" class="mt-1 text-xs text-red-600">
+              <p v-if="f.sync_status === 'error' && f.last_sync_error" class="mt-1 text-xs text-red-600 dark:text-red-400">
                 {{ f.last_sync_error }}
               </p>
             </td>
@@ -322,7 +322,7 @@ onMounted(async () => {
                   {{ fullSyncId === f.id ? $t('forms.resyncing') : $t('forms.resync') }}
                 </button>
                 <button
-                  class="font-medium text-red-600 hover:underline"
+                  class="font-medium text-red-600 dark:text-red-400 hover:underline"
                   :title="$t('forms.deleteTitle')"
                   @click="removeForm(f)"
                 >

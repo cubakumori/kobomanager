@@ -69,13 +69,18 @@ Todos los cambios notables de KoboManager. El formato sigue
   botones y avisos conservan su contraste y el modo oscuro combina con los temas
   `theme-teal`/`theme-violet`; los fondos teñidos claros (pills de la portada, cajas de
   error/éxito/aviso, chips de estado, tarjetas accent de «Mis formularios»/«Apoyar») llevan
-  variantes `dark:` apagadas y translúcidas para no deslumbrar. Las superficies oscuras por
-  diseño (sidebar, drawer móvil) se anclan con `.km-pin-neutrals`; los gráficos re-renderizan
-  el texto/rejilla al alternar; `color-scheme: dark` adapta inputs nativos y scrollbars. La
-  portada muestra una **variante nocturna del banner** en modo oscuro.
+  variantes `dark:` apagadas y translúcidas para no deslumbrar; los rojos y naranjas de
+  acciones (eliminar, desactivar, revocar) y los botones de peligro también se suavizan en
+  oscuro, igual que el badge de rol admin y los badges «Filtro»/«Columnas» de Permisos. Las
+  superficies oscuras por diseño (sidebar, drawer móvil) se anclan con `.km-pin-neutrals`;
+  los gráficos re-renderizan el texto/rejilla al alternar; `color-scheme: dark` adapta
+  inputs nativos y scrollbars. La portada muestra una **variante nocturna del banner** en
+  modo oscuro.
 - **Skeletons de carga**: nuevo componente `Skeleton.vue` (variantes `table`/`lines`/`cards`)
   que sustituye el texto «Cargando…» en las vistas principales (tabla de envíos, detalle,
-  estadísticas, Mis formularios, Mi actividad y las listas de administración).
+  estadísticas, Mis formularios, Mi actividad y las listas de administración). En las tablas
+  con filtros (envíos, mensajes, auditoría, actividad) el skeleton solo aparece en la carga
+  inicial: al cambiar un filtro la tabla se mantiene (atenuada) en lugar de «parpadear».
 
 - **Bandeja admin de mensajes de contacto (`/admin/messages`)**: los mensajes del formulario
   público de la página «Apoyar» (tabla `contact_messages`) ahora se leen y gestionan desde el
@@ -84,9 +89,10 @@ Todos los cambios notables de KoboManager. El formato sigue
   **Responder** (mailto con asunto prellenado), **archivar/desarchivar** y **eliminar** con
   confirmación. La tabla gana la columna `status` (`new`/`read`/`archived`, DDL canónico en
   `db/009_contact_messages.sql`). Nueva card «Mensajes» en el Dashboard admin con contador de
-  no leídos. Archivar y eliminar quedan auditados (`contact_message_archive`/`_delete`); el
-  paso a leído no se audita para no generar ruido. Endpoints admin `GET /admin/messages`
-  (filtros + `new_count`) y `PUT`/`DELETE /admin/messages/{id}`. 4 tests de integración HTTP.
+  no leídos. La bandeja abre filtrada en **«Nuevo»** por defecto. Archivar y eliminar quedan
+  auditados (`contact_message_archive`/`_delete`); el paso a leído no se audita para no
+  generar ruido. Endpoints admin `GET /admin/messages` (filtros + `new_count`) y
+  `PUT`/`DELETE /admin/messages/{id}`. 4 tests de integración HTTP.
 
 - **Página «Apoyar» (`/apoyar`)**: nueva página pública que reemplaza el enlace «Donar»
   (antes inerte, «Próximamente») por «Apoyar» en el nav y el menú móvil. Reúne: uso libre +

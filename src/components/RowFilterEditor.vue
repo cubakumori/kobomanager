@@ -269,7 +269,7 @@ defineExpose({ getValue })
           </div>
           <button
             type="button"
-            class="rounded-lg px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
+            class="rounded-lg px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
             @click="removeGroup(gi)"
           >
             {{ $t('rowfilter.removeGroup') }}
@@ -311,7 +311,7 @@ defineExpose({ getValue })
 
             <button
               type="button"
-              class="rounded-lg px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
+              class="rounded-lg px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
               @click="removeCondition(gi, ci)"
             >
               {{ $t('rowfilter.removeCondition') }}

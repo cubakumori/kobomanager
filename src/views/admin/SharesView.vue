@@ -281,7 +281,7 @@ onMounted(() => {
               <p class="text-xs text-slate-400">{{ link.form.name }}</p>
               <div class="mt-1 flex flex-wrap items-center gap-1.5">
                 <code class="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">/s/{{ link.token.slice(0, 10) }}…</code>
-                <span v-if="link.has_password" class="text-xs text-amber-600">🔒 {{ $t('shares.withPassword') }}</span>
+                <span v-if="link.has_password" class="text-xs text-amber-600 dark:text-amber-400">🔒 {{ $t('shares.withPassword') }}</span>
                 <span v-if="link.row_filter" class="text-xs text-accent-700 dark:text-accent-300">
                   {{ $t('shares.rowFilterActive', { n: countConditions(link.row_filter) }) }}
                 </span>
@@ -328,11 +328,11 @@ onMounted(() => {
                 >{{ $t('shares.open') }}</a>
                 <button
                   v-if="linkState(link) !== 'revoked'"
-                  class="rounded-lg px-2.5 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                  class="rounded-lg px-2.5 py-1 text-xs font-medium text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40"
                   @click="revoke(link)"
                 >{{ $t('shares.revoke') }}</button>
                 <button
-                  class="rounded-lg px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
+                  class="rounded-lg px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
                   @click="remove(link)"
                 >{{ $t('shares.delete') }}</button>
               </div>
@@ -388,10 +388,10 @@ onMounted(() => {
               {{ $t('shares.exposeAttachments') }}
             </label>
           </div>
-          <p v-if="!(form.expose_list || form.expose_detail || form.expose_map)" class="mt-1 text-xs text-red-600">
+          <p v-if="!(form.expose_list || form.expose_detail || form.expose_map)" class="mt-1 text-xs text-red-600 dark:text-red-400">
             {{ $t('shares.exposeAtLeastOne') }}
           </p>
-          <p v-if="attachmentsPolicy === 'require_password' && form.expose_attachments && !canExposeAttachments" class="mt-1 text-xs text-amber-600">
+          <p v-if="attachmentsPolicy === 'require_password' && form.expose_attachments && !canExposeAttachments" class="mt-1 text-xs text-amber-600 dark:text-amber-400">
             {{ $t('shares.exposeAttachmentsNeedsPassword') }}
           </p>
         </fieldset>
@@ -473,7 +473,7 @@ onMounted(() => {
         />
 
         <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
-          <button type="button" class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40" @click="clearScope">
+          <button type="button" class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40" @click="clearScope">
             {{ $t('permissions.scopeClear') }}
           </button>
           <div class="flex gap-2">
@@ -517,7 +517,7 @@ onMounted(() => {
         </template>
 
         <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
-          <button type="button" class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40" @click="clearCols">
+          <button type="button" class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40" @click="clearCols">
             {{ $t('permissions.colsClear') }}
           </button>
           <div class="flex gap-2">

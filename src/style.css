@@ -207,8 +207,6 @@
 .dark {
   color-scheme: dark;
 
-  --color-white: #1e293b;
-
   --color-slate-50:  #283548; /* hovers/cabeceras de tabla sobre tarjeta */
   --color-slate-100: #0f172a; /* fondo de página */
   --color-slate-200: #334155; /* bordes/rings sobre tarjeta */
@@ -219,6 +217,27 @@
   --color-slate-700: #e2e8f0;
   --color-slate-800: #f1f5f9; /* texto base */
   --color-slate-900: #f8fafc; /* titulares */
+
+  /* La hamburguesa móvil referencia --color-white (que NO se invierte, ver abajo):
+     superficies oscuras explícitas para que no quede un botón blanco brillante. */
+  --km-burger-bg:       #1e293b;
+  --km-burger-bg-hover: #283548;
+}
+
+/*
+  `--color-white` NO se invierte: `text-white` (texto sobre botones de color) y
+  `bg-white` (tarjetas) comparten la misma variable, y voltearla oscurecía el
+  TEXTO de todos los botones. En su lugar, solo la UTILIDAD de fondo se
+  redefine bajo `.dark` (las tres variantes que usa la app).
+*/
+.dark :where(.bg-white) {
+  background-color: #1e293b;
+}
+.dark :where(.bg-white\/70) {
+  background-color: rgb(30 41 59 / 0.7);
+}
+.dark :where(.bg-white\/80) {
+  background-color: rgb(30 41 59 / 0.8);
 }
 
 /*
