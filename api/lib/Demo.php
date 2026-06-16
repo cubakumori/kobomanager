@@ -19,8 +19,7 @@
  * reset periódico lo restaura.
  *
  * Las constantes son OPCIONALES (guard `defined()`): una config sin ellas
- * equivale a demo desactivada. Ver config.example.php y DEPLOY.md
- * («Running a demo instance»).
+ * equivale a demo desactivada. Ver config.example.php y DEMO.md.
  */
 class Demo {
 

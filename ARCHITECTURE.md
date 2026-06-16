@@ -190,7 +190,7 @@ disabled with a tooltip. Enforcement is central: a route-pattern + method denyli
 front controller returns 403 `DEMO_LOCKED` for anything that would break the demo or leak
 secrets (Kobo account CRUD, user/password/session management, global settings, submission
 editing, manual sync). Everything local that a periodic DB reset restores stays enabled.
-Operational guide (seed dump, reset cron, hardening): `DEPLOY.md` §13.
+Operational guide (synthetic seeding via `api/cli/seed_demo.php`, seed dump, reset cron, hardening): [`DEMO.md`](DEMO.md).
 
 ### Attachment proxies & CSV hardening
 The attachment proxies (`submissions/{id}/attachments/...` and the public share one) stream

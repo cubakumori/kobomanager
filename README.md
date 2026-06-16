@@ -17,6 +17,49 @@ holds the Kobo credentials (stored encrypted); end users work through KoboManage
 per-form permissions — including multi-condition (AND/OR) row-level scoping and
 column-level field hiding — and an internal review workflow decoupled from Kobo.
 
+## Features
+
+**Access & permissions**
+
+- Your team signs in with app users — **no KoboToolbox account needed**, and the API
+  token is never exposed to the browser (stored encrypted on the server).
+- Per-form permissions (view / edit / validate).
+- **Multi-condition row-level scoping** (AND/OR groups; `in`, `not in`, ranges, empty,
+  and `has_any/all/none` for multi-selects) — each user sees only the rows that match.
+- **Column-level permissions**: hide fields or mark them read-only, per user.
+
+**Review**
+
+- Internal **review workflow** (pending / approved / on hold / rejected), one-by-one or
+  in batches, decoupled from Kobo's own validation.
+
+**Sharing**
+
+- **Public read-only links** — share a form without giving anyone an account, optionally
+  with a password, an expiry date, and the same row/column scoping you apply to your
+  team. Map and attachments are opt-in per link.
+
+**Analysis**
+
+- **Statistics**: totals, submissions per day/month, activity by hour and weekday
+  (configurable timezone), 7/30-day trends, fill-in duration, and distribution by review
+  status and by question.
+- **Map** of submission geopoints.
+
+**Data**
+
+- **Human-readable labels** from the XLSForm (codes → text, multilingual).
+- **Attachments** (photo / audio / video / file) served through an authenticated proxy.
+- **Search** and persistent **advanced filters**.
+- **CSV export** that honors each user's row/column scoping.
+- **Submission editing** that writes back to Kobo.
+
+**Operation**
+
+- Bilingual UI (Spanish / English), light/dark theme, installable **PWA** with offline
+  reads, **email notifications**, a built-in **demo mode**, a one-command **CLI
+  installer**, and fully **themable** colors (below).
+
 ## Repository layout
 
 The frontend lives at the repo root (same as in deployment); the backend in `/api`.
@@ -105,14 +148,11 @@ Three semantic color scales drive the UI (Tailwind v4 `@theme`):
 
 ### Dark mode
 
-The app ships a **light / dark / auto** theme switch (sun/moon icon in the public header,
-plus a selector in *My profile*). "Auto" follows the system (`prefers-color-scheme`); the
-choice persists per device in `localStorage` and always wins over the site default. Admins
-can set a **default theme** and **hide the theme selector** in *Settings*. Dark mode only
-remaps the **neutral** colors (`white` + the `slate` scale) under the `.dark` class in
-`src/style.css` — brand tokens and semantic colors are untouched, so it composes freely
-with the alternate themes below — plus muted `dark:` variants for tinted chips/badges/cards.
-The landing hero swaps to a night variant of the banner.
+A **light / dark / auto** switch (header icon + a selector in *My profile*; "auto" follows
+`prefers-color-scheme`, persists per device, and always wins over the site default — which
+admins set in *Settings*). Dark mode only remaps the **neutral** colors (`white` + the
+`slate` scale) under the `.dark` class in `src/style.css`, so brand and semantic tokens are
+untouched and it composes freely with the alternate themes below.
 
 ### Change the default colors
 

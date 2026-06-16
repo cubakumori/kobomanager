@@ -143,7 +143,7 @@ define('MAIL_FROM', 'KoboManager <noreply@yourdomain.com>');
 define('APP_TIMEZONE', 'America/Havana'); // stats hour/weekday in local time (IANA; default 'UTC')
 define('APP_TIMEZONE_LABEL', 'La Habana'); // human label for the UI; '' falls back to the IANA id
 
-// Optional — public demo instance (DEMO_MODE, DEMO_RESET_MINUTES, DEMO_LOGIN_ADMIN/VIEWER): see §13.
+// Optional — public demo instance (DEMO_MODE, DEMO_RESET_MINUTES, DEMO_LOGIN_ADMIN/VIEWER): see DEMO.md.
 ```
 
 > **Important:** keep `CONFIG_TOKEN_KEY` somewhere safe. If it's lost or changed, the
@@ -354,141 +354,8 @@ backup taken in step 1.
 ## 13. Running a demo instance
 
 KoboManager ships with a built-in **demo mode** so you can run a public sandbox of your
-own (a throwaway instance where visitors log in with shared credentials and click around
-real features) without letting them break it or read your secrets.
+own — a throwaway instance where visitors log in with shared credentials and click around
+real features without being able to break it or read your secrets.
 
-### What `DEMO_MODE` does
-
-In `api/config.php` (all the constants are optional — a config without them behaves as
-demo off):
-
-```php
-// --- Public demo ---
-define('DEMO_MODE', true);          // demo notice + sensitive actions blocked
-define('DEMO_RESET_MINUTES', 60);   // informative: shown in the welcome dialog
-// Credentials shown in the dialog, per role ('' hides that line). The app adds the
-// role label translated to the visitor's language.
-define('DEMO_LOGIN_ADMIN', 'admin@demo.org / demo1234');
-define('DEMO_LOGIN_VIEWER', 'viewer@demo.org / demo1234');
-```
-
-With the flag on, `GET /api/v1/config` exposes `demo_mode`, and the frontend shows a
-welcome dialog on every homepage load with the reset cycle and the login hint, plus a
-small **DEMO** badge next to the brand everywhere (public pages, login page and the
-app shell) — clicking the badge reopens that dialog at any time. Blocked buttons are
-disabled with a tooltip, and the API enforces the same list centrally (403
-`DEMO_LOCKED`), so direct requests are covered too. Blocked in demo:
-
-- **Kobo accounts** — create/edit/delete (protects the API token of the demo account).
-- **Users** — create/edit/deactivate, password changes (own and others'), and revoking
-  sessions (including your own: the demo user is shared, closing its sessions would log
-  out other visitors). The password-recovery flow is blocked as well.
-- **Global settings** (`PUT /admin/settings`).
-- **Submission editing** — it writes to the real Kobo account; the local DB reset would
-  not undo it.
-- **Manual sync against Kobo** ("Update"/"Resync"/account discovery) — saves the demo
-  account's API quota. The server-side cron jobs (§7) keep syncing normally.
-
-Everything else stays enabled on purpose — it is what the demo is for: browsing, search
-and filters, single and batch review, CSV export, statistics, the map, creating and
-revoking share links, language and theme… All of it is local and restored by the reset.
-
-### Demo users
-
-Create the account(s) you publish in `DEMO_LOGIN_ADMIN`/`DEMO_LOGIN_VIEWER` **before**
-enabling the demo — those constants are plain text, they do not create anything. Note that the app validates emails
-with PHP's `FILTER_VALIDATE_EMAIL`, which requires a dotted domain: an address like
-`admin@demo` cannot be created from the admin UI (use `admin@demo.org` instead, or
-create it with `php api/cli/create_user.php`, which skips that validation). A nice
-touch is a second, viewer-role user with a row filter and hidden/read-only columns
-configured, so visitors can log in with each one and compare — advertise it via
-`DEMO_LOGIN_VIEWER` (above).
-
-**Keep your real identity out of the seed.** Demo visitors sign in as an *admin*, so
-they see everything an admin sees: the user list (names and emails), the audit trail
-and per-user session info (IP, browser). Therefore the demo database must contain
-**only** the published demo users:
-
-- Make the demo admin itself (`admin@demo.org`) the first user you create, and do the
-  whole setup logged in as that account — don't create a personal admin on this
-  instance (if you already did, delete it before the seed, with `DEMO_MODE` still off).
-- Just before taking the seed dump, empty the tables that carry your setup trail and
-  connection metadata (the demo refills them as visitors use it):
-  ```sql
-  TRUNCATE user_sessions; TRUNCATE login_attempts; TRUNCATE rate_hits;
-  TRUNCATE password_resets; TRUNCATE audit_log; TRUNCATE contact_messages;
-  ```
-  (Truncating `user_sessions` logs everyone out, you included — sign in again after
-  the dump. Skip `contact_messages` if you seeded an example message on purpose.)
-
-### Setup order (the flag goes last)
-
-The demo locks apply to **everyone, admins included** — there is no "owner bypass". So
-prepare the instance with `DEMO_MODE` **off** (or the constants absent), because setup
-needs exactly the actions the demo blocks (connecting the Kobo account, creating users,
-changing settings, manual sync):
-
-1. Install normally (§§1–10) with `DEMO_MODE = false`.
-2. Connect the disposable Kobo account, sync, create the demo users, permissions,
-   an example share link, settings — leave everything the way visitors should find it.
-3. Take the seed dump (below), add the reset cron, set `DEMO_MODE = true`.
-4. Only then publish the URL.
-
-To adjust something later, do the same loop over SSH: flip the flag off, change what
-you need, regenerate the seed dump, flip it back on.
-
-### Periodic reset
-
-1. With the demo ready, take a seed dump of the demo database:
-   ```bash
-   mkdir -p /opt/km-demo
-   mysqldump --single-transaction kobomanager > /opt/km-demo/seed.sql
-   ```
-   (Equivalent: export the database from phpMyAdmin or any client connected to it and
-   place the file at that path.) Keep it **outside the web root**, readable only by the
-   cron user — and keep an off-server copy of `seed.sql` + `config.php` (hours of setup
-   live in that pair; the `CONFIG_TOKEN_KEY` in the config is the only thing that can
-   decrypt the Kobo token stored in the dump).
-
-   **Preparing the seed on another machine.** The dump is portable with ONE condition:
-   the Kobo token inside it is encrypted with the `CONFIG_TOKEN_KEY` of the instance
-   that created it, so the demo server must use the **same** `CONFIG_TOKEN_KEY`. With
-   that in place you can build the whole demo comfortably on your dev machine (Kobo
-   account, sync, users, permissions, the privacy cleanup above), dump it there, upload
-   `seed.sql` and load it once on the server (`mysql kobomanager < seed.sql`). Caveat
-   when dumping from **MariaDB** for a **MySQL** server: recent MariaDB `mysqldump`
-   prepends a `/*!999999\- enable the sandbox mode */` line that MySQL rejects — delete
-   that first line (`sed -i '1{/999999/d}' seed.sql`) before importing.
-2. Add a cron aligned with `DEMO_RESET_MINUTES` (schedule the §7 sync crons at other
-   minutes — e.g. reset at `0`, submissions sync at `15,30,45` — so a sync never runs
-   mid-restore):
-   ```cron
-   0 * * * *  mysql kobomanager < /opt/km-demo/seed.sql >/dev/null 2>&1
-   ```
-   The dump restores users, permissions, reviews, share links, settings and the
-   submissions cache. The encrypted Kobo token lives in the DB, so it is restored as-is
-   (the server's `CONFIG_TOKEN_KEY` does not change). `DEMO_MODE` itself lives in
-   `config.php`, not in the DB — the reset never touches it.
-
-### Demo hardening notes
-
-- Use a **dedicated, disposable KoboToolbox account** with 100 % synthetic data — never
-  real (not even anonymized) data. Its token is low-value, and demo mode hides it anyway.
-- Leave `RESEND_API_KEY` empty: the mailer is a no-op and the demo sends no email.
-- The built-in rate limits (login, contact form, share links) stay active.
-- `robots.txt`: if the demo runs alongside a separate project website, consider
-  `Disallow:` (or a `noindex` meta) so the demo does not compete with it in search
-  results. If the demo **is** your public site (its landing page doubles as the project
-  homepage), leave it indexable — everything beyond the landing requires login and is
-  not crawlable anyway.
-- If the server has **phpMyAdmin** (or any DB admin panel), remember it is a second,
-  independent door to the same database: bots scan every domain for `/phpmyadmin`-like
-  URLs around the clock, and whoever gets in talks straight to MySQL — full read/write
-  on the demo DB, bypassing the app and `DEMO_MODE` entirely. Either restrict who can
-  reach it (an IP allowlist — `Require ip <your-ip>` in its Apache config — or HTTP
-  basic auth in front of its login), or simply **remove it once setup is done**
-  (`apt remove phpmyadmin`); reinstalling it the day you need it takes minutes, and
-  what is not there cannot be attacked.
-- The audit viewer (Dashboard → Audit) is a handy way to watch what visitors try.
-- If the demo gets abused, shorten the reset cycle (15–30 min) — the welcome dialog
-  follows `DEMO_RESET_MINUTES` automatically.
+It is a specialized deployment with its own runbook (what the flag blocks, setup order,
+seeding synthetic submissions, the reset cron, and hardening). See **[DEMO.md](DEMO.md)**.

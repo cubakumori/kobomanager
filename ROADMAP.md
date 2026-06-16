@@ -79,18 +79,24 @@ Quedan como ideas reabribles si aparece una necesidad real.
         (cuentas Kobo, usuarios/contraseñas/sesiones, settings, edición de envíos y sync
         manual); el resto —revisión, filtros, export, shares, stats, mapa— queda abierto.
         Botones deshabilitados con aviso.
-        Documentado en `DEPLOY.md` §13 «Running a demo instance» (config, seed, cron de
-        reset, hardening) para que cualquiera monte su propia demo.
+        Documentado en [`DEMO.md`](DEMO.md) (runbook completo: config, usuarios, seed,
+        cron de reset, hardening) para que cualquiera monte su propia demo.
+  - [x] **Sembrado de datos sintéticos — HECHO**: CLI `api/cli/seed_demo.php` que lee el
+        esquema cacheado del formulario y genera envíos FALSOS directamente en
+        `submissions_cache` (no escribe en Kobo) con fechas repartidas, opciones válidas,
+        geopoints, campos vacíos y revisiones de ejemplo (marca `_km_seed` para `--clear`).
+        Decisión clave: una demo sembrada NO lleva cron de sync (lo reconciliaría y
+        borraría), solo cron de reset. Documentado en [`DEMO.md`](DEMO.md).
   - [ ] **Instancia**: VPS + dominio + cuenta Kobo desechable con datos 100 % sintéticos
         + usuarios/permisos/share de ejemplo + dump semilla + cron de reset.
 - [ ] **Semilla y reset de la demo gestionados por la app** *(idea del usuario en el QA,
-      jun-2026)*: hoy la demo exige `mysqldump` + cron SQL a mano (DEPLOY §13). En su
+      jun-2026)*: hoy la demo exige `mysqldump` + cron SQL a mano (DEMO.md). En su
       lugar: botón admin «Generar semilla de la demo» (exporta la BD a una ruta
       configurada, p. ej. `DEMO_SEED_PATH`; disponible solo con `DEMO_MODE` apagado,
       coherente con el bucle de mantenimiento) + cron `api/cron/demo_reset.php` (como
       los de sync) que restaura esa semilla cada `DEMO_RESET_MINUTES`. Retos: dump y
       restore desde PHP sin `mysqldump` (multi-statement, FK checks, tamaño) y restaurar
-      «en caliente» con visitantes activos. Eliminaría todo el SQL manual de §13.
+      «en caliente» con visitantes activos. Eliminaría todo el SQL manual de DEMO.md.
 - [ ] **Release «deploy-ready» en GitHub** *(idea del QA de instalación, jun-2026)*: zip
       adjunto a cada release con EXACTAMENTE lo que se sube al servidor — contenido de
       `dist/` (incluido el `.htaccess` raíz) + `api/` podado (sin vendor/tests/composer/

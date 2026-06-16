@@ -57,7 +57,7 @@ define('APP_ENV', 'dev');
 // true → instancia de DEMOSTRACIÓN: banner global visible y acciones sensibles
 // bloqueadas (CRUD de cuentas Kobo y usuarios, contraseñas y sesiones, ajustes
 // globales, edición de envíos y sync manual). Pensado junto a un cron que
-// restaura la BD desde un dump semilla. Ver DEPLOY.md «Running a demo instance».
+// restaura la BD desde un dump semilla. Ver DEMO.md (runbook completo).
 define('DEMO_MODE', false);
 // Minutos del ciclo de reset (solo informativo: se muestra en el banner).
 define('DEMO_RESET_MINUTES', 60);
@@ -65,7 +65,7 @@ define('DEMO_RESET_MINUTES', 60);
 // etiqueta «Administrador»/«Viewer» la pone la app, traducida). Texto libre
 // tipo 'email / contraseña'; vacío = esa línea no se muestra. Los usuarios
 // deben EXISTIR (créalos desde la app; el email necesita dominio con punto).
-// Convención sugerida (la que usa DEPLOY.md §13):
+// Convención sugerida (la que usa DEMO.md):
 define('DEMO_LOGIN_ADMIN', '');   // p. ej. 'admin@demo.org / demo1234'
 define('DEMO_LOGIN_VIEWER', '');  // p. ej. 'viewer@demo.org / demo1234'
 

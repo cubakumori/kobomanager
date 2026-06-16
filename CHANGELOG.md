@@ -8,6 +8,20 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Sembrado de datos sintéticos para la demo** (`php api/cli/seed_demo.php <form_id>
+  <count> [--days N] [--reviews PCT] [--clear]`): herramienta de operador que lee el
+  esquema cacheado del formulario y genera envíos FALSOS directamente en
+  `submissions_cache` —sin escribir en KoboToolbox—, con fechas repartidas en semanas
+  (estadísticas por día/mes/hora y tendencias con forma realista), opciones válidas del
+  esquema, geopoints, campos vacíos para los filtros «vacío/no vacío» y revisiones de
+  ejemplo. Los envíos sembrados llevan la marca `_km_seed` para poder limpiarlos con
+  `--clear` sin tocar los reales. No tiene equivalente en la UI (generar datos falsos
+  sobre formularios reales sería un riesgo).
+- **`DEMO.md`**: el runbook de la instancia de demostración se traslada de `DEPLOY.md`
+  §13 a un documento propio (qué bloquea el flag, orden de instalación, sembrado
+  sintético, dump semilla, cron de reset y *hardening*); `DEPLOY.md` §13 queda como
+  puntero. Aviso clave: una demo sembrada NO debe llevar cron de sync (lo reconciliaría
+  y borraría), solo cron de reset.
 - **Instalador CLI** (`php api/cli/install.php`): con `api/config.php` relleno, un solo
   comando verifica los requisitos (PHP 8.1+, extensiones, claves de 64 hex, conexión a
   la BD), aplica el esquema si la base de datos está vacía (con esquema parcial aborta
@@ -45,6 +59,14 @@ Todos los cambios notables de KoboManager. El formato sigue
   - `DEPLOY.md`: nueva sección **«Running a demo instance»** (config, usuarios demo,
     dump semilla + cron de reset, notas de hardening).
 
+### Cambiado
+
+- **README — sección «Features»**: nueva sección que enumera todas las capacidades de la
+  app agrupadas por valor (acceso y permisos, revisión, enlaces públicos, estadísticas y
+  mapa, datos, operación), porque antes varias —enlaces públicos, estadísticas, mapa,
+  etiquetas, export CSV, adjuntos, notificaciones— no figuraban en el README. La sección de
+  modo oscuro se condensó (se solapaba con la nueva lista).
+
 ### Arreglado
 
 - **`db/*.sql` instalable en MySQL** (hallazgo del QA de instalación): 003/004/005/007
@@ -61,6 +83,9 @@ Todos los cambios notables de KoboManager. El formato sigue
   redirigía a `/login` también cuando el 401 era la respuesta del propio intento de
   login (p. ej. desde el modal de la portada); ahora el error se muestra en el
   formulario («Credenciales incorrectas»).
+
+- **Skeleton con aparición retrasada**: los esqueletos de carga aparecen tras ~180 ms con
+  un fundido corto, evitando el «flashazo» de skeleton en cargas rápidas.
 
 ## [1.3.0] - 2026-06-11
 
