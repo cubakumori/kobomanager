@@ -186,6 +186,14 @@ the published demo users:
    (the server's `CONFIG_TOKEN_KEY` does not change). `DEMO_MODE` itself lives in
    `config.php`, not in the DB — the reset never touches it.
 
+   > **`DEMO_RESET_MINUTES` is informational only** — it's the number shown in the welcome
+   > dialog, it does **not** drive the cron. Make the cron's frequency match it, or the
+   > dialog will lie. For `DEMO_RESET_MINUTES = 120` (every 2 hours) the cron is
+   > `0 */2 * * *` (minute 0, every 2nd hour). Watch the syntax: `0 2 * * *` would mean
+   > *2 a.m. once a day*, **not** every 2 hours — use the `*/2` interval form for "every N".
+   > Many panels (e.g. DirectAdmin) show the schedule in plain English as you type it
+   > ("At 0 minutes past the hour, every 2 hours") — a handy sanity check.
+
 > ⚠️ **Do not add a submissions-sync cron (§7) to a seeded demo.** Seeded submissions
 > exist only in the local cache, not in Kobo. A sync reconciles the cache against the
 > Kobo account and would **delete** every seeded row (their `_id`/`_uuid` are not in

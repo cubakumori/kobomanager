@@ -3,6 +3,12 @@
 -- vez sobre una base de datos vacía; no hay migraciones incrementales.
 -- Aplicar con: mysql kobomanager < db/001_schema.sql
 -- (Los valores por defecto de `settings` van en db/002_defaults.sql.)
+--
+-- NOTA de portabilidad: las claves foráneas llevan NOMBRE explícito y único
+-- (`fk_<tabla>_<ref>`). Sin nombre, MariaDB las autogenera como `1`, `2`… POR TABLA,
+-- y un `mysqldump` de MariaDB materializa esos nombres; al importarlo en MySQL —que
+-- exige nombres de constraint únicos POR BASE DE DATOS— chocan (#1826 Duplicate
+-- foreign key constraint name). Con nombres propios el dump es portable a MySQL.
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
@@ -41,7 +47,7 @@ CREATE TABLE IF NOT EXISTS user_sessions (
     last_activity   DATETIME,
     ip              VARCHAR(45),
     user_agent      TEXT,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    CONSTRAINT fk_user_sessions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 3.4 Caché de formularios desde Kobo
@@ -67,7 +73,7 @@ CREATE TABLE IF NOT EXISTS forms (
     last_sync_error     TEXT,
     active              TINYINT(1) DEFAULT 1,
     created_at          DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (kobo_account_id) REFERENCES kobo_accounts(id) ON DELETE CASCADE,
+    CONSTRAINT fk_forms_account FOREIGN KEY (kobo_account_id) REFERENCES kobo_accounts(id) ON DELETE CASCADE,
     UNIQUE KEY unique_account_asset (kobo_account_id, kobo_asset_uid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -84,7 +90,7 @@ CREATE TABLE IF NOT EXISTS submissions_cache (
     search_text     MEDIUMTEXT,
     submitted_at    DATETIME,
     last_synced_at  DATETIME,
-    FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
+    CONSTRAINT fk_submissions_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
     INDEX idx_form_submitted (form_id, submitted_at),
     FULLTEXT INDEX idx_search_text (search_text)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -97,7 +103,7 @@ CREATE TABLE IF NOT EXISTS submission_reviews (
     status          ENUM('pending', 'approved', 'on_hold', 'rejected') NOT NULL DEFAULT 'pending',
     comment         TEXT,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_reviews_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_submission (submission_uid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -122,8 +128,8 @@ CREATE TABLE IF NOT EXISTS user_form_permissions (
     -- {"hidden":["clave","g_a/region"]} o NULL = ve todos los campos. Ver lib/FieldScope.
     field_filter    JSON NULL,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ufp_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ufp_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
     UNIQUE KEY unique_user_form (user_id, form_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -134,8 +140,8 @@ CREATE TABLE IF NOT EXISTS notification_config (
     form_id         INT UNSIGNED NOT NULL,
     daily_summary   TINYINT(1) DEFAULT 1,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+    CONSTRAINT fk_notif_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_notif_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 3.9 Registro de auditoría
@@ -147,7 +153,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
     action          VARCHAR(50) NOT NULL,
     detail          JSON,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    CONSTRAINT fk_audit_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 3.10 Rate limiting de login (por IP)
@@ -185,7 +191,7 @@ CREATE TABLE IF NOT EXISTS password_resets (
     used_at     DATETIME DEFAULT NULL,             -- se fija al consumir el token
     ip          VARCHAR(45),                       -- IP que solicitó el reset
     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_pwreset_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_user (user_id),
     INDEX idx_expires (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -210,8 +216,8 @@ CREATE TABLE IF NOT EXISTS share_links (
     last_accessed_at  DATETIME NULL,
     access_count      INT UNSIGNED NOT NULL DEFAULT 0,
     created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (form_id)    REFERENCES forms(id) ON DELETE CASCADE,
-    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_shares_form    FOREIGN KEY (form_id)    REFERENCES forms(id) ON DELETE CASCADE,
+    CONSTRAINT fk_shares_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_form (form_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

@@ -4,6 +4,17 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.4.1] - 2026-06-17
+
+### Arreglado
+
+- **`db/001_schema.sql` portable a MySQL desde un dump de MariaDB**: las 12 claves foráneas
+  llevan ahora **nombre explícito y único** (`fk_<tabla>_<ref>`). Sin nombre, MariaDB las
+  autogenera como `1`/`2` **por tabla**; un `mysqldump` materializa esos nombres y, al
+  importarlo en MySQL —que exige nombres de constraint únicos **por base de datos**—
+  chocaban (`#1826 Duplicate foreign key constraint name '1'`). Afectaba al flujo de
+  preparar la semilla de la demo en MariaDB local e importarla en el MySQL del VPS.
+
 ## [1.4.0] - 2026-06-17
 
 ### Añadido
