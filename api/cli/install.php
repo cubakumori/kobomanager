@@ -87,15 +87,15 @@ ok('Conexión a la BD «' . DB_NAME . '» (servidor ' . $serverVersion . ')');
 echo "\nEsquema:\n";
 
 // scandir y no glob(): la ruta puede contener metacaracteres de glob ([], ?, *).
+// No se exige todavía que existan: los db/*.sql solo hacen falta si la BD está
+// vacía. Con el esquema ya aplicado (a mano por SSH/phpMyAdmin), la carpeta db/
+// es prescindible y el instalador sigue para crear el primer admin.
 $files = array_values(array_filter(
     is_dir($dbDir) ? scandir($dbDir) : [],
     static fn($f) => str_ends_with($f, '.sql')
 ));
 sort($files);
 $files = array_map(static fn($f) => $dbDir . '/' . $f, $files);
-if (!$files) {
-    fail("No se encontraron archivos de esquema en $dbDir.");
-}
 
 // Tablas que debe tener una instalación completa (las crea db/001_schema.sql).
 $expected = [
@@ -117,6 +117,11 @@ if (count($present) === count($expected)) {
     fail('La base de datos tiene un esquema PARCIAL (' . count($present) . ' de ' . count($expected)
         . ' tablas). Recrea una base de datos vacía y vuelve a ejecutar el instalador.');
 } else {
+    // BD vacía: ahora sí hacen falta los archivos de esquema.
+    if (!$files) {
+        fail("La base de datos está vacía y no se encontraron archivos de esquema en $dbDir.\n"
+            . "     Sube la carpeta db/ junto a api/ (o aplica db/*.sql a mano) y reintenta.");
+    }
     foreach ($files as $file) {
         foreach (split_sql_statements((string) file_get_contents($file)) as $stmt) {
             try {
