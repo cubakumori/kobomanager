@@ -22,6 +22,15 @@ Todos los cambios notables de KoboManager. El formato sigue
 - **`SECURITY.md`**: política de divulgación responsable de vulnerabilidades (canal
   privado por GitHub + email de respaldo, alcance y plazos), esperada en un repo
   público AGPL.
+- **Portada: CTA de cierre «monta tu propia instancia»** (software libre → enlace al
+  repositorio + página «Apoyar»).
+
+### Cambiado
+
+- **Enlaces externos públicos (repo, PayPal, Ko-fi) configurables por entorno**
+  (`REPO_URL`, `DONATE_PAYPAL_URL`, `DONATE_KOFI_URL`), expuestos vía `/config`. La
+  UI oculta los no configurados y, sin donaciones, muestra una línea neutra: una
+  instancia clonada ya no enseña botones muertos ni pide donaciones a otra cuenta.
 
 ## [1.4.1] - 2026-06-17
 

@@ -53,6 +53,14 @@ define('CORS_ALLOWED_ORIGINS', ['http://localhost:5173']);
 // Entorno: 'dev' muestra detalles de error; 'prod' los oculta.
 define('APP_ENV', 'dev');
 
+// --- Enlaces públicos (landing + página «Apoyar») ---
+// URLs externas que muestra la parte pública. VACÍO = ese enlace/botón NO se
+// muestra (una instancia recién clonada no enseña botones muertos ni pide
+// donaciones a la cuenta de otra persona). Rellena solo los que tengas.
+define('REPO_URL', '');           // p. ej. 'https://github.com/tu-usuario/kobomanager'
+define('DONATE_PAYPAL_URL', '');  // p. ej. 'https://paypal.me/tu-usuario'
+define('DONATE_KOFI_URL', '');    // p. ej. 'https://ko-fi.com/tu-usuario'
+
 // --- Demo pública (opcional) ---
 // true → instancia de DEMOSTRACIÓN: banner global visible y acciones sensibles
 // bloqueadas (CRUD de cuentas Kobo y usuarios, contraseñas y sesiones, ajustes

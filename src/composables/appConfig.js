@@ -24,6 +24,10 @@ const demoResetMinutes = ref(60)
 const demoLoginAdmin = ref('')
 const demoLoginViewer = ref('')
 
+// Enlaces externos de la parte pública (repo, donaciones). Vacío = se ocultan.
+// Sin caché: solo se usan en páginas públicas, donde el parpadeo es irrelevante.
+const links = ref({ repo: '', paypal: '', kofi: '' })
+
 publicApi
   .get('/config')
   .then(({ data }) => {
@@ -36,6 +40,12 @@ publicApi
     demoResetMinutes.value = Number(data.data.demo_reset_minutes) || 60
     demoLoginAdmin.value = String(data.data.demo_login_admin || '')
     demoLoginViewer.value = String(data.data.demo_login_viewer || '')
+    const l = data.data.links || {}
+    links.value = {
+      repo: String(l.repo || ''),
+      paypal: String(l.paypal || ''),
+      kofi: String(l.kofi || ''),
+    }
   })
   .catch(() => { /* sin red: vale el valor cacheado o el default */ })
 
@@ -48,4 +58,10 @@ export function useTableFreeze() {
 /** Modo demo (reactivo): flag, minutos del ciclo de reset y credenciales por rol. */
 export function useDemoMode() {
   return { demoMode, demoResetMinutes, demoLoginAdmin, demoLoginViewer }
+}
+
+/** Enlaces externos públicos (reactivo): repo + donaciones. Vacío = ocultar. */
+export function usePublicLinks() {
+  const hasDonate = () => !!(links.value.paypal || links.value.kofi)
+  return { links, hasDonate }
 }

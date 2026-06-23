@@ -16,4 +16,10 @@ ErrorResponse::ok([
     'demo_reset_minutes'     => Demo::resetMinutes(),
     'demo_login_admin'       => Demo::loginAdmin(),
     'demo_login_viewer'      => Demo::loginViewer(),
+    // Enlaces externos de la parte pública (vacío = la UI los oculta).
+    'links'                  => [
+        'repo'   => defined('REPO_URL') ? (string) REPO_URL : '',
+        'paypal' => defined('DONATE_PAYPAL_URL') ? (string) DONATE_PAYPAL_URL : '',
+        'kofi'   => defined('DONATE_KOFI_URL') ? (string) DONATE_KOFI_URL : '',
+    ],
 ]);

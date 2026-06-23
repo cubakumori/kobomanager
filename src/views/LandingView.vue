@@ -3,7 +3,8 @@ import { ref, watch } from 'vue'
 import PublicLayout from '../components/PublicLayout.vue'
 import DemoModal from '../components/DemoModal.vue'
 import { useDarkMode } from '../composables/darkMode'
-import { useDemoMode } from '../composables/appConfig'
+import { useDemoMode, usePublicLinks } from '../composables/appConfig'
+import { RouterLink } from 'vue-router'
 import bannerDay from '../assets/kobomanager.webp'
 import bannerNight from '../assets/kobomanager_night.webp'
 
@@ -24,6 +25,9 @@ const features = [1, 2, 3, 4]
 // Sección «Y mucho más»: enlaces públicos como tarjeta destacada (feat5) y el
 // resto de capacidades vendibles como chips, mismo lenguaje visual verde.
 const chips = ['chipColumns', 'chipStats', 'chipEmail', 'chipLabels', 'chipMap', 'chipCsv', 'chipEdit']
+
+// Enlace al repo para la CTA de cierre («monta tu propia instancia»); vacío = oculto.
+const { links } = usePublicLinks()
 </script>
 
 <template>
@@ -132,6 +136,27 @@ const chips = ['chipColumns', 'chipStats', 'chipEmail', 'chipLabels', 'chipMap',
           </div>
           <h3 class="font-semibold text-slate-900">{{ $t('landing.step' + n + 'Title') }}</h3>
           <p class="mt-1 text-sm text-slate-600">{{ $t('landing.step' + n + 'Desc') }}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA de cierre: software libre → monta tu propia instancia (repo + Apoyar) -->
+    <section class="mx-auto w-full max-w-6xl px-6 py-12">
+      <div class="mx-auto max-w-3xl rounded-2xl bg-primary-600 px-6 py-10 text-center shadow-lg shadow-primary-600/20">
+        <h2 class="text-2xl font-bold tracking-tight text-white">{{ $t('landing.selfHostTitle') }}</h2>
+        <p class="mx-auto mt-3 max-w-xl text-sm text-primary-50">{{ $t('landing.selfHostBody') }}</p>
+        <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <a
+            v-if="links.repo"
+            :href="links.repo"
+            target="_blank"
+            rel="noopener"
+            class="rounded-xl bg-primary-50 px-6 py-3 text-sm font-semibold text-primary-700 shadow-sm transition hover:bg-primary-100"
+          >{{ $t('landing.selfHostRepo') }}</a>
+          <RouterLink
+            :to="{ name: 'support' }"
+            class="rounded-xl border border-white/40 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+          >{{ $t('landing.navSupport') }}</RouterLink>
         </div>
       </div>
     </section>

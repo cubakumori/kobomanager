@@ -2,11 +2,11 @@
 import { reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { publicApi } from '../services/api'
+import { usePublicLinks } from '../composables/appConfig'
 
-// Enlaces externos (espejo del README).
-const repoUrl = 'https://github.com/cubakumori/kobomanager'
-const paypalUrl = 'https://paypal.me/ernestortiz'
-const kofiUrl = 'https://ko-fi.com/kumoricuba'
+// Enlaces externos: configurables por entorno (/config). Vacío = se ocultan, así
+// una instancia clonada no muestra botones muertos ni donaciones de otra cuenta.
+const { links, hasDonate } = usePublicLinks()
 
 const form = reactive({ name: '', email: '', org: '', topic: 'general', message: '' })
 const topics = ['general', 'hire', 'proposal', 'using']
@@ -65,7 +65,8 @@ function reset() {
         <p class="mt-2 text-sm text-slate-600">{{ $t('support.freeBody') }}</p>
         <div class="mt-4 flex flex-wrap gap-3">
           <a
-            :href="repoUrl"
+            v-if="links.repo"
+            :href="links.repo"
             target="_blank"
             rel="noopener"
             class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
@@ -80,20 +81,25 @@ function reset() {
       <section class="rounded-2xl bg-accent-50 p-6 ring-1 ring-accent-200 dark:bg-accent-900/25 dark:ring-accent-800">
         <h2 class="text-lg font-semibold text-accent-800 dark:text-accent-300">{{ $t('support.donateTitle') }}</h2>
         <p class="mt-2 text-sm text-accent-900/70 dark:text-accent-200/70">{{ $t('support.donateBody') }}</p>
-        <div class="mt-4 flex flex-wrap gap-3">
+        <div v-if="hasDonate()" class="mt-4 flex flex-wrap gap-3">
           <a
-            :href="paypalUrl"
+            v-if="links.paypal"
+            :href="links.paypal"
             target="_blank"
             rel="noopener"
             class="rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700"
           >{{ $t('support.donatePaypal') }}</a>
           <a
-            :href="kofiUrl"
+            v-if="links.kofi"
+            :href="links.kofi"
             target="_blank"
             rel="noopener"
             class="rounded-xl bg-accent-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-accent-700"
           >{{ $t('support.donateKofi') }}</a>
         </div>
+        <p v-else class="mt-4 text-sm italic text-accent-900/60 dark:text-accent-200/60">
+          {{ $t('support.donateNone') }}
+        </p>
       </section>
     </div>
 

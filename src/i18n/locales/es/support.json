@@ -10,6 +10,7 @@
     "donateBody": "El desarrollo lo sostiene una persona. Si la app te ahorra trabajo, una donación —del tamaño que sea— ayuda a mantenerla y a añadir funciones nuevas.",
     "donatePaypal": "Donar con PayPal",
     "donateKofi": "Invítame un Ko-fi",
+    "donateNone": "Esta instancia no tiene enlaces de donación configurados.",
     "servicesTitle": "¿Prefieres que lo gestionemos nosotros?",
     "servicesBody": "Ofrecemos servicios profesionales alrededor de KoboManager, sin atar el código (sigue siendo libre):",
     "service1": "Instalación llave en mano (servidor, dominio, HTTPS, conexión con Kobo y primer administrador).",

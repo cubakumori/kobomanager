@@ -36,6 +36,9 @@
     "chipMap": "Map & geolocation",
     "chipCsv": "CSV export",
     "chipEdit": "Submission editing",
+    "selfHostTitle": "It's free software: run your own instance",
+    "selfHostBody": "KoboManager is open source (AGPL-3.0). Deploy it on your own server at no cost, or support the project to keep it growing.",
+    "selfHostRepo": "View the code (GitHub)",
     "disclaimer": "KoboManager is an independent open-source project and is not affiliated with, endorsed by, or sponsored by KoboToolbox or Rakuten Kobo."
   }
 }
