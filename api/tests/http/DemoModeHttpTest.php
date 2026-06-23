@@ -45,6 +45,8 @@ final class DemoModeHttpTest extends HttpTestCase
             ['PUT',    "admin/users/$uid"],
             ['DELETE', "admin/users/$uid"],
             ['DELETE', "admin/users/$uid/sessions"],
+            // Borrado de formularios (purga la caché local; degrada la demo)
+            ['DELETE', 'admin/forms/1'],
             ['POST',   'profile/password'],
             ['DELETE', 'profile/sessions'],
             ['POST',   'auth/forgot-password'],
