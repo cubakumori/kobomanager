@@ -4,6 +4,25 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [Sin publicar]
+
+### Seguridad
+
+- **Content-Security-Policy y cabeceras de seguridad en el documento de la SPA**
+  (`public/.htaccess`, espejo nginx en `DEPLOY.md` §6). La CSP se aplica solo a las
+  respuestas `text/html` (no toca `/assets`, el API ni la CSP del proxy de adjuntos)
+  y lleva el hash del `<script>` inline de tema para evitar `'unsafe-inline'`. Se
+  suman `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` y
+  `X-Frame-Options: DENY` al estático.
+- **Modo demo: bloqueado el borrado de formularios** (`DELETE /admin/forms/:id`), que
+  purgaba la caché local en cascada y degradaba la demo hasta el siguiente reset.
+
+### Añadido
+
+- **`SECURITY.md`**: política de divulgación responsable de vulnerabilidades (canal
+  privado por GitHub + email de respaldo, alcance y plazos), esperada en un repo
+  público AGPL.
+
 ## [1.4.1] - 2026-06-17
 
 ### Arreglado

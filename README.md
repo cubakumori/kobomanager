@@ -234,6 +234,8 @@ and [`ROADMAP.md`](./ROADMAP.md) for what's pending.
 See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the design overview and
 [`CONTRIBUTING.md`](./CONTRIBUTING.md) for conventions and how to get set up.
 
+Found a security issue? Please report it privately — see [`SECURITY.md`](./SECURITY.md).
+
 ---
 
 ## Support this project

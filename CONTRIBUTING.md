@@ -27,7 +27,8 @@ overview read [`ARCHITECTURE.md`](./ARCHITECTURE.md); for setup read [`README.md
 - **Frontend dependencies stay lean.** Vue, Vite, Pinia, vue-router, vue-i18n, Tailwind,
   axios, plus chart.js and leaflet for the stats/map views. Justify new ones.
 - **Security first.** The Kobo token is never sent to the browser. Respect the auth/permission
-  guards and the CSRF check; validate input on the server.
+  guards and the CSRF check; validate input on the server. To report a vulnerability, see
+  [`SECURITY.md`](./SECURITY.md) (please don't open a public issue for security problems).
 
 ## Conventions
 
