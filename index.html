@@ -7,7 +7,10 @@
     <title>KoboManager</title>
     <!-- Modo oscuro sin destello: aplica la clase ANTES de cargar la app
          (misma lógica que src/composables/darkMode.js: elección del usuario →
-         default del sitio cacheado de /config → 'auto'). -->
+         default del sitio cacheado de /config → 'auto').
+         OJO: el hash de este <script> está fijado en la CSP (public/.htaccess y
+         DEPLOY §6). Si cambias el contenido, recalcula el hash o el modo oscuro
+         romperá la CSP en producción. -->
     <script>
       try {
         var kmTheme = localStorage.getItem('km.theme') || localStorage.getItem('km.theme.default') || 'auto'

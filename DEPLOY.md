@@ -184,11 +184,23 @@ updates lag. For reference, in case you edit it:
   <Files "sw.js">
     Header set Cache-Control "no-cache"    # SW must revalidate; assets/ are hashed
   </Files>
+
+  # Security headers for the SPA document (the API sets its own in api/v1/index.php).
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "no-referrer"
+  Header set X-Frame-Options "DENY"
+  # CSP only on text/html (the SPA) — never on /assets, the JSON API, or the
+  # attachment proxy's own CSP. script-src carries the HASH of the inline theme
+  # <script> in index.html; if you edit that script, recompute it (the command is
+  # in public/.htaccess) or dark mode will break the CSP.
+  Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-GyOuvgU4KjskfU9dxnY0uNhKMq9b4ZTdIG6/cUjqa4c='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'" "expr=%{CONTENT_TYPE} =~ m#text/html#"
 </IfModule>
 ```
 
-The `/api/.htaccess` ships with the repo (routes through `index.php`, blocks `config.php`
-and the internal `lib/`, `cron/`, `cli/`, `tests/`, `vendor/`).
+This headers block ships inside `dist/.htaccess` (copied from `public/.htaccess`), so on
+Apache it is already in place after a build. The `/api/.htaccess` ships with the repo
+(routes through `index.php`, blocks `config.php` and the internal `lib/`, `cron/`, `cli/`,
+`tests/`, `vendor/`).
 
 ### Nginx (no `.htaccess`)
 
@@ -199,6 +211,14 @@ to internal code and config**:
 ```nginx
 location / {
     try_files $uri $uri/ /index.html;
+
+    # Security headers for the SPA document (the API sets its own in PHP).
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "no-referrer" always;
+    add_header X-Frame-Options "DENY" always;
+    # CSP for the SPA. script-src carries the hash of the inline theme <script>
+    # in index.html — recompute it (command in public/.htaccess) if you edit it.
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-GyOuvgU4KjskfU9dxnY0uNhKMq9b4ZTdIG6/cUjqa4c='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'" always;
 }
 
 location = /sw.js { add_header Cache-Control "no-cache"; }   # PWA: revalidate promptly
