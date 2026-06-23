@@ -8,6 +8,10 @@ import LoginForm from './LoginForm.vue'
 import ThemeToggle from './ThemeToggle.vue'
 import DemoBadge from './DemoBadge.vue'
 import { useDialogA11y } from '../composables/dialogA11y'
+import { usePublicSurface } from '../composables/appConfig'
+
+// La página «Apoyar» se puede ocultar globalmente desde Ajustes.
+const { supportPageEnabled } = usePublicSurface()
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -68,6 +72,7 @@ const drawerLink =
             class="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
           >{{ $t('landing.navTutorials') }}</RouterLink>
           <RouterLink
+            v-if="supportPageEnabled"
             :to="{ name: 'support' }"
             class="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
           >{{ $t('landing.navSupport') }}</RouterLink>
@@ -154,7 +159,7 @@ const drawerLink =
           <RouterLink :to="{ name: 'guide' }" :class="drawerLink" @click="showMenu = false">
             {{ $t('landing.navTutorials') }}
           </RouterLink>
-          <RouterLink :to="{ name: 'support' }" :class="drawerLink" @click="showMenu = false">
+          <RouterLink v-if="supportPageEnabled" :to="{ name: 'support' }" :class="drawerLink" @click="showMenu = false">
             {{ $t('landing.navSupport') }}
           </RouterLink>
           <button :class="[drawerLink, 'w-full text-left']" @click="toggleLocale">

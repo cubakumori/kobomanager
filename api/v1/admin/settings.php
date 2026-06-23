@@ -31,6 +31,8 @@ if (Request::method() === 'GET') {
         'show_theme_toggle'          => Settings::showThemeToggle(),
         'table_freeze'               => Settings::tableFreeze(),
         'valid_table_freeze'         => Settings::VALID_TABLE_FREEZE,
+        'support_page_enabled'       => Settings::supportPageEnabled(),
+        'landing_cta_enabled'        => Settings::landingCtaEnabled(),
     ]);
 }
 
@@ -75,6 +77,16 @@ if (Request::method() === 'PUT') {
     if (array_key_exists('show_theme_toggle', $body)) {
         Settings::set('show_theme_toggle', (bool) $body['show_theme_toggle']);
         $out['show_theme_toggle'] = (bool) $body['show_theme_toggle'];
+    }
+
+    if (array_key_exists('support_page_enabled', $body)) {
+        Settings::set('support_page_enabled', (bool) $body['support_page_enabled']);
+        $out['support_page_enabled'] = (bool) $body['support_page_enabled'];
+    }
+
+    if (array_key_exists('landing_cta_enabled', $body)) {
+        Settings::set('landing_cta_enabled', (bool) $body['landing_cta_enabled']);
+        $out['landing_cta_enabled'] = (bool) $body['landing_cta_enabled'];
     }
 
     if (array_key_exists('table_freeze', $body)) {

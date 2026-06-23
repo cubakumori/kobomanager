@@ -16,6 +16,9 @@ ErrorResponse::ok([
     'demo_reset_minutes'     => Demo::resetMinutes(),
     'demo_login_admin'       => Demo::loginAdmin(),
     'demo_login_viewer'      => Demo::loginViewer(),
+    // Visibilidad de la parte pública de escaparate.
+    'support_page_enabled'   => Settings::supportPageEnabled(),
+    'landing_cta_enabled'    => Settings::landingCtaEnabled(),
     // Enlaces externos de la parte pública (vacío = la UI los oculta).
     'links'                  => [
         'repo'   => defined('REPO_URL') ? (string) REPO_URL : '',

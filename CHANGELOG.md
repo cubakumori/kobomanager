@@ -27,6 +27,11 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
+- **Visibilidad de la parte pública configurable desde Ajustes**: dos interruptores
+  globales (ambos activados por defecto) — *Mostrar la página «Apoyar»* (oculta
+  /apoyar y sus enlaces; el acceso directo redirige a la portada) y *Mostrar la
+  llamada de cierre de la portada*. Pensado para quien autoaloja la app solo para
+  uso interno.
 - **Enlaces externos públicos (repo, PayPal, Ko-fi) configurables por entorno**
   (`REPO_URL`, `DONATE_PAYPAL_URL`, `DONATE_KOFI_URL`), expuestos vía `/config`. La
   UI oculta los no configurados y, sin donaciones, muestra una línea neutra: una

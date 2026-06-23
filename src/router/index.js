@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { configReady, usePublicSurface } from '../composables/appConfig'
 
 // Rutas planas. Las públicas llevan meta.public; las del área autenticada llevan
 // meta.shell (App.vue las envuelve en el layout con sidebar).
@@ -47,6 +48,13 @@ router.beforeEach(async (to) => {
   const auth = useAuthStore()
   if (!auth.checked) {
     await auth.fetchMe()
+  }
+
+  // Página «Apoyar» desactivada por el admin → no es accesible (ni por URL directa).
+  if (to.name === 'support') {
+    await configReady.catch(() => {})
+    const { supportPageEnabled } = usePublicSurface()
+    if (!supportPageEnabled.value) return { name: 'landing' }
   }
 
   // Públicas (landing, login): accesibles siempre. Si ya hay sesión, el login

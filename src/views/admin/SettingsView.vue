@@ -23,6 +23,8 @@ const auditSelfViewEnabled = ref(false)
 const defaultTheme = ref('auto')
 const validThemes = ref(['light', 'dark', 'auto'])
 const showThemeToggle = ref(true)
+const supportPageEnabled = ref(true)
+const landingCtaEnabled = ref(true)
 const { tableFreeze: appTableFreeze } = useTableFreeze()
 // En demo los ajustes globales son de solo lectura (PUT bloqueado).
 const { demoMode } = useDemoMode()
@@ -58,6 +60,8 @@ async function load() {
     defaultTheme.value = data.data.default_theme
     validThemes.value = data.data.valid_themes ?? validThemes.value
     showThemeToggle.value = data.data.show_theme_toggle
+    if (data.data.support_page_enabled != null) supportPageEnabled.value = data.data.support_page_enabled
+    if (data.data.landing_cta_enabled != null) landingCtaEnabled.value = data.data.landing_cta_enabled
     tableFreeze.value = data.data.table_freeze
     validTableFreeze.value = data.data.valid_table_freeze ?? validTableFreeze.value
     mailConfigured.value = data.data.mail_configured
@@ -100,6 +104,8 @@ async function save() {
       audit_self_view_enabled: auditSelfViewEnabled.value,
       default_theme: defaultTheme.value,
       show_theme_toggle: showThemeToggle.value,
+      support_page_enabled: supportPageEnabled.value,
+      landing_cta_enabled: landingCtaEnabled.value,
       table_freeze: tableFreeze.value,
       viewer_actions: viewerActions.value,
       share_password_policy: sharePasswordPolicy.value,
@@ -116,6 +122,8 @@ async function save() {
     if (data.data.audit_self_view_enabled != null) auditSelfViewEnabled.value = data.data.audit_self_view_enabled
     if (data.data.default_theme != null) defaultTheme.value = data.data.default_theme
     if (data.data.show_theme_toggle != null) showThemeToggle.value = data.data.show_theme_toggle
+    if (data.data.support_page_enabled != null) supportPageEnabled.value = data.data.support_page_enabled
+    if (data.data.landing_cta_enabled != null) landingCtaEnabled.value = data.data.landing_cta_enabled
     if (data.data.table_freeze != null) {
       tableFreeze.value = data.data.table_freeze
       // Reflejar el cambio en esta misma pestaña (módulo reactivo + caché local).
@@ -215,6 +223,38 @@ onMounted(load)
           <span>
             <span class="block text-sm font-medium text-slate-800">{{ $t('settings.themeToggle') }}</span>
             <span class="block text-xs text-slate-400">{{ $t('settings.themeToggleHint') }}</span>
+          </span>
+        </label>
+      </section>
+
+      <!-- Parte pública (escaparate): página Apoyar y CTA de la portada -->
+      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.publicSurface') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.publicSurfaceDesc') }}</p>
+        </div>
+        <label class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+          <input
+            type="checkbox"
+            class="mt-0.5 h-4 w-4"
+            :checked="supportPageEnabled"
+            @change="supportPageEnabled = !supportPageEnabled; saved = false"
+          />
+          <span>
+            <span class="block text-sm font-medium text-slate-800">{{ $t('settings.supportPageToggle') }}</span>
+            <span class="block text-xs text-slate-400">{{ $t('settings.supportPageHint') }}</span>
+          </span>
+        </label>
+        <label class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+          <input
+            type="checkbox"
+            class="mt-0.5 h-4 w-4"
+            :checked="landingCtaEnabled"
+            @change="landingCtaEnabled = !landingCtaEnabled; saved = false"
+          />
+          <span>
+            <span class="block text-sm font-medium text-slate-800">{{ $t('settings.landingCtaToggle') }}</span>
+            <span class="block text-xs text-slate-400">{{ $t('settings.landingCtaHint') }}</span>
           </span>
         </label>
       </section>

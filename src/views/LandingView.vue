@@ -1,9 +1,9 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import PublicLayout from '../components/PublicLayout.vue'
 import DemoModal from '../components/DemoModal.vue'
 import { useDarkMode } from '../composables/darkMode'
-import { useDemoMode, usePublicLinks } from '../composables/appConfig'
+import { useDemoMode, usePublicLinks, usePublicSurface } from '../composables/appConfig'
 import { RouterLink } from 'vue-router'
 import bannerDay from '../assets/kobomanager.webp'
 import bannerNight from '../assets/kobomanager_night.webp'
@@ -28,6 +28,12 @@ const chips = ['chipColumns', 'chipStats', 'chipEmail', 'chipLabels', 'chipMap',
 
 // Enlace al repo para la CTA de cierre («monta tu propia instancia»); vacío = oculto.
 const { links } = usePublicLinks()
+
+// CTA de cierre: toggle global propio (landing_cta_enabled) + el botón «Apoyar»
+// depende de que la página «Apoyar» esté activa. Si la banda se queda sin ningún
+// botón (sin repo y sin Apoyar), no se muestra.
+const { supportPageEnabled, landingCtaEnabled } = usePublicSurface()
+const showCta = computed(() => landingCtaEnabled.value && (!!links.value.repo || supportPageEnabled.value))
 </script>
 
 <template>
@@ -141,7 +147,7 @@ const { links } = usePublicLinks()
     </section>
 
     <!-- CTA de cierre: software libre → monta tu propia instancia (repo + Apoyar) -->
-    <section class="mx-auto w-full max-w-6xl px-6 py-12">
+    <section v-if="showCta" class="mx-auto w-full max-w-6xl px-6 py-12">
       <div class="mx-auto max-w-3xl rounded-2xl bg-primary-600 px-6 py-10 text-center shadow-lg shadow-primary-600/20">
         <h2 class="text-2xl font-bold tracking-tight text-white">{{ $t('landing.selfHostTitle') }}</h2>
         <p class="mx-auto mt-3 max-w-xl text-sm text-primary-50">{{ $t('landing.selfHostBody') }}</p>
@@ -154,6 +160,7 @@ const { links } = usePublicLinks()
             class="rounded-xl bg-primary-50 px-6 py-3 text-sm font-semibold text-primary-700 shadow-sm transition hover:bg-primary-100"
           >{{ $t('landing.selfHostRepo') }}</a>
           <RouterLink
+            v-if="supportPageEnabled"
             :to="{ name: 'support' }"
             class="rounded-xl border border-white/40 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
           >{{ $t('landing.navSupport') }}</RouterLink>

@@ -28,7 +28,13 @@ const demoLoginViewer = ref('')
 // Sin caché: solo se usan en páginas públicas, donde el parpadeo es irrelevante.
 const links = ref({ repo: '', paypal: '', kofi: '' })
 
-publicApi
+// Visibilidad de la parte pública de escaparate (ajustes globales del admin).
+const supportPageEnabled = ref(true)
+const landingCtaEnabled = ref(true)
+
+// Promesa de «config lista»: la usa el guard del router para decidir rutas
+// públicas (p. ej. /apoyar) sin depender del orden de carga.
+const configReady = publicApi
   .get('/config')
   .then(({ data }) => {
     const v = data.data.table_freeze
@@ -46,6 +52,8 @@ publicApi
       paypal: String(l.paypal || ''),
       kofi: String(l.kofi || ''),
     }
+    if (data.data.support_page_enabled != null) supportPageEnabled.value = !!data.data.support_page_enabled
+    if (data.data.landing_cta_enabled != null) landingCtaEnabled.value = !!data.data.landing_cta_enabled
   })
   .catch(() => { /* sin red: vale el valor cacheado o el default */ })
 
@@ -65,3 +73,11 @@ export function usePublicLinks() {
   const hasDonate = () => !!(links.value.paypal || links.value.kofi)
   return { links, hasDonate }
 }
+
+/** Visibilidad de la parte pública de escaparate (página Apoyar + CTA de portada). */
+export function usePublicSurface() {
+  return { supportPageEnabled, landingCtaEnabled }
+}
+
+/** Promesa que resuelve cuando /config se ha cargado (para el guard del router). */
+export { configReady }

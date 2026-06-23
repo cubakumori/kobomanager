@@ -188,6 +188,25 @@ class Settings {
         return in_array($v, self::VALID_TABLE_FREEZE, true) ? $v : self::DEFAULT_TABLE_FREEZE;
     }
 
+    /**
+     * Visibilidad de la parte pública «de escaparate». Ambos activados por defecto.
+     *   - support_page_enabled → la página «Apoyar» (/apoyar) y sus enlaces.
+     *   - landing_cta_enabled  → la banda de cierre de la portada («monta tu instancia»).
+     * Un operador que autoaloja para uso interno puede ocultarlas sin tocar código.
+     */
+    private const DEFAULT_SUPPORT_PAGE = true;
+    private const DEFAULT_LANDING_CTA  = true;
+
+    /** ¿Se muestra la página «Apoyar» y sus enlaces? */
+    public static function supportPageEnabled(): bool {
+        return (bool) self::get('support_page_enabled', self::DEFAULT_SUPPORT_PAGE);
+    }
+
+    /** ¿Se muestra la CTA de cierre de la portada? */
+    public static function landingCtaEnabled(): bool {
+        return (bool) self::get('landing_cta_enabled', self::DEFAULT_LANDING_CTA);
+    }
+
     public const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login'];
 
     /**
