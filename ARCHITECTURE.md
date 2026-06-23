@@ -270,8 +270,9 @@ to a new one (key rotation; see `DEPLOY.md §12`).
 - `lib/Settings.php`: global key/value settings (JSON) — sync statuses, default locale, label
   mode, field‑name truncation (`field_truncate_enabled`/`field_truncate_chars`, display‑only),
   password‑reset flag, self‑service audit flag (`audit_self_view_enabled`), viewer action
-  flags, share password policy, share attachments policy (`share_attachments_policy`), and
-  `cron_runs`
+  flags, share password policy, share attachments policy (`share_attachments_policy`),
+  public-surface toggles (`support_page_enabled` / `landing_cta_enabled`, served by the
+  public `GET /config`), and `cron_runs`
   (last run per cron, written by `recordCronRun()` at the end of each cron job).
 - `lib/Audit.php`: writes to `audit_log` (who did what) via `log()`, and reads it back via
   `query()` (pagination + filters by action/user/form/date/search, JOINs to users/forms).

@@ -64,12 +64,17 @@ Quedan como ideas reabribles si aparece una necesidad real.
 
 ## Publicación (en torno a hacer público el repo)
 
+> **Estado (jun-2026): el repositorio YA es PÚBLICO** y la demo está viva en
+> `kobomanager.org` (cron de reset verificado). Lo que queda abajo es pulido
+> posterior a la publicación.
+
 - [x] **Disclaimer de no afiliación** — HECHO: nota ámbar bajo «Cómo funciona» en la
       portada (es/en) y sección Disclaimer en el README.
-- [ ] **Dominio propio** — `kobomanager.org` y `.com` comprobados LIBRES (jun-2026, whois).
-      Registrar al menos el .org antes de difundir el repo para que README/landing apunten
-      a algo estable.
-- [ ] **Demo pública** (p. ej. `demo.kobomanager.org`) — plan completo en
+- [x] **Dominio propio** — HECHO: `kobomanager.org` registrado; la portada de la app
+      (que es a la vez la presentación del proyecto) vive ahí.
+- [x] **Política de seguridad** — HECHO: `SECURITY.md` (divulgación responsable,
+      GitHub Private Reporting + email de respaldo) + CSP/cabeceras de la SPA.
+- [~] **Demo pública** — VIVA en el apex `kobomanager.org`. Plan completo en
       `my.docs/PUBLICDEMO.md` (privado).
   - [x] **Modo demo integrado en la app — HECHO**: `DEMO_MODE` + `DEMO_RESET_MINUTES` +
         `DEMO_LOGIN_HINT` en config (opcionales, retrocompatibles), modo expuesto por
@@ -87,8 +92,9 @@ Quedan como ideas reabribles si aparece una necesidad real.
         geopoints, campos vacíos y revisiones de ejemplo (marca `_km_seed` para `--clear`).
         Decisión clave: una demo sembrada NO lleva cron de sync (lo reconciliaría y
         borraría), solo cron de reset. Documentado en [`DEMO.md`](DEMO.md).
-  - [ ] **Instancia**: VPS + dominio + cuenta Kobo desechable con datos 100 % sintéticos
-        + usuarios/permisos/share de ejemplo + dump semilla + cron de reset.
+  - [x] **Instancia**: HECHO — VPS + `kobomanager.org` + cuenta Kobo desechable con
+        datos sintéticos + usuarios/permisos/share de ejemplo + dump semilla + cron de
+        reset (verificado).
 - [ ] **Semilla y reset de la demo gestionados por la app** *(idea del usuario en el QA,
       jun-2026)*: hoy la demo exige `mysqldump` + cron SQL a mano (DEMO.md). En su
       lugar: botón admin «Generar semilla de la demo» (exporta la BD a una ruta

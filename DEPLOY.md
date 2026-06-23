@@ -151,8 +151,18 @@ define('MAIL_FROM', 'KoboManager <noreply@yourdomain.com>');
 define('APP_TIMEZONE', 'America/Havana');  // stats hour/weekday in local time (IANA; default 'UTC')
 define('APP_TIMEZONE_LABEL', 'La Habana'); // UI label; '' falls back to the IANA id
 
+// Public links shown on the landing / "Support" page. Empty = the link/button is
+// hidden (a fresh clone shows no dead buttons and no one else's donation accounts).
+define('REPO_URL',          'https://github.com/you/kobomanager');
+define('DONATE_PAYPAL_URL', '');  // e.g. 'https://paypal.me/you'
+define('DONATE_KOFI_URL',   '');  // e.g. 'https://ko-fi.com/you'
+
 // Optional — public demo (DEMO_MODE, DEMO_RESET_MINUTES, DEMO_LOGIN_ADMIN/VIEWER): see DEMO.md.
 ```
+
+> The public "Support" page and the homepage's closing call-to-action can also be
+> turned off from **Settings** (`support_page_enabled` / `landing_cta_enabled`, both on
+> by default) — handy when self-hosting for internal use only.
 
 > **Keep `CONFIG_TOKEN_KEY` safe.** If it's lost or changed, the encrypted Kobo tokens
 > can no longer be decrypted.
