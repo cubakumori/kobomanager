@@ -30,7 +30,7 @@
     "feat5Title": "Public read-only links",
     "feat5Desc": "Share a form by link, no account required: optionally with a password, an expiry date and the same row- and column-level scope you apply to your team.",
     "chipColumns": "Column-level permissions",
-    "chipStats": "Statistics & dashboard",
+    "chipStats": "Stats by team & enumerator",
     "chipEmail": "Email notifications",
     "chipLabels": "Human-readable labels",
     "chipMap": "Map & geolocation",

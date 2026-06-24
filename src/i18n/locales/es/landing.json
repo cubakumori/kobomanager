@@ -30,7 +30,7 @@
     "feat5Title": "Enlaces públicos de solo lectura",
     "feat5Desc": "Comparte un formulario por enlace, sin dar cuenta: opcionalmente con contraseña, fecha de caducidad y el mismo alcance por filas y columnas que aplicas a tu equipo.",
     "chipColumns": "Permisos por columna",
-    "chipStats": "Estadísticas y panel",
+    "chipStats": "Estadísticas por equipo y encuestador",
     "chipEmail": "Notificaciones por email",
     "chipLabels": "Etiquetas legibles",
     "chipMap": "Mapa y geolocalización",
