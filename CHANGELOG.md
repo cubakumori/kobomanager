@@ -6,11 +6,10 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [Unreleased]
 
-> **Nota de actualización (esquema).** Esta versión añade dos columnas a `forms`.
-> Instalación nueva: nada que hacer (el `db/001_schema.sql` ya las incluye). Si
-> actualizas sobre una BD existente, aplica una vez:
-> `ALTER TABLE forms ADD COLUMN stats_team_field VARCHAR(255) NULL AFTER submissions_synced_at, ADD COLUMN stats_enumerator_field VARCHAR(255) NULL AFTER stats_team_field;`
-> (o recrea la BD desde `db/*.sql`). No hay migraciones incrementales por diseño.
+> **Nota de actualización (esquema).** Esta versión añade dos columnas a `forms`
+> (`stats_team_field`, `stats_enumerator_field`). Instalación nueva: nada que hacer
+> (el `db/001_schema.sql` ya las incluye). Sobre una BD existente, recrea desde
+> `db/*.sql`. No hay migraciones incrementales por diseño.
 
 ### Añadido
 
