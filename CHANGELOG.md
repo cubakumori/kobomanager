@@ -4,7 +4,13 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
-## [Sin publicar]
+## [1.5.0] - 2026-06-24
+
+> **Nota de actualización (esquema).** Esta versión añade una columna a `share_links`.
+> Instalación nueva: nada que hacer (el `db/001_schema.sql` ya la incluye). Si actualizas
+> desde 1.4.x sobre una BD existente, aplica una vez:
+> `ALTER TABLE share_links ADD COLUMN expose_stats TINYINT(1) NOT NULL DEFAULT 0 AFTER expose_map;`
+> (o recrea la BD desde `db/*.sql`). No hay migraciones incrementales por diseño.
 
 ### Seguridad
 
@@ -75,6 +81,12 @@ Todos los cambios notables de KoboManager. El formato sigue
   (`REPO_URL`, `DONATE_PAYPAL_URL`, `DONATE_KOFI_URL`), expuestos vía `/config`. La
   UI oculta los no configurados y, sin donaciones, muestra una línea neutra: una
   instancia clonada ya no enseña botones muertos ni pide donaciones a otra cuenta.
+
+### Arreglado
+
+- **Instalador CLI**: detecta «ya instalado» consultando `information_schema` **antes**
+  de exigir los `db/*.sql`, de modo que ya no aborta cuando la BD tiene las 15 tablas
+  pero la carpeta `db/` no está en el servidor (esquema aplicado a mano por SSH/phpMyAdmin).
 
 ## [1.4.1] - 2026-06-17
 
