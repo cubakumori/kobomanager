@@ -82,7 +82,8 @@ const can = (a) => auth.isAdmin || !!actions.value[a]
 const anyAction = computed(() => ['enketo', 'update', 'resync', 'login'].some(can))
 
 const enketoId = ref(null)
-const busyId = ref(null) // formulario en actualización/resync
+const busyId = ref(null)         // formulario en actualización/resync
+const busyAction = ref(null)     // 'update' | 'resync' (cuál de los dos botones está en marcha)
 const flash = ref('')
 const actionError = ref('')
 
@@ -130,6 +131,7 @@ async function onUpdate(f, full = false) {
     if (!ok) return
   }
   busyId.value = f.id
+  busyAction.value = full ? 'resync' : 'update'
   flash.value = ''
   actionError.value = ''
   try {
@@ -142,6 +144,7 @@ async function onUpdate(f, full = false) {
     actionError.value = `«${f.name}»: ${apiError(e, t('forms.updateErr'))}`
   } finally {
     busyId.value = null
+    busyAction.value = null
   }
 }
 
@@ -254,7 +257,7 @@ onMounted(load)
             :title="demoMode ? $t('common.demoDisabled') : $t('forms.updateTitle')"
             @click="onUpdate(f, false)"
           >
-            {{ busyId === f.id ? $t('forms.updating') : $t('forms.update') }}
+            {{ busyId === f.id && busyAction === 'update' ? $t('forms.updating') : $t('forms.update') }}
           </button>
           <button
             v-if="can('resync')"
@@ -264,7 +267,7 @@ onMounted(load)
             :title="demoMode ? $t('common.demoDisabled') : $t('forms.resyncTitle')"
             @click="onUpdate(f, true)"
           >
-            {{ busyId === f.id ? $t('forms.resyncing') : $t('forms.resync') }}
+            {{ busyId === f.id && busyAction === 'resync' ? $t('forms.resyncing') : $t('forms.resync') }}
           </button>
         </div>
       </div>
