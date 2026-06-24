@@ -110,14 +110,14 @@ Quedan como ideas reabribles si aparece una necesidad real.
       los de sync) que restaura esa semilla cada `DEMO_RESET_MINUTES`. Retos: dump y
       restore desde PHP sin `mysqldump` (multi-statement, FK checks, tamaño) y restaurar
       «en caliente» con visitantes activos. Eliminaría todo el SQL manual de DEMO.md.
-- [ ] **Release «deploy-ready» en GitHub** *(idea del QA de instalación, jun-2026)*: zip
-      adjunto a cada release con EXACTAMENTE lo que se sube al servidor — contenido de
-      `dist/` (incluido el `.htaccess` raíz) + `api/` podado (sin vendor/tests/composer/
-      phpunit) + `db/` — de modo que instalar sea: descomprimir en el webroot, crear
-      `api/config.php` desde el example, aplicar `db/*.sql` y (Apache) listo. Implementar
-      como job de GitHub Actions al pushear un tag (build + zip + attach al release);
-      hacerlo DESPUÉS del QA de la instalación manual, para que el zip encode el layout
-      ya verificado. DEPLOY §3 ofrecería entonces dos vías: release zip o build propio.
+- [x] **Release «deploy-ready» — HECHO** *(idea del QA de instalación, jun-2026)*: el zip
+      con EXACTAMENTE lo que se sube al servidor — contenido de `dist/` (incluido el
+      `.htaccess` raíz) + `api/` podado (sin vendor/tests/composer/phpunit y sin el
+      `config.php` con secretos) + `db/` — lo genera el **script local `npm run package`**
+      (`scripts/package.mjs`, sin dependencias npm). DEPLOY §3 ofrece ya dos vías: release
+      zip (opción A) o build propio (opción B). La automatización en CI (workflow que en un
+      tag corre el mismo script y adjunta el zip al GitHub Release) queda como paso opcional
+      documentado en DEPLOY §3.1 — se activa añadiendo `.github/workflows/release.yml`.
 
 ---
 

@@ -12,7 +12,8 @@
     "build": "vite build",
     "prepreview": "lsof -ti:4173 -sTCP:LISTEN 2>/dev/null | xargs kill 2>/dev/null || true",
     "preview": "vite preview --port 4173 --strictPort",
-    "i18n:check": "node scripts/check-i18n-parity.mjs"
+    "i18n:check": "node scripts/check-i18n-parity.mjs",
+    "package": "node scripts/package.mjs"
   },
   "dependencies": {
     "axios": "^1.16.1",

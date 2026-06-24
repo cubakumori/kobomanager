@@ -55,6 +55,23 @@ The compiled frontend goes in the public root, the backend under `/api`:
 
 ## 3. Build and upload
 
+Two ways to get the files that go on the server.
+
+### Option A — deploy-ready zip (recommended)
+
+```bash
+npm install
+npm run package        # → release/kobomanager-<version>.zip
+```
+
+The zip already contains the exact server layout of §2: the `dist/` contents at the
+root, a **pruned** `api/` (no `vendor/`, `tests/`, `phpunit.xml`, `composer.*`, and
+**never** your `config.php`), and `db/`. Unzip it and upload the contents of the
+resulting `kobomanager-<version>/` folder to the public root. *(Tagged releases on
+GitHub attach this same zip automatically — see §3.1.)* Then continue with §4–§5.
+
+### Option B — build and copy by hand
+
 Build locally:
 
 ```bash
@@ -75,6 +92,15 @@ Upload:
    it at runtime; deletable afterwards. Skip it if you pipe the SQL over SSH instead.
 
 > Never upload `node_modules/`, `src/`, or your dev `api/config.php`.
+
+### 3.1 Automating the zip (optional CI)
+
+`npm run package` is the single source of truth for the build. A GitHub Actions
+workflow (`.github/workflows/release.yml`) runs that same command and, **on a `v*`
+tag push**, attaches the resulting zip to the GitHub Release (it can also be run
+manually, uploading the zip as a run artifact). It does **not** run on normal pushes,
+so it stays inert until you tag a version. Enable it by adding the workflow file;
+disable it by removing it. Either way, local `npm run package` keeps working.
 
 ## 4. Database
 

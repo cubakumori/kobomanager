@@ -25,6 +25,12 @@ Todos los cambios notables de KoboManager. El formato sigue
   estado de revisión interno**. El cálculo se extrajo a `lib/Stats`, fuente única
   compartida por `forms/stats.php` y el nuevo `public/share/{token}/stats`; el render
   vive en el componente compartido `StatsPanels.vue` (interno + público).
+- **Empaquetado «deploy-ready» (`npm run package`)** — `scripts/package.mjs` (sin
+  dependencias npm) genera `release/kobomanager-<versión>.zip` con el layout exacto de
+  despliegue: contenido de `dist/` + `api/` podado (sin `vendor/`, `tests/`, `phpunit.xml`,
+  `composer.*` ni el `config.php` con secretos) + `db/`. DEPLOY §3 lo ofrece como vía A
+  (vía B = build manual) y §3.1 documenta la automatización opcional en CI (un workflow que
+  en un tag `v*` corre el mismo script y adjunta el zip al GitHub Release).
 - **Vista pública de enlaces: sello de frescura** «Datos a fecha de …»
   (`forms.last_synced_at`), para que el visitante sepa cuándo se sincronizó por última
   vez la caché (los enlaces leen la caché local refrescada por el cron, no Kobo en vivo).

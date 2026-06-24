@@ -5,6 +5,9 @@ vendor/
 # Build del frontend
 dist/
 
+# Paquetes «deploy-ready» generados (npm run package)
+release/
+
 # Configuración con secretos (usar api/config.example.php como plantilla)
 api/config.php
 
