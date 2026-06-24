@@ -58,6 +58,7 @@
     "KOBO_FORM_NOT_FOUND": "El formulario ya no existe en KoboToolbox.",
     "KOBO_SUBMISSION_NOT_FOUND": "El envío ya no existe en KoboToolbox.",
     "KOBO_EDIT_FAILED": "KoboToolbox rechazó la edición del envío. Revisa los valores e inténtalo de nuevo.",
+    "KOBO_VALIDATE_FORBIDDEN": "La cuenta de Kobo no tiene permiso para validar envíos en este formulario. Pide al propietario que conceda «Validate Submissions» a la cuenta en KoboToolbox.",
     "AUTH_RATE_LIMITED": "Demasiados intentos de inicio de sesión. Espera un minuto e inténtalo de nuevo.",
     "AUTH_INSUFFICIENT_PERMISSIONS": "No tienes permisos para realizar esta acción.",
     "CSRF_BLOCKED": "La petición fue bloqueada por seguridad (origen no permitido). Recarga la página e inténtalo de nuevo.",

@@ -5,8 +5,11 @@
  */
 class KoboException extends RuntimeException {
     public string $errorCode;
-    public function __construct(string $errorCode, string $message) {
-        $this->errorCode = $errorCode;
+    /** Código HTTP de Kobo que originó el error (si lo hubo), para afinar el diagnóstico. */
+    public ?int $httpStatus;
+    public function __construct(string $errorCode, string $message, ?int $httpStatus = null) {
+        $this->errorCode  = $errorCode;
+        $this->httpStatus = $httpStatus;
         parent::__construct($message);
     }
 }
@@ -174,25 +177,38 @@ class KoboClient {
         $ids = array_values(array_map('intval', $submissionIds));
         if (!$ids) return;
 
-        if ($statusUid === '') {
-            foreach ($ids as $id) {
-                $this->request('DELETE', "/api/v2/assets/$assetUid/data/$id/validation_status/");
+        try {
+            if ($statusUid === '') {
+                foreach ($ids as $id) {
+                    $this->request('DELETE', "/api/v2/assets/$assetUid/data/$id/validation_status/");
+                }
+                return;
             }
-            return;
-        }
 
-        $payload = [
-            'payload' => [
-                'submission_ids'        => $ids,
-                'validation_status.uid' => $statusUid,
-            ],
-        ];
-        $resp = $this->request('PATCH', "/api/v2/assets/$assetUid/data/validation_statuses/", [], $payload);
+            $payload = [
+                'payload' => [
+                    'submission_ids'        => $ids,
+                    'validation_status.uid' => $statusUid,
+                ],
+            ];
+            $resp = $this->request('PATCH', "/api/v2/assets/$assetUid/data/validation_statuses/", [], $payload);
 
-        // El endpoint puede responder 200 con un detalle de fallos parciales (como el
-        // bulk de edición). Si lo trae, lo tratamos como error.
-        if ((int) ($resp['failures'] ?? 0) > 0) {
-            throw new KoboException('KOBO_EDIT_FAILED', 'Kobo rechazó el cambio de estado de validación');
+            // El endpoint puede responder 200 con un detalle de fallos parciales (como el
+            // bulk de edición). Si lo trae, lo tratamos como error.
+            if ((int) ($resp['failures'] ?? 0) > 0) {
+                throw new KoboException('KOBO_EDIT_FAILED', 'Kobo rechazó el cambio de estado de validación');
+            }
+        } catch (KoboException $e) {
+            // Un 403 aquí casi siempre significa que la cuenta NO tiene el permiso
+            // «Validate Submissions» sobre el formulario (el token es válido: leer/editar
+            // funcionan). Se traduce a un código propio para no confundir con «token inválido».
+            if ($e->httpStatus === 403) {
+                throw new KoboException(
+                    'KOBO_VALIDATE_FORBIDDEN',
+                    'La cuenta de Kobo no tiene permiso para validar envíos en este formulario'
+                );
+            }
+            throw $e;
         }
     }
 
@@ -346,7 +362,10 @@ class KoboClient {
             throw new KoboException('KOBO_TIMEOUT', "No se pudo contactar con Kobo: $errmsg");
         }
         if ($status === 401 || $status === 403) {
-            throw new KoboException('KOBO_UNAUTHORIZED', 'Token de Kobo expirado o inválido');
+            // 401 = token inválido/expirado; 403 = el token es válido pero la cuenta no
+            // tiene permiso para esta operación sobre el asset. Se conserva el status para
+            // que el llamador pueda dar un mensaje más preciso (p. ej. la validación).
+            throw new KoboException('KOBO_UNAUTHORIZED', 'Token de Kobo expirado o inválido', $status);
         }
         if ($status === 404) {
             throw new KoboException('KOBO_FORM_NOT_FOUND', 'Recurso no encontrado en Kobo');

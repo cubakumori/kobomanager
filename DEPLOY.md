@@ -343,9 +343,16 @@ app keeps working but email-dependent features don't send. Handy for staging.
 - Add a real Kobo account and click **Sync** under *Forms*.
 - Run `sync_submissions.php` manually once and check `submissions_cache`.
 - The internal review status is synced with Kobo's native **validation status** (push on
-  review, pull on every sync). For the push to work the account's API token must have the
-  **Validate Submissions** permission on each form — for forms you own this is automatic;
-  for forms **shared** with the account, make sure that permission is granted in Kobo.
+  review, pull on every sync). For the **push** to work, the connected account's API token
+  must have the **Validate Submissions** permission on the form:
+  - **Forms the account owns** → automatic (the owner has every permission). Nothing to do.
+  - **Forms shared with the account** → the *owner* must grant it in KoboToolbox: open the
+    project → **Settings → Sharing** → on the row of the shared-with user, enable
+    **Validate Submissions** → save. (It sits next to *View* / *Edit submissions*.)
+  - If it's missing, a review attempt fails with **`KOBO_VALIDATE_FORBIDDEN`** ("the Kobo
+    account isn't allowed to validate submissions on this form") and nothing is saved — the
+    token itself is fine, only that permission is absent. The **pull** (reading the status
+    Kobo already has) needs no special permission.
 
 ## 10. Subsequent updates
 

@@ -71,6 +71,12 @@ if ($method === 'PATCH' && preg_match('#/api/v2/assets/[^/]+/data/validation_sta
         echo json_encode(['detail' => '`submission_ids` is required']);
         exit;
     }
+    // _id 4030 simula falta del permiso «Validate Submissions» (HTTP 403).
+    if (in_array(4030, array_map('intval', $ids), true)) {
+        http_response_code(403);
+        echo json_encode(['detail' => 'You do not have permission to perform this action.']);
+        exit;
+    }
     // Fallo forzado: el _id 9999 simula que Kobo rechaza el cambio (HTTP 200 con failures>0).
     if (in_array(9999, array_map('intval', $ids), true)) {
         echo json_encode(['successes' => 0, 'failures' => 1, 'detail' => 'stub forced validation failure']);

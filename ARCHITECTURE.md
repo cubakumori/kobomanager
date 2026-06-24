@@ -239,7 +239,10 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   - *Push* (blocking, like edits): `v1/submissions/review.php` and `v1/forms/review_batch.php`
     `PATCH …/data/validation_statuses/` (or `DELETE …/{id}/validation_status/` to clear). If Kobo
     rejects, **no local review is written** — both sides stay identical. Skipped under `DEMO_MODE`
-    (review stays local‑only, the real account is never touched).
+    (review stays local‑only, the real account is never touched). The push needs the account's
+    token to hold the *Validate Submissions* permission on the form (automatic for owned forms;
+    must be granted for **shared** ones); a `403` is surfaced as `KOBO_VALIDATE_FORBIDDEN`
+    (distinct from `KOBO_UNAUTHORIZED`, thanks to `KoboException::$httpStatus`).
   - *Pull* (every sync, both modes): a cheap `fields=["_uuid","_id","_validation_status"]` sweep
     feeds a **3‑way merge** per submission — `koboNow` vs the baseline `submissions_cache.kobo_validation_seen`
     vs the latest local review. If Kobo changed externally, the baseline is updated and (when it

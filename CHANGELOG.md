@@ -32,6 +32,10 @@ Todos los cambios notables de KoboManager. El formato sigue
     historial interno como una entrada de origen **«Kobo»**. En conflicto, **gana Kobo**.
   - En **modo demo** el push se omite (la revisión sigue siendo local; la cuenta Kobo real
     no se toca).
+  - Si la cuenta de Kobo no tiene el permiso *Validate Submissions* sobre el formulario
+    (típico en formularios **compartidos**), el push falla con un error claro
+    (`KOBO_VALIDATE_FORBIDDEN`) en vez de confundirse con «token inválido»; en los
+    formularios propios el permiso es automático.
 - **Orden configurable de «Mis formularios»** — nuevo ajuste global (Admin → Ajustes)
   para ordenar las tarjetas: cuenta + nombre (por defecto), nombre, últimos sincronizados
   primero, o añadidos más recientes primero.

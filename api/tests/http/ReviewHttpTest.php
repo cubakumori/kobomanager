@@ -71,6 +71,23 @@ final class ReviewHttpTest extends HttpTestCase
         @unlink($jar);
     }
 
+    public function testReviewForbiddenWhenAccountLacksValidatePermission(): void
+    {
+        $this->seedUser('admin', 'admin@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $formId = $this->seedForm($accId);
+        // El stub responde 403 para el _id 4030 (falta «Validate Submissions» en Kobo).
+        $this->seedSubmission($formId, 'uid-403', ['_id' => 4030, 'prov' => '1']);
+        $jar = $this->login('admin@test.local', 'Secret123!');
+
+        $res = $this->request('POST', 'submissions/uid-403/review', ['status' => 'approved'], $jar);
+        // Código propio (no «token inválido»), y la revisión no se guarda.
+        $this->assertSame(403, $res['status']);
+        $this->assertSame('KOBO_VALIDATE_FORBIDDEN', $res['json']['error']['code']);
+        $this->assertFalse((bool) DB::run('SELECT 1 FROM submission_reviews WHERE submission_uid = ?', ['uid-403'])->fetch());
+        @unlink($jar);
+    }
+
     public function testViewerWithoutValidateCannotReview(): void
     {
         $uid = $this->seedUser('viewer', 'v@test.local', 'Secret123!');

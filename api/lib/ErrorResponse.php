@@ -11,6 +11,7 @@ class ErrorResponse {
         'KOBO_FORM_NOT_FOUND'           => [404, 'El formulario no existe en Kobo'],
         'KOBO_SUBMISSION_NOT_FOUND'     => [404, 'El envío no existe en Kobo'],
         'KOBO_EDIT_FAILED'              => [502, 'Kobo rechazó la edición del envío'],
+        'KOBO_VALIDATE_FORBIDDEN'       => [403, 'La cuenta de Kobo no tiene permiso para validar envíos en este formulario'],
         'KOBO_RATE_LIMIT'               => [429, 'Se alcanzó el límite de peticiones de la API de Kobo'],
         'AUTH_INVALID_TOKEN'            => [401, 'Sesión inválida o expirada'],
         'AUTH_INSUFFICIENT_PERMISSIONS' => [403, 'No tienes permisos suficientes'],
