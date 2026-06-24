@@ -44,6 +44,13 @@ Todos los cambios notables de KoboManager. El formato sigue
   tanto en la validación del backend como en la interfaz de edición (siguen visibles en
   modo lectura, pero ya no se ofrecen para editar).
 
+### Corregido
+
+- **«Mis formularios»: el indicador de progreso de «Actualizar»/«Resync».** Al pulsar uno,
+  ambos botones mostraban su estado «…ando», dando la impresión de que se lanzaban los dos;
+  ahora solo el botón pulsado muestra su progreso (el comportamiento de sincronización no
+  cambia: siguen siendo dos operaciones distintas, incremental y completa).
+
 ## [1.6.0] - 2026-06-24
 
 > **Nota de actualización (esquema).** Esta versión añade dos columnas a `forms`
