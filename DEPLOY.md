@@ -284,8 +284,30 @@ location /api/ {
 0    7 * * *  php /path/api/cron/daily_summary.php       # daily email summary
 ```
 
-Both run only from the CLI (they reject web requests). The daily summary needs
-`RESEND_API_KEY` and `MAIL_FROM` (§8).
+Both run only from the CLI (they reject web requests), so trigger them with the **PHP
+CLI binary on the file path** — not a URL/`wget`/`curl` job (that would hit the web
+front controller and get a 403). On panels like cPanel/DirectAdmin, cron jobs are
+**account-wide**, not per-domain/subdomain: there is no subdomain to pick — just point
+the command at the script's absolute path (e.g. `/usr/local/bin/php
+/home/<user>/domains/<domain>/public_html/api/cron/daily_summary.php`). The daily
+summary needs `RESEND_API_KEY` and `MAIL_FROM` (§8), and only reports what's already in
+the cache — so keep `sync_submissions.php` scheduled too, or there's nothing new to send.
+
+**Cron output / notifications.** Cron mails the command's output to the account on
+**every** run, which gets noisy (especially the 15-min sync). Append a redirection to
+control it — pick by how much you want to hear from it:
+
+```cron
+… daily_summary.php                          # (no redirection) emails you every run — verbose, but you see everything
+… daily_summary.php >/dev/null               # discards normal output, still emails on errors (stderr) — recommended
+… daily_summary.php >/dev/null 2>&1           # fully silent — no mail even on failure
+… daily_summary.php >> /home/<user>/km-cron.log 2>&1   # append everything to a log you check on demand
+```
+
+Tip: run with no redirection at first to confirm it works (and pass a date —
+`daily_summary.php 2026-06-23` — to summarize a specific day), then switch to
+`>/dev/null` once it's stable. Cron uses the **server timezone**, independent of
+`APP_TIMEZONE` (which only affects how stats are displayed).
 
 ## 8. Email (Resend)
 
