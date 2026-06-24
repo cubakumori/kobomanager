@@ -50,6 +50,13 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       con modelo acordado primero. Demanda recurrente
       ([open-source-online-dashboards/17702](https://community.kobotoolbox.org/t/open-source-online-dashboards/17702)).
 
+      > **Avance parcial (jun-2026, entregado):** los enlaces públicos ya pueden exponer
+      > el **panel de Estadísticas** (`expose_stats`), con scoping de fila/columna y **sin**
+      > el estado de revisión interno; un enlace con *solo* estadísticas muestra gráficos
+      > sin exponer envíos individuales — cubre la viñeta «compartible/embebible» para un
+      > **único formulario** con el informe **fijo**. Queda pendiente lo grande: panel
+      > **configurable** (elegir indicadores/widgets) y **multi-fuente** (varios formularios).
+
 ### Decisión de diseño: flujo de revisión simple
 
 Se conservan los **4 estados fijos** (pendiente / en espera / aprobado / rechazado) y la

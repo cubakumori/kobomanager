@@ -37,7 +37,9 @@ column-level field hiding — and an internal review workflow decoupled from Kob
 
 - **Public read-only links** — share a form without giving anyone an account, optionally
   with a password, an expiry date, and the same row/column scoping you apply to your
-  team. Map and attachments are opt-in per link.
+  team. Submission list, map, statistics, and attachments are opt-in per link (a
+  stats-only link shows charts without exposing individual submissions). The public view
+  shows the data's freshness ("data as of …").
 
 **Analysis**
 
