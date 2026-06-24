@@ -41,7 +41,7 @@ The compiled frontend goes in the public root, the backend under `/api`:
   assets/               ← Vue build (dist/assets), content-hashed
   sw.js, registerSW.js, manifest.webmanifest   ← PWA
   .htaccess             ← SPA rewrite, shipped inside dist/ (Apache; §6)
-  /api                  ← PHP backend (upload as-is)
+  /api                  ← PHP backend (pruned — no vendor/, tests/, composer.*; see §3 Option B)
     config.php          ← create on the server, NOT committed (§5)
     .htaccess
     index.php, lib/, v1/, cron/, cli/
