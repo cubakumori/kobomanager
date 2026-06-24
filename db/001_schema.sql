@@ -92,6 +92,10 @@ CREATE TABLE IF NOT EXISTS submissions_cache (
     form_id         INT UNSIGNED NOT NULL,
     submission_uid  VARCHAR(100) NOT NULL UNIQUE,
     json_payload    JSON NOT NULL,
+    -- Último `_validation_status.uid` de Kobo observado por el sync = línea base del
+    -- merge a 3 vías del estado de validación (ver lib/SubmissionSync::reconcileValidation
+    -- y lib/ValidationStatus). NULL = nunca visto / sin estado.
+    kobo_validation_seen VARCHAR(40) NULL,
     -- Proyección en texto plano de los VALORES de respuesta (sin claves ni
     -- metadatos `_*`), poblada por la app (lib/SubmissionSearch::textFor) en cada
     -- sync. Indexada con FULLTEXT para la búsqueda de la tabla de envíos; evita el
@@ -104,11 +108,16 @@ CREATE TABLE IF NOT EXISTS submissions_cache (
     FULLTEXT INDEX idx_search_text (search_text)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3.6 Revisiones internas (desacopladas de Kobo)
+-- 3.6 Revisiones internas, sincronizadas con el `_validation_status` nativo de Kobo
+--     (push bloqueante al revisar + pull en cada sync; gana Kobo en conflicto).
+--     `source` distingue el origen: 'app' = revisión hecha en KoboManager (user_id
+--     NOT NULL); 'kobo' = estado traído de Kobo por el sync (user_id NULL). La regla
+--     se aplica en el código (MySQL 5.7 no tiene CHECK por columnas cruzadas).
 CREATE TABLE IF NOT EXISTS submission_reviews (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     submission_uid  VARCHAR(100) NOT NULL,
-    user_id         INT UNSIGNED NOT NULL,
+    user_id         INT UNSIGNED NULL,
+    source          ENUM('app', 'kobo') NOT NULL DEFAULT 'app',
     status          ENUM('pending', 'approved', 'on_hold', 'rejected') NOT NULL DEFAULT 'pending',
     comment         TEXT,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,

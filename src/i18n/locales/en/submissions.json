@@ -87,7 +87,8 @@
     "pending": "Pending",
     "approved": "Approved",
     "on_hold": "On hold",
-    "rejected": "Rejected"
+    "rejected": "Rejected",
+    "kobo": "Kobo"
   },
   "map": {
     "back": "← Back to submissions",

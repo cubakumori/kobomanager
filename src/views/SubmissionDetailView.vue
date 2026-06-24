@@ -405,7 +405,7 @@ onMounted(load)
             <ReviewBadge :status="r.status" />
             <div class="text-sm">
               <p class="text-slate-700">{{ r.comment || '—' }}</p>
-              <p class="text-xs text-slate-400">{{ r.user_name }} · {{ r.created_at }}</p>
+              <p class="text-xs text-slate-400">{{ r.user_name || (r.source === 'kobo' ? $t('review.kobo') : '—') }} · {{ r.created_at }}</p>
             </div>
           </li>
         </ul>

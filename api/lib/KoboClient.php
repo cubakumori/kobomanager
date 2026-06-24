@@ -159,6 +159,77 @@ class KoboClient {
     }
 
     /**
+     * Fija (o limpia) el `_validation_status` nativo de uno o varios envíos.
+     * $submissionIds = _id numéricos de Kobo; $statusUid = uid de validación
+     * (validation_status_approved | _not_approved | _on_hold) o '' para limpiarlo
+     * (equivale a «sin estado» / pending). Lanza KoboException si Kobo lo rechaza
+     * (push bloqueante, espejo de editSubmission).
+     *
+     * - Fijar: PATCH /api/v2/assets/{uid}/data/validation_statuses/ con el envoltorio
+     *   {payload:{submission_ids, "validation_status.uid"}} (mismo formato que el bulk).
+     * - Limpiar: DELETE /api/v2/assets/{uid}/data/{id}/validation_status/ por envío
+     *   (vía inequívoca para «sin estado»; el lote a pending es poco frecuente).
+     */
+    public function setValidationStatuses(string $assetUid, array $submissionIds, string $statusUid): void {
+        $ids = array_values(array_map('intval', $submissionIds));
+        if (!$ids) return;
+
+        if ($statusUid === '') {
+            foreach ($ids as $id) {
+                $this->request('DELETE', "/api/v2/assets/$assetUid/data/$id/validation_status/");
+            }
+            return;
+        }
+
+        $payload = [
+            'payload' => [
+                'submission_ids'        => $ids,
+                'validation_status.uid' => $statusUid,
+            ],
+        ];
+        $resp = $this->request('PATCH', "/api/v2/assets/$assetUid/data/validation_statuses/", [], $payload);
+
+        // El endpoint puede responder 200 con un detalle de fallos parciales (como el
+        // bulk de edición). Si lo trae, lo tratamos como error.
+        if ((int) ($resp['failures'] ?? 0) > 0) {
+            throw new KoboException('KOBO_EDIT_FAILED', 'Kobo rechazó el cambio de estado de validación');
+        }
+    }
+
+    /**
+     * Mapa _uuid => `validation_status.uid` de TODOS los envíos de un formulario.
+     * Pide solo `_uuid`, `_id` y `_validation_status` (`fields=[...]`) para que sea
+     * barato; sirve al pull del estado de validación en cada sync (incremental no
+     * re-trae envíos viejos cuyo estado cambió en Kobo). Gemelo de getAllSubmissionIds.
+     * Un envío sin estado se devuelve con uid ''.
+     */
+    public function getValidationStatuses(string $assetUid, int $pageSize = 10000, int $maxPages = 100): array {
+        $base = [
+            'format' => 'json',
+            'limit'  => $pageSize,
+            'fields' => '["_uuid","_id","_validation_status"]',
+            'sort'   => '{"_id":1}',
+        ];
+
+        $map   = [];
+        $start = 0;
+        for ($page = 0; $page < $maxPages; $page++) {
+            $data    = $this->httpGet("/api/v2/assets/$assetUid/data/", $base + ['start' => $start]);
+            $results = $data['results'] ?? [];
+            foreach ($results as $r) {
+                $uid = $r['_uuid'] ?? (isset($r['_id']) ? (string) $r['_id'] : null);
+                if ($uid === null) continue;
+                $map[$uid] = ValidationStatus::uidFromPayload($r);
+            }
+            $count = (int) ($data['count'] ?? 0);
+            if (count($results) < $pageSize) break;
+            $start += $pageSize;
+            if ($start >= $count) break;
+        }
+        return $map;
+    }
+
+    /**
      * Descarga un adjunto (foto, audio, archivo) de un envío y lo devuelve en
      * memoria como ['body' => bytes, 'mimetype' => tipo]. $url es la `download_url`
      * del adjunto (absoluta) o una ruta relativa al servidor.

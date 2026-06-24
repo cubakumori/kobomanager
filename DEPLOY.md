@@ -342,6 +342,10 @@ app keeps working but email-dependent features don't send. Handy for staging.
 - Sign in with your admin; the cookie must travel as `Secure` + `HttpOnly`.
 - Add a real Kobo account and click **Sync** under *Forms*.
 - Run `sync_submissions.php` manually once and check `submissions_cache`.
+- The internal review status is synced with Kobo's native **validation status** (push on
+  review, pull on every sync). For the push to work the account's API token must have the
+  **Validate Submissions** permission on each form — for forms you own this is automatic;
+  for forms **shared** with the account, make sure that permission is granted in Kobo.
 
 ## 10. Subsequent updates
 

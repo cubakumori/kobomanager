@@ -67,6 +67,12 @@ y los **estados de validación personalizables**
 ([15808](https://community.kobotoolbox.org/t/customizing-validation-statuses/15808)).
 Quedan como ideas reabribles si aparece una necesidad real.
 
+- [x] **Sincronización bidireccional con el `_validation_status` nativo de Kobo — HECHO**
+      (sin tag; ver `CHANGELOG.md`). Los 4 estados se mapean al campo nativo de Kobo: push
+      bloqueante al revisar (individual/lote) + pull en cada sync con merge a 3 vías
+      («gana Kobo»). El historial distingue el origen con `submission_reviews.source`
+      (`app`/`kobo`). Requiere permiso *Validate Submissions* del token.
+
 ---
 
 ## Publicación (en torno a hacer público el repo)

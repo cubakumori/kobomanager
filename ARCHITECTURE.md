@@ -9,7 +9,8 @@ KoboManager is a thin management layer **between KoboToolbox accounts and a smal
 An administrator connects Kobo accounts (API tokens stored encrypted); other users get
 per‑form permissions and review submissions **without a Kobo account and without ever seeing
 the token**. Submissions are mirrored into a local cache for fast browsing and an internal
-review (approve / on-hold / reject) flow decoupled from Kobo.
+review (approve / on-hold / reject) flow that is **synced with Kobo's native validation
+status** in both directions (see below).
 
 ## Stack & layout
 
@@ -232,6 +233,21 @@ to a new one (key rotation; see `DEPLOY.md §12`).
 - **Submissions** (`lib/SubmissionSync.php`, cron + on demand): *incremental* (cursor =
   `MAX(submitted_at)` in cache) with a deletion sweep, or *full* (re‑download + reconcile by
   `_uuid`, reflecting edits made in Kobo). Reused by admin and viewer sync endpoints.
+- **Validation status sync** (`lib/ValidationStatus.php` + `SubmissionSync::reconcileValidation`):
+  the internal review status is kept in sync with Kobo's native `_validation_status` in **both
+  directions**.
+  - *Push* (blocking, like edits): `v1/submissions/review.php` and `v1/forms/review_batch.php`
+    `PATCH …/data/validation_statuses/` (or `DELETE …/{id}/validation_status/` to clear). If Kobo
+    rejects, **no local review is written** — both sides stay identical. Skipped under `DEMO_MODE`
+    (review stays local‑only, the real account is never touched).
+  - *Pull* (every sync, both modes): a cheap `fields=["_uuid","_id","_validation_status"]` sweep
+    feeds a **3‑way merge** per submission — `koboNow` vs the baseline `submissions_cache.kobo_validation_seen`
+    vs the latest local review. If Kobo changed externally, the baseline is updated and (when it
+    also differs from local) a synthetic review row is inserted with `source='kobo'`, `user_id=NULL`,
+    which becomes the latest by `MAX(id)` ⇒ **Kobo wins** on conflict. The incremental cursor
+    doesn't re‑fetch old submissions, so this sweep is what makes external validation changes land.
+  - `submission_reviews.source` (`'app'`/`'kobo'`) records the origin; `user_id` is `NULL` for
+    Kobo‑sourced rows (shown as “Kobo” in the history).
 - **Readable labels** (`lib/FormSchema.php`): caches a normalized XLSForm schema per form
   (`forms.schema_json`) so the UI shows question/option labels instead of raw codes.
 - **Geo** (`lib/Geo.php`): parses geopoint/geotrace/geoshape for the map view.

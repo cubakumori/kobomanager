@@ -17,7 +17,10 @@ if (Request::method() !== 'POST') {
     ErrorResponse::send('VALIDATION_ERROR', 'Método no permitido', 405);
 }
 
-$form = DB::run('SELECT id, deployment_status FROM forms WHERE id = ? AND active = 1', [$formId])->fetch();
+$form = DB::run(
+    'SELECT id, deployment_status, kobo_asset_uid, kobo_account_id FROM forms WHERE id = ? AND active = 1',
+    [$formId]
+)->fetch();
 if (!$form) {
     ErrorResponse::send('NOT_FOUND', 'Formulario no encontrado');
 }
@@ -54,21 +57,58 @@ $rows = DB::run(
     array_merge([$formId], $uids)
 )->fetchAll();
 
-// Scoping por filas: solo se aplican los que están dentro de alcance.
+// Scoping por filas: solo se aplican los que están dentro de alcance. De cada uno
+// guardamos su _id de Kobo (necesario para el push del estado de validación).
 $scopeRule = RowScope::ruleForUser($user, $formId);
+$targets   = []; // submission_uid => kobo _id (int)
+foreach ($rows as $r) {
+    $payload = json_decode($r['json_payload'], true) ?: [];
+    if (!RowScope::matches($scopeRule, $payload)) {
+        continue;
+    }
+    $koboId = $payload['_id'] ?? null;
+    if (!Demo::enabled() && !$koboId) {
+        // Sin _id no se puede empujar a Kobo: se omite (cuenta como skipped).
+        continue;
+    }
+    $targets[$r['submission_uid']] = (int) $koboId;
+}
+
+// Push a Kobo (estado de validación nativo): bloqueante. Un solo PATCH para todos los
+// envíos del lote (mismo estado). Si Kobo lo rechaza, NO se aplica nada localmente.
+// En modo demo se omite el push (la revisión queda solo local).
+$statusUid = ValidationStatus::toKobo($status);
+$pushed    = false;
+if (!Demo::enabled() && $targets) {
+    $acc = DB::run(
+        'SELECT server_url, api_token FROM kobo_accounts WHERE id = ?',
+        [$form['kobo_account_id']]
+    )->fetch();
+    if (!$acc) {
+        ErrorResponse::send('KOBO_ACCOUNT_DISABLED', 'La cuenta Kobo no existe');
+    }
+    $client = new KoboClient($acc['server_url'], TokenVault::decrypt($acc['api_token']));
+    try {
+        $client->setValidationStatuses($form['kobo_asset_uid'], array_values($targets), $statusUid);
+    } catch (KoboException $e) {
+        ErrorResponse::send($e->errorCode, $e->getMessage());
+    }
+    $pushed = true;
+}
 
 $pdo = DB::conn();
 $pdo->beginTransaction();
-$applied   = [];
-$stmt      = $pdo->prepare(
-    'INSERT INTO submission_reviews (submission_uid, user_id, status, comment) VALUES (?, ?, ?, ?)'
+$applied = [];
+$stmt = $pdo->prepare(
+    'INSERT INTO submission_reviews (submission_uid, user_id, source, status, comment) VALUES (?, ?, ?, ?, ?)'
 );
-foreach ($rows as $r) {
-    if (!RowScope::matches($scopeRule, json_decode($r['json_payload'], true) ?: [])) {
-        continue;
+$seenStmt = $pdo->prepare('UPDATE submissions_cache SET kobo_validation_seen = ? WHERE submission_uid = ?');
+foreach ($targets as $sUid => $koboId) {
+    $stmt->execute([$sUid, $user['id'], 'app', $status, $comment !== '' ? $comment : null]);
+    if ($pushed) {
+        $seenStmt->execute([$statusUid, $sUid]);
     }
-    $stmt->execute([$r['submission_uid'], $user['id'], $status, $comment !== '' ? $comment : null]);
-    $applied[] = $r['submission_uid'];
+    $applied[] = $sUid;
 }
 $pdo->commit();
 

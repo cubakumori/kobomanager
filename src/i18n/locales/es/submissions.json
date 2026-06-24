@@ -87,7 +87,8 @@
     "pending": "Pendiente",
     "approved": "Aprobado",
     "on_hold": "En espera",
-    "rejected": "Rechazado"
+    "rejected": "Rechazado",
+    "kobo": "Kobo"
   },
   "map": {
     "back": "← Volver a los envíos",

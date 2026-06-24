@@ -40,10 +40,12 @@ if ($method === 'GET') {
         ErrorResponse::send('NOT_FOUND', 'Envío no encontrado');
     }
 
+    // LEFT JOIN: las revisiones traídas de Kobo por el sync (source='kobo') no tienen
+    // usuario (user_id NULL) y deben aparecer igual en el historial.
     $reviews = DB::run(
-        'SELECT r.id, r.status, r.comment, r.created_at, u.name AS user_name
+        'SELECT r.id, r.status, r.comment, r.created_at, r.source, u.name AS user_name
          FROM submission_reviews r
-         JOIN users u ON u.id = r.user_id
+         LEFT JOIN users u ON u.id = r.user_id
          WHERE r.submission_uid = ?
          ORDER BY r.id DESC',
         [$uid]

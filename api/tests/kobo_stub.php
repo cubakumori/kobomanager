@@ -61,5 +61,30 @@ if ($method === 'PATCH' && preg_match('#/api/v2/assets/[^/]+/data/bulk/?$#', $pa
     exit;
 }
 
+// PATCH /api/v2/assets/{uid}/data/validation_statuses/  (push del estado de validación)
+if ($method === 'PATCH' && preg_match('#/api/v2/assets/[^/]+/data/validation_statuses/?$#', $path)) {
+    $body = json_decode(file_get_contents('php://input'), true) ?: [];
+    $ids  = $body['payload']['submission_ids'] ?? [];
+
+    if (!is_array($ids) || count($ids) === 0) {
+        http_response_code(400);
+        echo json_encode(['detail' => '`submission_ids` is required']);
+        exit;
+    }
+    // Fallo forzado: el _id 9999 simula que Kobo rechaza el cambio (HTTP 200 con failures>0).
+    if (in_array(9999, array_map('intval', $ids), true)) {
+        echo json_encode(['successes' => 0, 'failures' => 1, 'detail' => 'stub forced validation failure']);
+        exit;
+    }
+    echo json_encode(['successes' => count($ids), 'failures' => 0, 'detail' => 'ok']);
+    exit;
+}
+
+// DELETE /api/v2/assets/{uid}/data/{id}/validation_status/  (limpiar a «sin estado»)
+if ($method === 'DELETE' && preg_match('#/api/v2/assets/[^/]+/data/\d+/validation_status/?$#', $path)) {
+    http_response_code(204);
+    exit;
+}
+
 http_response_code(404);
 echo json_encode(['detail' => 'stub: ruta no soportada ' . $method . ' ' . $path]);

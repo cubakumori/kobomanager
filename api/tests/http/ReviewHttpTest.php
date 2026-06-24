@@ -34,6 +34,43 @@ final class ReviewHttpTest extends HttpTestCase
         @unlink($jar);
     }
 
+    public function testReviewPushesValidationToKobo(): void
+    {
+        $this->seedUser('admin', 'admin@test.local', 'Secret123!');
+        $this->seedFormWithSubmission('uid-1'); // _id = 1001 → stub de Kobo
+        $jar = $this->login('admin@test.local', 'Secret123!');
+
+        $res = $this->request('POST', 'submissions/uid-1/review', ['status' => 'approved'], $jar);
+        $this->assertSame(201, $res['status'], $res['raw']);
+
+        // La revisión local marca origen 'app' y la línea base guarda el uid empujado.
+        $row = DB::run('SELECT source, status FROM submission_reviews WHERE submission_uid = ?', ['uid-1'])->fetch();
+        $this->assertSame('app', $row['source']);
+        $seen = DB::run('SELECT kobo_validation_seen FROM submissions_cache WHERE submission_uid = ?', ['uid-1'])->fetch();
+        $this->assertSame('validation_status_approved', $seen['kobo_validation_seen']);
+        @unlink($jar);
+    }
+
+    public function testReviewBlockedWhenKoboRejects(): void
+    {
+        $this->seedUser('admin', 'admin@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $formId = $this->seedForm($accId);
+        // El stub rechaza el cambio de validación para el _id 9999 (failures>0).
+        $this->seedSubmission($formId, 'uid-fail', ['_id' => 9999, 'prov' => '1']);
+        $jar = $this->login('admin@test.local', 'Secret123!');
+
+        $res = $this->request('POST', 'submissions/uid-fail/review', ['status' => 'approved'], $jar);
+        $this->assertSame(502, $res['status']);
+        $this->assertSame('KOBO_EDIT_FAILED', $res['json']['error']['code']);
+
+        // Push bloqueante: si Kobo rechaza, NO se guarda nada local ni se mueve la base.
+        $this->assertFalse((bool) DB::run('SELECT 1 FROM submission_reviews WHERE submission_uid = ?', ['uid-fail'])->fetch());
+        $seen = DB::run('SELECT kobo_validation_seen FROM submissions_cache WHERE submission_uid = ?', ['uid-fail'])->fetch();
+        $this->assertNull($seen['kobo_validation_seen']);
+        @unlink($jar);
+    }
+
     public function testViewerWithoutValidateCannotReview(): void
     {
         $uid = $this->seedUser('viewer', 'v@test.local', 'Secret123!');

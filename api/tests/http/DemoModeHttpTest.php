@@ -79,6 +79,11 @@ final class DemoModeHttpTest extends HttpTestCase
         $res = $this->request('POST', 'submissions/sub-demo-1/review', ['status' => 'approved'], $jar);
         $this->assertSame(201, $res['status'], 'la revisión debe seguir permitida en demo: ' . $res['raw']);
         $this->assertSame('approved', $res['json']['data']['review_status']);
+
+        // En demo NO se empuja a Kobo: la línea base queda intacta (NULL), prueba de que
+        // la rama de push no se ejecutó (solo ella fija kobo_validation_seen).
+        $seen = DB::run('SELECT kobo_validation_seen FROM submissions_cache WHERE submission_uid = ?', ['sub-demo-1'])->fetch();
+        $this->assertNull($seen['kobo_validation_seen']);
     }
 
     public function testLocalActionsStillAllowed(): void

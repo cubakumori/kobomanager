@@ -4,6 +4,35 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [Sin publicar]
+
+> **Nota de actualización (esquema).** Esta versión sincroniza el estado de validación
+> con Kobo y cambia tres cosas del esquema: `submission_reviews.user_id` pasa a admitir
+> `NULL`, se añade `submission_reviews.source` (`'app'`/`'kobo'`) y `submissions_cache.kobo_validation_seen`.
+> Instalación nueva: nada que hacer (`db/001_schema.sql` ya lo incluye). Sobre una BD
+> existente, recrea desde `db/*.sql` **o** aplica:
+>
+> ```sql
+> ALTER TABLE submission_reviews MODIFY user_id INT UNSIGNED NULL,
+>   ADD COLUMN source ENUM('app','kobo') NOT NULL DEFAULT 'app' AFTER user_id;
+> ALTER TABLE submissions_cache ADD COLUMN kobo_validation_seen VARCHAR(40) NULL AFTER json_payload;
+> ```
+
+### Añadido
+
+- **Sincronización bidireccional del estado de validación con Kobo.** El flujo de
+  revisión interno (pendiente / aprobado / en espera / rechazado) deja de estar
+  desacoplado: ahora se sincroniza con el campo nativo `_validation_status` de Kobo
+  en ambos sentidos.
+  - **Push** (al aprobar/rechazar/poner en espera, individual o en lote): se escribe en
+    Kobo de forma **bloqueante** (como la edición). Si Kobo lo rechaza, la revisión no se
+    guarda y ambos lados quedan idénticos. Requiere que el token tenga permiso *Validate
+    Submissions* sobre el formulario.
+  - **Pull** (en cada sync): un cambio hecho directamente en Kobo se refleja en el
+    historial interno como una entrada de origen **«Kobo»**. En conflicto, **gana Kobo**.
+  - En **modo demo** el push se omite (la revisión sigue siendo local; la cuenta Kobo real
+    no se toca).
+
 ## [1.6.0] - 2026-06-24
 
 > **Nota de actualización (esquema).** Esta versión añade dos columnas a `forms`

@@ -15,7 +15,8 @@ access to KoboToolbox submissions — view, edit and validate — **without spen
 licenses/seats for every user and without exposing the API token**. The administrator
 holds the Kobo credentials (stored encrypted); end users work through KoboManager with
 per-form permissions — including multi-condition (AND/OR) row-level scoping and
-column-level field hiding — and an internal review workflow decoupled from Kobo.
+column-level field hiding — and an internal review workflow synced with Kobo's
+native validation status.
 
 ## Features
 
@@ -31,7 +32,9 @@ column-level field hiding — and an internal review workflow decoupled from Kob
 **Review**
 
 - Internal **review workflow** (pending / approved / on hold / rejected), one-by-one or
-  in batches, decoupled from Kobo's own validation.
+  in batches, **synced both ways with Kobo's native validation status**: a decision made
+  here is pushed to Kobo, and a change made directly in Kobo is pulled back on the next
+  sync (Kobo wins on conflict).
 
 **Sharing**
 

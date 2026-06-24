@@ -83,6 +83,11 @@ class SubmissionSync {
                 $count++;
             }
 
+            // Pull del estado de validación nativo de Kobo (siempre, en ambos modos):
+            // el cursor incremental no re-trae envíos viejos cuyo `_validation_status`
+            // cambió en Kobo, así que se reconcilia con un barrido ligero aparte.
+            self::reconcileValidation($formId, $client, $assetUid);
+
             $removed = $full
                 ? self::reconcileFull($formId, array_keys($seenUids))
                 : self::reconcileDeletions($formId, $client, $assetUid);
@@ -100,6 +105,66 @@ class SubmissionSync {
             );
             throw $e;
         }
+    }
+
+    /**
+     * Pull del estado de validación: reconcilia el `_validation_status` nativo de Kobo
+     * con el log de revisiones interno mediante un merge a 3 vías por envío:
+     *   - koboNow  = estado actual en Kobo (barrido ligero getValidationStatuses);
+     *   - baseline = último uid de Kobo visto (submissions_cache.kobo_validation_seen);
+     *   - localNow = última revisión interna (MAX(id); 'pending' si no hay).
+     * Si koboNow ≠ baseline, Kobo cambió fuera de la app → se actualiza la línea base y,
+     * si además koboNow ≠ localNow, se inserta una revisión sintética source='kobo'
+     * (user_id NULL) que pasa a ser la última por MAX(id) ⇒ GANA KOBO en conflicto.
+     * Devuelve cuántas revisiones sintéticas se crearon.
+     */
+    private static function reconcileValidation(int $formId, KoboClient $client, string $assetUid): int {
+        $koboMap = $client->getValidationStatuses($assetUid);
+
+        // Estado local: línea base por envío + última revisión (la de mayor id).
+        $rows = DB::run(
+            'SELECT sc.submission_uid, sc.kobo_validation_seen, lr.status AS local_status
+             FROM submissions_cache sc
+             LEFT JOIN (
+                SELECT r.submission_uid, r.status
+                FROM submission_reviews r
+                JOIN (SELECT submission_uid, MAX(id) AS mid FROM submission_reviews GROUP BY submission_uid) m
+                  ON m.mid = r.id
+             ) lr ON lr.submission_uid = sc.submission_uid
+             WHERE sc.form_id = ?',
+            [$formId]
+        )->fetchAll();
+
+        $pdo      = DB::conn();
+        $created  = 0;
+        $upd      = $pdo->prepare('UPDATE submissions_cache SET kobo_validation_seen = ? WHERE submission_uid = ?');
+        $ins      = $pdo->prepare(
+            "INSERT INTO submission_reviews (submission_uid, user_id, source, status, comment)
+             VALUES (?, NULL, 'kobo', ?, NULL)"
+        );
+
+        foreach ($rows as $r) {
+            $sUid = $r['submission_uid'];
+            // Si el envío no está en el mapa de Kobo (p. ej. recién borrado), se deja al
+            // barrido de bajas; no se toca su validación aquí.
+            if (!array_key_exists($sUid, $koboMap)) {
+                continue;
+            }
+            $koboUid  = $koboMap[$sUid];                            // '' = sin estado
+            $koboNow  = ValidationStatus::fromKobo($koboUid);
+            $baseline = ValidationStatus::fromKobo($r['kobo_validation_seen']);
+            if ($koboNow === $baseline) {
+                continue; // Kobo no cambió desde la última vez → nada que hacer.
+            }
+
+            $upd->execute([$koboUid, $sUid]);
+            $localNow = $r['local_status'] ?? 'pending';
+            if ($koboNow !== $localNow) {
+                $ins->execute([$sUid, $koboNow]);
+                $created++;
+            }
+        }
+        return $created;
     }
 
     /**
