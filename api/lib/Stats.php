@@ -21,7 +21,13 @@ class Stats {
      * @param array|null $scope        Regla RowScope ya normalizada (o null = sin restricción).
      * @param array|null $fieldScope   Regla FieldScope ya normalizada (o null).
      * @param string     $locale       Idioma para resolver etiquetas de preguntas/opciones.
-     * @param bool       $includeReview Incluir `by_status` (interno; público = false).
+     * @param bool       $includeReview Incluir `by_status` y la mezcla de revisión de
+     *                                 `by_team` (interno; público = false).
+     * @param string|null $teamField   Ruta del campo «equipo» para el desglose por equipo
+     *                                 (forms.stats_team_field). NULL = sin desglose.
+     * @param string|null $enumField   Ruta del campo «encuestador» dentro del equipo
+     *                                 (forms.stats_enumerator_field). NULL/`_submitted_by`
+     *                                 = usar el usuario Kobo que envió.
      */
     public static function compute(
         int $formId,
@@ -29,7 +35,9 @@ class Stats {
         ?array $scope,
         ?array $fieldScope,
         string $locale,
-        bool $includeReview = true
+        bool $includeReview = true,
+        ?string $teamField = null,
+        ?string $enumField = null
     ): array {
         [$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'json_payload');
 
@@ -96,26 +104,29 @@ class Stats {
             'last_30' => $last30, 'prev_30' => $prev30, 'pct_30' => $pct($last30, $prev30),
         ];
 
-        // Distribución por estado de revisión (solo si se pide; interna).
-        $byStatus = ['pending' => 0, 'approved' => 0, 'on_hold' => 0, 'rejected' => 0];
+        // Distribución por estado de revisión (solo si se pide; interna). De la misma
+        // consulta sale el mapa uid → última revisión, que reutiliza el desglose por
+        // equipo para la mezcla de calidad (evita una segunda consulta).
+        $byStatus  = ['pending' => 0, 'approved' => 0, 'on_hold' => 0, 'rejected' => 0];
+        $statusMap = []; // submission_uid => estado de la última revisión
         if ($includeReview) {
             $reviewed = DB::run(
-                "SELECT r.status, COUNT(*) AS count
+                "SELECT r.submission_uid, r.status
                  FROM submission_reviews r
                  JOIN (
                     SELECT submission_uid, MAX(id) AS max_id FROM submission_reviews GROUP BY submission_uid
                  ) latest ON latest.max_id = r.id
                  JOIN submissions_cache sc ON sc.submission_uid = r.submission_uid AND sc.form_id = ?
-                    AND $scopeSql
-                 GROUP BY r.status",
+                    AND $scopeSql",
                 array_merge([$formId], $scopeP)
             )->fetchAll();
 
             $reviewedTotal = 0;
             foreach ($reviewed as $r) {
                 if (isset($byStatus[$r['status']])) {
-                    $byStatus[$r['status']] = (int) $r['count'];
-                    $reviewedTotal += (int) $r['count'];
+                    $byStatus[$r['status']]++;
+                    $statusMap[$r['submission_uid']] = $r['status'];
+                    $reviewedTotal++;
                 }
             }
             // Los envíos sin revisión cuentan como 'pending'.
@@ -129,6 +140,19 @@ class Stats {
         $labelsOn  = Settings::labelMode() === 'labels';
         $labels    = $resolved['labels'] ?? [];
         $options   = $resolved['options'] ?? [];
+
+        // --- Config del desglose por equipo (opcional). ---
+        // El campo de equipo debe estar configurado y NO oculto por FieldScope en este
+        // alcance: no se puede agrupar por una columna que el usuario no ve (además, el
+        // payload ya viene recortado, así que todo caería en «—»). El encuestador usa
+        // `_submitted_by` salvo que se configure un campo de datos visible.
+        $teamField = ($teamField !== null && $teamField !== '' && !FieldScope::isHidden($fieldScope, $teamField))
+            ? $teamField : null;
+        $enumIsField = $enumField !== null && $enumField !== '' && $enumField !== '_submitted_by'
+            && !FieldScope::isHidden($fieldScope, $enumField);
+        $enumPath   = $enumIsField ? $enumField : '_submitted_by';
+        $teamOptMap = $teamField !== null ? ($options[$teamField] ?? []) : [];
+        $enumOptMap = $enumIsField ? ($options[$enumPath] ?? []) : [];
 
         // Preguntas de opción (select_one y select_multiple).
         $singleFields = [];
@@ -153,8 +177,24 @@ class Stats {
         $geoWith    = 0;
         $lastSub    = null;
 
+        // Desglose por equipo → encuestador. Acumula una «hoja» de métricas por equipo
+        // y por (equipo, encuestador); el nivel de equipo se agrega a la vez que la hoja
+        // del encuestador para no recombinar luego.
+        $teamAcc = []; // teamKey => ['leaf' => hoja, 'enums' => [enumKey => hoja]]
+        $newLeaf = fn(): array => [
+            'count' => 0, 'dur' => [], 'compSum' => 0.0, 'compN' => 0, 'last' => null,
+            'status' => ['pending' => 0, 'approved' => 0, 'on_hold' => 0, 'rejected' => 0],
+        ];
+        $bump = function (array &$leaf, array $dd, ?string $subAt, string $st): void {
+            $leaf['count']++;
+            if ($dd['duration_s'] !== null)   $leaf['dur'][] = $dd['duration_s'];
+            if ($dd['completeness'] !== null) { $leaf['compSum'] += $dd['completeness']; $leaf['compN']++; }
+            if ($subAt !== null && ($leaf['last'] === null || $subAt > $leaf['last'])) $leaf['last'] = $subAt;
+            $leaf['status'][$st]++;
+        };
+
         $rows = DB::run(
-            "SELECT json_payload, submitted_at FROM submissions_cache WHERE form_id = ? AND $scopeSql",
+            "SELECT submission_uid, json_payload, submitted_at FROM submissions_cache WHERE form_id = ? AND $scopeSql",
             array_merge([$formId], $scopeP)
         )->fetchAll();
 
@@ -197,6 +237,19 @@ class Stats {
             if ($dd['has_attachments']) $attWith++;
             foreach ($attByKind as $k => $_) $attByKind[$k] += $dd['attachments_by_kind'][$k] ?? 0;
             if ($dd['has_geo']) $geoWith++;
+
+            // Desglose por equipo → encuestador.
+            if ($teamField !== null) {
+                $tv = $payload[$teamField] ?? null;
+                $ev = $payload[$enumPath] ?? null;
+                $tKey = ($tv === null || $tv === '' || is_array($tv)) ? '—' : (string) $tv;
+                $eKey = ($ev === null || $ev === '' || is_array($ev)) ? '—' : (string) $ev;
+                $st = $statusMap[$r['submission_uid']] ?? 'pending'; // sin revisión → pendiente
+                if (!isset($teamAcc[$tKey])) $teamAcc[$tKey] = ['leaf' => $newLeaf(), 'enums' => []];
+                if (!isset($teamAcc[$tKey]['enums'][$eKey])) $teamAcc[$tKey]['enums'][$eKey] = $newLeaf();
+                $bump($teamAcc[$tKey]['leaf'], $dd, $r['submitted_at'], $st);
+                $bump($teamAcc[$tKey]['enums'][$eKey], $dd, $r['submitted_at'], $st);
+            }
         }
 
         // --- Ensamblar «por pregunta»: etiquetas resueltas, ordenado desc, top 20 + otros. ---
@@ -281,6 +334,58 @@ class Stats {
             ];
         }
 
+        // --- Por equipo → encuestador: orden desc por volumen, top 20 + «otros». ---
+        $byTeam = [];
+        $teamOthers = 0;
+        if ($teamField !== null) {
+            // Convierte una hoja en su bloque de métricas. `$base` = denominador del % (el
+            // equipo se mide sobre el total; el encuestador, sobre el total de su equipo).
+            $finalize = function (array $leaf, int $base) use ($includeReview): array {
+                $dur = null;
+                if ($leaf['dur']) {
+                    sort($leaf['dur']);
+                    $n = count($leaf['dur']);
+                    $median = $n % 2
+                        ? $leaf['dur'][intdiv($n, 2)]
+                        : intdiv($leaf['dur'][$n / 2 - 1] + $leaf['dur'][$n / 2], 2);
+                    $dur = ['mean_s' => (int) round(array_sum($leaf['dur']) / $n), 'median_s' => (int) $median, 'count' => $n];
+                }
+                $out = [
+                    'count'             => $leaf['count'],
+                    'pct'               => $base > 0 ? round($leaf['count'] * 100 / $base, 1) : 0,
+                    'duration'          => $dur,
+                    'completeness_mean' => $leaf['compN'] > 0 ? round($leaf['compSum'] / $leaf['compN'], 4) : null,
+                    'last_activity'     => $leaf['last'],
+                ];
+                if ($includeReview) $out['status'] = $leaf['status']; // mezcla de revisión: solo interna
+                return $out;
+            };
+
+            uasort($teamAcc, fn($a, $b) => $b['leaf']['count'] <=> $a['leaf']['count']);
+            $rank = 0;
+            foreach ($teamAcc as $tKey => $t) {
+                if ($rank++ >= 20) { $teamOthers += $t['leaf']['count']; continue; }
+                $teamCount = $t['leaf']['count'];
+
+                $enums = $t['enums'];
+                uasort($enums, fn($a, $b) => $b['count'] <=> $a['count']);
+                $eList = [];
+                $eOthers = 0;
+                $erank = 0;
+                foreach ($enums as $eKey => $leaf) {
+                    if ($erank++ >= 20) { $eOthers += $leaf['count']; continue; }
+                    $eName = $eKey === '—' ? '—' : (($labelsOn && isset($enumOptMap[$eKey])) ? $enumOptMap[$eKey] : $eKey);
+                    $eList[] = ['name' => $eName] + $finalize($leaf, $teamCount);
+                }
+
+                $tName = $tKey === '—' ? '—' : (($labelsOn && isset($teamOptMap[$tKey])) ? $teamOptMap[$tKey] : $tKey);
+                $byTeam[] = ['name' => $tName] + $finalize($t['leaf'], $total) + [
+                    'enumerators'       => $eList,
+                    'enumerator_others' => $eOthers,
+                ];
+            }
+        }
+
         $out = [
             'total'           => $total,
             'last_submission' => $lastSub,
@@ -310,6 +415,19 @@ class Stats {
         ];
         if ($includeReview) {
             $out['by_status'] = $byStatus;
+        }
+        // Desglose por equipo (solo si está configurado y el campo es visible en este alcance).
+        if ($teamField !== null) {
+            $out['by_team']     = $byTeam;
+            $out['team_others'] = $teamOthers;
+            $out['team_field']  = [
+                'key'   => $teamField,
+                'label' => $labelsOn ? ($labels[$teamField] ?? $teamField) : $teamField,
+            ];
+            $out['enumerator_field'] = [
+                'key'   => $enumPath,
+                'label' => $enumIsField ? ($labelsOn ? ($labels[$enumPath] ?? $enumPath) : $enumPath) : null,
+            ];
         }
         return $out;
     }

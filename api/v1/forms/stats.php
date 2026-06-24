@@ -13,7 +13,7 @@ if (Request::method() !== 'GET') {
     ErrorResponse::send('VALIDATION_ERROR', 'Método no permitido', 405);
 }
 
-$form = DB::run('SELECT id, name, schema_json, deployment_status FROM forms WHERE id = ? AND active = 1', [$formId])->fetch();
+$form = DB::run('SELECT id, name, schema_json, deployment_status, stats_team_field, stats_enumerator_field FROM forms WHERE id = ? AND active = 1', [$formId])->fetch();
 if (!$form) {
     ErrorResponse::send('NOT_FOUND', 'Formulario no encontrado');
 }
@@ -23,7 +23,10 @@ $scope      = RowScope::ruleForUser($user, $formId);
 $fieldScope = FieldScope::ruleForUser($user, $formId);
 $schemaRaw  = $form['schema_json'] ? json_decode($form['schema_json'], true) : null;
 
-$stats = Stats::compute($formId, $schemaRaw, $scope, $fieldScope, $user['locale'], true);
+$stats = Stats::compute(
+    $formId, $schemaRaw, $scope, $fieldScope, $user['locale'], true,
+    $form['stats_team_field'] ?: null, $form['stats_enumerator_field'] ?: null
+);
 
 ErrorResponse::ok(array_merge([
     'form'              => ['id' => (int) $form['id'], 'name' => $form['name']],

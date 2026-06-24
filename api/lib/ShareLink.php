@@ -49,7 +49,8 @@ class ShareLink {
         if ($token === '') return null;
         $row = DB::run(
             'SELECT sl.*, f.name AS form_name, f.schema_json, f.active AS form_active,
-                    f.deployment_status, f.last_synced_at
+                    f.deployment_status, f.last_synced_at,
+                    f.stats_team_field, f.stats_enumerator_field
              FROM share_links sl
              JOIN forms f ON f.id = sl.form_id
              WHERE sl.token = ?',

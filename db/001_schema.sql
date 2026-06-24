@@ -69,6 +69,15 @@ CREATE TABLE IF NOT EXISTS forms (
     -- muestra «Sin sincronizar» en vez de «0 envíos». `last_synced_at` no sirve para
     -- esto porque también lo fija el descubrimiento de formularios.
     submissions_synced_at DATETIME NULL,
+    -- Desglose de estadísticas «por equipo → encuestador» (opcional, por formulario).
+    -- `stats_team_field`: ruta del campo del envío que identifica el EQUIPO/grupo
+    --   (hoja `team` o ruta de grupo `g/team`). NULL = desglose por equipo apagado.
+    -- `stats_enumerator_field`: ruta del campo que identifica al ENCUESTADOR dentro
+    --   del equipo. NULL = usar `_submitted_by` (el usuario Kobo que envió).
+    -- Los pone un admin desde la pantalla de ajustes del formulario; la sincronización
+    -- no los toca (actualiza columnas concretas).
+    stats_team_field      VARCHAR(255) NULL,
+    stats_enumerator_field VARCHAR(255) NULL,
     sync_status         ENUM('pending', 'success', 'error') DEFAULT 'pending',
     last_sync_error     TEXT,
     active              TINYINT(1) DEFAULT 1,
