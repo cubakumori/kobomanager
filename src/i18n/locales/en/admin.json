@@ -195,7 +195,12 @@
     "tableFreeze": "Tables: frozen columns",
     "tableFreezeDesc": "When a table scrolls sideways, the first column can stay pinned as a reference.",
     "tableFreeze_first": "Freeze the first column",
-    "tableFreeze_none": "Do not freeze"
+    "tableFreeze_none": "Do not freeze",
+    "headerLines": "Tables: header lines",
+    "headerLinesDesc": "Long questions can wrap to several lines (with a capped width) instead of stretching the column to one long line. More lines show more text but make headers taller.",
+    "headerLines_1": "One line (no wrap)",
+    "headerLines_2": "Up to 2 lines",
+    "headerLines_3": "Up to 3 lines"
   },
   "audit": {
     "title": "Audit log",

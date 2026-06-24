@@ -8,10 +8,11 @@ import { makeLabeler } from '../composables/labels'
 import LeafletMap from '../components/LeafletMap.vue'
 import AttachmentsGallery from '../components/AttachmentsGallery.vue'
 import StatsPanels from '../components/StatsPanels.vue'
-import { useTableFreeze } from '../composables/appConfig'
+import { useTableFreeze, useTableHeaderLines } from '../composables/appConfig'
 
 const { t } = useI18n()
 const { freezeFirst } = useTableFreeze()
+const { headerLinesClass } = useTableHeaderLines()
 const route = useRoute()
 const router = useRouter()
 const token = computed(() => String(route.params.token))
@@ -378,7 +379,9 @@ onMounted(loadMeta)
                 <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
                   <tr>
                     <th class="px-4 py-3" :class="freezeFirst() ? 'sticky left-0 z-10 bg-slate-50' : ''">{{ $t('share.colSubmitted') }}</th>
-                    <th v-for="c in columns" :key="c" class="px-4 py-3" :title="labeler.fullLabel(c)">{{ labeler.label(c) }}</th>
+                    <th v-for="c in columns" :key="c" class="px-4 py-3 align-bottom" :title="labeler.fullLabel(c)">
+                      <div :class="headerLinesClass()">{{ labeler.label(c) }}</div>
+                    </th>
                     <th v-if="meta.expose_detail" class="px-4 py-3"></th>
                   </tr>
                 </thead>

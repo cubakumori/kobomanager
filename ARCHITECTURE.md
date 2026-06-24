@@ -339,7 +339,11 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   exposes `useTableFreeze()`; each table applies a conditional sticky class to its first
   `th`/`td` (solid background + `group-hover`, capped at ~40% of the viewport width on
   small screens). In the submissions table the second pinned column ("Submitted") only
-  freezes from 540 px up.
+  freezes from 540 px up. A sibling global setting `table_header_lines` (`1` | `2` default
+  | `3`, same Settings → `/config` → `appConfig` path, `useTableHeaderLines()`) caps how
+  many lines a long column **header** wraps to (`line-clamp` + max-width; full text in the
+  `title`), so a long question no longer stretches the column to one wide line. Applied to
+  the submissions table and the public share table.
 - **PWA / offline**: `vite-plugin-pwa` in `injectManifest` mode with a hand-written service
   worker (`src/sw.js`): app shell precached, SPA navigations fall back to `index.html`
   (denylisting `/api` so CSV/attachment downloads hit the network), API GETs cached

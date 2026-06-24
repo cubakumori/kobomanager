@@ -31,6 +31,8 @@ if (Request::method() === 'GET') {
         'show_theme_toggle'          => Settings::showThemeToggle(),
         'table_freeze'               => Settings::tableFreeze(),
         'valid_table_freeze'         => Settings::VALID_TABLE_FREEZE,
+        'table_header_lines'         => Settings::tableHeaderLines(),
+        'valid_table_header_lines'   => Settings::VALID_TABLE_HEADER_LINES,
         'support_page_enabled'       => Settings::supportPageEnabled(),
         'landing_cta_enabled'        => Settings::landingCtaEnabled(),
     ]);
@@ -96,6 +98,15 @@ if (Request::method() === 'PUT') {
         }
         Settings::set('table_freeze', $tf);
         $out['table_freeze'] = $tf;
+    }
+
+    if (array_key_exists('table_header_lines', $body)) {
+        $hl = (int) $body['table_header_lines'];
+        if (!in_array($hl, Settings::VALID_TABLE_HEADER_LINES, true)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Número de líneas de encabezado no válido');
+        }
+        Settings::set('table_header_lines', $hl);
+        $out['table_header_lines'] = $hl;
     }
 
     if (array_key_exists('label_mode', $body)) {

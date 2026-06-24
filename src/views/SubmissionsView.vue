@@ -11,12 +11,13 @@ import ReviewBadge from '../components/ReviewBadge.vue'
 import Skeleton from '../components/Skeleton.vue'
 import Modal from '../components/Modal.vue'
 import RowFilterEditor from '../components/RowFilterEditor.vue'
-import { useTableFreeze } from '../composables/appConfig'
+import { useTableFreeze, useTableHeaderLines } from '../composables/appConfig'
 
 const { tableLabel, tableValue } = useDerivedFormat()
 
 const { t } = useI18n()
 const { freezeFirst } = useTableFreeze()
+const { headerLinesClass } = useTableHeaderLines()
 const viewOpen = ref(false) // modal «Vista» (revisión / orden / por página)
 const route = useRoute()
 const formId = computed(() => Number(route.params.id))
@@ -512,7 +513,9 @@ onMounted(() => { loadAdvFilter(); load() })
               class="whitespace-nowrap px-4 py-3"
               :class="freezeFirst() ? (canReview ? 'min-[540px]:sticky min-[540px]:left-12 z-20 bg-accent-50 dark:bg-slate-50' : 'sticky left-0 z-20 bg-accent-50 dark:bg-slate-50') : ''"
             >{{ $t('submissions.colSubmitted') }}</th>
-            <th v-for="c in shownColumns" :key="c" class="whitespace-nowrap px-4 py-3" :title="colFullLabel(c)">{{ colLabel(c) }}</th>
+            <th v-for="c in shownColumns" :key="c" class="px-4 py-3 align-bottom" :title="colFullLabel(c)">
+              <div :class="headerLinesClass()">{{ colLabel(c) }}</div>
+            </th>
             <th class="px-4 py-3">{{ $t('submissions.colReview') }}</th>
             <th class="px-4 py-3"></th>
           </tr>

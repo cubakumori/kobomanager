@@ -189,6 +189,19 @@ class Settings {
     }
 
     /**
+     * Nº máximo de líneas a las que se ajusta el encabezado de las columnas en
+     * las tablas de envíos (1 = una sola línea, como antes; 2|3 = el encabezado
+     * envuelve hasta N líneas con un ancho acotado, recortando con «…» si sobra).
+     */
+    public const VALID_TABLE_HEADER_LINES = [1, 2, 3];
+    private const DEFAULT_TABLE_HEADER_LINES = 2;
+
+    public static function tableHeaderLines(): int {
+        $v = (int) self::get('table_header_lines', self::DEFAULT_TABLE_HEADER_LINES);
+        return in_array($v, self::VALID_TABLE_HEADER_LINES, true) ? $v : self::DEFAULT_TABLE_HEADER_LINES;
+    }
+
+    /**
      * Visibilidad de la parte pública «de escaparate». Ambos activados por defecto.
      *   - support_page_enabled → la página «Apoyar» (/apoyar) y sus enlaces.
      *   - landing_cta_enabled  → la banda de cierre de la portada («monta tu instancia»).

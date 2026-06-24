@@ -195,7 +195,12 @@
     "tableFreeze": "Tablas: columnas congeladas",
     "tableFreezeDesc": "Al desplazar una tabla lateralmente, la primera columna puede quedar fija como referencia.",
     "tableFreeze_first": "Congelar la primera columna",
-    "tableFreeze_none": "No congelar"
+    "tableFreeze_none": "No congelar",
+    "headerLines": "Tablas: líneas del encabezado",
+    "headerLinesDesc": "Las preguntas largas pueden ajustarse a varias líneas (con ancho acotado) en lugar de estirar la columna a una sola línea. Más líneas muestran más texto pero suben la altura del encabezado.",
+    "headerLines_1": "Una línea (sin ajustar)",
+    "headerLines_2": "Hasta 2 líneas",
+    "headerLines_3": "Hasta 3 líneas"
   },
   "audit": {
     "title": "Auditoría",

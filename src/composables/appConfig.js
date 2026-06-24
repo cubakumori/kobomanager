@@ -16,6 +16,13 @@ const VALID = ['first', 'none']
 const cached = localStorage.getItem(CACHE_KEY)
 const tableFreeze = ref(VALID.includes(cached) ? cached : 'first')
 
+// Nº de líneas a las que se ajusta el encabezado de columna en las tablas (1|2|3).
+// Cacheado igual que table_freeze para pintar bien desde el primer render.
+const HEADER_LINES_KEY = 'km.cfg.tableHeaderLines'
+const VALID_LINES = [1, 2, 3]
+const cachedLines = Number(localStorage.getItem(HEADER_LINES_KEY))
+const tableHeaderLines = ref(VALID_LINES.includes(cachedLines) ? cachedLines : 2)
+
 // Modo demo (instancia pública de demostración): banner global + acciones
 // sensibles deshabilitadas. Sin caché local: que un banner de demo nunca se
 // quede pegado en una instancia normal (y viceversa); un parpadeo es aceptable.
@@ -42,6 +49,11 @@ const configReady = publicApi
       tableFreeze.value = v
       localStorage.setItem(CACHE_KEY, v)
     }
+    const hl = Number(data.data.table_header_lines)
+    if (VALID_LINES.includes(hl)) {
+      tableHeaderLines.value = hl
+      localStorage.setItem(HEADER_LINES_KEY, String(hl))
+    }
     demoMode.value = !!data.data.demo_mode
     demoResetMinutes.value = Number(data.data.demo_reset_minutes) || 60
     demoLoginAdmin.value = String(data.data.demo_login_admin || '')
@@ -61,6 +73,20 @@ const configReady = publicApi
 export function useTableFreeze() {
   const freezeFirst = () => tableFreeze.value === 'first'
   return { tableFreeze, freezeFirst }
+}
+
+// Clases (literales, para que Tailwind las detecte) del envoltorio del encabezado
+// según el nº de líneas: 1 = una sola línea; 2|3 = envuelve y recorta con «…».
+const HEADER_LINES_CLASS = {
+  1: 'whitespace-nowrap',
+  2: 'whitespace-normal break-words line-clamp-2 max-w-[15rem]',
+  3: 'whitespace-normal break-words line-clamp-3 max-w-[15rem]',
+}
+
+/** Ajuste de líneas del encabezado de columna (reactivo) + su clase CSS. */
+export function useTableHeaderLines() {
+  const headerLinesClass = () => HEADER_LINES_CLASS[tableHeaderLines.value] || HEADER_LINES_CLASS[1]
+  return { tableHeaderLines, headerLinesClass }
 }
 
 /** Modo demo (reactivo): flag, minutos del ciclo de reset y credenciales por rol. */

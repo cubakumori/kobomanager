@@ -19,6 +19,12 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Ajuste «líneas del encabezado» en tablas** (`table_header_lines`: 1/2/3, global,
+  por defecto 2) — los encabezados de columna largos se ajustan a varias líneas con un
+  ancho acotado (`line-clamp` + ancho máx., texto completo en el `title`) en vez de
+  estirar la columna a una sola línea muy ancha. Mismo patrón que `table_freeze`
+  (Settings → `/config` → `appConfig` cacheado), aplicado a la tabla de envíos y a la
+  vista pública de enlaces; control en Ajustes. Ortogonal a «Acortar nombres de campo».
 - **Enlaces compartidos: vista de estadísticas** (`expose_stats`). Un enlace público
   puede mostrar el panel de Estadísticas del formulario (mismas gráficas que la vista
   interna), con su filtro de filas y ocultado de columnas aplicados, pero **sin el

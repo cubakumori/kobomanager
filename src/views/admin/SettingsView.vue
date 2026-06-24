@@ -5,7 +5,7 @@ import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 import { useAuthStore } from '../../stores/auth'
 import { setLocale } from '../../i18n'
-import { useTableFreeze, useDemoMode } from '../../composables/appConfig'
+import { useTableFreeze, useTableHeaderLines, useDemoMode } from '../../composables/appConfig'
 import Skeleton from '../../components/Skeleton.vue'
 
 const { t } = useI18n()
@@ -26,10 +26,13 @@ const showThemeToggle = ref(true)
 const supportPageEnabled = ref(true)
 const landingCtaEnabled = ref(true)
 const { tableFreeze: appTableFreeze } = useTableFreeze()
+const { tableHeaderLines: appHeaderLines } = useTableHeaderLines()
 // En demo los ajustes globales son de solo lectura (PUT bloqueado).
 const { demoMode } = useDemoMode()
 const tableFreeze = ref('first')
 const validTableFreeze = ref(['first', 'none'])
+const tableHeaderLines = ref(2)
+const validTableHeaderLines = ref([1, 2, 3])
 const mailConfigured = ref(false)
 const viewerActions = ref({ enketo: false, update: false, resync: false, login: false })
 const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login']
@@ -64,6 +67,8 @@ async function load() {
     if (data.data.landing_cta_enabled != null) landingCtaEnabled.value = data.data.landing_cta_enabled
     tableFreeze.value = data.data.table_freeze
     validTableFreeze.value = data.data.valid_table_freeze ?? validTableFreeze.value
+    tableHeaderLines.value = data.data.table_header_lines ?? tableHeaderLines.value
+    validTableHeaderLines.value = data.data.valid_table_header_lines ?? validTableHeaderLines.value
     mailConfigured.value = data.data.mail_configured
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     sharePasswordPolicy.value = data.data.share_password_policy
@@ -107,6 +112,7 @@ async function save() {
       support_page_enabled: supportPageEnabled.value,
       landing_cta_enabled: landingCtaEnabled.value,
       table_freeze: tableFreeze.value,
+      table_header_lines: tableHeaderLines.value,
       viewer_actions: viewerActions.value,
       share_password_policy: sharePasswordPolicy.value,
       share_attachments_policy: shareAttachmentsPolicy.value,
@@ -124,6 +130,11 @@ async function save() {
     if (data.data.show_theme_toggle != null) showThemeToggle.value = data.data.show_theme_toggle
     if (data.data.support_page_enabled != null) supportPageEnabled.value = data.data.support_page_enabled
     if (data.data.landing_cta_enabled != null) landingCtaEnabled.value = data.data.landing_cta_enabled
+    if (data.data.table_header_lines != null) {
+      tableHeaderLines.value = data.data.table_header_lines
+      appHeaderLines.value = data.data.table_header_lines
+      try { localStorage.setItem('km.cfg.tableHeaderLines', String(data.data.table_header_lines)) } catch { /* noop */ }
+    }
     if (data.data.table_freeze != null) {
       tableFreeze.value = data.data.table_freeze
       // Reflejar el cambio en esta misma pestaña (módulo reactivo + caché local).
@@ -271,6 +282,21 @@ onMounted(load)
           @change="saved = false"
         >
           <option v-for="tf in validTableFreeze" :key="tf" :value="tf">{{ $t('settings.tableFreeze_' + tf) }}</option>
+        </select>
+      </section>
+
+      <!-- Líneas del encabezado de columna en tablas -->
+      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.headerLines') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.headerLinesDesc') }}</p>
+        </div>
+        <select
+          v-model.number="tableHeaderLines"
+          class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          @change="saved = false"
+        >
+          <option v-for="hl in validTableHeaderLines" :key="hl" :value="hl">{{ $t('settings.headerLines_' + hl) }}</option>
         </select>
       </section>
 
