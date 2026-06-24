@@ -4,7 +4,7 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
-## [Unreleased]
+## [1.6.0] - 2026-06-24
 
 > **Nota de actualización (esquema).** Esta versión añade dos columnas a `forms`
 > (`stats_team_field`, `stats_enumerator_field`). Instalación nueva: nada que hacer
@@ -27,6 +27,13 @@ Todos los cambios notables de KoboManager. El formato sigue
   desglose para ese usuario. Disponible también en los enlaces públicos con
   `expose_stats` (con volumen y calidad, pero **sin** la mezcla de revisión,
   coherente con omitir el estado de revisión interno).
+
+### Cambiado
+
+- **Portada: jerarquía de features** — «Seguimiento por equipo» y «Permisos por
+  columna» pasan de chip a **tarjeta destacada** en la sección «Y mucho más» (junto
+  a los enlaces públicos), en un grid responsive de tres columnas. La Guía in-app
+  documenta el desglose por equipo → encuestador.
 
 ## [1.5.0] - 2026-06-24
 
