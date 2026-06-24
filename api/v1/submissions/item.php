@@ -90,6 +90,9 @@ if ($method === 'GET') {
         'submitted_at'   => $sub['submitted_at'],
         'last_synced_at' => $sub['last_synced_at'],
         'data'           => $payload,
+        // Claves de metadato presentes en este envío (no editables): el detalle las
+        // muestra pero el modo edición no las ofrece (espejo de la validación del PUT).
+        'meta_fields'    => array_values(array_filter(array_keys($payload), fn($k) => FormSchema::isMetadataField((string) $k, $schemaRaw))),
         'review_status'  => $reviews[0]['status'] ?? 'pending',
         'reviews'        => $reviews,
         'can_edit'       => Auth::canForm($user, $formId, 'edit'),
@@ -116,9 +119,10 @@ if ($method === 'PUT') {
     if (!is_array($data) || $data === []) {
         ErrorResponse::send('VALIDATION_ERROR', 'Faltan campos a actualizar (data)');
     }
-    // No se permite tocar metadatos de Kobo (campos que empiezan por _).
+    // Solo se editan respuestas a preguntas: se vetan los metadatos (campos `_…`,
+    // `meta/…`, `formhub/…`, `__version__`, start/end/today/deviceid/calculate…).
     foreach (array_keys($data) as $k) {
-        if (str_starts_with((string) $k, '_')) {
+        if (FormSchema::isMetadataField((string) $k, $schemaRaw)) {
             ErrorResponse::send('VALIDATION_ERROR', "No se puede editar el metadato: $k");
         }
         // No se puede editar un campo que el usuario no ve (oculto por columna).

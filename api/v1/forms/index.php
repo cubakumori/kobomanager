@@ -13,6 +13,16 @@ if (Request::method() !== 'GET') {
     ErrorResponse::send('VALIDATION_ERROR', 'Método no permitido', 405);
 }
 
+// Orden de las tarjetas (ajuste global). Lista blanca: la clave validada por
+// Settings::formsOrder() mapea a un fragmento SQL fijo (nunca se interpola texto libre).
+$ORDER_SQL = [
+    'account_name'   => 'a.label, f.name',
+    'name'           => 'f.name',
+    'recent_sync'    => 'f.submissions_synced_at IS NULL, f.submissions_synced_at DESC, f.name',
+    'recent_created' => 'f.created_at DESC, f.name',
+];
+$orderBy = $ORDER_SQL[Settings::formsOrder()] ?? $ORDER_SQL['account_name'];
+
 if ($user['role'] === 'admin') {
     $rows = DB::run(
         'SELECT f.id, f.name, a.id AS account_id, a.label AS account_label, f.last_synced_at, f.sync_status,
@@ -22,7 +32,7 @@ if ($user['role'] === 'admin') {
          FROM forms f
          JOIN kobo_accounts a ON a.id = f.kobo_account_id
          WHERE f.active = 1
-         ORDER BY a.label, f.name'
+         ORDER BY ' . $orderBy
     )->fetchAll();
 } else {
     $rows = DB::run(
@@ -34,7 +44,7 @@ if ($user['role'] === 'admin') {
          JOIN kobo_accounts a ON a.id = f.kobo_account_id
          JOIN user_form_permissions p ON p.form_id = f.id AND p.user_id = ? AND p.can_view = 1
          WHERE f.active = 1
-         ORDER BY a.label, f.name',
+         ORDER BY ' . $orderBy,
         [$user['id']]
     )->fetchAll();
 

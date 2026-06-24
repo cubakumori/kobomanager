@@ -17,6 +17,39 @@ class FormSchema {
         'phonenumber', 'username', 'simserial', 'subscriberid', 'calculate'];
 
     /**
+     * Nombres hoja de metadatos que NUNCA son preguntas y por tanto no deben editarse,
+     * aunque el formulario use los nombres por defecto (sin esquema sincronizado).
+     * Cubre los metadatos auto-generados por Kobo/ODK además de los tipos del survey.
+     */
+    private const META_LEAF_NAMES = ['start', 'end', 'today', 'deviceid', 'subscriberid',
+        'simserial', 'phonenumber', 'username', 'audit', 'instanceID', 'instanceName',
+        'deprecatedID', 'rootUuid', 'uuid'];
+
+    /**
+     * ¿La clave `$key` de un envío es un metadato que NO debe editarse? Combina tres
+     * señales para ser robusto aun sin esquema sincronizado:
+     *   - prefijos estructurales: `_…`, `meta/…`, `formhub/…`, y la clave `__version__`;
+     *   - nombres hoja estándar de metadatos (ver META_LEAF_NAMES);
+     *   - los campos de tipo metadato/`calculate` del esquema (`schema.meta_fields`),
+     *     por si el formulario les puso un nombre personalizado.
+     * Lo usan el endpoint de edición (validación) y el detalle (qué se ofrece editar).
+     */
+    public static function isMetadataField(string $key, ?array $schema = null): bool {
+        if ($key === '' || $key[0] === '_') return true;
+        if ($key === '__version__') return true;
+        if (str_starts_with($key, 'meta/') || str_starts_with($key, 'formhub/')) return true;
+
+        $slash = strrpos($key, '/');
+        $leaf  = $slash === false ? $key : substr($key, $slash + 1);
+        if (in_array($leaf, self::META_LEAF_NAMES, true)) return true;
+
+        if ($schema && !empty($schema['meta_fields']) && in_array($key, $schema['meta_fields'], true)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Descarga el contenido del asset y guarda el esquema normalizado en `forms`.
      * No lanza: si el contenido no se puede leer, deja el esquema como está.
      */
@@ -47,9 +80,10 @@ class FormSchema {
         $survey       = $content['survey'] ?? [];
         $choices      = $content['choices'] ?? [];
 
-        $fields = [];
-        $meta   = []; // campos meta de interés (start/end/today) → su ruta en el payload
-        $stack  = []; // pila de nombres de grupo/repeat para reconstruir la ruta
+        $fields     = [];
+        $meta       = []; // campos meta de interés (start/end/today) → su ruta en el payload
+        $metaFields = []; // rutas de TODOS los campos metadato/calculate (para no editarlos)
+        $stack      = []; // pila de nombres de grupo/repeat para reconstruir la ruta
         foreach ($survey as $row) {
             $type = (string) ($row['type'] ?? '');
             $name = $row['name'] ?? null;
@@ -62,13 +96,22 @@ class FormSchema {
                 array_pop($stack);
                 continue;
             }
+            $full = ($name !== null && $name !== '')
+                ? ($stack ? implode('/', $stack) . '/' . $name : $name)
+                : null;
             // Campos meta de marca de tiempo: no son datos con etiqueta, pero su nombre
             // real (puede no ser «start»/«end») hace falta para calcular la duración.
-            if (in_array($type, ['start', 'end', 'today'], true) && $name !== null && $name !== '') {
-                $meta[$type] = $stack ? implode('/', $stack) . '/' . $name : $name;
+            if (in_array($type, ['start', 'end', 'today'], true) && $full !== null) {
+                $meta[$type]  = $full;
+                $metaFields[] = $full;
                 continue;
             }
             if ($name === null || $name === '' || in_array($type, self::SKIP_TYPES, true)) {
+                // Metadatos con valor en el payload (deviceid/audit/calculate/…, no `note`):
+                // se registran por su ruta para vetarlos en la edición.
+                if ($full !== null && $type !== 'note' && in_array($type, self::SKIP_TYPES, true)) {
+                    $metaFields[] = $full;
+                }
                 continue;
             }
 
@@ -79,7 +122,6 @@ class FormSchema {
                 $list = $m[1];
             }
 
-            $full = $stack ? implode('/', $stack) . '/' . $name : $name;
             $fields[$full] = [
                 'leaf'  => $name,
                 'type'  => $type,
@@ -103,6 +145,7 @@ class FormSchema {
             'fields'           => $fields,
             'choices'          => $choiceMap,
             'meta'             => $meta,
+            'meta_fields'      => array_values(array_unique($metaFields)),
         ];
     }
 

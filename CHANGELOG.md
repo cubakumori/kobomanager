@@ -32,6 +32,17 @@ Todos los cambios notables de KoboManager. El formato sigue
     historial interno como una entrada de origen **«Kobo»**. En conflicto, **gana Kobo**.
   - En **modo demo** el push se omite (la revisión sigue siendo local; la cuenta Kobo real
     no se toca).
+- **Orden configurable de «Mis formularios»** — nuevo ajuste global (Admin → Ajustes)
+  para ordenar las tarjetas: cuenta + nombre (por defecto), nombre, últimos sincronizados
+  primero, o añadidos más recientes primero.
+
+### Cambiado
+
+- **La edición de envíos solo permite respuestas a preguntas.** Antes el backend solo
+  vetaba los campos `_…`; ahora se bloquean también los metadatos que no son preguntas
+  (`meta/…`, `formhub/…`, `__version__`, `start`/`end`/`today`/`deviceid`/`calculate`…),
+  tanto en la validación del backend como en la interfaz de edición (siguen visibles en
+  modo lectura, pero ya no se ofrecen para editar).
 
 ## [1.6.0] - 2026-06-24
 

@@ -32,6 +32,8 @@ const { tableHeaderLines: appHeaderLines } = useTableHeaderLines()
 const { demoMode } = useDemoMode()
 const tableFreeze = ref('first')
 const validTableFreeze = ref(['first', 'none'])
+const formsOrder = ref('account_name')
+const validFormsOrder = ref(['account_name', 'name', 'recent_sync', 'recent_created'])
 const tableHeaderLines = ref(2)
 const validTableHeaderLines = ref([1, 2, 3])
 const mailConfigured = ref(false)
@@ -71,6 +73,8 @@ async function load() {
     validTableFreeze.value = data.data.valid_table_freeze ?? validTableFreeze.value
     tableHeaderLines.value = data.data.table_header_lines ?? tableHeaderLines.value
     validTableHeaderLines.value = data.data.valid_table_header_lines ?? validTableHeaderLines.value
+    if (data.data.forms_order != null) formsOrder.value = data.data.forms_order
+    validFormsOrder.value = data.data.valid_forms_order ?? validFormsOrder.value
     mailConfigured.value = data.data.mail_configured
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     sharePasswordPolicy.value = data.data.share_password_policy
@@ -116,6 +120,7 @@ async function save() {
       landing_cta_enabled: landingCtaEnabled.value,
       table_freeze: tableFreeze.value,
       table_header_lines: tableHeaderLines.value,
+      forms_order: formsOrder.value,
       viewer_actions: viewerActions.value,
       share_password_policy: sharePasswordPolicy.value,
       share_attachments_policy: shareAttachmentsPolicy.value,
@@ -145,6 +150,7 @@ async function save() {
       appTableFreeze.value = data.data.table_freeze
       try { localStorage.setItem('km.cfg.tableFreeze', data.data.table_freeze) } catch { /* noop */ }
     }
+    if (data.data.forms_order != null) formsOrder.value = data.data.forms_order
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     if (data.data.share_password_policy) sharePasswordPolicy.value = data.data.share_password_policy
     if (data.data.share_attachments_policy) shareAttachmentsPolicy.value = data.data.share_attachments_policy
@@ -286,6 +292,21 @@ onMounted(load)
           @change="saved = false"
         >
           <option v-for="tf in validTableFreeze" :key="tf" :value="tf">{{ $t('settings.tableFreeze_' + tf) }}</option>
+        </select>
+      </section>
+
+      <!-- Orden de las tarjetas en «Mis formularios» -->
+      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.formsOrder') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.formsOrderDesc') }}</p>
+        </div>
+        <select
+          v-model="formsOrder"
+          class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          @change="saved = false"
+        >
+          <option v-for="fo in validFormsOrder" :key="fo" :value="fo">{{ $t('settings.formsOrder_' + fo) }}</option>
         </select>
       </section>
 

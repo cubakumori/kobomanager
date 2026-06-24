@@ -36,6 +36,8 @@ if (Request::method() === 'GET') {
         'notifications_default_on'   => Settings::notificationsDefaultOn(),
         'support_page_enabled'       => Settings::supportPageEnabled(),
         'landing_cta_enabled'        => Settings::landingCtaEnabled(),
+        'forms_order'                => Settings::formsOrder(),
+        'valid_forms_order'          => Settings::VALID_FORMS_ORDER,
     ]);
 }
 
@@ -113,6 +115,15 @@ if (Request::method() === 'PUT') {
         }
         Settings::set('table_header_lines', $hl);
         $out['table_header_lines'] = $hl;
+    }
+
+    if (array_key_exists('forms_order', $body)) {
+        $ord = (string) $body['forms_order'];
+        if (!in_array($ord, Settings::VALID_FORMS_ORDER, true)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Orden de formularios no válido');
+        }
+        Settings::set('forms_order', $ord);
+        $out['forms_order'] = $ord;
     }
 
     if (array_key_exists('label_mode', $body)) {

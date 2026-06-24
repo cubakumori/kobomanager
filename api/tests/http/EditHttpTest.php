@@ -66,6 +66,29 @@ final class EditHttpTest extends HttpTestCase
         @unlink($jar);
     }
 
+    public function testCannotEditMetadataFields(): void
+    {
+        $this->seedUser('admin', 'admin@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $formId = $this->seedForm($accId);
+        $this->seedSubmission($formId, 'm1', [
+            '_id' => 7001, 'name' => 'Ana', 'start' => '2024-01-01T08:00:00',
+            'today' => '2024-01-01', 'deviceid' => 'dev123', '__version__' => 'vABC',
+            'meta/instanceID' => 'uuid:zzz',
+        ]);
+        $jar = $this->login('admin@test.local', 'Secret123!');
+
+        // Cada metadato se rechaza (422) y nada se escribe en Kobo.
+        foreach (['start', 'today', 'deviceid', '__version__', 'meta/instanceID'] as $meta) {
+            $res = $this->request('PUT', 'submissions/m1', ['data' => [$meta => 'x']], $jar);
+            $this->assertSame(422, $res['status'], "editar $meta debería fallar: " . $res['raw']);
+            $this->assertSame('VALIDATION_ERROR', $res['json']['error']['code'], $meta);
+        }
+        // Una pregunta real sí se puede editar.
+        $this->assertSame(200, $this->request('PUT', 'submissions/m1', ['data' => ['name' => 'Bea']], $jar)['status']);
+        @unlink($jar);
+    }
+
     public function testViewerWithoutEditCannotEdit(): void
     {
         $uid = $this->seedUser('viewer', 'v@test.local', 'Secret123!');

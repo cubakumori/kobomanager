@@ -230,6 +230,23 @@ class Settings {
         return (bool) self::get('landing_cta_enabled', self::DEFAULT_LANDING_CTA);
     }
 
+    /**
+     * Orden de las tarjetas en «Mis formularios» (global, configurable por el admin):
+     *   'account_name'   → cuenta + nombre (por defecto, alfabético).
+     *   'name'           → nombre del formulario (A→Z).
+     *   'recent_sync'    → últimos envíos sincronizados primero (sin sincronizar al final).
+     *   'recent_created' → añadidos más recientemente primero.
+     * El SQL de cada opción vive en v1/forms/index.php (lista blanca, nunca interpolado).
+     */
+    public const VALID_FORMS_ORDER = ['account_name', 'name', 'recent_sync', 'recent_created'];
+    private const DEFAULT_FORMS_ORDER = 'account_name';
+
+    /** Criterio de orden de «Mis formularios». */
+    public static function formsOrder(): string {
+        $v = self::get('forms_order', self::DEFAULT_FORMS_ORDER);
+        return in_array($v, self::VALID_FORMS_ORDER, true) ? $v : self::DEFAULT_FORMS_ORDER;
+    }
+
     public const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login'];
 
     /**

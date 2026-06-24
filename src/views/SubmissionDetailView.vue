@@ -75,6 +75,12 @@ const fields = computed(() => {
   return { data, meta }
 })
 
+// Metadatos (start/end/today/deviceid, meta/…, formhub/…, __version__, calculate…):
+// el backend los marca y NO deben editarse. Se ven en lectura, pero el modo edición
+// solo ofrece las respuestas a preguntas.
+const metaFieldSet = computed(() => new Set(sub.value?.meta_fields ?? []))
+const editableFields = computed(() => fields.value.data.filter(([k]) => !metaFieldSet.value.has(k)))
+
 function fmt(v) {
   return v !== null && typeof v === 'object' ? JSON.stringify(v) : String(v ?? '')
 }
@@ -108,12 +114,12 @@ async function load() {
 
 function startEdit() {
   editError.value = ''
-  editForm.value = Object.fromEntries(fields.value.data.map(([k, v]) => [k, fmt(v)]))
+  editForm.value = Object.fromEntries(editableFields.value.map(([k, v]) => [k, fmt(v)]))
   editing.value = true
 }
 
 async function saveEdit() {
-  const original = Object.fromEntries(fields.value.data.map(([k, v]) => [k, fmt(v)]))
+  const original = Object.fromEntries(editableFields.value.map(([k, v]) => [k, fmt(v)]))
   const changed = {}
   for (const [k, v] of Object.entries(editForm.value)) {
     if (v !== original[k]) changed[k] = v
@@ -245,7 +251,7 @@ onMounted(load)
 
         <!-- Modo edición -->
         <div v-else class="space-y-3 px-5 py-4">
-          <label v-for="[k] in fields.data" :key="k" class="grid grid-cols-3 items-center gap-4">
+          <label v-for="[k] in editableFields" :key="k" class="grid grid-cols-3 items-center gap-4">
             <span class="text-sm font-medium text-slate-500" :title="labeler.fullLabel(k)">
               {{ labeler.label(k) }}
               <span v-if="isReadonly(k)" :title="$t('detail.readonlyField')">🔒</span>
