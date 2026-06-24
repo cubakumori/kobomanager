@@ -256,12 +256,22 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   submission list can be **sorted by a calculated column** (duration, attachment count,
   has‑geo) expressed as SQL over the JSON, so the order is global rather than per‑page.
   The whole computation lives in `lib/Stats::compute($formId, $schema, $scope, $fieldScope,
-  $locale, $includeReview)` — a single source of truth reused by the authenticated endpoint
-  and by the public share endpoint (`public/share/{token}/stats`), which passes the link's
-  scope/field rules and `$includeReview = false` so the **internal review status
-  (`by_status`) is never exposed publicly**. The frontend render is the shared
+  $locale, $includeReview, $teamField, $enumField)` — a single source of truth reused by the
+  authenticated endpoint and by the public share endpoint (`public/share/{token}/stats`),
+  which passes the link's scope/field rules and `$includeReview = false` so the **internal
+  review status (`by_status`) is never exposed publicly**. The frontend render is the shared
   `StatsPanels.vue` component (authenticated `StatsView` + public `PublicShareView`),
   which simply omits the review cards/chart when `by_status` is absent.
+- **Team → enumerator breakdown** (optional, per form): when `forms.stats_team_field` is set,
+  the same in‑scope pass also groups submissions by a **team** field and, within each team, by
+  an **enumerator** (`forms.stats_enumerator_field`, or `_submitted_by` by default), yielding
+  `by_team` — for every team and enumerator: volume (count + %), median duration, mean
+  completeness, last activity and the review‑status mix. Because it rides the existing
+  `RowScope`/`FieldScope` pass, a team lead with a row filter only sees their own team, and a
+  team field hidden by column permissions disables the breakdown for that user. The review mix
+  is gated by `$includeReview` (so public links get the volume/quality but not the review mix,
+  mirroring `by_status`). The two fields are configured from a per‑form **settings screen**
+  (`admin/forms/{id}` `GET`/`PATCH`, view `FormSettingsView.vue`, route `admin-form-settings`).
 - **Search** (`lib/SubmissionSearch.php`, M4a): submission‑table search no longer does a `LIKE`
   over the whole JSON. `textFor()` builds a plain‑text projection of the answer **values**
   (skipping `_*` metadata keys) into the indexed `submissions_cache.search_text` column,

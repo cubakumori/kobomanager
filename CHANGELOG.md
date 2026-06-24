@@ -4,6 +4,31 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [Unreleased]
+
+> **Nota de actualización (esquema).** Esta versión añade dos columnas a `forms`.
+> Instalación nueva: nada que hacer (el `db/001_schema.sql` ya las incluye). Si
+> actualizas sobre una BD existente, aplica una vez:
+> `ALTER TABLE forms ADD COLUMN stats_team_field VARCHAR(255) NULL AFTER submissions_synced_at, ADD COLUMN stats_enumerator_field VARCHAR(255) NULL AFTER stats_team_field;`
+> (o recrea la BD desde `db/*.sql`). No hay migraciones incrementales por diseño.
+
+### Añadido
+
+- **Estadísticas «por equipo → encuestador»** — desglose de dos niveles de las
+  estadísticas. Por formulario, un admin designa el campo del envío que identifica
+  el **equipo** y, opcionalmente, el del **encuestador** (si no, se usa el usuario
+  Kobo `_submitted_by`), desde una pantalla de **ajustes por formulario** nueva
+  (acceso «Ajustes» en Admin → Formularios). La página de Estadísticas muestra una
+  sección plegable por equipo con, para cada equipo y cada encuestador dentro de él:
+  **volumen** (nº y %), **duración** mediana, **completitud** media, **última
+  actividad** y la **mezcla de estado de revisión** (aprobado/rechazado/en
+  espera/pendiente). Reutiliza la pasada única en alcance de `lib/Stats`
+  (`RowScope` + `FieldScope` + `Derived`), de modo que un jefe de equipo con filtro
+  por filas ve solo su equipo, y un campo de equipo oculto por columnas desactiva el
+  desglose para ese usuario. Disponible también en los enlaces públicos con
+  `expose_stats` (con volumen y calidad, pero **sin** la mezcla de revisión,
+  coherente con omitir el estado de revisión interno).
+
 ## [1.5.0] - 2026-06-24
 
 > **Nota de actualización (esquema).** Esta versión añade una columna a `share_links`.
