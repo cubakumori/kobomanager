@@ -65,6 +65,7 @@
     "PASSWORD_INCORRECT": "The current password is incorrect.",
     "SHARE_PASSWORD_REQUIRED": "This link requires a password.",
     "RATE_LIMITED": "Too many requests. Try again in a moment.",
+    "FORM_ARCHIVED": "The form is archived: its submissions are read-only.",
     "generic": "An error occurred",
     "DEMO_LOCKED": "This action is disabled in the demo."
   }

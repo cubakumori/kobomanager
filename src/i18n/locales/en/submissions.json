@@ -24,6 +24,7 @@
     "sortGeo": "With location first",
     "perPage": "Per page:",
     "colReview": "Review",
+    "archivedReadonly": "This form is archived: submissions and their reviews are read-only.",
     "colSubmitted": "Submitted",
     "details": "Details",
     "empty": "No submissions.",

@@ -24,6 +24,7 @@
     "sortGeo": "Con ubicación primero",
     "perPage": "Por página:",
     "colReview": "Revisión",
+    "archivedReadonly": "Este formulario está archivado: los envíos y sus revisiones son de solo lectura.",
     "colSubmitted": "Enviado",
     "details": "Detalles",
     "empty": "Sin envíos.",

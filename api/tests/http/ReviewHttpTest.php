@@ -76,6 +76,26 @@ final class ReviewHttpTest extends HttpTestCase
         @unlink($jar);
     }
 
+    public function testArchivedFormRejectsReview(): void
+    {
+        $this->seedUser('admin', 'admin@test.local', 'Secret123!');
+        [, $formId] = $this->seedFormWithSubmission('uid-1');
+        DB::run('UPDATE forms SET deployment_status = ? WHERE id = ?', ['archived', $formId]);
+        $jar = $this->login('admin@test.local', 'Secret123!');
+
+        // Individual y por lotes → 409 FORM_ARCHIVED; no se crea ninguna revisión.
+        $single = $this->request('POST', 'submissions/uid-1/review', ['status' => 'approved'], $jar);
+        $this->assertSame(409, $single['status']);
+        $this->assertSame('FORM_ARCHIVED', $single['json']['error']['code']);
+
+        $batch = $this->request('POST', "forms/$formId/review", ['uids' => ['uid-1'], 'status' => 'approved'], $jar);
+        $this->assertSame(409, $batch['status']);
+        $this->assertSame('FORM_ARCHIVED', $batch['json']['error']['code']);
+
+        $this->assertFalse((bool) DB::run('SELECT 1 FROM submission_reviews WHERE submission_uid = ?', ['uid-1'])->fetch());
+        @unlink($jar);
+    }
+
     public function testBatchReviewAppliesAndSkips(): void
     {
         $this->seedUser('admin', 'admin@test.local', 'Secret123!');

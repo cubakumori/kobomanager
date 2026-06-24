@@ -13,7 +13,9 @@ if (Request::method() !== 'POST') {
 }
 
 $sub = DB::run(
-    'SELECT sc.submission_uid, sc.form_id, sc.json_payload FROM submissions_cache sc WHERE sc.submission_uid = ?',
+    'SELECT sc.submission_uid, sc.form_id, sc.json_payload, f.deployment_status
+     FROM submissions_cache sc JOIN forms f ON f.id = sc.form_id
+     WHERE sc.submission_uid = ?',
     [$uid]
 )->fetch();
 if (!$sub) {
@@ -21,6 +23,10 @@ if (!$sub) {
 }
 $formId = (int) $sub['form_id'];
 Auth::requireForm($user, $formId, 'validate');
+// Archivado = solo lectura para la revisión (ver review_batch.php).
+if (($sub['deployment_status'] ?? null) === 'archived') {
+    ErrorResponse::send('FORM_ARCHIVED');
+}
 
 // Scoping por filas: un envío fuera de alcance se comporta como inexistente (404).
 $scopeRule = RowScope::ruleForUser($user, $formId);

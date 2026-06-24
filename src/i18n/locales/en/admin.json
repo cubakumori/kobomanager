@@ -72,6 +72,8 @@
     "syncing": "Syncing…",
     "accountFilter": "Account:",
     "allAccounts": "All accounts",
+    "typeFilter": "Type:",
+    "allTypes": "All types",
     "colForm": "Form",
     "colAccount": "Account",
     "colType": "Type",

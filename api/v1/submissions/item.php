@@ -12,7 +12,7 @@ $method = Request::method();
 
 $sub = DB::run(
     'SELECT sc.id, sc.submission_uid, sc.json_payload, sc.submitted_at, sc.last_synced_at,
-            f.id AS form_id, f.name AS form_name, f.kobo_asset_uid, f.kobo_account_id, f.schema_json
+            f.id AS form_id, f.name AS form_name, f.kobo_asset_uid, f.kobo_account_id, f.schema_json, f.deployment_status
      FROM submissions_cache sc
      JOIN forms f ON f.id = sc.form_id
      WHERE sc.submission_uid = ?',
@@ -82,7 +82,7 @@ if ($method === 'GET') {
 
     ErrorResponse::ok([
         'submission_uid' => $sub['submission_uid'],
-        'form'           => ['id' => $formId, 'name' => $sub['form_name']],
+        'form'           => ['id' => $formId, 'name' => $sub['form_name'], 'deployment_status' => $sub['deployment_status'] ?? null],
         'prev'           => $prev['submission_uid'] ?? null,
         'next'           => $next['submission_uid'] ?? null,
         'submitted_at'   => $sub['submitted_at'],

@@ -19,6 +19,15 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Enlaces compartidos: vista de estadísticas** (`expose_stats`). Un enlace público
+  puede mostrar el panel de Estadísticas del formulario (mismas gráficas que la vista
+  interna), con su filtro de filas y ocultado de columnas aplicados, pero **sin el
+  estado de revisión interno**. El cálculo se extrajo a `lib/Stats`, fuente única
+  compartida por `forms/stats.php` y el nuevo `public/share/{token}/stats`; el render
+  vive en el componente compartido `StatsPanels.vue` (interno + público).
+- **Vista pública de enlaces: sello de frescura** «Datos a fecha de …»
+  (`forms.last_synced_at`), para que el visitante sepa cuándo se sincronizó por última
+  vez la caché (los enlaces leen la caché local refrescada por el cron, no Kobo en vivo).
 - **`SECURITY.md`**: política de divulgación responsable de vulnerabilidades (canal
   privado por GitHub + email de respaldo, alcance y plazos), esperada en un repo
   público AGPL.
@@ -27,6 +36,16 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Cambiado
 
+- **«Mis formularios»: color de fondo según el tipo del formulario**, siguiendo la
+  columna «Tipo» de admin/forms — desplegado = verde (el accent de marca), borrador =
+  ámbar, archivado = gris, con una etiqueta del tipo en las tarjetas no desplegadas.
+- **«Mis formularios»: filtro por tipo** (desplegado/borrador/archivado), un `<select>`
+  que aparece solo cuando hay más de un tipo, combinable con el filtro por cuenta.
+- **Formularios archivados = solo lectura para la revisión.** Se siguen viendo los
+  envíos, el estado de revisión y el historial, pero se ocultan la selección y las
+  acciones de revisión (individual + por lotes) y el backend las rechaza con
+  `FORM_ARCHIVED` (409) — defensa en servidor, no solo en la UI. Un aviso explica el
+  modo. La edición de envíos no cambia (sigue dependiendo de `can_edit`).
 - **Visibilidad de la parte pública configurable desde Ajustes**: dos interruptores
   globales (ambos activados por defecto) — *Mostrar la página «Apoyar»* (oculta
   /apoyar y sus enlaces; el acceso directo redirige a la portada) y *Mostrar la

@@ -327,8 +327,9 @@ onMounted(load)
         </div>
       </section>
 
-      <!-- Panel de revisión -->
-      <section v-if="sub.can_validate" class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+      <!-- Panel de revisión. Oculto en formularios archivados (solo lectura): el
+           historial de abajo sigue visible. -->
+      <section v-if="sub.can_validate && sub.form.deployment_status !== 'archived'" class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
         <h2 class="border-b border-slate-100 px-5 py-3 font-semibold text-slate-900">{{ $t('detail.review') }}</h2>
         <div class="space-y-3 px-5 py-4">
           <div v-if="reviewError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
@@ -387,6 +388,14 @@ onMounted(load)
           </div>
         </dl>
       </details>
+
+      <!-- Aviso de solo lectura cuando el formulario está archivado. -->
+      <div
+        v-if="sub.can_validate && sub.form.deployment_status === 'archived'"
+        class="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800/50 dark:text-slate-300 dark:ring-slate-700"
+      >
+        {{ $t('submissions.archivedReadonly') }}
+      </div>
 
       <!-- Historial de revisiones -->
       <section class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">

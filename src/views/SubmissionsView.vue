@@ -38,6 +38,10 @@ const labelMode = ref('raw')
 const fieldTruncate = ref(null)
 const hasGeo = ref(false)
 const canValidate = ref(false)
+const deploymentStatus = ref(null)
+// Un formulario archivado es de solo lectura para la revisión: la columna de estado
+// sigue visible, pero se ocultan la selección y las acciones de revisión por lotes.
+const canReview = computed(() => canValidate.value && deploymentStatus.value !== 'archived')
 
 // --- Selección + revisión en lote ---
 const selected = ref(new Set())
@@ -266,6 +270,7 @@ async function load() {
       },
     })
     formName.value = data.data.form.name
+    deploymentStatus.value = data.data.form.deployment_status ?? null
     items.value = data.data.items
     loaded.value = true
     total.value = data.data.total
@@ -397,6 +402,14 @@ onMounted(() => { loadAdvFilter(); load() })
       </template>
     </header>
 
+    <!-- Aviso: formulario archivado → la revisión es de solo lectura. -->
+    <div
+      v-if="deploymentStatus === 'archived' && canValidate"
+      class="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800/50 dark:text-slate-300 dark:ring-slate-700"
+    >
+      {{ $t('submissions.archivedReadonly') }}
+    </div>
+
     <!-- Una sola fila: búsqueda a mano; revisión/orden/por página en el modal «Vista»;
          condiciones avanzadas en el modal «Filtros». -->
     <div class="flex items-center gap-2">
@@ -446,7 +459,7 @@ onMounted(() => { loadAdvFilter(); load() })
 
     <!-- Barra de revisión en lote (solo si el usuario puede validar y hay selección) -->
     <div
-      v-if="canValidate && selected.size"
+      v-if="canReview && selected.size"
       class="flex flex-wrap items-center gap-3 rounded-xl bg-accent-50 px-4 py-3 ring-1 ring-accent-200 dark:bg-accent-900/25 dark:ring-accent-800"
     >
       <span class="text-sm font-medium text-accent-800 dark:text-accent-300">{{ $t('submissions.selected', { n: selected.size }) }}</span>
@@ -486,7 +499,7 @@ onMounted(() => { loadAdvFilter(); load() })
       <table v-else class="w-full text-left text-sm transition-opacity" :class="loading ? 'opacity-60' : ''">
         <thead class="bg-accent-50 text-xs uppercase tracking-wider text-accent-700 dark:bg-slate-50 dark:text-accent-300">
           <tr>
-            <th v-if="canValidate" class="w-12 px-4 py-3" :class="freezeFirst() ? 'sticky left-0 z-20 bg-accent-50 dark:bg-slate-50' : ''">
+            <th v-if="canReview" class="w-12 px-4 py-3" :class="freezeFirst() ? 'sticky left-0 z-20 bg-accent-50 dark:bg-slate-50' : ''">
               <input
                 type="checkbox"
                 class="h-4 w-4 align-middle"
@@ -497,7 +510,7 @@ onMounted(() => { loadAdvFilter(); load() })
             </th>
             <th
               class="whitespace-nowrap px-4 py-3"
-              :class="freezeFirst() ? (canValidate ? 'min-[540px]:sticky min-[540px]:left-12 z-20 bg-accent-50 dark:bg-slate-50' : 'sticky left-0 z-20 bg-accent-50 dark:bg-slate-50') : ''"
+              :class="freezeFirst() ? (canReview ? 'min-[540px]:sticky min-[540px]:left-12 z-20 bg-accent-50 dark:bg-slate-50' : 'sticky left-0 z-20 bg-accent-50 dark:bg-slate-50') : ''"
             >{{ $t('submissions.colSubmitted') }}</th>
             <th v-for="c in shownColumns" :key="c" class="whitespace-nowrap px-4 py-3" :title="colFullLabel(c)">{{ colLabel(c) }}</th>
             <th class="px-4 py-3">{{ $t('submissions.colReview') }}</th>
@@ -506,7 +519,7 @@ onMounted(() => { loadAdvFilter(); load() })
         </thead>
         <tbody class="divide-y divide-slate-100">
           <tr v-for="s in items" :key="s.submission_uid" class="group hover:bg-slate-50">
-            <td v-if="canValidate" class="px-4 py-3" :class="freezeFirst() ? 'sticky left-0 z-10 bg-white group-hover:bg-slate-50' : ''">
+            <td v-if="canReview" class="px-4 py-3" :class="freezeFirst() ? 'sticky left-0 z-10 bg-white group-hover:bg-slate-50' : ''">
               <input
                 type="checkbox"
                 class="h-4 w-4 align-middle"
@@ -516,7 +529,7 @@ onMounted(() => { loadAdvFilter(); load() })
             </td>
             <td
               class="whitespace-nowrap px-4 py-3 text-slate-600"
-              :class="freezeFirst() ? (canValidate ? 'min-[540px]:sticky min-[540px]:left-12 z-10 bg-white group-hover:bg-slate-50' : 'sticky left-0 z-10 bg-white group-hover:bg-slate-50') : ''"
+              :class="freezeFirst() ? (canReview ? 'min-[540px]:sticky min-[540px]:left-12 z-10 bg-white group-hover:bg-slate-50' : 'sticky left-0 z-10 bg-white group-hover:bg-slate-50') : ''"
             >{{ s.submitted_at }}</td>
             <td
               v-for="c in shownColumns"
@@ -535,7 +548,7 @@ onMounted(() => { loadAdvFilter(); load() })
             </td>
           </tr>
           <tr v-if="!items.length">
-            <td :colspan="shownColumns.length + 3 + (canValidate ? 1 : 0)" class="px-4 py-6 text-center text-slate-400">
+            <td :colspan="shownColumns.length + 3 + (canReview ? 1 : 0)" class="px-4 py-6 text-center text-slate-400">
               {{ $t('submissions.empty') }}
             </td>
           </tr>

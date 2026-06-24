@@ -133,7 +133,8 @@ returns `readonly_fields` so the UI renders them locked (🔒). Share links don'
 ### Public share links (`lib/ShareLink.php`)
 Read‑only links let anyone browse a form's submissions **without a session** (M1). A
 `share_links` row carries an unguessable URL `token`, what it exposes (`expose_list` /
-`expose_detail` / `expose_map` / `expose_attachments`), an optional `row_filter` (reuses
+`expose_detail` / `expose_map` / `expose_stats` / `expose_attachments`), an optional
+`row_filter` (reuses
 `RowScope`), an optional `field_filter` (reuses `FieldScope` — hide columns in the public
 view), an optional `password_hash`, and optional `expires_at` / `revoked_at`. `resolve()`
 returns the row only while active (not revoked, not expired, form active). The public endpoints
@@ -163,7 +164,11 @@ limiting of the public GETs is still deferred to M4b/M5.)*
 (`approved` / `on_hold` / `rejected` / `pending`) to many
 submissions in a single transaction; it requires `validate` once and **re‑checks**, per uid,
 form membership and row scope server‑side (out‑of‑scope/foreign uids are silently skipped),
-returning `{applied, skipped}`. `GET /forms/{id}/export` (`forms/export.php`) streams a
+returning `{applied, skipped}`. **Archived forms are read‑only for review**: both this
+endpoint and the single `POST /submissions/{id}/review` reject with `FORM_ARCHIVED` (409)
+when `forms.deployment_status = 'archived'` — the data and prior review decisions stay
+visible, but no new ones are recorded (the frontend hides the selection/review controls;
+this is the server‑side backstop). Editing is unaffected (still gated by `can_edit`). `GET /forms/{id}/export` (`forms/export.php`) streams a
 UTF‑8 **CSV with BOM** of the submissions (requires `view`, honors row scope and the
 list filters); it bypasses the JSON envelope and resolves question/option labels per the
 global label mode. Note: PHP 8.4+ requires the `fputcsv` `$escape` argument explicitly
@@ -250,6 +255,13 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   **trend** object (last 7/30 days vs the previous equal period, with % change). The
   submission list can be **sorted by a calculated column** (duration, attachment count,
   has‑geo) expressed as SQL over the JSON, so the order is global rather than per‑page.
+  The whole computation lives in `lib/Stats::compute($formId, $schema, $scope, $fieldScope,
+  $locale, $includeReview)` — a single source of truth reused by the authenticated endpoint
+  and by the public share endpoint (`public/share/{token}/stats`), which passes the link's
+  scope/field rules and `$includeReview = false` so the **internal review status
+  (`by_status`) is never exposed publicly**. The frontend render is the shared
+  `StatsPanels.vue` component (authenticated `StatsView` + public `PublicShareView`),
+  which simply omits the review cards/chart when `by_status` is absent.
 - **Search** (`lib/SubmissionSearch.php`, M4a): submission‑table search no longer does a `LIKE`
   over the whole JSON. `textFor()` builds a plain‑text projection of the answer **values**
   (skipping `_*` metadata keys) into the indexed `submissions_cache.search_text` column,

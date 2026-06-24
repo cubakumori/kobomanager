@@ -18,6 +18,7 @@ class ErrorResponse {
         'DEMO_LOCKED'                   => [403, 'Esta acción está deshabilitada en la demo'],
         'AUTH_RATE_LIMITED'             => [429, 'Demasiados intentos. Espera un minuto e inténtalo de nuevo.'],
         'VALIDATION_ERROR'              => [422, 'Datos de entrada inválidos'],
+        'FORM_ARCHIVED'                 => [409, 'El formulario está archivado (solo lectura)'],
         'RESET_TOKEN_INVALID'           => [400, 'El enlace de recuperación no es válido o ha caducado'],
         'PASSWORD_INCORRECT'            => [400, 'La contraseña actual no es correcta'],
         'SHARE_PASSWORD_REQUIRED'       => [401, 'Este enlace requiere una contraseña'],

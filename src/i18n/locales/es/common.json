@@ -65,6 +65,7 @@
     "PASSWORD_INCORRECT": "La contraseña actual no es correcta.",
     "SHARE_PASSWORD_REQUIRED": "Este enlace requiere una contraseña.",
     "RATE_LIMITED": "Demasiadas peticiones. Inténtalo de nuevo en un momento.",
+    "FORM_ARCHIVED": "El formulario está archivado: sus envíos son de solo lectura.",
     "generic": "Ha ocurrido un error",
     "DEMO_LOCKED": "Esta acción está deshabilitada en la demo."
   }

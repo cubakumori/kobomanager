@@ -17,11 +17,17 @@ if (Request::method() !== 'POST') {
     ErrorResponse::send('VALIDATION_ERROR', 'Método no permitido', 405);
 }
 
-$form = DB::run('SELECT id FROM forms WHERE id = ? AND active = 1', [$formId])->fetch();
+$form = DB::run('SELECT id, deployment_status FROM forms WHERE id = ? AND active = 1', [$formId])->fetch();
 if (!$form) {
     ErrorResponse::send('NOT_FOUND', 'Formulario no encontrado');
 }
 Auth::requireForm($user, $formId, 'validate');
+// Un formulario archivado es de solo lectura para la revisión: se ven los envíos y
+// las decisiones previas, pero no se aplican nuevas (defensa en el backend; la UI
+// además oculta los controles).
+if (($form['deployment_status'] ?? null) === 'archived') {
+    ErrorResponse::send('FORM_ARCHIVED');
+}
 
 $body    = Request::json();
 $status  = $body['status'] ?? '';
