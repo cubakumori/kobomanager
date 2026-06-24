@@ -22,9 +22,11 @@ watch(demoMode, (v) => { if (v) showDemoModal.value = true }, { immediate: true 
 // acceso granular (permisos por filas), añadido recientemente.
 const features = [1, 2, 3, 4]
 
-// Sección «Y mucho más»: enlaces públicos como tarjeta destacada (feat5) y el
-// resto de capacidades vendibles como chips, mismo lenguaje visual verde.
-const chips = ['chipColumns', 'chipStats', 'chipEmail', 'chipLabels', 'chipMap', 'chipCsv', 'chipEdit']
+// Sección «Y mucho más»: las capacidades más vendibles como tarjetas destacadas
+// (seguimiento por equipo, permisos por columna y enlaces públicos) y el resto
+// como chips, mismo lenguaje visual verde.
+const highlights = ['featStats', 'featColumns', 'feat5']
+const chips = ['chipEmail', 'chipLabels', 'chipMap', 'chipCsv', 'chipEdit']
 
 // Enlace al repo para la CTA de cierre («monta tu propia instancia»); vacío = oculto.
 const { links } = usePublicLinks()
@@ -110,13 +112,19 @@ const showCta = computed(() => landingCtaEnabled.value && (!!links.value.repo ||
       <h2 class="text-center text-2xl font-bold tracking-tight text-slate-900">{{ $t('landing.moreTitle') }}</h2>
       <p class="mx-auto mt-2 max-w-2xl text-center text-sm text-slate-600">{{ $t('landing.moreSubtitle') }}</p>
 
-      <!-- Tarjeta destacada: enlaces públicos de solo lectura -->
-      <div class="mx-auto mt-8 max-w-3xl rounded-2xl bg-accent-50 p-6 ring-1 ring-accent-200 dark:bg-accent-900/25 dark:ring-accent-800">
-        <h3 class="flex items-center gap-2 font-semibold text-accent-800 dark:text-accent-300">
-          <span class="h-1.5 w-1.5 rounded-full bg-accent-500"></span>
-          {{ $t('landing.feat5Title') }}
-        </h3>
-        <p class="mt-2 text-sm text-accent-900/70 dark:text-accent-200/70">{{ $t('landing.feat5Desc') }}</p>
+      <!-- Tarjetas destacadas: seguimiento por equipo, permisos por columna y enlaces públicos -->
+      <div class="mx-auto mt-8 grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          v-for="h in highlights"
+          :key="h"
+          class="rounded-2xl bg-accent-50 p-6 ring-1 ring-accent-200 dark:bg-accent-900/25 dark:ring-accent-800"
+        >
+          <h3 class="flex items-center gap-2 font-semibold text-accent-800 dark:text-accent-300">
+            <span class="h-1.5 w-1.5 rounded-full bg-accent-500"></span>
+            {{ $t('landing.' + h + 'Title') }}
+          </h3>
+          <p class="mt-2 text-sm text-accent-900/70 dark:text-accent-200/70">{{ $t('landing.' + h + 'Desc') }}</p>
+        </div>
       </div>
 
       <!-- Resto de capacidades como chips -->
