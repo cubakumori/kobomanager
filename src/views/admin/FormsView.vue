@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, RouterLink } from 'vue-router'
 import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 import { confirmDialog } from '../../composables/confirm'
@@ -331,6 +331,13 @@ onMounted(async () => {
                 >
                   {{ fullSyncId === f.id ? $t('forms.resyncing') : $t('forms.resync') }}
                 </button>
+                <RouterLink
+                  :to="{ name: 'admin-form-settings', params: { id: f.id } }"
+                  class="font-medium text-primary-600 hover:underline"
+                  :title="$t('forms.settingsTitle')"
+                >
+                  {{ $t('forms.settings') }}
+                </RouterLink>
                 <button
                   class="font-medium text-red-600 dark:text-red-400 hover:underline"
                   :title="$t('forms.deleteTitle')"

@@ -118,7 +118,28 @@
     "loadError": "No se pudieron cargar los formularios",
     "syncErr": "No se pudo sincronizar",
     "updateErr": "no se pudo actualizar",
-    "deleteErr": "no se pudo eliminar"
+    "deleteErr": "no se pudo eliminar",
+    "settings": "Ajustes",
+    "settingsTitle": "Ajustes del formulario (desglose de estadísticas por equipo)"
+  },
+  "formSettings": {
+    "title": "Ajustes del formulario",
+    "subtitle": "Ajustes por formulario de KoboManager (no afectan a KoboToolbox).",
+    "back": "← Formularios",
+    "teamSection": "Desglose por equipo (estadísticas)",
+    "teamSectionDesc": "Desglosa las estadísticas por equipo y, dentro de cada equipo, por encuestador. Respeta el filtro por filas y el ocultado de columnas.",
+    "teamField": "Campo de equipo",
+    "teamFieldHint": "Campo del envío que identifica el equipo/grupo. Sin él, el desglose por equipo se desactiva.",
+    "enumField": "Campo de encuestador",
+    "enumFieldHint": "Campo que identifica al encuestador dentro del equipo.",
+    "teamNone": "— Sin desglose por equipo —",
+    "enumDefault": "Usuario Kobo (quien envió)",
+    "noSchema": "Este formulario aún no tiene esquema sincronizado; no hay campos que elegir.",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "saved": "Ajustes guardados.",
+    "loadError": "No se pudieron cargar los ajustes del formulario.",
+    "saveError": "No se pudieron guardar los ajustes."
   },
   "settings": {
     "title": "Configuración",

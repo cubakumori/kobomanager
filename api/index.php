@@ -39,7 +39,7 @@ if (in_array($origin, CORS_ALLOWED_ORIGINS, true)) {
     header('Access-Control-Allow-Credentials: true');
     header('Vary: Origin');
 }
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
 // --- Cabeceras de seguridad (todas las respuestas de la API) ---

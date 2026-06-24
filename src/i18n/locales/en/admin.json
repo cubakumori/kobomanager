@@ -118,7 +118,28 @@
     "loadError": "Could not load the forms",
     "syncErr": "Could not sync",
     "updateErr": "could not update",
-    "deleteErr": "could not delete"
+    "deleteErr": "could not delete",
+    "settings": "Settings",
+    "settingsTitle": "Per-form settings (stats team breakdown)"
+  },
+  "formSettings": {
+    "title": "Form settings",
+    "subtitle": "Per-form KoboManager settings (they do not affect KoboToolbox).",
+    "back": "← Forms",
+    "teamSection": "Team breakdown (statistics)",
+    "teamSectionDesc": "Breaks statistics down by team and, within each team, by enumerator. Respects row scoping and column hiding.",
+    "teamField": "Team field",
+    "teamFieldHint": "Submission field that identifies the team/group. Without it, the team breakdown is off.",
+    "enumField": "Enumerator field",
+    "enumFieldHint": "Field that identifies the enumerator within the team.",
+    "teamNone": "— No team breakdown —",
+    "enumDefault": "Kobo user (who submitted)",
+    "noSchema": "This form has no synced schema yet; there are no fields to choose.",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Settings saved.",
+    "loadError": "Could not load the form settings.",
+    "saveError": "Could not save the settings."
   },
   "settings": {
     "title": "Settings",

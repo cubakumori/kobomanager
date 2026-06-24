@@ -60,8 +60,8 @@ class Demo {
         'admin/users/:id'          => ['PUT', 'DELETE'],
         // Formularios: borrar uno purga su caché local (cascade) y degrada la
         // demo hasta el siguiente reset. (PUT no tiene handler hoy; se bloquea
-        // por si se añade.)
-        'admin/forms/:id'          => ['DELETE', 'PUT'],
+        // por si se añade.) PATCH = ajustes de estadísticas por formulario.
+        'admin/forms/:id'          => ['DELETE', 'PUT', 'PATCH'],
         'admin/users/:id/sessions' => ['DELETE'],
         // Contraseña y sesiones propias (el usuario demo es compartido).
         'profile/password'         => ['POST'],
