@@ -130,14 +130,6 @@ Quedan como ideas reabribles si aparece una necesidad real.
 
 ## Optimización y UX
 
-- [x] **Estadísticas de grupo / por equipo — HECHO** *(idea jun-2026; entregada)*. Desglose de
-      dos niveles equipo → encuestador en la pasada única en alcance de `lib/Stats`: por
-      formulario se designan el campo de **equipo** y el de **encuestador** (o `_submitted_by`)
-      desde una pantalla de ajustes por formulario; la sección plegable de `StatsPanels` muestra,
-      por (equipo → encuestador), volumen y %, duración mediana, completitud, última actividad y
-      —solo en interno— la mezcla de estado de revisión. Respeta `RowScope`/`FieldScope` y se
-      expone también en enlaces públicos con `expose_stats` (sin la mezcla de revisión). Ver el
-      `CHANGELOG`.
 - [ ] **Agregación semanal explícita en Estadísticas** *(pendiente menor)* — hoy «Envíos por
       día/mes» elige día↔mes automáticamente según el tramo; valorar el escalón intermedio
       por semana.
