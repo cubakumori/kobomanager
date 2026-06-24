@@ -50,6 +50,18 @@
     "byQuestion": "Distribución por pregunta",
     "answered": "{n} respuesta(s)",
     "multiHint": "opción múltiple (% sobre encuestados)",
-    "others": "+{n} más"
+    "others": "+{n} más",
+    "byTeamTitle": "Por equipo → encuestador",
+    "byTeamTeam": "Equipo: {field}",
+    "byTeamEnum": "Encuestador: {field}",
+    "enumSubmittedBy": "usuario Kobo",
+    "colEnumerator": "Encuestador",
+    "colVolume": "Envíos",
+    "colDuration": "Duración (mediana)",
+    "colCompleteness": "Completitud",
+    "colLastActivity": "Última actividad",
+    "colReview": "Revisión",
+    "teamOthers": "+{n} en otros equipos",
+    "enumOthers": "+{n} encuestador(es) más"
   }
 }

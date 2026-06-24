@@ -173,6 +173,36 @@ const attByKindText = computed(() => {
     .map((k) => `${by[k]} ${t('derived.kind.' + k)}`)
     .join(' · ')
 })
+
+// ---- Desglose por equipo → encuestador ----
+// Etiqueta del campo de equipo y del de encuestador (o «usuario Kobo» si se usa
+// `_submitted_by`, que llega con label null).
+const teamFieldLabel = computed(() => stats.value?.team_field?.label || stats.value?.team_field?.key || '')
+const enumFieldLabel = computed(() => stats.value?.enumerator_field?.label || t('stats.enumSubmittedBy'))
+
+// Se muestra solo si aporta algo: ≥2 equipos, ≥2 encuestadores en el primero, o hay
+// equipos en «otros». Con un único equipo y un único encuestador sería ruido.
+const showTeam = computed(() => {
+  const ts = stats.value?.by_team ?? []
+  if (!ts.length) return false
+  return ts.length >= 2 || (ts[0]?.enumerators?.length ?? 0) >= 2 || (stats.value?.team_others ?? 0) > 0
+})
+
+const fmtPct = (p) => (p == null ? '—' : p + '%')
+const fmtCompleteness = (c) => (c == null ? '—' : Math.round(c * 100) + '%')
+const fmtMedian = (d) => (d ? fmtDuration(d.median_s) : '—')
+
+// Conteos de revisión con color (omite los que están a 0). `status` solo viene en la
+// vista interna; en pública es undefined → array vacío y la columna se oculta.
+const reviewPills = (st) =>
+  st
+    ? [
+        { key: 'approved', n: st.approved, cls: 'text-success-600 dark:text-success-400' },
+        { key: 'rejected', n: st.rejected, cls: 'text-red-600 dark:text-red-400' },
+        { key: 'on_hold', n: st.on_hold, cls: 'text-sky-600' },
+        { key: 'pending', n: st.pending, cls: 'text-amber-600 dark:text-amber-400' },
+      ].filter((p) => p.n > 0)
+    : []
 </script>
 
 <template>
@@ -302,6 +332,76 @@ const attByKindText = computed(() => {
         {{ $t('stats.others', { n: stats.enumerator_others }) }}
       </p>
     </div>
+
+    <!-- Por equipo → encuestador (desglose de dos niveles, si está configurado) -->
+    <section v-if="showTeam" class="space-y-3">
+      <div>
+        <h2 class="font-semibold text-slate-900">{{ $t('stats.byTeamTitle') }}</h2>
+        <p class="text-xs text-slate-400">
+          {{ $t('stats.byTeamTeam', { field: teamFieldLabel }) }} · {{ $t('stats.byTeamEnum', { field: enumFieldLabel }) }}
+        </p>
+      </div>
+
+      <details
+        v-for="(team, i) in stats.by_team"
+        :key="i"
+        class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200"
+        :open="stats.by_team.length <= 3"
+      >
+        <summary class="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3 hover:bg-slate-50">
+          <span class="font-semibold text-slate-900">{{ team.name }}</span>
+          <span class="text-sm text-slate-500">{{ team.count }} · {{ fmtPct(team.pct) }}</span>
+          <span class="ml-auto flex gap-2 text-xs font-semibold">
+            <span v-for="p in reviewPills(team.status)" :key="p.key" :class="p.cls" :title="$t('review.' + p.key)">
+              {{ p.n }}
+            </span>
+          </span>
+        </summary>
+
+        <div class="border-t border-slate-100 px-5 py-3">
+          <!-- Métricas del equipo -->
+          <dl class="mb-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-3">
+            <div><dt class="text-slate-400">{{ $t('stats.colDuration') }}</dt><dd class="font-medium text-slate-700">{{ fmtMedian(team.duration) }}</dd></div>
+            <div><dt class="text-slate-400">{{ $t('stats.colCompleteness') }}</dt><dd class="font-medium text-slate-700">{{ fmtCompleteness(team.completeness_mean) }}</dd></div>
+            <div><dt class="text-slate-400">{{ $t('stats.colLastActivity') }}</dt><dd class="font-medium text-slate-700">{{ team.last_activity ?? '—' }}</dd></div>
+          </dl>
+
+          <!-- Encuestadores del equipo -->
+          <div class="overflow-x-auto">
+            <table class="w-full whitespace-nowrap text-left text-sm">
+              <thead class="text-xs uppercase tracking-wider text-slate-400">
+                <tr>
+                  <th class="py-1 pr-3">{{ $t('stats.colEnumerator') }}</th>
+                  <th class="py-1 pr-3 text-right">{{ $t('stats.colVolume') }}</th>
+                  <th class="py-1 pr-3 text-right">{{ $t('stats.colDuration') }}</th>
+                  <th class="py-1 pr-3 text-right">{{ $t('stats.colCompleteness') }}</th>
+                  <th v-if="team.status" class="py-1 pr-3 text-right">{{ $t('stats.colReview') }}</th>
+                  <th class="py-1 text-right">{{ $t('stats.colLastActivity') }}</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr v-for="(e, j) in team.enumerators" :key="j">
+                  <td class="py-1.5 pr-3 font-medium text-slate-700">{{ e.name }}</td>
+                  <td class="py-1.5 pr-3 text-right text-slate-600">{{ e.count }} <span class="text-slate-400">· {{ fmtPct(e.pct) }}</span></td>
+                  <td class="py-1.5 pr-3 text-right text-slate-600">{{ fmtMedian(e.duration) }}</td>
+                  <td class="py-1.5 pr-3 text-right text-slate-600">{{ fmtCompleteness(e.completeness_mean) }}</td>
+                  <td v-if="team.status" class="py-1.5 pr-3 text-right">
+                    <span v-for="p in reviewPills(e.status)" :key="p.key" :class="p.cls" :title="$t('review.' + p.key)" class="ml-1.5 font-semibold">{{ p.n }}</span>
+                    <span v-if="!reviewPills(e.status).length" class="text-slate-300">—</span>
+                  </td>
+                  <td class="py-1.5 text-right text-slate-500">{{ e.last_activity ?? '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p v-if="team.enumerator_others" class="mt-2 text-xs text-slate-400">
+            {{ $t('stats.enumOthers', { n: team.enumerator_others }) }}
+          </p>
+        </div>
+      </details>
+
+      <p v-if="stats.team_others" class="text-xs text-slate-400">{{ $t('stats.teamOthers', { n: stats.team_others }) }}</p>
+    </section>
 
     <!-- Distribución por pregunta (select_one / select_multiple) -->
     <section v-if="stats.by_question.length" class="space-y-4">

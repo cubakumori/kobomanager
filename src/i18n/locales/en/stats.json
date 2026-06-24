@@ -50,6 +50,18 @@
     "byQuestion": "Distribution by question",
     "answered": "{n} answer(s)",
     "multiHint": "multiple choice (% of respondents)",
-    "others": "+{n} more"
+    "others": "+{n} more",
+    "byTeamTitle": "By team → enumerator",
+    "byTeamTeam": "Team: {field}",
+    "byTeamEnum": "Enumerator: {field}",
+    "enumSubmittedBy": "Kobo user",
+    "colEnumerator": "Enumerator",
+    "colVolume": "Submissions",
+    "colDuration": "Duration (median)",
+    "colCompleteness": "Completeness",
+    "colLastActivity": "Last activity",
+    "colReview": "Review",
+    "teamOthers": "+{n} in other teams",
+    "enumOthers": "+{n} more enumerator(s)"
   }
 }
