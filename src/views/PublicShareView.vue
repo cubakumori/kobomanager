@@ -7,6 +7,7 @@ import { i18n, setLocale } from '../i18n'
 import { makeLabeler } from '../composables/labels'
 import LeafletMap from '../components/LeafletMap.vue'
 import AttachmentsGallery from '../components/AttachmentsGallery.vue'
+import StatsPanels from '../components/StatsPanels.vue'
 import { useTableFreeze } from '../composables/appConfig'
 
 const { t } = useI18n()
@@ -33,15 +34,28 @@ function cfg(params) {
   }
 }
 
-// Vista activa: 'list' | 'map'; el detalle se controla con ?sub=<uid>.
-const view = computed(() => (route.query.view === 'map' && meta.value?.expose_map ? 'map' : 'list'))
+// Vistas disponibles según los flags del enlace (en orden de pestaña).
+const availableViews = computed(() => {
+  const v = []
+  if (meta.value?.expose_list) v.push('list')
+  if (meta.value?.expose_map) v.push('map')
+  if (meta.value?.expose_stats) v.push('stats')
+  return v
+})
+
+// Vista activa: 'list' | 'map' | 'stats'; el detalle se controla con ?sub=<uid>.
+const view = computed(() => {
+  const q = String(route.query.view || '')
+  if (q && availableViews.value.includes(q)) return q
+  return availableViews.value[0] || 'list'
+})
 const currentSub = computed(() => (route.query.sub ? String(route.query.sub) : null))
 
 function go(query) {
   router.replace({ name: 'share', params: { token: token.value }, query: { ...route.query, ...query } })
 }
 function setView(v) {
-  router.replace({ name: 'share', params: { token: token.value }, query: v === 'map' ? { view: 'map' } : {} })
+  router.replace({ name: 'share', params: { token: token.value }, query: v === 'list' ? {} : { view: v } })
 }
 
 // ---------- carga de metadatos ----------
@@ -162,16 +176,31 @@ async function loadMap() {
   }
 }
 
-// Carga la vista activa (lista o mapa) según los flags del enlace.
+// ---------- estadísticas ----------
+const stats = ref(null)
+const statsLoading = ref(false)
+async function loadStats() {
+  statsLoading.value = true
+  try {
+    const { data } = await publicApi.get(`/public/share/${token.value}/stats`, cfg())
+    stats.value = data.data
+  } catch {
+    stats.value = null
+  } finally {
+    statsLoading.value = false
+  }
+}
+
+// Carga la vista activa (lista / mapa / estadísticas) según los flags del enlace.
 async function loadActiveView() {
   if (currentSub.value && meta.value?.expose_detail) {
     await loadDetail(currentSub.value)
   } else if (view.value === 'map') {
     await loadMap()
+  } else if (view.value === 'stats') {
+    await loadStats()
   } else if (meta.value?.expose_list) {
     await loadList(1)
-  } else if (meta.value?.expose_map) {
-    setView('map')
   }
 }
 
@@ -241,6 +270,12 @@ onMounted(loadMeta)
 
       <!-- Contenido desbloqueado -->
       <template v-else-if="meta && meta.unlocked">
+        <!-- Sello de frescura: los datos provienen de la caché local, refrescada por
+             el cron de sincronización. Informa al visitante de su antigüedad. -->
+        <p v-if="meta.last_synced_at" class="mb-4 text-xs text-slate-400">
+          {{ $t('share.dataAsOf', { date: meta.last_synced_at }) }}
+        </p>
+
         <!-- Detalle de un envío -->
         <section v-if="currentSub && meta.expose_detail" class="space-y-5">
           <button class="text-sm text-primary-600 hover:underline" @click="go({ sub: undefined })">{{ $t('share.back') }}</button>
@@ -290,24 +325,30 @@ onMounted(loadMeta)
           </template>
         </section>
 
-        <!-- Lista / Mapa -->
+        <!-- Lista / Mapa / Estadísticas -->
         <section v-else class="space-y-4">
           <!-- Pestañas (solo si hay más de una vista) -->
-          <div v-if="meta.expose_list && meta.expose_map" class="flex gap-1 border-b border-slate-200">
+          <div v-if="availableViews.length > 1" class="flex gap-1 border-b border-slate-200">
             <button
+              v-for="v in availableViews"
+              :key="v"
               class="border-b-2 px-4 py-2 text-sm font-medium"
-              :class="view === 'list' ? 'border-primary-600 text-primary-700' : 'border-transparent text-slate-500 hover:text-slate-700'"
-              @click="setView('list')"
-            >{{ $t('share.tabList') }}</button>
-            <button
-              class="border-b-2 px-4 py-2 text-sm font-medium"
-              :class="view === 'map' ? 'border-primary-600 text-primary-700' : 'border-transparent text-slate-500 hover:text-slate-700'"
-              @click="setView('map')"
-            >{{ $t('share.tabMap') }}</button>
+              :class="view === v ? 'border-primary-600 text-primary-700' : 'border-transparent text-slate-500 hover:text-slate-700'"
+              @click="setView(v)"
+            >{{ $t('share.tab' + v.charAt(0).toUpperCase() + v.slice(1)) }}</button>
           </div>
 
+          <!-- Estadísticas -->
+          <template v-if="view === 'stats'">
+            <div v-if="statsLoading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
+            <StatsPanels v-else-if="stats" :stats="stats" />
+            <p v-else class="rounded-xl bg-white px-5 py-8 text-center text-sm text-slate-400 ring-1 ring-slate-200">
+              {{ $t('stats.noData') }}
+            </p>
+          </template>
+
           <!-- Mapa -->
-          <template v-if="view === 'map'">
+          <template v-else-if="view === 'map'">
             <div v-if="mapLoading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
             <LeafletMap
               v-else-if="points.length"

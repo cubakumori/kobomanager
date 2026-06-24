@@ -34,7 +34,9 @@ ErrorResponse::ok([
     'expose_list'      => (bool) $link['expose_list'],
     'expose_detail'    => (bool) $link['expose_detail'],
     'expose_map'       => (bool) $link['expose_map'],
+    'expose_stats'     => (bool) $link['expose_stats'],
     'requires_password'=> $needsPassword,
     'unlocked'         => $unlocked,
+    'last_synced_at'   => $link['last_synced_at'],
     'default_locale'   => Settings::defaultLocale(),
 ]);

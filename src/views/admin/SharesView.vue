@@ -29,6 +29,7 @@ const blankForm = () => ({
   expose_list: true,
   expose_detail: true,
   expose_map: false,
+  expose_stats: false,
   expose_attachments: false,
   password: '',
   expires_at: '',
@@ -72,7 +73,7 @@ function openCreate() {
 const canCreate = computed(
   () =>
     form.value.form_id &&
-    (form.value.expose_list || form.value.expose_detail || form.value.expose_map) &&
+    (form.value.expose_list || form.value.expose_detail || form.value.expose_map || form.value.expose_stats) &&
     !(passwordPolicy.value === 'required' && !form.value.password),
 )
 
@@ -92,6 +93,7 @@ async function onCreate() {
       expose_list: form.value.expose_list,
       expose_detail: form.value.expose_detail,
       expose_map: form.value.expose_map,
+      expose_stats: form.value.expose_stats,
       expose_attachments: canExposeAttachments.value && form.value.expose_attachments,
       password: passwordPolicy.value === 'off' ? '' : form.value.password,
       expires_at: form.value.expires_at,
@@ -132,6 +134,7 @@ function exposesText(link) {
   if (link.expose_list) parts.push(t('shares.exposeList'))
   if (link.expose_detail) parts.push(t('shares.exposeDetail'))
   if (link.expose_map) parts.push(t('shares.exposeMap'))
+  if (link.expose_stats) parts.push(t('shares.exposeStats'))
   if (link.expose_attachments) parts.push(t('shares.exposeAttachments'))
   return parts.join(' · ')
 }
@@ -383,6 +386,7 @@ onMounted(() => {
             <label class="inline-flex items-center gap-2 text-sm"><input type="checkbox" v-model="form.expose_list" /> {{ $t('shares.exposeList') }}</label>
             <label class="inline-flex items-center gap-2 text-sm"><input type="checkbox" v-model="form.expose_detail" /> {{ $t('shares.exposeDetail') }}</label>
             <label class="inline-flex items-center gap-2 text-sm"><input type="checkbox" v-model="form.expose_map" /> {{ $t('shares.exposeMap') }}</label>
+            <label class="inline-flex items-center gap-2 text-sm"><input type="checkbox" v-model="form.expose_stats" /> {{ $t('shares.exposeStats') }}</label>
             <label
               v-if="attachmentsPolicy === 'require_password'"
               class="inline-flex items-center gap-2 text-sm"
@@ -392,7 +396,7 @@ onMounted(() => {
               {{ $t('shares.exposeAttachments') }}
             </label>
           </div>
-          <p v-if="!(form.expose_list || form.expose_detail || form.expose_map)" class="mt-1 text-xs text-red-600 dark:text-red-400">
+          <p v-if="!(form.expose_list || form.expose_detail || form.expose_map || form.expose_stats)" class="mt-1 text-xs text-red-600 dark:text-red-400">
             {{ $t('shares.exposeAtLeastOne') }}
           </p>
           <p v-if="attachmentsPolicy === 'require_password' && form.expose_attachments && !canExposeAttachments" class="mt-1 text-xs text-amber-600 dark:text-amber-400">

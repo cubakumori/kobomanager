@@ -28,6 +28,7 @@ require __DIR__ . '/lib/Derived.php';
 require __DIR__ . '/lib/RowScope.php';
 require __DIR__ . '/lib/FieldScope.php';
 require __DIR__ . '/lib/SubmissionSearch.php';
+require __DIR__ . '/lib/Stats.php';
 require __DIR__ . '/lib/ShareLink.php';
 require __DIR__ . '/lib/SubmissionSync.php';
 
@@ -147,6 +148,7 @@ $routes = [
     'public/share/:token/submissions/:uid' => 'public/share_submission.php',
     'public/share/:token/submissions/:uid/attachments/:attId' => 'public/share_attachment.php',
     'public/share/:token/map'              => 'public/share_map.php',
+    'public/share/:token/stats'            => 'public/share_stats.php',
     // Formulario de contacto público (página «Apoyar»): sin sesión.
     'public/contact'                       => 'public/contact.php',
 ];

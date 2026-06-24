@@ -48,7 +48,8 @@ class ShareLink {
     public static function resolve(string $token): ?array {
         if ($token === '') return null;
         $row = DB::run(
-            'SELECT sl.*, f.name AS form_name, f.schema_json, f.active AS form_active
+            'SELECT sl.*, f.name AS form_name, f.schema_json, f.active AS form_active,
+                    f.deployment_status, f.last_synced_at
              FROM share_links sl
              JOIN forms f ON f.id = sl.form_id
              WHERE sl.token = ?',
@@ -138,6 +139,7 @@ class ShareLink {
             'list'        => 'expose_list',
             'detail'      => 'expose_detail',
             'map'         => 'expose_map',
+            'stats'       => 'expose_stats',
             'attachments' => 'expose_attachments',
             default       => null,
         };

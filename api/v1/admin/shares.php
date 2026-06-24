@@ -3,7 +3,7 @@
  * /api/v1/admin/shares   (solo admin)
  *
  *   GET  → lista de enlaces de solo lectura (con su formulario y estado).
- *   POST { form_id, label?, expose_list?, expose_detail?, expose_map?,
+ *   POST { form_id, label?, expose_list?, expose_detail?, expose_map?, expose_stats?,
  *          row_filter?, password?, expires_at? }
  *        → crea un enlace y devuelve su token.
  *
@@ -18,7 +18,7 @@ $method = Request::method();
 if ($method === 'GET') {
     $rows = DB::run(
         "SELECT sl.id, sl.token, sl.form_id, f.name AS form_name, sl.label,
-                sl.expose_list, sl.expose_detail, sl.expose_map, sl.expose_attachments, sl.row_filter, sl.field_filter,
+                sl.expose_list, sl.expose_detail, sl.expose_map, sl.expose_stats, sl.expose_attachments, sl.row_filter, sl.field_filter,
                 (sl.password_hash IS NOT NULL) AS has_password,
                 sl.expires_at, sl.revoked_at, sl.last_accessed_at, sl.access_count,
                 sl.created_at, u.name AS created_by_name
@@ -37,6 +37,7 @@ if ($method === 'GET') {
         'expose_list'       => (bool) $r['expose_list'],
         'expose_detail'     => (bool) $r['expose_detail'],
         'expose_map'        => (bool) $r['expose_map'],
+        'expose_stats'      => (bool) $r['expose_stats'],
         'expose_attachments'=> (bool) $r['expose_attachments'],
         'row_filter'      => RowScope::normalize($r['row_filter'] ? json_decode($r['row_filter'], true) : null),
         'field_filter'    => FieldScope::normalize($r['field_filter'] ? json_decode($r['field_filter'], true) : null),
@@ -72,7 +73,8 @@ if ($method === 'POST') {
     $exposeList   = !empty($body['expose_list']) ? 1 : 0;
     $exposeDetail = !empty($body['expose_detail']) ? 1 : 0;
     $exposeMap    = !empty($body['expose_map']) ? 1 : 0;
-    if (!$exposeList && !$exposeDetail && !$exposeMap) {
+    $exposeStats  = !empty($body['expose_stats']) ? 1 : 0;
+    if (!$exposeList && !$exposeDetail && !$exposeMap && !$exposeStats) {
         ErrorResponse::send('VALIDATION_ERROR', 'El enlace debe exponer al menos una vista');
     }
 
@@ -129,18 +131,18 @@ if ($method === 'POST') {
 
     DB::run(
         'INSERT INTO share_links
-            (token, form_id, created_by, label, expose_list, expose_detail, expose_map,
+            (token, form_id, created_by, label, expose_list, expose_detail, expose_map, expose_stats,
              expose_attachments, row_filter, field_filter, password_hash, expires_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
             $token, $formId, $admin['id'], $label !== '' ? $label : null,
-            $exposeList, $exposeDetail, $exposeMap, $exposeAttachments, $filterJson, $fieldJson, $hash, $expiresAt,
+            $exposeList, $exposeDetail, $exposeMap, $exposeStats, $exposeAttachments, $filterJson, $fieldJson, $hash, $expiresAt,
         ]
     );
 
     $id = (int) DB::conn()->lastInsertId();
     Audit::log($admin['id'], 'share_create', $formId, null, [
-        'share_id' => $id, 'exposes' => compact('exposeList', 'exposeDetail', 'exposeMap', 'exposeAttachments'),
+        'share_id' => $id, 'exposes' => compact('exposeList', 'exposeDetail', 'exposeMap', 'exposeStats', 'exposeAttachments'),
         'has_password' => $hash !== null, 'expires_at' => $expiresAt,
     ]);
 
