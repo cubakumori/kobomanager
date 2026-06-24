@@ -130,6 +130,18 @@ Quedan como ideas reabribles si aparece una necesidad real.
 
 ## Optimización y UX
 
+- [ ] **Estadísticas de grupo / por equipo** *(idea jun-2026; por definir)*. Hoy las
+      estadísticas incluyen un desglose «por enumerador» (sobre `_submitted_by`). La idea es
+      un desglose de **dos niveles**: un campo del envío identifica el **equipo/grupo** y
+      otro (o `_submitted_by`) al **encuestador** individual, para ver «cómo lo está
+      haciendo» cada equipo y, dentro de él, cada encuestador. Métricas por
+      (equipo → encuestador): volumen y %, y —para calidad— mezcla de estado de revisión
+      (aprobado/rechazado/pendiente), duración media/mediana, completitud y última
+      actividad. Encaja con la pasada única en alcance de `lib/Stats` (reutiliza
+      `Derived`/`RowScope`/`FieldScope`) + una sección plegable en `StatsView`. **A definir**:
+      cómo se designan los campos de equipo/encuestador por formulario (ajuste por
+      formulario), qué métricas entran en la v1, y la interacción con el scoping por filas
+      (un jefe de equipo con `row_filter` vería solo su equipo). Esfuerzo medio.
 - [ ] **Agregación semanal explícita en Estadísticas** *(pendiente menor)* — hoy «Envíos por
       día/mes» elige día↔mes automáticamente según el tramo; valorar el escalón intermedio
       por semana.
