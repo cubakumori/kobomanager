@@ -33,6 +33,7 @@ if (Request::method() === 'GET') {
         'valid_table_freeze'         => Settings::VALID_TABLE_FREEZE,
         'table_header_lines'         => Settings::tableHeaderLines(),
         'valid_table_header_lines'   => Settings::VALID_TABLE_HEADER_LINES,
+        'notifications_default_on'   => Settings::notificationsDefaultOn(),
         'support_page_enabled'       => Settings::supportPageEnabled(),
         'landing_cta_enabled'        => Settings::landingCtaEnabled(),
     ]);
@@ -79,6 +80,11 @@ if (Request::method() === 'PUT') {
     if (array_key_exists('show_theme_toggle', $body)) {
         Settings::set('show_theme_toggle', (bool) $body['show_theme_toggle']);
         $out['show_theme_toggle'] = (bool) $body['show_theme_toggle'];
+    }
+
+    if (array_key_exists('notifications_default_on', $body)) {
+        Settings::set('notifications_default_on', (bool) $body['notifications_default_on']);
+        $out['notifications_default_on'] = (bool) $body['notifications_default_on'];
     }
 
     if (array_key_exists('support_page_enabled', $body)) {

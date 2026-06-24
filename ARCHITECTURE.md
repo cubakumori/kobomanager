@@ -283,9 +283,21 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   mode, field‑name truncation (`field_truncate_enabled`/`field_truncate_chars`, display‑only),
   password‑reset flag, self‑service audit flag (`audit_self_view_enabled`), viewer action
   flags, share password policy, share attachments policy (`share_attachments_policy`),
+  the default daily‑summary subscription (`notifications_default_on`), table display
+  (`table_freeze`, `table_header_lines`),
   public-surface toggles (`support_page_enabled` / `landing_cta_enabled`, served by the
   public `GET /config`), and `cron_runs`
   (last run per cron, written by `recordCronRun()` at the end of each cron job).
+- **Email notifications**: `cron/daily_summary.php` (e.g. `0 7 * * *`) sends each user one
+  digest of the previous day's new submissions per form, over `submissions_cache` (not
+  Kobo), via `lib/Mailer` (Resend REST, no SDK; a no‑op returning `false` when
+  `RESEND_API_KEY` is empty). A user's effective subscription per form is their explicit
+  `notification_config` row if present, else the global `notifications_default_on`
+  (`COALESCE(nc.daily_summary, default)`), scoped to **active** forms they can view
+  (admins: all active; viewers: `can_view`, honoring their row scope). `GET/PUT
+  /notifications` reads/writes those preferences: PUT stores an explicit 0/1 for every
+  currently‑visible form, so an opt‑out persists even when the default is on, while a
+  newly‑added form inherits the default until the user next saves.
 - `lib/Audit.php`: writes to `audit_log` (who did what) via `log()`, and reads it back via
   `query()` (pagination + filters by action/user/form/date/search, JOINs to users/forms).
   Two endpoints share `query()`: `GET /admin/audit` (admin; full log, optional user filter)

@@ -202,6 +202,16 @@ class Settings {
     }
 
     /**
+     * ¿Los usuarios reciben el resumen diario por DEFECTO en los formularios activos
+     * que pueden ver? Cuando está activo, un formulario sin preferencia explícita en
+     * `notification_config` se considera suscrito (el usuario puede desmarcarlo, lo que
+     * guarda una preferencia explícita en 0). Desactivado por defecto.
+     */
+    public static function notificationsDefaultOn(): bool {
+        return (bool) self::get('notifications_default_on', false);
+    }
+
+    /**
      * Visibilidad de la parte pública «de escaparate». Ambos activados por defecto.
      *   - support_page_enabled → la página «Apoyar» (/apoyar) y sus enlaces.
      *   - landing_cta_enabled  → la banda de cierre de la portada («monta tu instancia»).

@@ -19,6 +19,14 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
+- **Notificaciones por defecto** (`notifications_default_on`, global, desmarcado por
+  defecto) — cuando se activa, los usuarios quedan suscritos al resumen diario por email
+  en los formularios **activos** que pueden ver (admins incluidos), sin tener que
+  marcarlos a mano. Modelo dinámico: la suscripción efectiva = preferencia explícita del
+  usuario o, en su ausencia, el valor por defecto (`COALESCE`), evaluado en vivo; el PUT
+  de `/notifications` guarda un 0/1 explícito por formulario visible, de modo que un
+  opt-out **persiste** y los formularios nuevos heredan el default. Sin cambio de esquema.
+  Checkbox en Configuración + aviso en la página de Notificaciones.
 - **Ajuste «líneas del encabezado» en tablas** (`table_header_lines`: 1/2/3, global,
   por defecto 2) — los encabezados de columna largos se ajustan a varias líneas con un
   ancho acotado (`line-clamp` + ancho máx., texto completo en el `title`) en vez de

@@ -7,6 +7,7 @@ import { apiError } from '../stores/auth'
 const { t } = useI18n()
 
 const forms = ref([]) // [{ form_id, name, account_label, daily_summary }]
+const defaultOn = ref(false) // ajuste global: suscripción por defecto en formularios visibles
 const loading = ref(true)
 const error = ref('')
 const saving = ref(false)
@@ -17,7 +18,8 @@ async function load() {
   error.value = ''
   try {
     const { data } = await api.get('/notifications')
-    forms.value = data.data
+    forms.value = data.data.forms
+    defaultOn.value = !!data.data.default_on
   } catch (e) {
     error.value = apiError(e, t('notifications.loadError'))
   } finally {
@@ -64,6 +66,9 @@ onMounted(load)
       <div v-if="loading" class="px-5 py-4 text-sm text-slate-500">{{ $t('common.loading') }}</div>
 
       <template v-else>
+        <p v-if="defaultOn" class="border-b border-slate-100 bg-slate-50 px-5 py-2 text-xs text-slate-500">
+          {{ $t('notifications.defaultOnHint') }}
+        </p>
         <ul class="divide-y divide-slate-100">
           <li v-for="f in forms" :key="f.form_id" class="flex items-center justify-between px-5 py-3">
             <div>

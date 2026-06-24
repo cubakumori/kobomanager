@@ -28,17 +28,36 @@ $end   = date('Y-m-d', strtotime($day . ' +1 day')) . ' 00:00:00';
 
 // Candidatos (usuario × formulario con resumen activo). El conteo se calcula aparte
 // porque cada (usuario, formulario) puede tener un filtro por filas distinto.
-$candidates = DB::run(
-    'SELECT u.id AS user_id, u.name, u.email, u.role,
+// Suscripción EFECTIVA = preferencia explícita en notification_config o, en su
+// ausencia, el valor por defecto global (notifications_default_on). Solo cuentan los
+// formularios ACTIVOS que el usuario puede ver (viewer: can_view; admin: todos).
+$def = Settings::notificationsDefaultOn() ? 1 : 0;
+
+$viewerRows = DB::run(
+    "SELECT u.id AS user_id, u.name, u.email, u.role,
             f.id AS form_id, f.name AS form_name, p.row_filter
-     FROM notification_config nc
-     JOIN users u ON u.id = nc.user_id AND u.active = 1
-     JOIN forms f ON f.id = nc.form_id
-     LEFT JOIN user_form_permissions p ON p.user_id = u.id AND p.form_id = f.id
-     WHERE nc.daily_summary = 1
-     ORDER BY u.id, f.name',
-    []
+     FROM users u
+     JOIN user_form_permissions p ON p.user_id = u.id AND p.can_view = 1
+     JOIN forms f ON f.id = p.form_id AND f.active = 1
+     LEFT JOIN notification_config nc ON nc.user_id = u.id AND nc.form_id = f.id
+     WHERE u.active = 1 AND u.role <> 'admin' AND COALESCE(nc.daily_summary, ?) = 1
+     ORDER BY u.id, f.name",
+    [$def]
 )->fetchAll();
+
+// Los admins ven todos los formularios activos (sin filtro por filas).
+$adminRows = DB::run(
+    "SELECT u.id AS user_id, u.name, u.email, u.role,
+            f.id AS form_id, f.name AS form_name, NULL AS row_filter
+     FROM users u
+     JOIN forms f ON f.active = 1
+     LEFT JOIN notification_config nc ON nc.user_id = u.id AND nc.form_id = f.id
+     WHERE u.active = 1 AND u.role = 'admin' AND COALESCE(nc.daily_summary, ?) = 1
+     ORDER BY u.id, f.name",
+    [$def]
+)->fetchAll();
+
+$candidates = array_merge($viewerRows, $adminRows);
 
 // Agrupar por usuario, contando solo los envíos en alcance.
 $byUser = [];

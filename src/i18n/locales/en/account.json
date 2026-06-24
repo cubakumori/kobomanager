@@ -56,6 +56,7 @@
     "subtitle": "Email alerts about your forms' activity.",
     "dailySummary": "Daily email summary",
     "dailySummaryDesc": "Get a morning email with the new submissions of the selected forms.",
+    "defaultOnHint": "The administrator enabled notifications by default: active forms show as checked. Uncheck any you don't want to receive.",
     "noForms": "You have no assigned forms.",
     "save": "Save preferences",
     "loadError": "Could not load the notifications",

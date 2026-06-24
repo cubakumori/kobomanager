@@ -27,11 +27,17 @@ function visible_form_ids(array $user): array {
 }
 
 if (Request::method() === 'GET') {
-    $enabled = DB::run(
-        'SELECT form_id FROM notification_config WHERE user_id = ? AND daily_summary = 1',
+    // Preferencia EXPLÍCITA del usuario por formulario (0/1). La ausencia de fila
+    // significa «sin preferencia» → se aplica el valor por defecto global.
+    $rows = DB::run(
+        'SELECT form_id, daily_summary FROM notification_config WHERE user_id = ?',
         [$user['id']]
     )->fetchAll();
-    $enabledSet = array_flip(array_map(fn($r) => (int) $r['form_id'], $enabled));
+    $explicit = [];
+    foreach ($rows as $r) {
+        $explicit[(int) $r['form_id']] = (int) $r['daily_summary'];
+    }
+    $defaultOn = Settings::notificationsDefaultOn();
 
     if ($user['role'] === 'admin') {
         $forms = DB::run(
@@ -54,10 +60,13 @@ if (Request::method() === 'GET') {
         'form_id'       => (int) $f['id'],
         'name'          => $f['name'],
         'account_label' => $f['account_label'],
-        'daily_summary' => isset($enabledSet[(int) $f['id']]),
+        // Efectivo = preferencia explícita si existe; si no, el valor por defecto.
+        'daily_summary' => array_key_exists((int) $f['id'], $explicit)
+            ? (bool) $explicit[(int) $f['id']]
+            : $defaultOn,
     ], $forms);
 
-    ErrorResponse::ok($out);
+    ErrorResponse::ok(['forms' => $out, 'default_on' => $defaultOn]);
 }
 
 if (Request::method() === 'PUT') {
@@ -65,21 +74,21 @@ if (Request::method() === 'PUT') {
     if (!is_array($enabled)) {
         ErrorResponse::send('VALIDATION_ERROR', 'enabled debe ser una lista de form_id');
     }
-    // Solo formularios que el usuario puede ver.
-    $allowed = array_flip(visible_form_ids($user));
-    $toEnable = array_values(array_unique(array_filter(
-        array_map('intval', $enabled),
-        fn($id) => isset($allowed[$id])
-    )));
+    // Formularios que el usuario puede ver (activos). Se guarda una preferencia
+    // EXPLÍCITA (1/0) para cada uno, de modo que un «desmarcado» persista frente al
+    // valor por defecto global (sin fila = sin preferencia = usa el default). Los
+    // formularios no visibles en este momento (p. ej. nuevos) heredarán el default.
+    $visible    = visible_form_ids($user);
+    $enabledSet = array_flip(array_map('intval', $enabled));
 
     $pdo = DB::conn();
     $pdo->beginTransaction();
     try {
         DB::run('DELETE FROM notification_config WHERE user_id = ?', [$user['id']]);
-        foreach ($toEnable as $formId) {
+        foreach ($visible as $formId) {
             DB::run(
-                'INSERT INTO notification_config (user_id, form_id, daily_summary) VALUES (?, ?, 1)',
-                [$user['id'], $formId]
+                'INSERT INTO notification_config (user_id, form_id, daily_summary) VALUES (?, ?, ?)',
+                [$user['id'], $formId, isset($enabledSet[$formId]) ? 1 : 0]
             );
         }
         $pdo->commit();
@@ -88,7 +97,7 @@ if (Request::method() === 'PUT') {
         throw $e;
     }
 
-    ErrorResponse::ok(['enabled' => $toEnable]);
+    ErrorResponse::ok(['enabled' => array_values(array_filter($visible, fn($id) => isset($enabledSet[$id])))]);
 }
 
 ErrorResponse::send('VALIDATION_ERROR', 'Método no permitido', 405);

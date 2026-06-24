@@ -20,6 +20,7 @@ const labelMode = ref('labels')
 const validLabelModes = ref(['labels', 'raw'])
 const passwordResetEnabled = ref(false)
 const auditSelfViewEnabled = ref(false)
+const notificationsDefaultOn = ref(false)
 const defaultTheme = ref('auto')
 const validThemes = ref(['light', 'dark', 'auto'])
 const showThemeToggle = ref(true)
@@ -60,6 +61,7 @@ async function load() {
     validLabelModes.value = data.data.valid_label_modes
     passwordResetEnabled.value = data.data.password_reset_enabled
     auditSelfViewEnabled.value = data.data.audit_self_view_enabled
+    if (data.data.notifications_default_on != null) notificationsDefaultOn.value = data.data.notifications_default_on
     defaultTheme.value = data.data.default_theme
     validThemes.value = data.data.valid_themes ?? validThemes.value
     showThemeToggle.value = data.data.show_theme_toggle
@@ -107,6 +109,7 @@ async function save() {
       label_mode: labelMode.value,
       password_reset_enabled: passwordResetEnabled.value,
       audit_self_view_enabled: auditSelfViewEnabled.value,
+      notifications_default_on: notificationsDefaultOn.value,
       default_theme: defaultTheme.value,
       show_theme_toggle: showThemeToggle.value,
       support_page_enabled: supportPageEnabled.value,
@@ -126,6 +129,7 @@ async function save() {
     labelMode.value = data.data.label_mode
     passwordResetEnabled.value = data.data.password_reset_enabled
     if (data.data.audit_self_view_enabled != null) auditSelfViewEnabled.value = data.data.audit_self_view_enabled
+    if (data.data.notifications_default_on != null) notificationsDefaultOn.value = data.data.notifications_default_on
     if (data.data.default_theme != null) defaultTheme.value = data.data.default_theme
     if (data.data.show_theme_toggle != null) showThemeToggle.value = data.data.show_theme_toggle
     if (data.data.support_page_enabled != null) supportPageEnabled.value = data.data.support_page_enabled
@@ -401,6 +405,26 @@ onMounted(load)
           <span>
             <span class="block text-sm font-medium text-slate-800">{{ $t('settings.auditSelfViewToggle') }}</span>
             <span class="block text-xs text-slate-400">{{ $t('settings.auditSelfViewHint') }}</span>
+          </span>
+        </label>
+      </section>
+
+      <!-- Notificaciones por defecto -->
+      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.notificationsDefault') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.notificationsDefaultDesc') }}</p>
+        </div>
+        <label class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+          <input
+            type="checkbox"
+            class="mt-0.5 h-4 w-4"
+            :checked="notificationsDefaultOn"
+            @change="notificationsDefaultOn = !notificationsDefaultOn; saved = false"
+          />
+          <span>
+            <span class="block text-sm font-medium text-slate-800">{{ $t('settings.notificationsDefaultToggle') }}</span>
+            <span class="block text-xs text-slate-400">{{ $t('settings.notificationsDefaultHint') }}</span>
           </span>
         </label>
       </section>
