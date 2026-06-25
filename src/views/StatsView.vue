@@ -15,17 +15,40 @@ const stats = ref(null)
 const loading = ref(true)
 const error = ref('')
 
+// Filtro de estado activo (null = dejar que el backend aplique el alcance por
+// defecto configurado). Tras cargar, se sincroniza con el filtro realmente aplicado.
+const selectedStatus = ref(null)
+// Equipos seleccionados (null = todos; array = subconjunto marcado). Persiste al
+// cambiar de estado: ambos filtros se componen.
+const selectedTeams = ref(null)
+
 async function load() {
   loading.value = true
   error.value = ''
   try {
-    const { data } = await api.get(`/forms/${formId.value}/stats`)
+    const params = {}
+    if (selectedStatus.value) params.status = selectedStatus.value
+    if (selectedTeams.value) params.teams = selectedTeams.value.join(',')
+    const { data } = await api.get(`/forms/${formId.value}/stats`, { params })
     stats.value = data.data
+    selectedStatus.value = data.data.filter // refleja la tarjeta activa
+    selectedTeams.value = data.data.team_selection ?? null
   } catch (e) {
     error.value = apiError(e, t('stats.loadError'))
   } finally {
     loading.value = false
   }
+}
+
+function selectStatus(status) {
+  if (status === selectedStatus.value) return
+  selectedStatus.value = status
+  load()
+}
+
+function selectTeams(keys) {
+  selectedTeams.value = keys // null = todos; array = subconjunto (puede ser vacío)
+  load()
 }
 
 onMounted(load)
@@ -51,8 +74,16 @@ onMounted(load)
     <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
       {{ error }}
     </div>
-    <Skeleton v-else-if="loading" variant="cards" :count="4" />
+    <Skeleton v-else-if="loading && !stats" variant="cards" :count="4" />
 
-    <StatsPanels v-else-if="stats" :stats="stats" />
+    <StatsPanels
+      v-else-if="stats"
+      :stats="stats"
+      interactive
+      :reloading="loading"
+      :selected-teams="selectedTeams"
+      @select="selectStatus"
+      @select-teams="selectTeams"
+    />
   </div>
 </template>

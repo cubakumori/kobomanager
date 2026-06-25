@@ -16,10 +16,14 @@ $link  = ShareLink::requireAccess($token, 'detail');
 
 $formId = (int) $link['form_id'];
 
+// Alcance por estado de revisión del enlace: un envío fuera de ese estado responde 404
+// (se aplica en la propia consulta, por submission_uid).
+[$stSql, $stP] = ValidationStatus::latestFilterSql(ShareLink::statusScope($link), 'submission_uid');
+
 $sub = DB::run(
-    'SELECT id, submission_uid, json_payload, submitted_at
-     FROM submissions_cache WHERE submission_uid = ? AND form_id = ?',
-    [$uid, $formId]
+    "SELECT id, submission_uid, json_payload, submitted_at
+     FROM submissions_cache WHERE submission_uid = ? AND form_id = ? AND $stSql",
+    array_merge([$uid, $formId], $stP)
 )->fetch();
 if (!$sub) {
     ErrorResponse::send('NOT_FOUND', 'Envío no encontrado');
@@ -27,8 +31,8 @@ if (!$sub) {
 
 $payload = json_decode($sub['json_payload'], true) ?: [];
 
-$scope = ShareLink::rule($link);
-if (!RowScope::matches($scope, $payload)) {
+// Alcance por filas del enlace (row_filter + equipos): fuera de alcance → 404.
+if (!ShareLink::matchesScope($link, $payload)) {
     ErrorResponse::send('NOT_FOUND', 'Envío no encontrado');
 }
 
@@ -43,18 +47,18 @@ $resolved = FieldScope::applySchema($fieldScope, FormSchema::resolve($schema, Se
 // Envío anterior/siguiente dentro del alcance del enlace (mismo orden que la lista).
 $curTime = $sub['submitted_at'];
 $curId   = (int) $sub['id'];
-[$navSql, $navP] = RowScope::sqlCondition($scope, 'json_payload');
+[$navSql, $navP] = ShareLink::rowSql($link, 'json_payload');
 $next = DB::run(
     "SELECT submission_uid FROM submissions_cache
-     WHERE form_id = ? AND (submitted_at < ? OR (submitted_at = ? AND id < ?)) AND $navSql
+     WHERE form_id = ? AND (submitted_at < ? OR (submitted_at = ? AND id < ?)) AND $navSql AND $stSql
      ORDER BY submitted_at DESC, id DESC LIMIT 1",
-    array_merge([$formId, $curTime, $curTime, $curId], $navP)
+    array_merge([$formId, $curTime, $curTime, $curId], $navP, $stP)
 )->fetch();
 $prev = DB::run(
     "SELECT submission_uid FROM submissions_cache
-     WHERE form_id = ? AND (submitted_at > ? OR (submitted_at = ? AND id > ?)) AND $navSql
+     WHERE form_id = ? AND (submitted_at > ? OR (submitted_at = ? AND id > ?)) AND $navSql AND $stSql
      ORDER BY submitted_at ASC, id ASC LIMIT 1",
-    array_merge([$formId, $curTime, $curTime, $curId], $navP)
+    array_merge([$formId, $curTime, $curTime, $curId], $navP, $stP)
 )->fetch();
 
 // Adjuntos: solo si el enlace los expone. Se sirven por el proxy público; el

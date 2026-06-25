@@ -15,14 +15,16 @@ final class ShareLinkTest extends DbTestCase
         DB::run(
             'INSERT INTO share_links
                 (token, form_id, created_by, label, expose_list, expose_detail, expose_map,
-                 expose_attachments, row_filter, password_hash, expires_at, revoked_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                 expose_attachments, row_filter, team_filter, stats_status, password_hash, expires_at, revoked_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 $token, $formId, $opts['created_by'] ?? $this->makeUser('admin'),
                 $opts['label'] ?? null,
                 $opts['expose_list'] ?? 1, $opts['expose_detail'] ?? 1, $opts['expose_map'] ?? 0,
                 $opts['expose_attachments'] ?? 0,
                 isset($opts['row_filter']) ? json_encode($opts['row_filter']) : null,
+                isset($opts['team_filter']) ? json_encode($opts['team_filter']) : null,
+                $opts['stats_status'] ?? null,
                 $opts['password_hash'] ?? null,
                 $opts['expires_at'] ?? null,
                 $opts['revoked_at'] ?? null,
@@ -108,6 +110,43 @@ final class ShareLinkTest extends DbTestCase
         $formId = $this->makeForm();
         [$token] = $this->makeShare($formId);
         $this->assertNull(ShareLink::rule(ShareLink::resolve($token)));
+    }
+
+    // ---- Alcance fijo del enlace: equipos + estado ----
+
+    public function testStatusScope(): void
+    {
+        $formId = $this->makeForm();
+        [$tApproved] = $this->makeShare($formId, ['stats_status' => 'approved']);
+        [$tAll]      = $this->makeShare($formId);
+        $this->assertSame('approved', ShareLink::statusScope(ShareLink::resolve($tApproved)));
+        $this->assertNull(ShareLink::statusScope(ShareLink::resolve($tAll)));
+    }
+
+    public function testTeamScopeFromLink(): void
+    {
+        $formId = $this->makeForm();
+        DB::run('UPDATE forms SET stats_team_field = ? WHERE id = ?', ['team', $formId]);
+        [$token] = $this->makeShare($formId, ['team_filter' => ['A']]);
+        $link = ShareLink::resolve($token);
+
+        // Hay regla de equipo y el alcance por filas la respeta.
+        $this->assertNotNull(ShareLink::teamRule($link));
+        $this->assertTrue(ShareLink::matchesScope($link, ['team' => 'A']));
+        $this->assertFalse(ShareLink::matchesScope($link, ['team' => 'B']));
+
+        // El SQL combinado lleva parámetros del equipo seleccionado.
+        [$sql, $params] = ShareLink::rowSql($link, 'json_payload');
+        $this->assertStringContainsString('AND', $sql);
+        $this->assertContains('A', $params);
+    }
+
+    public function testTeamScopeNullWithoutTeamField(): void
+    {
+        // Sin stats_team_field en el formulario, team_filter no produce regla.
+        $formId = $this->makeForm();
+        [$token] = $this->makeShare($formId, ['team_filter' => ['A']]);
+        $this->assertNull(ShareLink::teamRule(ShareLink::resolve($token)));
     }
 
     public function testPasswordVerification(): void

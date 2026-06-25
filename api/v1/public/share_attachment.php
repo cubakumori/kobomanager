@@ -24,12 +24,15 @@ $attId = (string) Request::param('attId');
 $link   = ShareLink::requireAccess($token, 'attachments');
 $formId = (int) $link['form_id'];
 
+// Alcance por estado de revisión del enlace (p. ej. solo aprobados): fuera de estado → 404.
+[$stSql, $stP] = ValidationStatus::latestFilterSql(ShareLink::statusScope($link), 'sc.submission_uid');
+
 $sub = DB::run(
-    'SELECT sc.json_payload, f.kobo_account_id
+    "SELECT sc.json_payload, f.kobo_account_id
      FROM submissions_cache sc
      JOIN forms f ON f.id = sc.form_id
-     WHERE sc.submission_uid = ? AND sc.form_id = ?',
-    [$uid, $formId]
+     WHERE sc.submission_uid = ? AND sc.form_id = ? AND $stSql",
+    array_merge([$uid, $formId], $stP)
 )->fetch();
 if (!$sub) {
     ErrorResponse::send('NOT_FOUND', 'Envío no encontrado');
@@ -37,8 +40,8 @@ if (!$sub) {
 
 $payload = json_decode($sub['json_payload'], true) ?: [];
 
-// Fuera del alcance de filas del enlace → como inexistente.
-if (!RowScope::matches(ShareLink::rule($link), $payload)) {
+// Fuera del alcance de filas del enlace (row_filter + equipos) → como inexistente.
+if (!ShareLink::matchesScope($link, $payload)) {
     ErrorResponse::send('NOT_FOUND', 'Envío no encontrado');
 }
 

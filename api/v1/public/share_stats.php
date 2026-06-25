@@ -19,9 +19,13 @@ $schemaRaw  = $link['schema_json'] ? json_decode($link['schema_json'], true) : n
 $scope      = ShareLink::rule($link);
 $fieldScope = FieldScope::ruleForLink($link);
 
+// Alcance FIJO del enlace: equipos (restricción de fila adicional, vía $extraScope) y
+// estado de revisión. `includeReview=false` mantiene oculto el desglose `by_status`,
+// pero el conjunto sí se acota a «solo aprobados» si el enlace lo fija.
 $stats = Stats::compute(
     $formId, $schemaRaw, $scope, $fieldScope, Settings::defaultLocale(), false,
-    $link['stats_team_field'] ?: null, $link['stats_enumerator_field'] ?: null
+    $link['stats_team_field'] ?: null, $link['stats_enumerator_field'] ?: null,
+    ShareLink::statusScope($link), null, ShareLink::teamRule($link)
 );
 
 ErrorResponse::ok(array_merge([

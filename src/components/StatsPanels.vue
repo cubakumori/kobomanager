@@ -15,8 +15,57 @@ import StatsChart from './StatsChart.vue'
 const { t } = useI18n()
 const props = defineProps({
   stats: { type: Object, required: true },
+  // Cabecera clicable: al pulsar una tarjeta se emite `select` con el estado y
+  // las métricas se recalculan para ese subconjunto. La vista pública lo deja en
+  // false (tarjetas como simples contadores, sin estado de revisión).
+  interactive: { type: Boolean, default: false },
+  // Recarga en curso (cambio de filtro): atenúa las tarjetas mientras llega.
+  reloading: { type: Boolean, default: false },
+  // Equipos marcados (null = todos). Controla qué equipos suman a los agregados.
+  selectedTeams: { type: Array, default: null },
 })
+const emit = defineEmits(['select', 'select-teams'])
 const stats = computed(() => props.stats)
+
+// ---- Filtro por equipos (checkboxes del desglose) ----
+const allTeamKeys = computed(() => (stats.value?.by_team ?? []).map((t) => t.key))
+const teamSubsetActive = computed(() => Array.isArray(props.selectedTeams))
+const isTeamOn = (key) => props.selectedTeams === null || props.selectedTeams.includes(key)
+const teamsOnCount = computed(() =>
+  props.selectedTeams === null ? allTeamKeys.value.length : props.selectedTeams.length,
+)
+
+function toggleTeam(key) {
+  const cur = props.selectedTeams ? [...props.selectedTeams] : [...allTeamKeys.value]
+  const i = cur.indexOf(key)
+  if (i >= 0) cur.splice(i, 1)
+  else cur.push(key)
+  // Si quedan todos marcados, se vuelve a «sin filtro» (null) para no arrastrar el parámetro.
+  emit('select-teams', cur.length === allTeamKeys.value.length ? null : cur)
+}
+
+// Tarjetas del encabezado. «Total» (clave 'all') siempre; el resto solo con el
+// bloque de revisión presente (vista interna). La clave casa con el filtro que
+// devuelve el backend (`stats.filter`) para resaltar la activa.
+const headerCards = computed(() => {
+  const s = stats.value
+  const cards = [{ key: 'all', label: t('stats.total'), value: s.total, cls: 'text-slate-900' }]
+  if (s.by_status) {
+    cards.push(
+      { key: 'pending', label: t('stats.pending'), value: s.by_status.pending, cls: 'text-amber-600 dark:text-amber-400' },
+      { key: 'approved', label: t('stats.approved'), value: s.by_status.approved, cls: 'text-success-600 dark:text-success-400' },
+      { key: 'on_hold', label: t('stats.onHold'), value: s.by_status.on_hold ?? 0, cls: 'text-sky-600' },
+      { key: 'rejected', label: t('stats.rejected'), value: s.by_status.rejected, cls: 'text-red-600 dark:text-red-400' },
+    )
+  }
+  return cards
+})
+
+// Etiqueta del subconjunto activo, para el aviso «basado en …».
+const filterLabel = computed(() => {
+  const f = stats.value?.filter
+  return f && f !== 'all' ? t('review.' + f) : t('stats.scopeAll')
+})
 
 const PRIMARY = '#2563eb'
 
@@ -207,31 +256,38 @@ const reviewPills = (st) =>
 
 <template>
   <div class="space-y-6">
-    <!-- Tarjetas resumen. Las de estado de revisión solo si el bloque interno está presente. -->
+    <!-- Tarjetas resumen. Las de estado de revisión solo si el bloque interno está
+         presente. En modo interactivo son botones: al pulsarlos las estadísticas se
+         recalculan para ese subconjunto (la activa lleva anillo y ✓). -->
     <div class="grid gap-4 grid-cols-2 sm:grid-cols-3" :class="stats.by_status ? 'lg:grid-cols-5' : ''">
-      <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.total') }}</p>
-        <p class="mt-1 text-2xl font-semibold text-slate-900">{{ stats.total }}</p>
-      </div>
-      <template v-if="stats.by_status">
-        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.pending') }}</p>
-          <p class="mt-1 text-2xl font-semibold text-amber-600 dark:text-amber-400">{{ stats.by_status.pending }}</p>
-        </div>
-        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.approved') }}</p>
-          <p class="mt-1 text-2xl font-semibold text-success-600 dark:text-success-400">{{ stats.by_status.approved }}</p>
-        </div>
-        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.onHold') }}</p>
-          <p class="mt-1 text-2xl font-semibold text-sky-600">{{ stats.by_status.on_hold ?? 0 }}</p>
-        </div>
-        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <p class="text-xs uppercase tracking-wider text-slate-400">{{ $t('stats.rejected') }}</p>
-          <p class="mt-1 text-2xl font-semibold text-red-600 dark:text-red-400">{{ stats.by_status.rejected }}</p>
-        </div>
-      </template>
+      <component
+        :is="interactive ? 'button' : 'div'"
+        v-for="c in headerCards"
+        :key="c.key"
+        :type="interactive ? 'button' : undefined"
+        :disabled="interactive && reloading"
+        :aria-pressed="interactive ? String(stats.filter === c.key) : undefined"
+        class="relative rounded-xl bg-white p-5 text-left shadow-sm ring-1 transition"
+        :class="[
+          interactive && stats.filter === c.key ? 'ring-2 ring-primary-500' : 'ring-slate-200',
+          interactive ? 'cursor-pointer hover:ring-primary-300 disabled:cursor-wait disabled:opacity-60' : '',
+        ]"
+        @click="interactive ? $emit('select', c.key) : null"
+      >
+        <span
+          v-if="interactive && stats.filter === c.key"
+          class="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary-600 text-xs font-bold text-white"
+          aria-hidden="true"
+        >✓</span>
+        <p class="text-xs uppercase tracking-wider text-slate-400">{{ c.label }}</p>
+        <p class="mt-1 text-2xl font-semibold" :class="c.cls">{{ c.value }}</p>
+      </component>
     </div>
+
+    <!-- Aviso del subconjunto activo (solo interactivo). -->
+    <p v-if="interactive" class="-mt-3 text-xs text-slate-400">
+      {{ $t('stats.showingScope', { label: filterLabel, n: stats.base }) }}
+    </p>
 
     <!-- Gráficos base. -->
     <div class="grid gap-4 lg:grid-cols-3">
@@ -306,19 +362,20 @@ const reviewPills = (st) =>
       </div>
     </div>
 
-    <!-- Adjuntos / Geo -->
-    <div class="grid gap-4 lg:grid-cols-2">
-      <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+    <!-- Adjuntos / Geo. Cada tarjeta solo si el subconjunto mostrado tiene alguno
+         (un formulario sin adjuntos/ubicación no genera una tarjeta vacía). -->
+    <div v-if="stats.attachments.with > 0 || stats.geo.with > 0" class="grid gap-4 lg:grid-cols-2">
+      <div v-if="stats.attachments.with > 0" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <h2 class="mb-1 font-semibold text-slate-900">{{ $t('stats.attachments') }}</h2>
         <p class="mb-3 text-sm text-slate-500">
           {{ $t('stats.attSummary', { pct: stats.attachments.with_pct }) }}<span v-if="attByKindText"> · {{ attByKindText }}</span>
         </p>
-        <div class="h-56"><StatsChart type="doughnut" :data="attachmentsData" :options="doughnutValueOpts(stats.total)" /></div>
+        <div class="h-56"><StatsChart type="doughnut" :data="attachmentsData" :options="doughnutValueOpts(stats.base)" /></div>
       </div>
-      <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <div v-if="stats.geo.with > 0" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <h2 class="mb-1 font-semibold text-slate-900">{{ $t('stats.geo') }}</h2>
         <p class="mb-3 text-sm text-slate-500">{{ $t('stats.geoSummary', { pct: stats.geo.with_pct }) }}</p>
-        <div class="h-56"><StatsChart type="doughnut" :data="geoData" :options="doughnutValueOpts(stats.total)" /></div>
+        <div class="h-56"><StatsChart type="doughnut" :data="geoData" :options="doughnutValueOpts(stats.base)" /></div>
       </div>
     </div>
 
@@ -326,7 +383,7 @@ const reviewPills = (st) =>
     <div v-if="showEnumerator" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
       <h2 class="mb-4 font-semibold text-slate-900">{{ $t('stats.byEnumerator') }}</h2>
       <div :style="{ height: hBarHeight(stats.by_enumerator.length) }">
-        <StatsChart type="bar" :data="byEnumeratorData" :options="hBarValueOpts(stats.total)" />
+        <StatsChart type="bar" :data="byEnumeratorData" :options="hBarValueOpts(stats.base)" />
       </div>
       <p v-if="stats.enumerator_others" class="mt-2 text-xs text-slate-400">
         {{ $t('stats.others', { n: stats.enumerator_others }) }}
@@ -335,20 +392,47 @@ const reviewPills = (st) =>
 
     <!-- Por equipo → encuestador (desglose de dos niveles, si está configurado) -->
     <section v-if="showTeam" class="space-y-3">
-      <div>
-        <h2 class="font-semibold text-slate-900">{{ $t('stats.byTeamTitle') }}</h2>
-        <p class="text-xs text-slate-400">
-          {{ $t('stats.byTeamTeam', { field: teamFieldLabel }) }} · {{ $t('stats.byTeamEnum', { field: enumFieldLabel }) }}
-        </p>
+      <div class="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('stats.byTeamTitle') }}</h2>
+          <p class="text-xs text-slate-400">
+            {{ $t('stats.byTeamTeam', { field: teamFieldLabel }) }} · {{ $t('stats.byTeamEnum', { field: enumFieldLabel }) }}
+          </p>
+          <p v-if="interactive" class="mt-0.5 text-xs text-slate-400">{{ $t('stats.teamToggleHint') }}</p>
+        </div>
+        <div v-if="interactive && teamSubsetActive" class="flex items-center gap-2 text-xs">
+          <span class="text-slate-500">{{ $t('stats.teamsSubset', { k: teamsOnCount, m: stats.by_team.length }) }}</span>
+          <button type="button" class="font-medium text-primary-600 hover:underline" :disabled="reloading" @click="$emit('select-teams', null)">
+            {{ $t('stats.teamsShowAll') }}
+          </button>
+        </div>
       </div>
 
       <details
         v-for="(team, i) in stats.by_team"
         :key="i"
-        class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200"
+        class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200 transition"
+        :class="{ 'opacity-50': interactive && !isTeamOn(team.key) }"
         :open="stats.by_team.length <= 3"
       >
         <summary class="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3 hover:bg-slate-50">
+          <button
+            v-if="interactive"
+            type="button"
+            role="switch"
+            :aria-checked="String(isTeamOn(team.key))"
+            :aria-label="team.name"
+            :disabled="reloading"
+            :title="$t('stats.teamToggleHint')"
+            class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/30 disabled:cursor-wait disabled:opacity-60"
+            :class="isTeamOn(team.key) ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-600'"
+            @click.stop="toggleTeam(team.key)"
+          >
+            <span
+              class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+              :class="isTeamOn(team.key) ? 'translate-x-4' : 'translate-x-0.5'"
+            />
+          </button>
           <span class="font-semibold text-slate-900">{{ team.name }}</span>
           <span class="text-sm text-slate-500">{{ team.count }} · {{ fmtPct(team.pct) }}</span>
           <span class="ml-auto flex gap-2 text-xs font-semibold">

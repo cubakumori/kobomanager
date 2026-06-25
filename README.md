@@ -41,14 +41,18 @@ native validation status.
 - **Public read-only links** — share a form without giving anyone an account, optionally
   with a password, an expiry date, and the same row/column scoping you apply to your
   team. Submission list, map, statistics, and attachments are opt-in per link (a
-  stats-only link shows charts without exposing individual submissions). The public view
-  shows the data's freshness ("data as of …").
+  stats-only link shows charts without exposing individual submissions). You can also
+  **freeze a link to a subset** — only approved submissions, and/or specific teams —
+  applied across every view it exposes. The public view shows the data's freshness
+  ("data as of …").
 
 **Analysis**
 
 - **Statistics**: totals, submissions per day/month, activity by hour and weekday
   (configurable timezone), 7/30-day trends, fill-in duration, and distribution by review
-  status and by question.
+  status and by question. **Filterable** by review status (header cards) and by team
+  (toggles on the team breakdown); the default scope on open is configurable in *Settings*
+  (all submissions or approved only).
 - **Map** of submission geopoints.
 
 **Data**

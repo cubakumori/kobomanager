@@ -34,6 +34,8 @@ const tableFreeze = ref('first')
 const validTableFreeze = ref(['first', 'none'])
 const formsOrder = ref('account_name')
 const validFormsOrder = ref(['account_name', 'name', 'recent_sync', 'recent_created'])
+const statsDefaultScope = ref('approved')
+const validStatsDefaultScope = ref(['all', 'approved'])
 const tableHeaderLines = ref(2)
 const validTableHeaderLines = ref([1, 2, 3])
 const mailConfigured = ref(false)
@@ -75,6 +77,8 @@ async function load() {
     validTableHeaderLines.value = data.data.valid_table_header_lines ?? validTableHeaderLines.value
     if (data.data.forms_order != null) formsOrder.value = data.data.forms_order
     validFormsOrder.value = data.data.valid_forms_order ?? validFormsOrder.value
+    if (data.data.stats_default_scope != null) statsDefaultScope.value = data.data.stats_default_scope
+    validStatsDefaultScope.value = data.data.valid_stats_default_scope ?? validStatsDefaultScope.value
     mailConfigured.value = data.data.mail_configured
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     sharePasswordPolicy.value = data.data.share_password_policy
@@ -121,6 +125,7 @@ async function save() {
       table_freeze: tableFreeze.value,
       table_header_lines: tableHeaderLines.value,
       forms_order: formsOrder.value,
+      stats_default_scope: statsDefaultScope.value,
       viewer_actions: viewerActions.value,
       share_password_policy: sharePasswordPolicy.value,
       share_attachments_policy: shareAttachmentsPolicy.value,
@@ -151,6 +156,7 @@ async function save() {
       try { localStorage.setItem('km.cfg.tableFreeze', data.data.table_freeze) } catch { /* noop */ }
     }
     if (data.data.forms_order != null) formsOrder.value = data.data.forms_order
+    if (data.data.stats_default_scope != null) statsDefaultScope.value = data.data.stats_default_scope
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     if (data.data.share_password_policy) sharePasswordPolicy.value = data.data.share_password_policy
     if (data.data.share_attachments_policy) shareAttachmentsPolicy.value = data.data.share_attachments_policy
@@ -307,6 +313,21 @@ onMounted(load)
           @change="saved = false"
         >
           <option v-for="fo in validFormsOrder" :key="fo" :value="fo">{{ $t('settings.formsOrder_' + fo) }}</option>
+        </select>
+      </section>
+
+      <!-- Alcance por defecto de las estadísticas -->
+      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.statsDefaultScope') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.statsDefaultScopeDesc') }}</p>
+        </div>
+        <select
+          v-model="statsDefaultScope"
+          class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          @change="saved = false"
+        >
+          <option v-for="sc in validStatsDefaultScope" :key="sc" :value="sc">{{ $t('settings.statsScope_' + sc) }}</option>
         </select>
       </section>
 

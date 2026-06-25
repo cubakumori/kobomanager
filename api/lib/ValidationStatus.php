@@ -61,4 +61,31 @@ class ValidationStatus {
         }
         return '';
     }
+
+    /** Estados internos válidos del flujo de revisión. */
+    public const STATUSES = ['pending', 'approved', 'on_hold', 'rejected'];
+
+    /**
+     * Fragmento SQL (+ params) que restringe envíos por el estado de su revisión MÁS
+     * RECIENTE, equivalente a `COALESCE(latest.status,'pending') = $status` (un envío
+     * sin revisión cuenta como 'pending'). `$uidExpr` = expresión del `submission_uid`
+     * en la consulta que lo usa (p. ej. 'sc.submission_uid' o 'submission_uid').
+     * Estado null o no reconocido → ['1=1', []] (sin restricción). Fuente única usada
+     * por lib/Stats y por los endpoints públicos de enlaces.
+     *
+     * @return array{0:string,1:array}
+     */
+    public static function latestFilterSql(?string $status, string $uidExpr = 'submission_uid'): array {
+        if (!in_array($status, self::STATUSES, true)) {
+            return ['1=1', []];
+        }
+        $latest = "submission_reviews r
+                   JOIN (SELECT submission_uid, MAX(id) AS max_id FROM submission_reviews GROUP BY submission_uid) m
+                     ON m.max_id = r.id";
+        if ($status === 'pending') {
+            // pendiente = sin revisión O última revisión 'pending'.
+            return ["$uidExpr NOT IN (SELECT r.submission_uid FROM $latest WHERE r.status IN ('approved','on_hold','rejected'))", []];
+        }
+        return ["$uidExpr IN (SELECT r.submission_uid FROM $latest WHERE r.status = ?)", [$status]];
+    }
 }

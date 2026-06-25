@@ -132,6 +132,146 @@ final class StatsTest extends DbTestCase
         $this->assertArrayNotHasKey('by_team', $stats);
     }
 
+    // ---- Filtro por estado de revisión (tarjetas del encabezado) ----
+
+    public function testFilterApprovedRestrictsMetricsButNotHeader(): void
+    {
+        $formId = $this->makeForm();
+        $u1 = $this->addSubmission($formId, ['_id' => 1, 'region' => 'norte']);
+        $this->addSubmission($formId, ['_id' => 2, 'region' => 'sur']);
+        $this->addSubmission($formId, ['_id' => 3, 'region' => 'este']);
+        $this->review($u1, 'approved');
+
+        $stats = Stats::compute($formId, null, null, null, 'es', true, null, null, 'approved');
+
+        // El encabezado refleja SIEMPRE el conjunto completo.
+        $this->assertSame(3, $stats['total']);
+        $this->assertSame(1, $stats['by_status']['approved']);
+        $this->assertSame(2, $stats['by_status']['pending']);
+        // Las métricas mostradas se restringen al subconjunto aprobado.
+        $this->assertSame('approved', $stats['filter']);
+        $this->assertSame(1, $stats['base']);
+        $this->assertSame(1, array_sum(array_column($stats['by_day'], 'count')));
+        $this->assertSame(1, (int) $stats['trend']['last_7']);
+    }
+
+    public function testFilterPendingIncludesUnreviewed(): void
+    {
+        $formId = $this->makeForm();
+        $u1 = $this->addSubmission($formId, ['_id' => 1]);
+        $this->addSubmission($formId, ['_id' => 2]); // sin revisión → pendiente
+        $u3 = $this->addSubmission($formId, ['_id' => 3]);
+        $this->review($u1, 'approved');
+        $this->review($u3, 'pending'); // revisión explícita 'pending'
+
+        $stats = Stats::compute($formId, null, null, null, 'es', true, null, null, 'pending');
+        // pendiente = sin revisión + última revisión 'pending' = 2; excluye el aprobado.
+        $this->assertSame(2, $stats['base']);
+        $this->assertSame(3, $stats['total']);
+    }
+
+    public function testFilterAppliesEvenWithoutReviewBlock(): void
+    {
+        // El filtro por estado es INDEPENDIENTE de includeReview: una vista pública
+        // (sin el bloque by_status) puede acotarse a «solo aprobados». `by_status`
+        // sigue omitido, pero el conjunto se restringe igualmente.
+        $formId = $this->makeForm();
+        $u1 = $this->addSubmission($formId, ['_id' => 1]);
+        $this->addSubmission($formId, ['_id' => 2]);
+        $this->review($u1, 'approved');
+
+        $stats = Stats::compute($formId, null, null, null, 'es', false, null, null, 'approved');
+        $this->assertSame('approved', $stats['filter']);
+        $this->assertSame(1, $stats['base']);
+        $this->assertArrayNotHasKey('by_status', $stats); // sigue sin exponerse
+    }
+
+    public function testExtraScopeAndedWithScope(): void
+    {
+        // `$extraScope` (alcance fijo, p. ej. equipos de un enlace) se combina en AND y
+        // restringe TODO, incluido el desglose por equipo.
+        $formId = $this->makeForm();
+        $this->addSubmission($formId, ['_id' => 1, 'team' => 'A']);
+        $this->addSubmission($formId, ['_id' => 2, 'team' => 'A']);
+        $this->addSubmission($formId, ['_id' => 3, 'team' => 'B']);
+
+        $extra = RowScope::teamRule('team', ['A']);
+        $stats = Stats::compute($formId, null, null, null, 'es', true, 'team', null, null, null, $extra);
+        $this->assertSame(2, $stats['base']);
+        $this->assertSame(2, $stats['total']); // total respeta el alcance fijo (scope+extra)
+        // Solo el equipo A entra en el desglose (alcance fijo, no toggles).
+        $this->assertCount(1, $stats['by_team']);
+        $this->assertSame('A', $stats['by_team'][0]['key']);
+    }
+
+    // ---- Filtro por equipos (checkboxes del desglose) ----
+
+    public function testTeamSelectionRestrictsAggregatesButKeepsBars(): void
+    {
+        $formId = $this->makeForm();
+        // Equipo A: 3 ; Equipo B: 1
+        $this->addSubmission($formId, ['_id' => 1, 'team' => 'A', '_submitted_by' => 'ana']);
+        $this->addSubmission($formId, ['_id' => 2, 'team' => 'A', '_submitted_by' => 'ana']);
+        $this->addSubmission($formId, ['_id' => 3, 'team' => 'A', '_submitted_by' => 'beto']);
+        $this->addSubmission($formId, ['_id' => 4, 'team' => 'B', '_submitted_by' => 'cris']);
+
+        // Solo el equipo A seleccionado.
+        $stats = Stats::compute($formId, null, null, null, 'es', true, 'team', null, null, ['A']);
+
+        // El total del encabezado no cambia; las métricas agregadas sí (base = 3 de A).
+        $this->assertSame(4, $stats['total']);
+        $this->assertSame(3, $stats['base']);
+        // Las barras por equipo se mantienen COMPLETAS (A y B) con sus claves.
+        $this->assertCount(2, $stats['by_team']);
+        $keys = array_column($stats['by_team'], 'key');
+        sort($keys);
+        $this->assertSame(['A', 'B'], $keys);
+        // La cuota de cada equipo es estable (sobre los 4, no sobre la selección).
+        $a = array_values(array_filter($stats['by_team'], fn($t) => $t['key'] === 'A'))[0];
+        $this->assertSame(3, $a['count']);
+        $this->assertSame(75.0, $a['pct']); // 3/4, no 3/3
+        // Eco de la selección activa.
+        $this->assertSame(['A'], $stats['team_selection']);
+    }
+
+    public function testTeamSelectionEmptyMatchesNothing(): void
+    {
+        $formId = $this->makeForm();
+        $this->addSubmission($formId, ['_id' => 1, 'team' => 'A']);
+        $this->addSubmission($formId, ['_id' => 2, 'team' => 'B']);
+
+        // Todos los equipos desmarcados → base 0, pero las barras siguen completas.
+        $stats = Stats::compute($formId, null, null, null, 'es', true, 'team', null, null, []);
+        $this->assertSame(0, $stats['base']);
+        $this->assertSame(2, $stats['total']);
+        $this->assertCount(2, $stats['by_team']);
+    }
+
+    public function testTeamSelectionNoneBucket(): void
+    {
+        $formId = $this->makeForm();
+        $this->addSubmission($formId, ['_id' => 1, 'team' => 'A']);
+        $this->addSubmission($formId, ['_id' => 2]); // sin equipo → bucket '__none__'
+
+        // Seleccionar solo «sin equipo».
+        $stats = Stats::compute($formId, null, null, null, 'es', true, 'team', null, null, ['__none__']);
+        $this->assertSame(1, $stats['base']);
+        $keys = array_column($stats['by_team'], 'key');
+        $this->assertContains('__none__', $keys);
+    }
+
+    public function testTeamSelectionIgnoredWithoutTeamField(): void
+    {
+        $formId = $this->makeForm();
+        $this->addSubmission($formId, ['_id' => 1, 'team' => 'A']);
+        $this->addSubmission($formId, ['_id' => 2, 'team' => 'B']);
+
+        // Sin campo de equipo configurado, la selección se ignora (base = total).
+        $stats = Stats::compute($formId, null, null, null, 'es', true, null, null, null, ['A']);
+        $this->assertSame(2, $stats['base']);
+        $this->assertArrayNotHasKey('by_team', $stats);
+    }
+
     public function testByTeamEnumeratorFieldOverride(): void
     {
         $formId = $this->makeForm();

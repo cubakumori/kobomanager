@@ -17,8 +17,49 @@ Todos los cambios notables de KoboManager. El formato sigue
 >   ADD COLUMN source ENUM('app','kobo') NOT NULL DEFAULT 'app' AFTER user_id;
 > ALTER TABLE submissions_cache ADD COLUMN kobo_validation_seen VARCHAR(40) NULL AFTER json_payload;
 > ```
+>
+> También añade el **alcance fijo de los enlaces compartidos** (dos columnas en `share_links`):
+>
+> ```sql
+> ALTER TABLE share_links ADD COLUMN team_filter JSON NULL AFTER field_filter,
+>   ADD COLUMN stats_status VARCHAR(16) NULL AFTER team_filter;
+> ```
 
 ### Añadido
+
+- **Estadísticas filtrables por estado de revisión.** En `forms/{id}/stats` las tarjetas
+  del encabezado (Total, Pendientes, Aprobados, En espera, Rechazados) son ahora botones:
+  al pulsar una, **todas** las métricas (series por día/mes, tendencia 7/30 d, por pregunta,
+  duración, actividad por hora/día, adjuntos, geo y desglose por equipo) se recalculan solo
+  para ese subconjunto. El encabezado sigue mostrando siempre el recuento completo para poder
+  cambiar de filtro. Backend: `Stats::compute` acepta un filtro de estado que restringe el
+  conjunto manteniendo `total`/`by_status` completos y exponiendo `base` (nº del subconjunto)
+  como denominador; el endpoint lo lee de `?status=`.
+- **Ajuste global «Estadísticas: alcance por defecto»** (Configuración): decide qué
+  subconjunto se muestra al abrir las estadísticas, entre **Todos los envíos** y
+  **Solo aprobados** (por defecto: aprobados, lo más habitual). El usuario puede cambiarlo
+  en la propia página con un clic.
+- **Alcance fijo de los enlaces compartidos (al crear en `/admin/shares`).** Dos restricciones
+  que se aplican a **todo** el enlace (lista, mapa, detalle, adjuntos y estadísticas):
+  - **Por estado de revisión**: «Todos» o «Solo aprobados». Un enlace «de lo validado» nunca
+    revela envíos no aprobados (en ninguna vista) y sigue sin exponer el flujo de revisión interno.
+  - **Por equipo(s)**: se eligen los equipos incluidos (valores del campo de equipo del formulario);
+    viajan como una condición de fila combinada en AND con el filtro de filas existente.
+  Detrás: el filtro por estado se desacopla de la exposición del desglose interno; helpers
+  compartidos `RowScope::teamRule` y `ValidationStatus::latestFilterSql`; dos columnas nuevas
+  en `share_links` (`team_filter`, `stats_status`).
+- **Filtrado de estadísticas por equipo.** En el desglose «Por equipo → encuestador» cada
+  equipo lleva ahora un interruptor (toggle, activados por defecto): al desactivar uno, sus envíos se
+  **restan** de todas las métricas agregadas (series, tendencia, por pregunta, duración,
+  actividad, adjuntos/geo). Las barras de equipo se mantienen completas y con su cuota
+  estable, para poder marcar/desmarcar; un enlace «Mostrar todos» revierte. Compone con el
+  filtro por estado de revisión. Reutiliza el motor `RowScope` (misma semántica SQL≡PHP).
+
+### Cambiado
+
+- **Estadísticas: las tarjetas «Attachments» y «Geographic coverage» solo se muestran si el
+  subconjunto presentado tiene alguno.** Un formulario sin adjuntos o sin ubicación ya no
+  genera una tarjeta con un gráfico vacío.
 
 - **Sincronización bidireccional del estado de validación con Kobo.** El flujo de
   revisión interno (pendiente / aprobado / en espera / rechazado) deja de estar

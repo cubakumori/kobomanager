@@ -23,9 +23,24 @@ $scope      = RowScope::ruleForUser($user, $formId);
 $fieldScope = FieldScope::ruleForUser($user, $formId);
 $schemaRaw  = $form['schema_json'] ? json_decode($form['schema_json'], true) : null;
 
+// Filtro por estado de revisión: `?status=` lo fija explícitamente (al pulsar una
+// tarjeta del encabezado); sin él, se aplica el alcance por defecto configurado
+// globalmente ('all' o 'approved'). Cualquier valor no válido cae al por defecto.
+$reqStatus = (string) ($_GET['status'] ?? '');
+$filter    = in_array($reqStatus, ['all', 'pending', 'approved', 'on_hold', 'rejected'], true)
+    ? $reqStatus
+    : Settings::statsDefaultScope();
+
+// Filtro por equipos (`?teams=` = claves separadas por coma; el bucket «sin equipo»
+// usa '__none__'). Ausente = null = todos. Presente pero vacío = ninguno seleccionado.
+$teamSel = array_key_exists('teams', $_GET)
+    ? array_values(array_filter(explode(',', (string) $_GET['teams']), fn($s) => $s !== ''))
+    : null;
+
 $stats = Stats::compute(
     $formId, $schemaRaw, $scope, $fieldScope, $user['locale'], true,
-    $form['stats_team_field'] ?: null, $form['stats_enumerator_field'] ?: null
+    $form['stats_team_field'] ?: null, $form['stats_enumerator_field'] ?: null,
+    $filter, $teamSel
 );
 
 ErrorResponse::ok(array_merge([

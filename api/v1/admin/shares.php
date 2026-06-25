@@ -18,7 +18,8 @@ $method = Request::method();
 if ($method === 'GET') {
     $rows = DB::run(
         "SELECT sl.id, sl.token, sl.form_id, f.name AS form_name, sl.label,
-                sl.expose_list, sl.expose_detail, sl.expose_map, sl.expose_stats, sl.expose_attachments, sl.row_filter, sl.field_filter,
+                sl.expose_list, sl.expose_detail, sl.expose_map, sl.expose_stats, sl.expose_attachments,
+                sl.row_filter, sl.field_filter, sl.team_filter, sl.stats_status,
                 (sl.password_hash IS NOT NULL) AS has_password,
                 sl.expires_at, sl.revoked_at, sl.last_accessed_at, sl.access_count,
                 sl.created_at, u.name AS created_by_name
@@ -41,6 +42,8 @@ if ($method === 'GET') {
         'expose_attachments'=> (bool) $r['expose_attachments'],
         'row_filter'      => RowScope::normalize($r['row_filter'] ? json_decode($r['row_filter'], true) : null),
         'field_filter'    => FieldScope::normalize($r['field_filter'] ? json_decode($r['field_filter'], true) : null),
+        'team_filter'     => $r['team_filter'] ? json_decode($r['team_filter'], true) : null,
+        'stats_status'    => $r['stats_status'] ?: 'all',
         'has_password'    => (bool) $r['has_password'],
         'expires_at'      => $r['expires_at'],
         'revoked_at'      => $r['revoked_at'],
@@ -64,7 +67,7 @@ if ($method === 'POST') {
     if (!$formId) {
         ErrorResponse::send('VALIDATION_ERROR', 'Falta form_id');
     }
-    $form = DB::run('SELECT id FROM forms WHERE id = ? AND active = 1', [$formId])->fetch();
+    $form = DB::run('SELECT id, stats_team_field FROM forms WHERE id = ? AND active = 1', [$formId])->fetch();
     if (!$form) {
         ErrorResponse::send('NOT_FOUND', 'Formulario no encontrado');
     }
@@ -85,6 +88,23 @@ if ($method === 'POST') {
     // Filtro por columna (ocultar campos en el enlace): canónico o NULL.
     $fieldRule  = FieldScope::normalize($body['field_filter'] ?? null);
     $fieldJson  = $fieldRule ? json_encode($fieldRule, JSON_UNESCAPED_UNICODE) : null;
+
+    // Alcance FIJO por equipo: lista de claves seleccionadas (valores de stats_team_field;
+    // '__none__' = sin equipo). Solo tiene sentido si el formulario tiene equipo configurado.
+    // Lista vacía o sin equipo configurado → NULL (= todos los equipos).
+    $teamJson = null;
+    if (!empty($form['stats_team_field']) && isset($body['team_filter']) && is_array($body['team_filter'])) {
+        $keys = array_values(array_unique(array_filter(
+            array_map(fn($v) => trim((string) $v), $body['team_filter']),
+            fn($v) => $v !== ''
+        )));
+        if ($keys) {
+            $teamJson = json_encode($keys, JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    // Alcance por estado de revisión: 'all' (NULL) o 'approved'.
+    $statsStatus = ($body['stats_status'] ?? 'all') === 'approved' ? 'approved' : null;
 
     // Contraseña según política global.
     $policy   = Settings::sharePasswordPolicy();
@@ -132,11 +152,12 @@ if ($method === 'POST') {
     DB::run(
         'INSERT INTO share_links
             (token, form_id, created_by, label, expose_list, expose_detail, expose_map, expose_stats,
-             expose_attachments, row_filter, field_filter, password_hash, expires_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+             expose_attachments, row_filter, field_filter, team_filter, stats_status, password_hash, expires_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
             $token, $formId, $admin['id'], $label !== '' ? $label : null,
-            $exposeList, $exposeDetail, $exposeMap, $exposeStats, $exposeAttachments, $filterJson, $fieldJson, $hash, $expiresAt,
+            $exposeList, $exposeDetail, $exposeMap, $exposeStats, $exposeAttachments, $filterJson, $fieldJson,
+            $teamJson, $statsStatus, $hash, $expiresAt,
         ]
     );
 
@@ -144,6 +165,7 @@ if ($method === 'POST') {
     Audit::log($admin['id'], 'share_create', $formId, null, [
         'share_id' => $id, 'exposes' => compact('exposeList', 'exposeDetail', 'exposeMap', 'exposeStats', 'exposeAttachments'),
         'has_password' => $hash !== null, 'expires_at' => $expiresAt,
+        'stats_status' => $statsStatus ?? 'all', 'team_filter' => $teamJson !== null,
     ]);
 
     ErrorResponse::ok(['id' => $id, 'token' => $token], 201);

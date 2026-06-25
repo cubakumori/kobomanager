@@ -35,8 +35,24 @@ const blankForm = () => ({
   expires_at: '',
   row_filter: null,
   field_filter: null,
+  stats_status: 'all', // 'all' | 'approved'
+  team_filter: null, // null = todos los equipos; array de claves = subconjunto
 })
 const form = ref(blankForm())
+
+// Equipos disponibles del formulario elegido (para el alcance fijo por equipo).
+const teamOptions = ref([]) // [{ key, name }]
+const teamFieldLabel = ref('')
+const teamLoading = ref(false)
+const isShareTeamOn = (key) => form.value.team_filter === null || form.value.team_filter.includes(key)
+function toggleShareTeam(key) {
+  const all = teamOptions.value.map((t) => t.key)
+  const cur = form.value.team_filter ? [...form.value.team_filter] : [...all]
+  const i = cur.indexOf(key)
+  if (i >= 0) cur.splice(i, 1)
+  else cur.push(key)
+  form.value.team_filter = cur.length === all.length ? null : cur
+}
 
 const activeForms = computed(() => forms.value.filter((f) => f.active))
 
@@ -99,6 +115,8 @@ async function onCreate() {
       expires_at: form.value.expires_at,
       row_filter: form.value.row_filter,
       field_filter: form.value.field_filter,
+      stats_status: form.value.stats_status,
+      team_filter: form.value.team_filter,
     })
     showCreate.value = false
     await loadLinks()
@@ -194,10 +212,35 @@ function clearScope() {
   form.value.row_filter = null
   scopeOpen.value = false
 }
-// Al cambiar de formulario, los filtros (filas y columnas) dejan de tener sentido.
+// Al cambiar de formulario, los filtros (filas, columnas, equipos) dejan de tener
+// sentido; además se recargan los equipos disponibles del nuevo formulario.
 function onFormChange() {
   form.value.row_filter = null
   form.value.field_filter = null
+  form.value.team_filter = null
+  loadTeamOptions()
+}
+
+// Equipos del formulario elegido: se leen del desglose por equipo de sus estadísticas
+// (etiquetas + claves), pidiendo todo el conjunto (status=all). Solo si el formulario
+// tiene un campo de equipo configurado.
+async function loadTeamOptions() {
+  teamOptions.value = []
+  teamFieldLabel.value = ''
+  const id = form.value.form_id
+  if (!id) return
+  teamLoading.value = true
+  try {
+    const { data } = await api.get(`/forms/${id}/stats`, { params: { status: 'all' } })
+    if (data.data.team_field && Array.isArray(data.data.by_team)) {
+      teamFieldLabel.value = data.data.team_field.label || data.data.team_field.key || ''
+      teamOptions.value = data.data.by_team.map((t) => ({ key: t.key, name: t.name }))
+    }
+  } catch {
+    /* sin equipos disponibles: no se muestra el selector */
+  } finally {
+    teamLoading.value = false
+  }
 }
 
 // ---------- Ocultar columnas — reutiliza el endpoint scope-fields ----------
@@ -293,6 +336,12 @@ onMounted(() => {
                 </span>
                 <span v-if="link.field_filter" class="text-xs text-accent-700 dark:text-accent-300">
                   {{ $t('permissions.colsHidden', { n: link.field_filter.hidden.length }) }}
+                </span>
+                <span v-if="link.stats_status === 'approved'" class="text-xs text-success-700 dark:text-success-300">
+                  {{ $t('shares.scopeStatusApprovedBadge') }}
+                </span>
+                <span v-if="link.team_filter" class="text-xs text-accent-700 dark:text-accent-300">
+                  {{ $t('shares.scopeTeamsBadge', { n: link.team_filter.length }) }}
                 </span>
               </div>
               </div>
@@ -431,6 +480,33 @@ onMounted(() => {
             @click="openCols"
           >{{ $t('shares.fieldFilterEdit') }}</button>
         </div>
+
+        <!-- Alcance por estado de revisión -->
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-slate-700">{{ $t('shares.scopeStatus') }}</span>
+          <select
+            v-model="form.stats_status"
+            :disabled="!form.form_id"
+            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 disabled:opacity-50"
+          >
+            <option value="all">{{ $t('shares.scopeStatusAll') }}</option>
+            <option value="approved">{{ $t('shares.scopeStatusApproved') }}</option>
+          </select>
+          <span class="mt-1 block text-xs text-slate-400">{{ $t('shares.scopeStatusHint') }}</span>
+        </label>
+
+        <!-- Alcance por equipo (solo si el formulario tiene equipo configurado) -->
+        <div v-if="teamLoading" class="text-xs text-slate-400">{{ $t('shares.scopeTeamsLoading') }}</div>
+        <fieldset v-else-if="teamOptions.length" class="rounded-lg bg-slate-50 px-3 py-2">
+          <legend class="text-sm font-medium text-slate-700">{{ $t('shares.scopeTeams', { field: teamFieldLabel }) }}</legend>
+          <p class="mb-2 text-xs text-slate-400">{{ $t('shares.scopeTeamsHint') }}</p>
+          <div class="flex max-h-40 flex-col gap-1 overflow-y-auto pr-1">
+            <label v-for="opt in teamOptions" :key="opt.key" class="inline-flex items-center gap-2 text-sm text-slate-700">
+              <input type="checkbox" :checked="isShareTeamOn(opt.key)" @change="toggleShareTeam(opt.key)" />
+              {{ opt.name }}
+            </label>
+          </div>
+        </fieldset>
 
         <!-- Contraseña (según política) -->
         <label v-if="passwordPolicy !== 'off'" class="block">

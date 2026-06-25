@@ -247,6 +247,24 @@ class Settings {
         return in_array($v, self::VALID_FORMS_ORDER, true) ? $v : self::DEFAULT_FORMS_ORDER;
     }
 
+    /**
+     * Alcance por defecto de la página de estadísticas (forms/{id}/stats): qué
+     * subconjunto de envíos se muestra al abrirla, antes de que el usuario pulse
+     * otra tarjeta del encabezado.
+     *   'all'      → todos los envíos.
+     *   'approved' → solo los aprobados (por defecto: lo «comúnmente interesante»).
+     * El usuario siempre puede cambiar a cualquiera de los cinco estados en la
+     * propia página; esto solo decide cuál se carga primero.
+     */
+    public const VALID_STATS_DEFAULT_SCOPE = ['all', 'approved'];
+    private const DEFAULT_STATS_DEFAULT_SCOPE = 'approved';
+
+    /** Alcance por defecto de la página de estadísticas ('all'|'approved'). */
+    public static function statsDefaultScope(): string {
+        $v = self::get('stats_default_scope', self::DEFAULT_STATS_DEFAULT_SCOPE);
+        return in_array($v, self::VALID_STATS_DEFAULT_SCOPE, true) ? $v : self::DEFAULT_STATS_DEFAULT_SCOPE;
+    }
+
     public const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login'];
 
     /**

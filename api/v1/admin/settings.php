@@ -38,6 +38,8 @@ if (Request::method() === 'GET') {
         'landing_cta_enabled'        => Settings::landingCtaEnabled(),
         'forms_order'                => Settings::formsOrder(),
         'valid_forms_order'          => Settings::VALID_FORMS_ORDER,
+        'stats_default_scope'        => Settings::statsDefaultScope(),
+        'valid_stats_default_scope'  => Settings::VALID_STATS_DEFAULT_SCOPE,
     ]);
 }
 
@@ -124,6 +126,15 @@ if (Request::method() === 'PUT') {
         }
         Settings::set('forms_order', $ord);
         $out['forms_order'] = $ord;
+    }
+
+    if (array_key_exists('stats_default_scope', $body)) {
+        $sc = (string) $body['stats_default_scope'];
+        if (!in_array($sc, Settings::VALID_STATS_DEFAULT_SCOPE, true)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Alcance de estadísticas por defecto no válido');
+        }
+        Settings::set('stats_default_scope', $sc);
+        $out['stats_default_scope'] = $sc;
     }
 
     if (array_key_exists('label_mode', $body)) {

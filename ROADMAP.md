@@ -67,47 +67,16 @@ y los **estados de validación personalizables**
 ([15808](https://community.kobotoolbox.org/t/customizing-validation-statuses/15808)).
 Quedan como ideas reabribles si aparece una necesidad real.
 
-- [x] **Sincronización bidireccional con el `_validation_status` nativo de Kobo — HECHO**
-      (sin tag; ver `CHANGELOG.md`). Los 4 estados se mapean al campo nativo de Kobo: push
-      bloqueante al revisar (individual/lote) + pull en cada sync con merge a 3 vías
-      («gana Kobo»). El historial distingue el origen con `submission_reviews.source`
-      (`app`/`kobo`). Requiere permiso *Validate Submissions* del token.
-
 ---
 
 ## Publicación (en torno a hacer público el repo)
 
 > **Estado (jun-2026): el repositorio YA es PÚBLICO** y la demo está viva en
-> `kobomanager.org` (cron de reset verificado). Lo que queda abajo es pulido
-> posterior a la publicación.
+> `kobomanager.org` (modo demo integrado, datos sintéticos vía `api/cli/seed_demo.php`,
+> cron de reset verificado; runbook en [`DEMO.md`](DEMO.md)). El disclaimer de no
+> afiliación, el dominio propio, `SECURITY.md`, el release «deploy-ready» y el instalador
+> CLI también están entregados (ver `CHANGELOG.md`). Lo que queda abajo es pulido posterior.
 
-- [x] **Disclaimer de no afiliación** — HECHO: nota ámbar bajo «Cómo funciona» en la
-      portada (es/en) y sección Disclaimer en el README.
-- [x] **Dominio propio** — HECHO: `kobomanager.org` registrado; la portada de la app
-      (que es a la vez la presentación del proyecto) vive ahí.
-- [x] **Política de seguridad** — HECHO: `SECURITY.md` (divulgación responsable,
-      GitHub Private Reporting + email de respaldo) + CSP/cabeceras de la SPA.
-- [~] **Demo pública** — VIVA en el apex `kobomanager.org`. Plan completo en
-      `my.docs/PUBLICDEMO.md` (privado).
-  - [x] **Modo demo integrado en la app — HECHO**: `DEMO_MODE` + `DEMO_RESET_MINUTES` +
-        `DEMO_LOGIN_HINT` en config (opcionales, retrocompatibles), modo expuesto por
-        `/config` (modal de bienvenida en cada carga de la portada + badge «DEMO»
-        clickeable junto a la marca que lo reabre), error `DEMO_LOCKED` 403 centralizado
-        en el router para las acciones que romperían la demo o filtrarían el token
-        (cuentas Kobo, usuarios/contraseñas/sesiones, settings, edición de envíos y sync
-        manual); el resto —revisión, filtros, export, shares, stats, mapa— queda abierto.
-        Botones deshabilitados con aviso.
-        Documentado en [`DEMO.md`](DEMO.md) (runbook completo: config, usuarios, seed,
-        cron de reset, hardening) para que cualquiera monte su propia demo.
-  - [x] **Sembrado de datos sintéticos — HECHO**: CLI `api/cli/seed_demo.php` que lee el
-        esquema cacheado del formulario y genera envíos FALSOS directamente en
-        `submissions_cache` (no escribe en Kobo) con fechas repartidas, opciones válidas,
-        geopoints, campos vacíos y revisiones de ejemplo (marca `_km_seed` para `--clear`).
-        Decisión clave: una demo sembrada NO lleva cron de sync (lo reconciliaría y
-        borraría), solo cron de reset. Documentado en [`DEMO.md`](DEMO.md).
-  - [x] **Instancia**: HECHO — VPS + `kobomanager.org` + cuenta Kobo desechable con
-        datos sintéticos + usuarios/permisos/share de ejemplo + dump semilla + cron de
-        reset (verificado).
 - [ ] **Semilla y reset de la demo gestionados por la app** *(idea del usuario en el QA,
       jun-2026)*: hoy la demo exige `mysqldump` + cron SQL a mano (DEMO.md). En su
       lugar: botón admin «Generar semilla de la demo» (exporta la BD a una ruta
@@ -116,14 +85,6 @@ Quedan como ideas reabribles si aparece una necesidad real.
       los de sync) que restaura esa semilla cada `DEMO_RESET_MINUTES`. Retos: dump y
       restore desde PHP sin `mysqldump` (multi-statement, FK checks, tamaño) y restaurar
       «en caliente» con visitantes activos. Eliminaría todo el SQL manual de DEMO.md.
-- [x] **Release «deploy-ready» — HECHO** *(idea del QA de instalación, jun-2026)*: el zip
-      con EXACTAMENTE lo que se sube al servidor — contenido de `dist/` (incluido el
-      `.htaccess` raíz) + `api/` podado (sin vendor/tests/composer/phpunit y sin el
-      `config.php` con secretos) + `db/` — lo genera el **script local `npm run package`**
-      (`scripts/package.mjs`, sin dependencias npm). DEPLOY §3 ofrece ya dos vías: release
-      zip (opción A) o build propio (opción B). La automatización en CI (workflow que en un
-      tag corre el mismo script y adjunta el zip al GitHub Release) queda como paso opcional
-      documentado en DEPLOY §3.1 — se activa añadiendo `.github/workflows/release.yml`.
 
 ---
 
@@ -139,6 +100,15 @@ Quedan como ideas reabribles si aparece una necesidad real.
 - [ ] **Agregación semanal explícita en Estadísticas** *(pendiente menor)* — hoy «Envíos por
       día/mes» elige día↔mes automáticamente según el tramo; valorar el escalón intermedio
       por semana.
+- [ ] **Filtrado avanzado de estadísticas por cualquier campo** *(mayor esfuerzo; mucho
+      más adelante)* — hoy las estadísticas se pueden acotar por estado de revisión
+      (tarjetas del encabezado) y por equipo (checkboxes del desglose por equipo). El salto
+      siguiente sería reutilizar el **filtro avanzado** que ya tiene la lista de envíos
+      (`RowFilterEditor.vue` + `?filter=` con RowScope multi-condición AND/OR) directamente
+      sobre la página de estadísticas: acotar por cualquier pregunta o combinación (p. ej.
+      «mujeres, de La Habana, desempleadas»). `Stats::compute` ya admite un `$scope`
+      arbitrario, así que el grueso es UX. El filtro por equipo de hoy sería un caso
+      particular de este mecanismo general.
 - [ ] **Carga diferida del catálogo i18n de la Guía** — cargar `guide.json` bajo demanda por
       ruta (vue-i18n `setLocaleMessage` + import dinámico). Solo merece la pena con un
       3.er idioma o si la Guía crece a documentación larga; adaptar entonces el check de
@@ -148,26 +118,11 @@ Quedan como ideas reabribles si aparece una necesidad real.
 
 ## Operación y mantenimiento
 
-- [x] **Instalador CLI (`php api/cli/install.php`) — HECHO** *(idea del QA de la
-      instalación limpia, jun-2026; implementado en la misma ronda)*. Verifica
-      requisitos (PHP/extensiones/claves/BD), aplica `db/*.sql` si la BD está vacía
-      (aborta con esquema parcial), crea el primer admin (interactivo o `--admin`),
-      idempotente, y `--clean` borra `db/` (negándose en un checkout con `.git`).
-      DEPLOY §4 lo ofrece como vía principal. Diseño original: con `config.php` ya rellenado, un único comando que
-      (1) verifique requisitos (PHP 8.1+, sodium, pdo_mysql, conexión a la BD, claves no
-      placeholder), (2) detecte si la BD ya está instalada (tablas presentes) y si no
-      aplique `db/*.sql` en orden, (3) cree el primer usuario admin de forma interactiva
-      (hoy `cli/create_user.php` aparte), y (4) al terminar SUGIERA borrar `db/` del
-      servidor (borrado opcional con flag `--clean`, nunca automático: en la vía SSH la
-      carpeta ni siquiera está, y un script que borra archivos por su cuenta sorprende).
-      CLI primero. Variante **web** estilo WordPress (idea del usuario) como posible capa
-      posterior, solo con TODAS las mitigaciones: se niega a correr si ya hay instalación
-      (tabla users no vacía / `install.lock` presente), se autodeshabilita al terminar e
-      instruye borrar el fichero del servidor. Aun así el beneficio es limitado: lo duro
-      (dominio, vhost, HTTPS, subir archivos, crear BD+usuario MySQL, config.php) exige
-      igualmente acceso al servidor, que es lo único que el CLI necesita. Cualquiera de
-      las dos reduciría los §§4 y 5 de DEPLOY a «rellena config.php y ejecuta el
-      instalador».
+> El **instalador CLI** (`php api/cli/install.php`) y el **release «deploy-ready»**
+> (`npm run package`) están entregados (ver `CHANGELOG.md` y DEPLOY §§3–4). Una variante
+> **web** del instalador (estilo WordPress, con autodeshabilitado e `install.lock`) sigue
+> como idea futura, aunque su beneficio es limitado: lo duro (dominio, vhost, HTTPS, subir
+> archivos, crear BD+usuario MySQL, `config.php`) exige igualmente acceso al servidor.
 
 - [ ] **Transporte de correo alternativo (SMTP)**: hoy el envío es solo vía Resend (API
       HTTP, `lib/Mailer.php`). Ofrecer SMTP para quien prefiera su propio servidor — choca

@@ -13,8 +13,9 @@ $link  = ShareLink::requireAccess($token, 'map');
 
 $formId              = (int) $link['form_id'];
 $schema              = $link['schema_json'] ? json_decode($link['schema_json'], true) : null;
-$scope               = ShareLink::rule($link);
-[$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'json_payload');
+// Alcance por filas (row_filter + equipos) y por estado de revisión del enlace.
+[$scopeSql, $scopeP] = ShareLink::rowSql($link, 'json_payload');
+[$stSql, $stP]       = ValidationStatus::latestFilterSql(ShareLink::statusScope($link), 'submission_uid');
 
 // Ocultado de columnas: un campo geo oculto no aporta su punto al mapa.
 $fieldScope = FieldScope::ruleForLink($link);
@@ -22,9 +23,9 @@ $fieldScope = FieldScope::ruleForLink($link);
 $rows = DB::run(
     "SELECT submission_uid, json_payload, submitted_at
      FROM submissions_cache
-     WHERE form_id = ? AND $scopeSql
+     WHERE form_id = ? AND $scopeSql AND $stSql
      ORDER BY submitted_at DESC, id DESC",
-    array_merge([$formId], $scopeP)
+    array_merge([$formId], $scopeP, $stP)
 )->fetchAll();
 
 $points = [];

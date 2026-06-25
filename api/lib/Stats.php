@@ -28,6 +28,15 @@ class Stats {
      * @param string|null $enumField   Ruta del campo «encuestador» dentro del equipo
      *                                 (forms.stats_enumerator_field). NULL/`_submitted_by`
      *                                 = usar el usuario Kobo que envió.
+     * @param string|null $filterStatus Restringe TODAS las métricas (series, tendencia,
+     *                                 por pregunta, adjuntos, equipo…) a los envíos cuyo
+     *                                 estado de revisión más reciente sea ese valor
+     *                                 ('pending'|'approved'|'on_hold'|'rejected'). 'all'
+     *                                 o null = sin filtro. El encabezado (`total` y
+     *                                 `by_status`) SIEMPRE refleja el conjunto completo,
+     *                                 para poder cambiar de filtro. Solo aplica con
+     *                                 `$includeReview = true` (los enlaces públicos no
+     *                                 distinguen estado → siempre 'all').
      */
     public static function compute(
         int $formId,
@@ -37,23 +46,58 @@ class Stats {
         string $locale,
         bool $includeReview = true,
         ?string $teamField = null,
-        ?string $enumField = null
+        ?string $enumField = null,
+        ?string $filterStatus = null,
+        ?array $teamSel = null,
+        ?array $extraScope = null
     ): array {
         [$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'json_payload');
 
+        // Restricción de filas ADICIONAL (p. ej. el alcance fijo por equipo de un enlace
+        // compartido), combinada en AND con el scope. Se pliega en `$scopeSql` para que la
+        // hereden TODAS las consultas (incluido el desglose por equipo): es un alcance fijo,
+        // no el filtro interactivo. Se hace a nivel SQL para no depender de la profundidad
+        // de RowScope (evita fusionar reglas).
+        if ($extraScope !== null) {
+            [$extraSql, $extraP] = RowScope::sqlCondition($extraScope, 'json_payload');
+            $scopeSql = "($scopeSql) AND ($extraSql)";
+            $scopeP   = array_merge($scopeP, $extraP);
+        }
+
+        // Filtro por estado de revisión (uno de los cuatro estados, o 'all'). Es
+        // INDEPENDIENTE de `$includeReview`: este último solo decide si se EXPONE el
+        // desglose `by_status` (interno), no si se filtra el conjunto. Así un enlace
+        // público puede acotarse a «solo aprobados» sin revelar el flujo de revisión.
+        $filter = in_array($filterStatus, ValidationStatus::STATUSES, true) ? $filterStatus : 'all';
+        [$statusSql, $statusP] = ValidationStatus::latestFilterSql($filter === 'all' ? null : $filter);
+
+        // Campo de equipo efectivo: configurado y NO oculto por FieldScope en este alcance
+        // (no se puede agrupar/filtrar por una columna que el usuario no ve).
+        $teamField = ($teamField !== null && $teamField !== '' && !FieldScope::isHidden($fieldScope, $teamField))
+            ? $teamField : null;
+
+        // Filtro INTERACTIVO por equipos (checkboxes del desglose). `$teamSel` = lista de
+        // claves seleccionadas; '__none__' = bucket «sin equipo». null = todos. Restringe
+        // las series, la tendencia y los agregados, PERO no el desglose por equipo (sus
+        // barras se mantienen completas para poder marcar/desmarcar). Misma semántica en
+        // SQL (by_day/tendencia) y en PHP (gate del bucle, vía RowScope::matches).
+        $teamRule = RowScope::teamRule($teamField, $teamSel);
+        [$teamSql, $teamP] = RowScope::sqlCondition($teamRule, 'json_payload');
+
+        // Total COMPLETO en alcance (para la tarjeta «Total» del encabezado; nunca filtrado).
         $total = (int) DB::run(
             "SELECT COUNT(*) AS c FROM submissions_cache WHERE form_id = ? AND $scopeSql",
             array_merge([$formId], $scopeP)
         )->fetch()['c'];
 
-        // Envíos por día.
+        // Envíos por día (restringido al filtro de estado, si lo hay).
         $byDay = DB::run(
             "SELECT DATE(submitted_at) AS day, COUNT(*) AS count
              FROM submissions_cache
-             WHERE form_id = ? AND submitted_at IS NOT NULL AND $scopeSql
+             WHERE form_id = ? AND submitted_at IS NOT NULL AND $scopeSql AND $statusSql AND $teamSql
              GROUP BY DATE(submitted_at)
              ORDER BY day",
-            array_merge([$formId], $scopeP)
+            array_merge([$formId], $scopeP, $statusP, $teamP)
         )->fetchAll();
         $byDay = array_map(fn($r) => ['date' => $r['day'], 'count' => (int) $r['count']], $byDay);
 
@@ -93,8 +137,8 @@ class Stats {
                 SUM(submitted_at >= NOW() - INTERVAL 30 DAY)                                         AS last30,
                 SUM(submitted_at <  NOW() - INTERVAL 30 DAY AND submitted_at >= NOW() - INTERVAL 60 DAY) AS prev30
              FROM submissions_cache
-             WHERE form_id = ? AND submitted_at IS NOT NULL AND $scopeSql",
-            array_merge([$formId], $scopeP)
+             WHERE form_id = ? AND submitted_at IS NOT NULL AND $scopeSql AND $statusSql AND $teamSql",
+            array_merge([$formId], $scopeP, $statusP, $teamP)
         )->fetch();
         $pct = fn(int $cur, int $prev): ?float => $prev > 0 ? round(($cur - $prev) * 100 / $prev, 1) : null;
         $last7 = (int) ($tr['last7'] ?? 0); $prev7 = (int) ($tr['prev7'] ?? 0);
@@ -142,12 +186,8 @@ class Stats {
         $options   = $resolved['options'] ?? [];
 
         // --- Config del desglose por equipo (opcional). ---
-        // El campo de equipo debe estar configurado y NO oculto por FieldScope en este
-        // alcance: no se puede agrupar por una columna que el usuario no ve (además, el
-        // payload ya viene recortado, así que todo caería en «—»). El encuestador usa
+        // `$teamField` ya está resuelto arriba (configurado y visible). El encuestador usa
         // `_submitted_by` salvo que se configure un campo de datos visible.
-        $teamField = ($teamField !== null && $teamField !== '' && !FieldScope::isHidden($fieldScope, $teamField))
-            ? $teamField : null;
         $enumIsField = $enumField !== null && $enumField !== '' && $enumField !== '_submitted_by'
             && !FieldScope::isHidden($fieldScope, $enumField);
         $enumPath   = $enumIsField ? $enumField : '_submitted_by';
@@ -194,13 +234,43 @@ class Stats {
         };
 
         $rows = DB::run(
-            "SELECT submission_uid, json_payload, submitted_at FROM submissions_cache WHERE form_id = ? AND $scopeSql",
-            array_merge([$formId], $scopeP)
+            "SELECT submission_uid, json_payload, submitted_at FROM submissions_cache WHERE form_id = ? AND $scopeSql AND $statusSql",
+            array_merge([$formId], $scopeP, $statusP)
         )->fetchAll();
+
+        // Denominador del DESGLOSE POR EQUIPO: todos los envíos en alcance + estado (NO el
+        // filtro por equipos), para que la cuota de cada equipo sea estable al marcar/desmarcar.
+        $teamBase = count($rows);
+        // Denominador de las DEMÁS métricas: el subconjunto que además pasa el filtro por
+        // equipos. Coincide con `$teamBase` cuando no hay equipos desmarcados.
+        $base = 0;
 
         foreach ($rows as $r) {
             // Recorta los campos ocultos: adjuntos/geo de un campo oculto no cuentan.
             $payload = FieldScope::apply($fieldScope, json_decode($r['json_payload'], true) ?: [], $schemaRaw);
+
+            // Métricas derivadas (duración, adjuntos, geo, hora/día). Necesarias tanto para el
+            // desglose por equipo (siempre) como para los agregados (solo si pasa el filtro).
+            $dd = Derived::compute($payload, $schemaRaw, $r['submitted_at']);
+
+            // Desglose por equipo → encuestador: SIEMPRE (las barras se mantienen completas,
+            // independientemente de qué equipos estén marcados).
+            if ($teamField !== null) {
+                $tv = $payload[$teamField] ?? null;
+                $ev = $payload[$enumPath] ?? null;
+                $tKey = ($tv === null || $tv === '' || is_array($tv)) ? '—' : (string) $tv;
+                $eKey = ($ev === null || $ev === '' || is_array($ev)) ? '—' : (string) $ev;
+                $st = $statusMap[$r['submission_uid']] ?? 'pending'; // sin revisión → pendiente
+                if (!isset($teamAcc[$tKey])) $teamAcc[$tKey] = ['leaf' => $newLeaf(), 'enums' => []];
+                if (!isset($teamAcc[$tKey]['enums'][$eKey])) $teamAcc[$tKey]['enums'][$eKey] = $newLeaf();
+                $bump($teamAcc[$tKey]['leaf'], $dd, $r['submitted_at'], $st);
+                $bump($teamAcc[$tKey]['enums'][$eKey], $dd, $r['submitted_at'], $st);
+            }
+
+            // Filtro por equipos: si el envío no entra en la selección, no suma al resto de
+            // métricas (mismo criterio que el SQL de by_day/tendencia, vía RowScope::matches).
+            if ($teamRule !== null && !RowScope::matches($teamRule, $payload)) continue;
+            $base++;
 
             if ($r['submitted_at'] !== null && ($lastSub === null || $r['submitted_at'] > $lastSub)) {
                 $lastSub = $r['submitted_at'];
@@ -229,27 +299,12 @@ class Stats {
             $by = ($by === null || $by === '') ? '—' : (string) $by;
             $enumCounts[$by] = ($enumCounts[$by] ?? 0) + 1;
 
-            // Métricas derivadas (duración, adjuntos, geo, hora/día).
-            $dd = Derived::compute($payload, $schemaRaw, $r['submitted_at']);
             if ($dd['duration_s'] !== null) $durations[] = $dd['duration_s'];
             if ($dd['submitted_hour'] !== null) $byHour[$dd['submitted_hour']]++;
             if ($dd['submitted_dow'] !== null) $byDow[$dd['submitted_dow']]++;
             if ($dd['has_attachments']) $attWith++;
             foreach ($attByKind as $k => $_) $attByKind[$k] += $dd['attachments_by_kind'][$k] ?? 0;
             if ($dd['has_geo']) $geoWith++;
-
-            // Desglose por equipo → encuestador.
-            if ($teamField !== null) {
-                $tv = $payload[$teamField] ?? null;
-                $ev = $payload[$enumPath] ?? null;
-                $tKey = ($tv === null || $tv === '' || is_array($tv)) ? '—' : (string) $tv;
-                $eKey = ($ev === null || $ev === '' || is_array($ev)) ? '—' : (string) $ev;
-                $st = $statusMap[$r['submission_uid']] ?? 'pending'; // sin revisión → pendiente
-                if (!isset($teamAcc[$tKey])) $teamAcc[$tKey] = ['leaf' => $newLeaf(), 'enums' => []];
-                if (!isset($teamAcc[$tKey]['enums'][$eKey])) $teamAcc[$tKey]['enums'][$eKey] = $newLeaf();
-                $bump($teamAcc[$tKey]['leaf'], $dd, $r['submitted_at'], $st);
-                $bump($teamAcc[$tKey]['enums'][$eKey], $dd, $r['submitted_at'], $st);
-            }
         }
 
         // --- Ensamblar «por pregunta»: etiquetas resueltas, ordenado desc, top 20 + otros. ---
@@ -296,7 +351,7 @@ class Stats {
         $rank = 0;
         foreach ($enumCounts as $name => $c) {
             if ($rank++ < 20) {
-                $byEnumerator[] = ['name' => $name, 'count' => $c, 'pct' => $total > 0 ? round($c * 100 / $total, 1) : 0];
+                $byEnumerator[] = ['name' => $name, 'count' => $c, 'pct' => $base > 0 ? round($c * 100 / $base, 1) : 0];
             } else {
                 $enumOthers += $c;
             }
@@ -379,15 +434,21 @@ class Stats {
                 }
 
                 $tName = $tKey === '—' ? '—' : (($labelsOn && isset($teamOptMap[$tKey])) ? $teamOptMap[$tKey] : $tKey);
-                $byTeam[] = ['name' => $tName] + $finalize($t['leaf'], $total) + [
-                    'enumerators'       => $eList,
-                    'enumerator_others' => $eOthers,
-                ];
+                // `key`: identificador URL-seguro para los checkboxes de filtro (código del
+                // equipo o el centinela '__none__' del bucket «sin equipo»). El % del equipo
+                // se mide sobre `$teamBase` (todos los equipos) para que sea estable al filtrar.
+                $byTeam[] = ['name' => $tName, 'key' => ($tKey === '—' ? '__none__' : $tKey)]
+                    + $finalize($t['leaf'], $teamBase) + [
+                        'enumerators'       => $eList,
+                        'enumerator_others' => $eOthers,
+                    ];
             }
         }
 
         $out = [
             'total'           => $total,
+            'base'            => $base,
+            'filter'          => $filter,
             'last_submission' => $lastSub,
             'by_day'          => $byDay,
             'by_month'        => $byMonth,
@@ -402,14 +463,14 @@ class Stats {
             'timezone'        => Derived::tzMeta(),
             'attachments'     => [
                 'with'    => $attWith,
-                'without' => $total - $attWith,
-                'with_pct'=> $total > 0 ? round($attWith * 100 / $total, 1) : 0,
+                'without' => $base - $attWith,
+                'with_pct'=> $base > 0 ? round($attWith * 100 / $base, 1) : 0,
                 'by_kind' => $attByKind,
             ],
             'geo'             => [
                 'with'    => $geoWith,
-                'without' => $total - $geoWith,
-                'with_pct'=> $total > 0 ? round($geoWith * 100 / $total, 1) : 0,
+                'without' => $base - $geoWith,
+                'with_pct'=> $base > 0 ? round($geoWith * 100 / $base, 1) : 0,
             ],
             'label_mode'      => Settings::labelMode(),
         ];
@@ -428,6 +489,9 @@ class Stats {
                 'key'   => $enumPath,
                 'label' => $enumIsField ? ($labelsOn ? ($labels[$enumPath] ?? $enumPath) : $enumPath) : null,
             ];
+            // Selección de equipos activa (null = todos): el front la usa para marcar los
+            // checkboxes tras recargar.
+            $out['team_selection'] = is_array($teamSel) ? array_values(array_map('strval', $teamSel)) : null;
         }
         return $out;
     }

@@ -14,8 +14,10 @@ $token = (string) Request::param('token');
 $link  = ShareLink::requireAccess($token, 'list');
 
 $formId              = (int) $link['form_id'];
-$scope               = ShareLink::rule($link);
-[$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'sc.json_payload');
+// Alcance por filas del enlace = row_filter + equipos.
+[$scopeSql, $scopeP] = ShareLink::rowSql($link, 'sc.json_payload');
+// Alcance por estado de revisión (p. ej. solo aprobados), por submission_uid.
+[$stSql, $stP]       = ValidationStatus::latestFilterSql(ShareLink::statusScope($link), 'sc.submission_uid');
 
 // Ocultado de columnas del enlace.
 $schema     = $link['schema_json'] ? json_decode($link['schema_json'], true) : null;
@@ -26,8 +28,8 @@ $perPage = min(100, max(1, (int) ($_GET['per_page'] ?? 25)));
 $offset  = ($page - 1) * $perPage;
 $search  = trim((string) ($_GET['search'] ?? ''));
 
-$where  = 'WHERE sc.form_id = ? AND ' . $scopeSql;
-$params = array_merge([$formId], $scopeP);
+$where  = 'WHERE sc.form_id = ? AND ' . $scopeSql . ' AND ' . $stSql;
+$params = array_merge([$formId], $scopeP, $stP);
 if ($search !== '') {
     [$searchSql, $searchParams] = $fieldScope !== null
         ? SubmissionSearch::clauseVisible('sc', $search, FieldScope::visiblePaths($fieldScope, $schema))

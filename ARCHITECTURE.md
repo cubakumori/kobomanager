@@ -147,6 +147,17 @@ plain `<img>`/`<audio>` requests can carry it). Out‑of‑scope or other‑form
 404; the internal review status is never exposed. Admin CRUD is in `v1/admin/shares*`; the
 password policy is the `share_password_policy` setting.
 
+**Fixed scope (status + teams).** Beyond `row_filter`/`field_filter`, a link can be frozen at
+creation to a subset that applies to **every** view it exposes (list, map, detail, attachments,
+stats): `stats_status` (`all` | `approved`) restricts by latest review status, and `team_filter`
+(a list of `forms.stats_team_field` values; `__none__` = no team) restricts by team. The team
+filter is expressed as a `RowScope` rule (`RowScope::teamRule`) **combined in AND** with
+`row_filter` — `ShareLink::rule()` / `rowSql()` / `matchesScope()` are the single sources the
+endpoints consume, so teams ride the existing row‑scope path for free. The status filter is a
+separate SQL fragment by `submission_uid` (`ValidationStatus::latestFilterSql`, shared with
+`lib/Stats`); it is **decoupled from review exposure** — an `approved`‑only link narrows the set
+without ever revealing the `by_status` breakdown.
+
 **Attachments (P4).** A link may also expose submission attachments through a dedicated public
 proxy (`GET /public/share/{token}/submissions/{uid}/attachments/{attId}`,
 `share_attachment.php`), guarded by `requireAccess(token, 'attachments')`. The proxy downloads
@@ -275,12 +286,28 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   submission list can be **sorted by a calculated column** (duration, attachment count,
   has‑geo) expressed as SQL over the JSON, so the order is global rather than per‑page.
   The whole computation lives in `lib/Stats::compute($formId, $schema, $scope, $fieldScope,
-  $locale, $includeReview, $teamField, $enumField)` — a single source of truth reused by the
-  authenticated endpoint and by the public share endpoint (`public/share/{token}/stats`),
-  which passes the link's scope/field rules and `$includeReview = false` so the **internal
-  review status (`by_status`) is never exposed publicly**. The frontend render is the shared
-  `StatsPanels.vue` component (authenticated `StatsView` + public `PublicShareView`),
-  which simply omits the review cards/chart when `by_status` is absent.
+  $locale, $includeReview, $teamField, $enumField, $filterStatus, $teamSel, $extraScope)` — a
+  single source of truth reused by the authenticated endpoint and by the public share endpoint
+  (`public/share/{token}/stats`), which passes the link's scope/field rules and
+  `$includeReview = false` so the **internal review status (`by_status`) is never exposed
+  publicly**. The frontend render is the shared `StatsPanels.vue` component (authenticated
+  `StatsView` + public `PublicShareView`), which omits the review cards/chart when `by_status`
+  is absent and hides the attachments/geo cards when the shown subset has none.
+- **Filtering the stats** (authenticated view): every metric is computed over a subset, with the
+  full header counts (`total` + `by_status`) always returned so the user can switch. Two
+  independent, composable filters:
+  - **By review status** — the five header cards (Total / Pending / Approved / On hold /
+    Rejected) act as a single‑choice toggle; the active one re‑scopes all charts. The filter
+    is a latest‑review SQL fragment (`ValidationStatus::latestFilterSql`); `$filterStatus` is
+    **independent of `$includeReview`** (so it works on public links too). The default scope on
+    open is the global `stats_default_scope` setting (`all` | `approved`, default `approved`),
+    overridable per request via `?status=`. `base` is the filtered denominator the charts use.
+  - **By team** — each bar of the team breakdown has a toggle; unchecking subtracts that team
+    from all aggregates (`$teamSel`, applied to the series/trend in SQL and the in‑PHP pass via
+    `RowScope::teamRule` + `RowScope::matches`) **while the bars stay complete** (their shares
+    use `teamBase`, the status‑filtered all‑teams count). For a **share link** the team scope is
+    instead frozen and uniform — passed as `$extraScope` (a `RowScope` rule AND‑ed into the
+    scope SQL), so it restricts the breakdown too (the viewer never sees excluded teams).
 - **Team → enumerator breakdown** (optional, per form): when `forms.stats_team_field` is set,
   the same in‑scope pass also groups submissions by a **team** field and, within each team, by
   an **enumerator** (`forms.stats_enumerator_field`, or `_submitted_by` by default), yielding

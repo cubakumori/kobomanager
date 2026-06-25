@@ -188,6 +188,38 @@ class RowScope {
         return $out;
     }
 
+    /**
+     * Regla NORMALIZADA que restringe por una selección de equipos (valores de un
+     * campo de tipo «equipo»). `$keys` = claves seleccionadas; el bucket «sin equipo»
+     * usa el centinela '__none__' (→ operador `empty`). Devuelve null si no hay campo o
+     * la selección es null (= todos, sin restricción). Una selección VACÍA produce una
+     * regla fail-closed (no casa nada). Compartida por las estadísticas (alcance fijo de
+     * un enlace) y por el filtro por equipos.
+     */
+    public static function teamRule(?string $field, ?array $keys): ?array {
+        if ($field === null || $field === '' || !is_array($keys)) {
+            return null;
+        }
+        $sel   = array_values(array_unique(array_map('strval', $keys)));
+        $codes = array_values(array_filter($sel, fn($k) => $k !== '__none__'));
+        $none  = in_array('__none__', $sel, true);
+
+        $conds = [];
+        if ($codes) $conds[] = ['field' => $field, 'op' => 'in', 'values' => $codes];
+        if ($none)  $conds[] = ['field' => $field, 'op' => 'empty'];
+
+        // Nada seleccionado → fail-closed (un `in` sin valores no casa nada).
+        if (!$conds) {
+            $conds[] = ['field' => $field, 'op' => 'in', 'values' => []];
+        }
+        // Un solo grupo: las condiciones se unen con OR ('any') cuando hay códigos Y el
+        // bucket «sin equipo»; con una sola condición el conector es indiferente.
+        return self::normalize([
+            'match'  => 'all',
+            'groups' => [['match' => 'any', 'conditions' => $conds]],
+        ]);
+    }
+
     // ───────────────────────── Traducción a SQL ─────────────────────────
 
     /**

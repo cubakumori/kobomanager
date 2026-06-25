@@ -229,6 +229,8 @@ CREATE TABLE IF NOT EXISTS share_links (
     expose_attachments TINYINT(1) NOT NULL DEFAULT 0,       -- exponer adjuntos (solo si el enlace tiene contraseña; ver `share_attachments_policy`)
     row_filter        JSON NULL,                            -- {match,groups:[{match,conditions:[{field,op,values}]}]} o NULL (ver lib/RowScope; lee también el formato antiguo {conditions:[...]})
     field_filter      JSON NULL,                            -- {hidden:["clave",...]} o NULL: columnas ocultas en este enlace (ver lib/FieldScope)
+    team_filter       JSON NULL,                            -- ["claveEquipo",...] o NULL: alcance FIJO por equipo (valores de forms.stats_team_field; '__none__' = sin equipo). Se combina en AND con row_filter en todos los endpoints del enlace
+    stats_status      VARCHAR(16) NULL,                     -- alcance por estado de revisión del enlace: NULL/'all' = todos; 'approved' = solo aprobados (aplica a lista/mapa/detalle/adjuntos/stats)
     password_hash     VARCHAR(255) NULL,                    -- NULL = acceso solo por token
     expires_at        DATETIME NULL,                        -- NULL = sin caducidad
     revoked_at        DATETIME NULL,                        -- no NULL = revocado (deja de funcionar)

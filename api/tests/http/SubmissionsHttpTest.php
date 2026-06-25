@@ -101,7 +101,9 @@ final class SubmissionsHttpTest extends HttpTestCase
         $this->grant($uid, $formId, view: true, fieldFilter: ['hidden' => ['estado']]);
         $jar = $this->login('v@test.local', 'Secret123!');
 
-        $res = $this->request('GET', "forms/$formId/stats", null, $jar);
+        // status=all: el test cubre el ocultado de campos, no el alcance por defecto
+        // (que de fábrica es «approved» y estos envíos no están revisados).
+        $res = $this->request('GET', "forms/$formId/stats?status=all", null, $jar);
         $this->assertSame(200, $res['status']);
         $fieldsInStats = array_column($res['json']['data']['by_question'], 'field');
         // La pregunta oculta no aparece en los agregados; la visible sí.

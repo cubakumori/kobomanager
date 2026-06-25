@@ -72,6 +72,43 @@ class ShareLink {
         );
     }
 
+    /**
+     * Alcance FIJO por equipo del enlace como regla RowScope (o null = sin restricción).
+     * Combina `team_filter` (selección de claves) con el `stats_team_field` del formulario.
+     */
+    public static function teamRule(array $link): ?array {
+        $keys = isset($link['team_filter']) && $link['team_filter'] !== null
+            ? json_decode((string) $link['team_filter'], true) : null;
+        return is_array($keys)
+            ? RowScope::teamRule($link['stats_team_field'] ?? null, $keys)
+            : null;
+    }
+
+    /** Alcance por estado de revisión del enlace: 'approved' (u otro estado válido) o null. */
+    public static function statusScope(array $link): ?string {
+        $s = $link['stats_status'] ?? null;
+        return in_array($s, ValidationStatus::STATUSES, true) ? $s : null;
+    }
+
+    /**
+     * Condición SQL (+ params) del alcance por FILAS del enlace = row_filter AND equipos,
+     * sobre la columna JSON dada. Se ANDan a nivel SQL para no depender de la profundidad
+     * de RowScope. NO incluye el filtro por estado (ese va aparte, por `submission_uid`).
+     *
+     * @return array{0:string,1:array}
+     */
+    public static function rowSql(array $link, string $jsonCol): array {
+        [$s1, $p1] = RowScope::sqlCondition(self::rule($link), $jsonCol);
+        [$s2, $p2] = RowScope::sqlCondition(self::teamRule($link), $jsonCol);
+        return ["($s1) AND ($s2)", array_merge($p1, $p2)];
+    }
+
+    /** ¿El payload de un envío entra en el alcance por filas (row_filter + equipos) del enlace? */
+    public static function matchesScope(array $link, array $payload): bool {
+        return RowScope::matches(self::rule($link), $payload)
+            && RowScope::matches(self::teamRule($link), $payload);
+    }
+
     /** ¿El enlace está protegido con contraseña? */
     public static function hasPassword(array $link): bool {
         return ($link['password_hash'] ?? null) !== null && $link['password_hash'] !== '';
