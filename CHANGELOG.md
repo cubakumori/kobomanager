@@ -4,7 +4,7 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
-## [Sin publicar]
+## [1.7.0] - 2026-06-25
 
 > **Nota de actualización (esquema).** Esta versión sincroniza el estado de validación
 > con Kobo y cambia tres cosas del esquema: `submission_reviews.user_id` pasa a admitir
