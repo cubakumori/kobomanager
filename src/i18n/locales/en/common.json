@@ -3,6 +3,8 @@
     "save": "Save",
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "schemaOutdatedTitle": "Database out of date.",
+    "schemaOutdatedBody": "The code expects columns that are missing ({cols}). Run «php api/cli/migrate.php» on the server (or apply the CHANGELOG ALTERs). Some features will fail until then.",
     "areYouSure": "Are you sure?",
     "edit": "Edit",
     "delete": "Delete",

@@ -25,6 +25,7 @@ class ErrorResponse {
         'SHARE_PASSWORD_REQUIRED'       => [401, 'Este enlace requiere una contraseña'],
         'RATE_LIMITED'                  => [429, 'Demasiadas peticiones. Inténtalo de nuevo en un momento.'],
         'NOT_FOUND'                     => [404, 'Recurso no encontrado'],
+        'DB_SCHEMA_OUTDATED'            => [500, 'La base de datos está desactualizada respecto a esta versión de la app. Aplica las columnas pendientes (php api/cli/migrate.php, o los ALTER de la «Nota de actualización» del CHANGELOG).'],
         'INTERNAL_ERROR'                => [500, 'Error interno del servidor'],
     ];
 

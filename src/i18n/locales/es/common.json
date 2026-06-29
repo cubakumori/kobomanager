@@ -3,6 +3,8 @@
     "save": "Guardar",
     "cancel": "Cancelar",
     "confirm": "Confirmar",
+    "schemaOutdatedTitle": "Base de datos desactualizada.",
+    "schemaOutdatedBody": "El código espera columnas que faltan ({cols}). Ejecuta «php api/cli/migrate.php» en el servidor (o aplica los ALTER del CHANGELOG). Algunas funciones fallarán hasta entonces.",
     "areYouSure": "¿Estás seguro?",
     "edit": "Editar",
     "delete": "Eliminar",

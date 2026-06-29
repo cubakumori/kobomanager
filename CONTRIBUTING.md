@@ -38,9 +38,15 @@ overview read [`ARCHITECTURE.md`](./ARCHITECTURE.md); for setup read [`README.md
   portable DDL** — it must run on both MySQL 5.7+ and MariaDB (no MariaDB‑only syntax
   like `ADD COLUMN IF NOT EXISTS`). New column → edit the canonical `CREATE TABLE`;
   new table → add it to `001` with `CREATE TABLE IF NOT EXISTS`; new setting default →
-  `002`. To pick up a change on an existing DB you recreate it (or apply the same DDL
-  by hand in dev/test). Runtime‑configurable behavior goes in the `settings` table,
-  not the schema.
+  `002`. To pick up a change on an existing DB, run `php api/cli/migrate.php` (idempotent —
+  applies only the missing columns), recreate it, or apply the DDL by hand in dev/test.
+  Runtime‑configurable behavior goes in the `settings` table, not the schema.
+  - **When you add a column, also**: (1) add a `SchemaCheck::CHECKS` entry in
+    `api/lib/SchemaCheck.php` with its idempotent `ALTER` (this powers `cli/doctor.php`,
+    `cli/migrate.php` and the admin "DB out of date" banner so operators upgrading a live
+    DB get a clear signal instead of a cryptic 500), and (2) add the `ALTER` to the
+    version's **«Nota de actualización (esquema)»** in `CHANGELOG.md`. The
+    `SchemaCheckTest` asserts every `CHECKS` entry exists in the canonical schema.
 
 ### Backend
 - One class per file in `lib/`, no namespaces (autoloaded by classmap for tests).

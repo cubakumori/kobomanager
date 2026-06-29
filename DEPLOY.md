@@ -360,10 +360,25 @@ app keeps working but email-dependent features don't send. Handy for staging.
 2. Replace the **contents of `dist/`** (`index.html`, `assets/`, `sw.js`, manifest, and
    the root `.htaccess` if it changed) and the `api/` folder — **without touching
    `config.php`**.
-3. Schema changes (only if the release notes mention them) ship as **edits to the
-   canonical `CREATE TABLE`s** in `db/001_schema.sql`; re-applying does nothing
-   (`CREATE TABLE IF NOT EXISTS`). Apply the change by hand per the changelog, or recreate
-   the database from `db/*.sql` and re-sync from Kobo.
+3. **Schema changes — always run the migrator after uploading new code:**
+
+   ```
+   php api/cli/migrate.php
+   ```
+
+   It's idempotent: it adds only the columns the new code expects and that your DB is
+   missing (nothing if you're already up to date), and never touches data. `php
+   api/cli/doctor.php` reports the same without changing anything (exit 1 if behind). This
+   is the safe path — skipping it means new code over an old DB fails with errors, and
+   admins see a red **"Database out of date"** banner in the app telling them to run it.
+
+   **No shell access (phpMyAdmin / Adminer)?** You can't run the CLI, so instead apply the
+   per-version `ALTER`s by hand: each version's **«Nota de actualización (esquema)»** in
+   `CHANGELOG.md` lists the exact statements — paste them into the SQL tab, skipping any
+   column your DB already has (MySQL errors harmlessly on an existing one). The admin banner
+   names the missing columns too. Alternatively, recreate the DB from `db/*.sql` and re-sync
+   from Kobo. (Schema changes ship only as edits to the canonical `CREATE TABLE`s in
+   `db/001_schema.sql`; there are no migration files.)
 4. PWA: the **first** load after an update still serves the previous version from the SW
    precache (the new one activates in the background) — reload once before judging.
 

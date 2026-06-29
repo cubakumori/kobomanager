@@ -32,7 +32,7 @@ status** in both directions (see below).
   lib/                       one class per file, no namespaces
   v1/                        endpoint scripts, grouped by area
   cron/                      CLI jobs (daily_summary, sync_submissions)
-  cli/                       create_user.php, rebuild_search_text.php, rotate_token_key.php
+  cli/                       create_user.php, install.php, migrate.php, doctor.php, seed_demo.php, …
   tests/                     PHPUnit (only dev dependency)
 /db              *.sql schema files, applied in order (see Database)
 ```
@@ -415,9 +415,10 @@ to a new one (key rotation; see `DEPLOY.md §12`).
 - **PWA / offline**: `vite-plugin-pwa` in `injectManifest` mode with a hand-written service
   worker (`src/sw.js`): app shell precached, SPA navigations fall back to `index.html`
   (denylisting `/api` so CSV/attachment downloads hit the network), API GETs cached
-  network-first (4 s timeout; attachments in a separate bounded `CacheFirst` cache), and a
-  custom plugin treats **5xx as network failure** so both *client offline* and *server down*
-  fall back to the last seen data. Only 200s are cached. `composables/offline.js` exposes
+  network-first (4 s timeout; attachments in a separate bounded `CacheFirst` cache). On
+  *client offline* or timeout it falls back to the last seen data; a server **5xx is
+  returned to the app** (not masked as a network error) so real errors stay visible. Only
+  200s are cached. `composables/offline.js` exposes
   `isOnline` (banner in `App.vue`) and `clearDataCaches()`, called on logout so no sensitive
   data outlives the session on shared devices. The SW is build-only (disabled in dev).
 - **Reusable UI**: `Modal.vue` + `ConfirmDialog.vue` (`composables/confirm.js`), with
@@ -432,6 +433,17 @@ applied in order: `db/001_schema.sql` (all `CREATE TABLE`s, canonical) and
 both MySQL and MariaDB. New columns are added to the canonical `CREATE TABLE` (never
 `ALTER`); to get a fresh database you drop and re‑apply both files. Runtime‑configurable
 behavior lives in the `settings` table, not in schema changes.
+
+**Schema‑drift safety net.** Because upgrades are hand‑applied, deploying new code over a
+DB that wasn't migrated would otherwise fail with a cryptic `Unknown column` 500.
+`lib/SchemaCheck` is the single declarative list of post‑1.0 columns the code expects (with
+each idempotent `ALTER`); it powers three things: `php api/cli/doctor.php` (reports drift +
+the exact `ALTER`s, exit 1), `php api/cli/migrate.php` (idempotently applies only the missing
+ones — run it on every deploy), and an admin‑only **"DB out of date" banner** (`/auth/me`
+returns `schema_missing` for admins; the shell shows it). Defense in depth: the front
+controller maps a `42S22`/`42S02` `PDOException` to a clear `DB_SCHEMA_OUTDATED` error
+(no raw SQL leak), and the service worker no longer masks API `5xx` as an opaque network
+error — the real response reaches the app.
 
 Key tables: `kobo_accounts`, `users`, `user_sessions`, `forms`, `submissions_cache`,
 `submission_reviews`, `user_form_permissions`, `notification_config`, `audit_log`,

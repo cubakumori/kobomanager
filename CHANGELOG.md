@@ -4,6 +4,29 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [Sin publicar]
+
+### Añadido
+
+- **Red de seguridad para actualizaciones de esquema.** Como las actualizaciones de BD se
+  aplican a mano (sin migraciones por archivo, por diseño), desplegar código nuevo sobre una
+  BD sin migrar fallaba con un 500 críptico (le pasó a una instancia real al subir a 1.7.0).
+  Ahora:
+  - `php api/cli/migrate.php` aplica de forma **idempotente** solo las columnas que el código
+    espera y faltan (nunca borra ni reescribe datos) — pensado para correrlo en cada deploy;
+    `php api/cli/doctor.php` informa lo mismo sin tocar nada (código de salida 1 si hay desfase).
+  - Un **banner solo-admin «Base de datos desactualizada»** avisa en la app (con las columnas
+    que faltan y qué ejecutar) en vez de esperar a un error opaco. Fuente única declarativa
+    `lib/SchemaCheck`.
+
+### Cambiado
+
+- **El Service Worker ya no enmascara los errores 5xx de la API como fallo de red:** el error
+  real llega a la app (antes, sobre una BD sin migrar, un 500 se veía como un `no-response` /
+  `ERR_FAILED` opaco). Sin conexión o por timeout se sigue sirviendo lo último visto.
+- **Los errores de columna/tabla inexistente** (SQLSTATE 42S22/42S02, típicos de un deploy sin
+  migrar) devuelven un código claro `DB_SCHEMA_OUTDATED` y dejan de filtrar el SQL crudo al cliente.
+
 ## [1.7.0] - 2026-06-25
 
 > **Nota de actualización (esquema).** Esta versión sincroniza el estado de validación

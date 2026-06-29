@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppSidebar from '../components/AppSidebar.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
@@ -23,6 +23,12 @@ watch(() => route.fullPath, () => { open.value = false })
 // Accesibilidad del drawer móvil (Escape, focus trap y foco) — solo cuando está abierto.
 const drawer = ref(null)
 useDialogA11y(drawer, () => { open.value = false }, open)
+
+// Aviso de esquema desactualizado (solo admins): columnas que el código espera y faltan
+// en la BD tras un deploy sin migrar. Lo expone /auth/me.
+const schemaMissing = computed(() =>
+  auth.isAdmin && Array.isArray(auth.user?.schema_missing) ? auth.user.schema_missing : [],
+)
 </script>
 
 <template>
@@ -82,6 +88,13 @@ useDialogA11y(drawer, () => { open.value = false }, open)
       </header>
 
       <main class="flex-1 overflow-y-auto">
+        <!-- Aviso de BD desactualizada (admins): evita el 500 opaco tras un deploy sin migrar. -->
+        <div v-if="schemaMissing.length" class="border-b border-red-200 bg-red-50 px-4 py-3 dark:border-red-900 dark:bg-red-950/40">
+          <div class="mx-auto max-w-5xl text-sm text-red-800 dark:text-red-300">
+            <strong>{{ $t('common.schemaOutdatedTitle') }}</strong>
+            {{ $t('common.schemaOutdatedBody', { cols: schemaMissing.join(', ') }) }}
+          </div>
+        </div>
         <div class="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <slot />
         </div>

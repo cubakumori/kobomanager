@@ -19,6 +19,7 @@ require __DIR__ . '/lib/Auth.php';
 require __DIR__ . '/lib/Audit.php';
 require __DIR__ . '/lib/RateLimit.php';
 require __DIR__ . '/lib/Settings.php';
+require __DIR__ . '/lib/SchemaCheck.php';
 require __DIR__ . '/lib/Demo.php';
 require __DIR__ . '/lib/KoboClient.php';
 require __DIR__ . '/lib/ValidationStatus.php';
@@ -190,6 +191,12 @@ try {
         ErrorResponse::send('NOT_FOUND', 'Ruta no encontrada: /' . $route);
     }
 } catch (Throwable $e) {
+    // Columna/tabla inexistente (SQLSTATE 42S22 / 42S02) = BD desactualizada respecto al
+    // código tras un deploy sin migrar. Se traduce a un error CLARO y accionable (en vez de
+    // un 500 opaco) y NO se filtra el SQL crudo (el nombre de columna revelaría el esquema).
+    if ($e instanceof PDOException && in_array((string) $e->getCode(), ['42S22', '42S02'], true)) {
+        ErrorResponse::send('DB_SCHEMA_OUTDATED');
+    }
     $detail = APP_ENV === 'dev' ? $e->getMessage() : null;
     ErrorResponse::send('INTERNAL_ERROR', $detail);
 }
