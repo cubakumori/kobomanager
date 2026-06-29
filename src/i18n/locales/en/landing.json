@@ -22,7 +22,7 @@
     "feat2Desc": "Approve or reject submissions; the status syncs both ways with Kobo's native validation.",
     "feat3Title": "Secure token",
     "feat3Desc": "The Kobo token is stored encrypted on the server and never exposed to the browser.",
-    "footer": "KoboManager — a management layer for KoboToolbox",
+    "footer": "KoboManager v{version} — a management layer for KoboToolbox",
     "feat4Title": "Row-level access",
     "feat4Desc": "Decide which submissions each user sees —by a field value or by who submitted them—, not just which forms.",
     "moreTitle": "And much more",

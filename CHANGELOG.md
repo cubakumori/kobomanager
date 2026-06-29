@@ -4,6 +4,14 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [Sin publicar]
+
+### Añadido
+
+- **Versión en el footer de las páginas públicas.** El pie muestra «KoboManager v{x.y.z} —
+  …» con la versión del build (inyectada por Vite desde `package.json` como `__APP_VERSION__`),
+  para reconocer de un vistazo si una instancia está desactualizada frente a la última de GitHub.
+
 ## [1.7.1] - 2026-06-29
 
 ### Añadido

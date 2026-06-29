@@ -1,10 +1,18 @@
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Versión del build (de package.json) → expuesta como `__APP_VERSION__` para
+// mostrarla en el footer. Refleja exactamente la versión empaquetada/desplegada.
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'))
+
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   plugins: [
     vue(),
     tailwindcss(),
@@ -15,8 +23,8 @@ export default defineConfig({
     //     lo ya consultado puede RELEERSE sin conexión o con el servidor caído.
     //     Las escrituras siguen requiriendo red. La caché de datos se limpia al
     //     cerrar sesión (src/composables/offline.js).
-    //   - Las estrategias viven en un SW propio (src/sw.js, modo injectManifest)
-    //     para poder tratar los 5xx del servidor como fallo → fallback a caché.
+    //   - Las estrategias viven en un SW propio (src/sw.js, modo injectManifest):
+    //     offline/timeout → caché; un 5xx se devuelve a la app (no se enmascara).
     VitePWA({
       strategies: 'injectManifest',
       srcDir: 'src',

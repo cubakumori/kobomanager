@@ -13,6 +13,10 @@ import { usePublicSurface } from '../composables/appConfig'
 // La página «Apoyar» se puede ocultar globalmente desde Ajustes.
 const { supportPageEnabled } = usePublicSurface()
 
+// Versión del build (inyectada por Vite desde package.json), mostrada en el footer:
+// permite ver de un vistazo si la instancia está desactualizada frente a la de GitHub.
+const appVersion = __APP_VERSION__
+
 const router = useRouter()
 const auth = useAuthStore()
 
@@ -121,7 +125,7 @@ const drawerLink =
 
     <!-- Footer -->
     <footer class="mt-auto border-t border-slate-200/70 px-6 py-6 text-center text-xs text-slate-400">
-      {{ $t('landing.footer') }}
+      {{ $t('landing.footer', { version: appVersion }) }}
     </footer>
 
     <!-- Drawer móvil (desde la derecha), estilo coherente con el sidebar del backend -->
