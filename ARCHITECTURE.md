@@ -147,6 +147,15 @@ plain `<img>`/`<audio>` requests can carry it). Out‑of‑scope or other‑form
 404; the internal review status is never exposed. Admin CRUD is in `v1/admin/shares*`; the
 password policy is the `share_password_policy` setting.
 
+**Bulk creation.** `POST /admin/shares/bulk` (`shares_bulk.php`) creates one link per chosen
+value of a **`select_one`** field: each link is pinned to `field = value` via a `row_filter`
+condition **AND‑combined** with the (optional) base filter — `ShareLink::withScopeValue()`
+appends the distinctive group, and `RowFilterEditor.vue` excludes the distinctive field and
+forces the root connector to AND so the result stays expressible in RowScope's two levels. Both
+the simple and bulk endpoints share `ShareLink::parseSettings()` for the common fields (what it
+exposes, columns, teams, status, password, expiry). Per‑value submission counts come from
+`GET /admin/forms/{id}/scope-fields?counts=…`. Capped at 50 links, all inserted in one transaction.
+
 **Fixed scope (status + teams).** Beyond `row_filter`/`field_filter`, a link can be frozen at
 creation to a subset that applies to **every** view it exposes (list, map, detail, attachments,
 stats): `stats_status` (`all` | `approved`) restricts by latest review status, and `team_filter`

@@ -42,6 +42,117 @@ class ShareLink {
     }
 
     /**
+     * Valida y resuelve los ajustes COMUNES de un enlace (los que comparten la
+     * creación simple y la creación en LOTE) a partir del cuerpo de la petición y
+     * el formulario destino. Devuelve los valores listos para el INSERT. Corta con
+     * `ErrorResponse::send()` ante datos inválidos. NO cubre `label` ni `row_filter`
+     * (difieren entre simple y lote).
+     *
+     * @return array{expose_list:int,expose_detail:int,expose_map:int,expose_stats:int,
+     *   expose_attachments:int,field_filter:?string,team_filter:?string,
+     *   stats_status:?string,password_hash:?string,expires_at:?string}
+     */
+    public static function parseSettings(array $body, array $form): array {
+        // Qué expone el enlace (al menos uno; la lista es lo razonable por defecto).
+        $exposeList   = !empty($body['expose_list']) ? 1 : 0;
+        $exposeDetail = !empty($body['expose_detail']) ? 1 : 0;
+        $exposeMap    = !empty($body['expose_map']) ? 1 : 0;
+        $exposeStats  = !empty($body['expose_stats']) ? 1 : 0;
+        if (!$exposeList && !$exposeDetail && !$exposeMap && !$exposeStats) {
+            ErrorResponse::send('VALIDATION_ERROR', 'El enlace debe exponer al menos una vista');
+        }
+
+        // Filtro por columna (ocultar campos en el enlace): canónico o NULL.
+        $fieldRule = FieldScope::normalize($body['field_filter'] ?? null);
+        $fieldJson = $fieldRule ? json_encode($fieldRule, JSON_UNESCAPED_UNICODE) : null;
+
+        // Alcance FIJO por equipo: lista de claves seleccionadas (valores de
+        // stats_team_field; '__none__' = sin equipo). Solo si el formulario tiene
+        // equipo configurado. Lista vacía / sin equipo → NULL (= todos los equipos).
+        $teamJson = null;
+        if (!empty($form['stats_team_field']) && isset($body['team_filter']) && is_array($body['team_filter'])) {
+            $keys = array_values(array_unique(array_filter(
+                array_map(fn($v) => trim((string) $v), $body['team_filter']),
+                fn($v) => $v !== ''
+            )));
+            if ($keys) {
+                $teamJson = json_encode($keys, JSON_UNESCAPED_UNICODE);
+            }
+        }
+
+        // Alcance por estado de revisión: 'all' (NULL) o 'approved'.
+        $statsStatus = ($body['stats_status'] ?? 'all') === 'approved' ? 'approved' : null;
+
+        // Contraseña según política global.
+        $policy   = Settings::sharePasswordPolicy();
+        $password = isset($body['password']) ? (string) $body['password'] : '';
+        $hash     = null;
+        if ($policy === 'off') {
+            $password = '';
+        }
+        if ($password !== '') {
+            $hash = password_hash($password, PASSWORD_DEFAULT);
+        } elseif ($policy === 'required') {
+            ErrorResponse::send('VALIDATION_ERROR', 'Este servidor exige contraseña en los enlaces');
+        }
+
+        // Adjuntos: doble capa. Solo si la política global lo permite Y el enlace
+        // tiene contraseña (los adjuntos suelen contener PII sensible).
+        $exposeAttachments = 0;
+        if (!empty($body['expose_attachments'])) {
+            if (Settings::shareAttachmentsPolicy() !== 'require_password') {
+                ErrorResponse::send('VALIDATION_ERROR', 'Este servidor no permite exponer adjuntos en enlaces');
+            }
+            if ($hash === null) {
+                ErrorResponse::send('VALIDATION_ERROR', 'Exponer adjuntos requiere proteger el enlace con contraseña');
+            }
+            $exposeAttachments = 1;
+        }
+
+        // Caducidad opcional (YYYY-MM-DD o datetime). En blanco → sin caducidad.
+        $expiresAt = null;
+        $rawExp    = trim((string) ($body['expires_at'] ?? ''));
+        if ($rawExp !== '') {
+            $ts = strtotime($rawExp);
+            if ($ts === false) {
+                ErrorResponse::send('VALIDATION_ERROR', 'Fecha de caducidad no válida');
+            }
+            if ($ts < time()) {
+                ErrorResponse::send('VALIDATION_ERROR', 'La caducidad debe estar en el futuro');
+            }
+            $expiresAt = date('Y-m-d H:i:s', $ts);
+        }
+
+        return [
+            'expose_list'        => $exposeList,
+            'expose_detail'      => $exposeDetail,
+            'expose_map'         => $exposeMap,
+            'expose_stats'       => $exposeStats,
+            'expose_attachments' => $exposeAttachments,
+            'field_filter'       => $fieldJson,
+            'team_filter'        => $teamJson,
+            'stats_status'       => $statsStatus,
+            'password_hash'      => $hash,
+            'expires_at'         => $expiresAt,
+        ];
+    }
+
+    /**
+     * Combina un filtro de filas BASE (componible con Y en la raíz) con una
+     * condición distintiva fija `campo = valor`, para la creación de enlaces en
+     * LOTE. Devuelve el row_filter canónico de RowScope. El llamador garantiza que
+     * el filtro base es AND-componible (raíz 'all' o ≤1 grupo).
+     */
+    public static function withScopeValue(?array $baseRule, string $field, string $value): ?array {
+        $base   = RowScope::normalize($baseRule);
+        $groups = $base['groups'] ?? [];
+        $groups[] = ['match' => 'all', 'conditions' => [
+            ['field' => $field, 'op' => 'in', 'values' => [$value]],
+        ]];
+        return RowScope::normalize(['match' => 'all', 'groups' => $groups]);
+    }
+
+    /**
      * Resuelve un token a su fila de `share_links` si el enlace está ACTIVO
      * (no revocado y no caducado). Devuelve null en cualquier otro caso.
      */

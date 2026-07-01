@@ -4,6 +4,20 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [Sin publicar]
+
+### Añadido
+
+- **Creación de enlaces en lote (Compartir).** Un botón «Crear enlaces (lote)» abre un modal
+  gemelo al de un enlace nuevo con un **campo distintivo** (obligatorio) y un **prefijo de nombre
+  interno** (opcional). Elegido un campo de **opción única (`select_one`)**, se crea **un enlace por
+  cada valor** marcado: cada uno queda fijado a `campo = valor` en su filtro de filas (combinado en
+  **Y** con el filtro base, del que se excluye el campo distintivo), y su nombre interno es
+  `prefijo + etiqueta` (p. ej. «ODS Pinar del Río»). La checklist de valores muestra el **nº de
+  envíos** de cada opción; tope de **50 enlaces** por acción; todo se crea en una sola transacción.
+  Reutiliza el motor de scoping (`RowScope`) y los ajustes del enlace simple (qué expone, columnas,
+  equipos, estado, contraseña, caducidad).
+
 ## [1.7.2] - 2026-06-29
 
 ### Añadido

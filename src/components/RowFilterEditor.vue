@@ -20,6 +20,12 @@ const props = defineProps({
   // avanzado de la tabla pasa el de usuario (`/forms/{id}/scope-fields`), que excluye
   // los campos ocultos y acota los valores sugeridos al alcance del usuario.
   fieldsUrl: { type: String, default: '' },
+  // Campo a EXCLUIR del selector (creación de enlaces en lote: el campo distintivo
+  // lo fija el propio lote, así que no debe poder añadirse aquí).
+  excludeField: { type: String, default: '' },
+  // Fuerza el conector raíz a Y y oculta su selector (creación en lote: el filtro
+  // base debe combinarse en AND con la condición distintiva).
+  forceRootAll: { type: Boolean, default: false },
 })
 
 const fieldsEndpoint = () => props.fieldsUrl || `/admin/forms/${props.formId}/scope-fields`
@@ -44,6 +50,11 @@ const fieldByKey = computed(() => {
   for (const f of fields.value) m.set(f.key, f)
   return m
 })
+
+// Campos ofrecidos en el selector (todos menos el excluido, si lo hay).
+const selectableFields = computed(() =>
+  props.excludeField ? fields.value.filter((f) => f.key !== props.excludeField) : fields.value,
+)
 
 // ---------- seed / carga ----------
 
@@ -76,7 +87,7 @@ function seed() {
     groups.value = []
     return
   }
-  rootMatch.value = r.match
+  rootMatch.value = props.forceRootAll ? 'all' : r.match
   groups.value = r.groups.map((g) => ({
     match: g.match,
     conditions: g.conditions.map((c) => ({ field: c.field, op: c.op, values: [...c.values] })),
@@ -239,8 +250,8 @@ defineExpose({ getValue })
         {{ $t('rowfilter.noFilter') }}
       </div>
 
-      <!-- Conector raíz entre grupos (solo si hay más de uno) -->
-      <div v-if="groups.length > 1" class="flex items-center gap-2 text-sm">
+      <!-- Conector raíz entre grupos (solo si hay más de uno y no está forzado a Y) -->
+      <div v-if="groups.length > 1 && !forceRootAll" class="flex items-center gap-2 text-sm">
         <span class="text-slate-600">{{ $t('rowfilter.betweenGroups') }}</span>
         <select
           v-model="rootMatch"
@@ -293,7 +304,7 @@ defineExpose({ getValue })
                 <option value="_submitted_by">{{ $t('rowfilter.submittedBy') }}</option>
               </optgroup>
               <optgroup :label="$t('rowfilter.fieldsGroup')">
-                <option v-for="f in fields" :key="f.key" :value="f.key">{{ f.label }}</option>
+                <option v-for="f in selectableFields" :key="f.key" :value="f.key">{{ f.label }}</option>
               </optgroup>
             </select>
 

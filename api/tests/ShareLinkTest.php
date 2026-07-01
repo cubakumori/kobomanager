@@ -112,6 +112,42 @@ final class ShareLinkTest extends DbTestCase
         $this->assertNull(ShareLink::rule(ShareLink::resolve($token)));
     }
 
+    // ---- Construcción en lote: combinar filtro base + condición distintiva ----
+
+    public function testWithScopeValueNoBase(): void
+    {
+        // Sin filtro base: solo la condición distintiva `campo = valor`.
+        $this->assertSame(
+            ['match' => 'all', 'groups' => [
+                ['match' => 'all', 'conditions' => [
+                    ['field' => 'provincia', 'op' => 'in', 'values' => ['PR']],
+                ]],
+            ]],
+            ShareLink::withScopeValue(null, 'provincia', 'PR')
+        );
+    }
+
+    public function testWithScopeValueAppendsToBaseInAnd(): void
+    {
+        $base = ['match' => 'all', 'groups' => [
+            ['match' => 'all', 'conditions' => [['field' => 'activo', 'op' => 'in', 'values' => ['si']]]],
+        ]];
+        $rule = ShareLink::withScopeValue($base, 'provincia', 'HAB');
+
+        // La condición base se conserva y se AÑADE la distintiva, ambas en Y en la raíz.
+        $this->assertSame('all', $rule['match']);
+        $this->assertCount(2, $rule['groups']);
+        $this->assertSame(
+            ['field' => 'provincia', 'op' => 'in', 'values' => ['HAB']],
+            $rule['groups'][1]['conditions'][0]
+        );
+
+        // Semántica: solo casa quien cumple base Y valor distintivo.
+        $this->assertTrue(RowScope::matches($rule, ['activo' => 'si', 'provincia' => 'HAB']));
+        $this->assertFalse(RowScope::matches($rule, ['activo' => 'si', 'provincia' => 'MAT']));
+        $this->assertFalse(RowScope::matches($rule, ['activo' => 'no', 'provincia' => 'HAB']));
+    }
+
     // ---- Alcance fijo del enlace: equipos + estado ----
 
     public function testStatusScope(): void

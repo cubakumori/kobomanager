@@ -97,6 +97,16 @@ Quedan como ideas reabribles si aparece una necesidad real.
 
 ## Optimización y UX
 
+- [ ] **Creación de enlaces en lote sobre más tipos de campo** *(extensión de lo ya
+      entregado)* — la creación en lote de enlaces de solo lectura (un enlace por valor de
+      un campo distintivo) hoy admite solo campos de **opción única (`select_one`)**, cuyos
+      valores son un conjunto acotado y conocido del esquema. Extensiones posibles según
+      demanda: (a) **campos de texto / metadatos** (p. ej. `_submitted_by`), enumerando los
+      **valores distintos presentes en los datos** (`scope-fields ?values=` ya los da) con un
+      tope claro; (b) **`select_multiple`**, donde «un enlace por valor» dejaría de ser una
+      partición (un envío con varios valores caería en varios enlaces) y usaría el operador
+      `has_any` en vez de `in`. Ambos son incrementales sobre el endpoint actual
+      (`admin/shares_bulk.php`) y el modal de `SharesView.vue`.
 - [ ] **Agregación semanal explícita en Estadísticas** *(pendiente menor)* — hoy «Envíos por
       día/mes» elige día↔mes automáticamente según el tramo; valorar el escalón intermedio
       por semana.

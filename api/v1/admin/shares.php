@@ -72,79 +72,12 @@ if ($method === 'POST') {
         ErrorResponse::send('NOT_FOUND', 'Formulario no encontrado');
     }
 
-    // Qué expone el enlace (al menos uno; la lista es lo razonable por defecto).
-    $exposeList   = !empty($body['expose_list']) ? 1 : 0;
-    $exposeDetail = !empty($body['expose_detail']) ? 1 : 0;
-    $exposeMap    = !empty($body['expose_map']) ? 1 : 0;
-    $exposeStats  = !empty($body['expose_stats']) ? 1 : 0;
-    if (!$exposeList && !$exposeDetail && !$exposeMap && !$exposeStats) {
-        ErrorResponse::send('VALIDATION_ERROR', 'El enlace debe exponer al menos una vista');
-    }
+    // Ajustes comunes (qué expone, columnas, equipos, estado, contraseña, caducidad).
+    $settings = ShareLink::parseSettings($body, $form);
 
     // Filtro por filas (scoping): canónico o NULL.
     $rule       = RowScope::normalize($body['row_filter'] ?? null);
     $filterJson = $rule ? json_encode($rule, JSON_UNESCAPED_UNICODE) : null;
-
-    // Filtro por columna (ocultar campos en el enlace): canónico o NULL.
-    $fieldRule  = FieldScope::normalize($body['field_filter'] ?? null);
-    $fieldJson  = $fieldRule ? json_encode($fieldRule, JSON_UNESCAPED_UNICODE) : null;
-
-    // Alcance FIJO por equipo: lista de claves seleccionadas (valores de stats_team_field;
-    // '__none__' = sin equipo). Solo tiene sentido si el formulario tiene equipo configurado.
-    // Lista vacía o sin equipo configurado → NULL (= todos los equipos).
-    $teamJson = null;
-    if (!empty($form['stats_team_field']) && isset($body['team_filter']) && is_array($body['team_filter'])) {
-        $keys = array_values(array_unique(array_filter(
-            array_map(fn($v) => trim((string) $v), $body['team_filter']),
-            fn($v) => $v !== ''
-        )));
-        if ($keys) {
-            $teamJson = json_encode($keys, JSON_UNESCAPED_UNICODE);
-        }
-    }
-
-    // Alcance por estado de revisión: 'all' (NULL) o 'approved'.
-    $statsStatus = ($body['stats_status'] ?? 'all') === 'approved' ? 'approved' : null;
-
-    // Contraseña según política global.
-    $policy   = Settings::sharePasswordPolicy();
-    $password = isset($body['password']) ? (string) $body['password'] : '';
-    $hash     = null;
-    if ($policy === 'off') {
-        $password = '';
-    }
-    if ($password !== '') {
-        $hash = password_hash($password, PASSWORD_DEFAULT);
-    } elseif ($policy === 'required') {
-        ErrorResponse::send('VALIDATION_ERROR', 'Este servidor exige contraseña en los enlaces');
-    }
-
-    // Adjuntos: doble capa. Solo si la política global lo permite Y el enlace
-    // tiene contraseña (los adjuntos suelen contener PII sensible).
-    $exposeAttachments = 0;
-    if (!empty($body['expose_attachments'])) {
-        if (Settings::shareAttachmentsPolicy() !== 'require_password') {
-            ErrorResponse::send('VALIDATION_ERROR', 'Este servidor no permite exponer adjuntos en enlaces');
-        }
-        if ($hash === null) {
-            ErrorResponse::send('VALIDATION_ERROR', 'Exponer adjuntos requiere proteger el enlace con contraseña');
-        }
-        $exposeAttachments = 1;
-    }
-
-    // Caducidad opcional (YYYY-MM-DD o datetime). En blanco → sin caducidad.
-    $expiresAt = null;
-    $rawExp    = trim((string) ($body['expires_at'] ?? ''));
-    if ($rawExp !== '') {
-        $ts = strtotime($rawExp);
-        if ($ts === false) {
-            ErrorResponse::send('VALIDATION_ERROR', 'Fecha de caducidad no válida');
-        }
-        if ($ts < time()) {
-            ErrorResponse::send('VALIDATION_ERROR', 'La caducidad debe estar en el futuro');
-        }
-        $expiresAt = date('Y-m-d H:i:s', $ts);
-    }
 
     $label = trim((string) ($body['label'] ?? ''));
     $token = ShareLink::generateToken();
@@ -156,16 +89,22 @@ if ($method === 'POST') {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
             $token, $formId, $admin['id'], $label !== '' ? $label : null,
-            $exposeList, $exposeDetail, $exposeMap, $exposeStats, $exposeAttachments, $filterJson, $fieldJson,
-            $teamJson, $statsStatus, $hash, $expiresAt,
+            $settings['expose_list'], $settings['expose_detail'], $settings['expose_map'], $settings['expose_stats'],
+            $settings['expose_attachments'], $filterJson, $settings['field_filter'],
+            $settings['team_filter'], $settings['stats_status'], $settings['password_hash'], $settings['expires_at'],
         ]
     );
 
     $id = (int) DB::conn()->lastInsertId();
     Audit::log($admin['id'], 'share_create', $formId, null, [
-        'share_id' => $id, 'exposes' => compact('exposeList', 'exposeDetail', 'exposeMap', 'exposeStats', 'exposeAttachments'),
-        'has_password' => $hash !== null, 'expires_at' => $expiresAt,
-        'stats_status' => $statsStatus ?? 'all', 'team_filter' => $teamJson !== null,
+        'share_id' => $id,
+        'exposes'  => [
+            'exposeList'        => $settings['expose_list'], 'exposeDetail' => $settings['expose_detail'],
+            'exposeMap'         => $settings['expose_map'],  'exposeStats'  => $settings['expose_stats'],
+            'exposeAttachments' => $settings['expose_attachments'],
+        ],
+        'has_password' => $settings['password_hash'] !== null, 'expires_at' => $settings['expires_at'],
+        'stats_status' => $settings['stats_status'] ?? 'all', 'team_filter' => $settings['team_filter'] !== null,
     ]);
 
     ErrorResponse::ok(['id' => $id, 'token' => $token], 201);

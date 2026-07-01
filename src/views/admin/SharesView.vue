@@ -37,8 +37,33 @@ const blankForm = () => ({
   field_filter: null,
   stats_status: 'all', // 'all' | 'approved'
   team_filter: null, // null = todos los equipos; array de claves = subconjunto
+  distinctive_field: '', // solo en modo lote: campo select_one por el que se crean los enlaces
 })
 const form = ref(blankForm())
+
+// --- Creación en lote (bulk): un enlace por cada valor de un campo select_one ---
+const BULK_MAX = 50
+const bulkMode = ref(false)
+const bulkFields = ref([]) // campos select_one del formulario elegido: [{key,label,options:[{value,label}]}]
+const bulkFieldsLoading = ref(false)
+const bulkCounts = ref({}) // {valor: nº de envíos} del campo distintivo elegido
+const bulkSelected = ref([]) // códigos marcados (los enlaces a crear)
+
+const distinctiveOptions = computed(() => {
+  const f = bulkFields.value.find((x) => x.key === form.value.distinctive_field)
+  return f ? f.options : []
+})
+const bulkCount = computed(() => bulkSelected.value.length)
+const bulkTooMany = computed(() => bulkCount.value > BULK_MAX)
+const canBulkCreate = computed(
+  () =>
+    form.value.form_id &&
+    form.value.distinctive_field &&
+    bulkCount.value > 0 &&
+    !bulkTooMany.value &&
+    (form.value.expose_list || form.value.expose_detail || form.value.expose_map || form.value.expose_stats) &&
+    !(passwordPolicy.value === 'required' && !form.value.password),
+)
 
 // Equipos disponibles del formulario elegido (para el alcance fijo por equipo).
 const teamOptions = ref([]) // [{ key, name }]
@@ -83,7 +108,85 @@ async function loadLinks() {
 function openCreate() {
   form.value = blankForm()
   createError.value = ''
+  bulkMode.value = false
   showCreate.value = true
+}
+
+function openBulk() {
+  form.value = blankForm()
+  createError.value = ''
+  bulkFields.value = []
+  bulkCounts.value = {}
+  bulkSelected.value = []
+  bulkMode.value = true
+  showCreate.value = true
+}
+
+// Campos select_one del formulario elegido (los únicos válidos como distintivo).
+async function loadBulkFields() {
+  bulkFields.value = []
+  const id = form.value.form_id
+  if (!id) return
+  bulkFieldsLoading.value = true
+  try {
+    const { data } = await api.get(`/admin/forms/${id}/scope-fields`)
+    bulkFields.value = data.data.fields.filter((f) => !f.multi && f.options && f.options.length)
+  } catch (e) {
+    createError.value = apiError(e, t('permissions.colsLoadError'))
+  } finally {
+    bulkFieldsLoading.value = false
+  }
+}
+
+// Al elegir el campo distintivo: marcar todos sus valores y traer su nº de envíos.
+async function onDistinctiveChange() {
+  bulkCounts.value = {}
+  bulkSelected.value = distinctiveOptions.value.map((o) => o.value)
+  const id = form.value.form_id
+  const field = form.value.distinctive_field
+  if (!id || !field) return
+  try {
+    const { data } = await api.get(`/admin/forms/${id}/scope-fields`, { params: { counts: field } })
+    bulkCounts.value = data.data.counts || {}
+  } catch {
+    bulkCounts.value = {}
+  }
+}
+function toggleBulkValue(value) {
+  const i = bulkSelected.value.indexOf(value)
+  if (i === -1) bulkSelected.value.push(value)
+  else bulkSelected.value.splice(i, 1)
+}
+
+async function onBulkCreate() {
+  if (!canBulkCreate.value) return
+  creating.value = true
+  createError.value = ''
+  try {
+    await api.post('/admin/shares/bulk', {
+      form_id: Number(form.value.form_id),
+      distinctive_field: form.value.distinctive_field,
+      values: bulkSelected.value,
+      label_prefix: form.value.label,
+      expose_list: form.value.expose_list,
+      expose_detail: form.value.expose_detail,
+      expose_map: form.value.expose_map,
+      expose_stats: form.value.expose_stats,
+      expose_attachments: canExposeAttachments.value && form.value.expose_attachments,
+      password: passwordPolicy.value === 'off' ? '' : form.value.password,
+      expires_at: form.value.expires_at,
+      row_filter: form.value.row_filter,
+      field_filter: form.value.field_filter,
+      stats_status: form.value.stats_status,
+      team_filter: form.value.team_filter,
+    })
+    showCreate.value = false
+    await loadLinks()
+  } catch (e) {
+    createError.value = apiError(e, t('shares.bulkCreateError'))
+  } finally {
+    creating.value = false
+  }
 }
 
 const canCreate = computed(
@@ -218,7 +321,12 @@ function onFormChange() {
   form.value.row_filter = null
   form.value.field_filter = null
   form.value.team_filter = null
+  form.value.distinctive_field = ''
+  bulkFields.value = []
+  bulkCounts.value = {}
+  bulkSelected.value = []
   loadTeamOptions()
+  if (bulkMode.value) loadBulkFields()
 }
 
 // Equipos del formulario elegido: se leen del desglose por equipo de sus estadísticas
@@ -295,12 +403,20 @@ onMounted(() => {
         <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ $t('shares.title') }}</h1>
         <p class="mt-1 text-sm text-slate-500">{{ $t('shares.subtitle') }}</p>
       </div>
-      <button
-        class="shrink-0 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
-        @click="openCreate"
-      >
-        {{ $t('shares.new') }}
-      </button>
+      <div class="flex shrink-0 gap-2">
+        <button
+          class="rounded-lg border border-primary-300 px-4 py-2 text-sm font-semibold text-primary-700 hover:bg-primary-50 dark:border-primary-700 dark:text-primary-300 dark:hover:bg-primary-900/30"
+          @click="openBulk"
+        >
+          {{ $t('shares.bulkNew') }}
+        </button>
+        <button
+          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+          @click="openCreate"
+        >
+          {{ $t('shares.new') }}
+        </button>
+      </div>
     </header>
 
     <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
@@ -401,8 +517,8 @@ onMounted(() => {
       </table>
     </div>
 
-    <!-- Modal: crear enlace -->
-    <Modal v-if="showCreate" size="lg" :title="$t('shares.new')" @close="showCreate = false">
+    <!-- Modal: crear enlace (simple o en lote) -->
+    <Modal v-if="showCreate" size="lg" :title="bulkMode ? $t('shares.bulkNew') : $t('shares.new')" @close="showCreate = false">
       <div class="space-y-4">
         <div v-if="createError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
           {{ createError }}
@@ -420,11 +536,45 @@ onMounted(() => {
           </select>
         </label>
 
+        <!-- Campo distintivo (solo en lote): un enlace por cada valor de este select_one -->
+        <template v-if="bulkMode">
+          <label class="block">
+            <span class="mb-1 block text-sm font-medium text-slate-700">{{ $t('shares.bulkField') }}</span>
+            <select
+              v-model="form.distinctive_field"
+              :disabled="!form.form_id || bulkFieldsLoading"
+              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 disabled:opacity-50"
+              @change="onDistinctiveChange"
+            >
+              <option value="">{{ $t('shares.bulkSelectField') }}</option>
+              <option v-for="f in bulkFields" :key="f.key" :value="f.key">{{ f.label }}</option>
+            </select>
+            <span class="mt-1 block text-xs text-slate-400">{{ $t('shares.bulkFieldHint') }}</span>
+            <span v-if="form.form_id && !bulkFieldsLoading && !bulkFields.length" class="mt-1 block text-xs text-amber-600 dark:text-amber-400">
+              {{ $t('shares.bulkNoFields') }}
+            </span>
+          </label>
+
+          <!-- Valores: checklist con nº de envíos por valor -->
+          <fieldset v-if="form.distinctive_field && distinctiveOptions.length" class="rounded-lg bg-slate-50 px-3 py-2">
+            <legend class="text-sm font-medium text-slate-700">{{ $t('shares.bulkValues') }}</legend>
+            <p class="mb-2 text-xs text-slate-400">{{ $t('shares.bulkValuesHint') }}</p>
+            <div class="flex max-h-48 flex-col gap-1 overflow-y-auto pr-1">
+              <label v-for="opt in distinctiveOptions" :key="opt.value" class="inline-flex items-center gap-2 text-sm text-slate-700">
+                <input type="checkbox" :checked="bulkSelected.includes(opt.value)" @change="toggleBulkValue(opt.value)" />
+                <span class="min-w-0 flex-1 truncate">{{ opt.label }} <span class="text-slate-400">({{ opt.value }})</span></span>
+                <span class="shrink-0 text-xs text-slate-400">{{ $t('shares.bulkOptionCount', { n: bulkCounts[opt.value] || 0 }) }}</span>
+              </label>
+            </div>
+            <p v-if="bulkTooMany" class="mt-2 text-xs text-red-600 dark:text-red-400">{{ $t('shares.bulkTooMany', { max: BULK_MAX }) }}</p>
+          </fieldset>
+        </template>
+
         <label class="block">
-          <span class="mb-1 block text-sm font-medium text-slate-700">{{ $t('shares.label') }}</span>
+          <span class="mb-1 block text-sm font-medium text-slate-700">{{ bulkMode ? $t('shares.bulkPrefix') : $t('shares.label') }}</span>
           <input
             v-model="form.label"
-            :placeholder="$t('shares.labelPlaceholder')"
+            :placeholder="bulkMode ? $t('shares.bulkPrefixPlaceholder') : $t('shares.labelPlaceholder')"
             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
           />
         </label>
@@ -453,10 +603,10 @@ onMounted(() => {
           </p>
         </fieldset>
 
-        <!-- Filtro de filas -->
+        <!-- Filtro de filas (en lote: filtro BASE común, se combina en Y con el valor distintivo) -->
         <div class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
           <span class="text-sm text-slate-600">
-            {{ $t('shares.rowFilter') }}:
+            {{ bulkMode ? $t('shares.rowFilterBase') : $t('shares.rowFilter') }}:
             <strong>{{ conditionCount ? $t('shares.rowFilterActive', { n: conditionCount }) : $t('shares.rowFilterAll') }}</strong>
           </span>
           <button
@@ -537,6 +687,15 @@ onMounted(() => {
             {{ $t('common.cancel') }}
           </button>
           <button
+            v-if="bulkMode"
+            :disabled="!canBulkCreate || creating"
+            class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+            @click="onBulkCreate"
+          >
+            {{ creating ? $t('shares.bulkCreating') : $t('shares.bulkCreate', { n: bulkCount }) }}
+          </button>
+          <button
+            v-else
             :disabled="!canCreate || creating"
             class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
             @click="onCreate"
@@ -554,6 +713,8 @@ onMounted(() => {
           ref="rowEditor"
           :form-id="form.form_id"
           :model-value="form.row_filter"
+          :exclude-field="bulkMode ? form.distinctive_field : ''"
+          :force-root-all="bulkMode"
         />
 
         <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">

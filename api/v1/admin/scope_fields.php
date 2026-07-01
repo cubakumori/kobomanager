@@ -7,6 +7,8 @@
  *     derivados del esquema XLSForm cacheado. Las etiquetas van en el idioma del admin.
  *   - ?values=CLAVE → valores DISTINCT existentes en la caché para ese campo
  *     (sugerencias para campos de texto / metadatos como _submitted_by).
+ *   - ?counts=CLAVE → {valor: nº de envíos} para ese campo (para la creación de
+ *     enlaces en lote: ayuda a descartar valores sin datos).
  *
  * Los metadatos de Kobo (p. ej. _submitted_by) los añade el frontend al selector.
  */
@@ -48,6 +50,28 @@ if ($valuesFor !== '') {
         if ($v !== null && $v !== '') $values[] = $v;
     }
     ErrorResponse::ok(['values' => $values]);
+}
+
+// ?counts=CLAVE → nº de envíos por valor de ese campo (para elegir/descartar
+// valores en la creación en lote). Misma exclusión de NULL que ?values.
+$countsFor = isset($_GET['counts']) ? (string) $_GET['counts'] : '';
+if ($countsFor !== '') {
+    $path = RowScope::jsonPath($countsFor);
+    $rows = DB::run(
+        'SELECT JSON_UNQUOTE(JSON_EXTRACT(json_payload, ?)) AS v, COUNT(*) AS n
+         FROM submissions_cache
+         WHERE form_id = ?
+           AND JSON_EXTRACT(json_payload, ?) IS NOT NULL
+           AND JSON_TYPE(JSON_EXTRACT(json_payload, ?)) <> \'NULL\'
+         GROUP BY v',
+        [$path, $formId, $path, $path]
+    )->fetchAll();
+    $counts = [];
+    foreach ($rows as $r) {
+        $v = $r['v'];
+        if ($v !== null && $v !== '') $counts[$v] = (int) $r['n'];
+    }
+    ErrorResponse::ok(['counts' => $counts]);
 }
 
 // Lista de campos filtrables desde el esquema (ruta completa como clave del envío).

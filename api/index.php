@@ -121,6 +121,7 @@ $routes = [
     'admin/forms/:id/scope-fields' => 'admin/scope_fields.php',
     'admin/settings'            => 'admin/settings.php',
     'admin/shares'              => 'admin/shares.php',
+    'admin/shares/bulk'         => 'admin/shares_bulk.php',
     'admin/shares/:id'          => 'admin/share_item.php',
     'admin/audit'               => 'admin/audit.php',
     'admin/messages'            => 'admin/messages.php',
