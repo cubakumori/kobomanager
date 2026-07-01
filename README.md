@@ -45,6 +45,8 @@ native validation status.
   **freeze a link to a subset** — only approved submissions, and/or specific teams —
   applied across every view it exposes. The public view shows the data's freshness
   ("data as of …").
+- **Bulk link creation** — create one link per value of a single-choice (`select_one`)
+  field in a single step (e.g. one link per province), each pinned to its value.
 
 **Analysis**
 
