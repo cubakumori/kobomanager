@@ -12,6 +12,7 @@ import Skeleton from '../components/Skeleton.vue'
 import Modal from '../components/Modal.vue'
 import RowFilterEditor from '../components/RowFilterEditor.vue'
 import { useTableFreeze, useTableHeaderLines } from '../composables/appConfig'
+import { useDialogA11y } from '../composables/dialogA11y'
 
 const { tableLabel, tableValue } = useDerivedFormat()
 
@@ -31,6 +32,36 @@ const perPageOptions = [10, 25, 50, 100]
 const search = ref('')
 const reviewFilter = ref('') // '' = todos
 const sort = ref('date_desc')
+
+// --- Preferencias de vista persistidas: orden y filtro de revisión por formulario;
+// tamaño de página global (gusto del usuario, no depende del formulario). Igual que
+// el filtro avanzado (km.filter.*) y las columnas (km.cols.*), sobreviven a navegar
+// a un detalle y volver. Se restauran AHORA, antes de registrar los watchers, para
+// no disparar una recarga extra al montar.
+const SORTS = ['date_desc', 'date_asc', 'duration_desc', 'duration_asc', 'attachments_desc', 'geo_desc']
+const REVIEWS = ['', 'pending', 'approved', 'on_hold', 'rejected']
+const viewKey = (id) => `km.view.${id}`
+function loadViewPrefs() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(viewKey(formId.value)) || 'null')
+    if (SORTS.includes(saved?.sort)) sort.value = saved.sort
+    if (REVIEWS.includes(saved?.review)) reviewFilter.value = saved.review
+    const pp = Number(localStorage.getItem('km.perPage'))
+    if (perPageOptions.includes(pp)) perPage.value = pp
+  } catch {
+    /* sin almacenamiento: las preferencias solo durarán la sesión */
+  }
+}
+function saveViewPrefs() {
+  try {
+    localStorage.setItem(viewKey(formId.value), JSON.stringify({ sort: sort.value, review: reviewFilter.value }))
+    localStorage.setItem('km.perPage', String(perPage.value))
+  } catch {
+    /* noop */
+  }
+}
+loadViewPrefs()
+
 const loading = ref(true)
 const loaded = ref(false) // primera carga completada (el skeleton solo aparece antes)
 const error = ref('')
@@ -159,6 +190,12 @@ const orderedCols = ref([]) // todas las columnas de datos en orden de presentac
 const visibleCols = ref([]) // subconjunto visible
 const colMenuOpen = ref(false)
 const actionsOpen = ref(false) // menú «Acciones» (solo móvil/tablet)
+// Ambos popovers se comportan como diálogos ligeros (tienen backdrop): Escape los
+// cierra, el foco entra al abrir y vuelve al botón de origen al cerrar.
+const colMenuEl = ref(null)
+const actionsMenuEl = ref(null)
+useDialogA11y(colMenuEl, () => (colMenuOpen.value = false), colMenuOpen)
+useDialogA11y(actionsMenuEl, () => (actionsOpen.value = false), actionsOpen)
 const dragIndex = ref(null)
 let prefsForm = null // formId para el que se inicializaron las preferencias
 
@@ -298,14 +335,16 @@ watch(search, () => {
   }, 300)
 })
 
-// Filtro de revisión, orden y tamaño de página: recargar desde la primera página.
+// Filtro de revisión, orden y tamaño de página: recargar desde la primera página
+// (y recordar la elección para la próxima visita).
 watch([reviewFilter, sort, perPage], () => {
+  saveViewPrefs()
   page.value = 1
   load()
 })
 
 // Al cambiar de formulario, re-inicializar las preferencias de columnas.
-watch(formId, () => { prefsForm = null; orderedCols.value = []; visibleCols.value = []; loadAdvFilter() })
+watch(formId, () => { prefsForm = null; orderedCols.value = []; visibleCols.value = []; loadAdvFilter(); loadViewPrefs() })
 
 function go(p) {
   if (p < 1 || p > totalPages.value) return
@@ -348,7 +387,7 @@ onMounted(() => { loadAdvFilter(); load() })
           </button>
           <template v-if="actionsOpen">
             <div class="fixed inset-0 z-30" @click="actionsOpen = false"></div>
-            <div class="absolute left-0 z-40 mt-1 w-56 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+            <div ref="actionsMenuEl" role="menu" class="absolute left-0 z-40 mt-1 w-56 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
               <button :class="menuItem" @click="actionsOpen = false; colMenuOpen = true">{{ $t('submissions.columns') }}</button>
               <RouterLink v-if="hasGeo" :to="{ name: 'form-map', params: { id: formId } }" :class="menuItem" @click="actionsOpen = false">{{ $t('submissions.map') }}</RouterLink>
               <span v-else :class="[menuItem, 'cursor-not-allowed text-slate-300 hover:bg-transparent']">{{ $t('submissions.map') }}</span>
@@ -364,7 +403,7 @@ onMounted(() => { loadAdvFilter(); load() })
            anclado a la derecha de la cabecera en escritorio. -->
       <template v-if="colMenuOpen">
         <div class="fixed inset-0 z-40 bg-black/30 lg:bg-transparent" @click="colMenuOpen = false"></div>
-        <div class="fixed inset-x-4 top-24 z-50 mx-auto max-w-sm rounded-lg border border-slate-200 bg-white p-2 shadow-lg lg:absolute lg:inset-x-auto lg:right-0 lg:top-full lg:mx-0 lg:mt-1 lg:w-72 lg:max-w-none">
+        <div ref="colMenuEl" role="dialog" :aria-label="$t('submissions.columnsTitle')" class="fixed inset-x-4 top-24 z-50 mx-auto max-w-sm rounded-lg border border-slate-200 bg-white p-2 shadow-lg lg:absolute lg:inset-x-auto lg:right-0 lg:top-full lg:mx-0 lg:mt-1 lg:w-72 lg:max-w-none">
           <div class="flex items-center justify-between px-2 py-1">
             <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">{{ $t('submissions.columnsTitle') }}</span>
             <button class="text-xs font-medium text-primary-600 hover:underline" @click="resetCols">
@@ -446,6 +485,7 @@ onMounted(() => { loadAdvFilter(); load() })
           type="button"
           class="shrink-0 rounded-lg px-2 py-1.5 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-900"
           :title="$t('submissions.filtersClear')"
+          :aria-label="$t('submissions.filtersClear')"
           @click="clearAdv"
         >×</button>
       </div>

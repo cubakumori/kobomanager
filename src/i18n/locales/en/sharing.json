@@ -69,6 +69,7 @@
     "neverAccessed": "no visits",
     "lastAccess": "last: {date}",
     "empty": "You haven't created any links yet.",
+    "emptyBody": "A public read-only link lets you share submissions, the map or statistics with people without an account — with optional password and expiry, scoped by rows and columns.",
     "confirmRevokeTitle": "Revoke link",
     "confirmRevoke": "The link will stop working immediately. Continue?",
     "confirmDeleteTitle": "Delete link",

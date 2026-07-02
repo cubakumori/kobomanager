@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { RouterLink } from 'vue-router'
 import api from '../services/api'
@@ -8,6 +8,11 @@ const auth = useAuthStore()
 
 // Contador de mensajes de contacto nuevos (solo admin; best-effort).
 const newMessages = ref(0)
+// «Primeros pasos»: en una instancia recién instalada (admin sin ninguna cuenta
+// Kobo conectada) el Dashboard orienta el arranque. Best-effort: si la señal no
+// llega, simplemente no se muestra la tarjeta.
+const accountsCount = ref(null) // null = aún sin saber
+const showFirstSteps = computed(() => auth.isAdmin && accountsCount.value === 0)
 onMounted(async () => {
   if (!auth.isAdmin) return
   try {
@@ -15,6 +20,12 @@ onMounted(async () => {
     newMessages.value = data.data.new_count
   } catch {
     /* la card funciona igual sin contador */
+  }
+  try {
+    const { data } = await api.get('/admin/accounts')
+    accountsCount.value = data.data.length
+  } catch {
+    /* sin tarjeta de primeros pasos */
   }
 })
 </script>
@@ -29,6 +40,30 @@ onMounted(async () => {
         {{ $t('dashboard.loggedAs', { email: auth.user?.email, role: auth.isAdmin ? $t('common.roleAdmin') : $t('common.roleViewer') }) }}
       </p>
     </header>
+
+    <!-- Primeros pasos: solo para el admin de una instancia sin cuentas Kobo. -->
+    <section
+      v-if="showFirstSteps"
+      class="rounded-xl bg-primary-50 p-5 ring-1 ring-primary-200 dark:bg-primary-900/20 dark:ring-primary-800"
+    >
+      <h2 class="font-semibold text-primary-900 dark:text-primary-200">{{ $t('dashboard.firstStepsTitle') }}</h2>
+      <p class="mt-1 text-sm text-primary-800 dark:text-primary-300">{{ $t('dashboard.firstStepsIntro') }}</p>
+      <ol class="mt-3 list-decimal space-y-1 pl-5 text-sm text-primary-900 dark:text-primary-200">
+        <li>{{ $t('dashboard.firstStep1') }}</li>
+        <li>{{ $t('dashboard.firstStep2') }}</li>
+        <li>{{ $t('dashboard.firstStep3') }}</li>
+      </ol>
+      <div class="mt-4 flex flex-wrap items-center gap-3">
+        <RouterLink
+          :to="{ name: 'admin-accounts' }"
+          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+        >{{ $t('dashboard.firstStepsCta') }}</RouterLink>
+        <RouterLink
+          :to="{ name: 'about-kobo' }"
+          class="text-sm font-medium text-primary-700 hover:underline dark:text-primary-300"
+        >{{ $t('dashboard.firstStepsHelp') }}</RouterLink>
+      </div>
+    </section>
 
     <section class="grid gap-4 sm:grid-cols-2">
       <template v-if="auth.isAdmin">

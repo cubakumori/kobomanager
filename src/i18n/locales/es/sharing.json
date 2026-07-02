@@ -69,6 +69,7 @@
     "neverAccessed": "sin visitas",
     "lastAccess": "última: {date}",
     "empty": "Aún no has creado enlaces.",
+    "emptyBody": "Un enlace público de solo lectura permite compartir envíos, mapa o estadísticas con quien no tiene cuenta — con contraseña y caducidad opcionales, y acotado por filas y columnas.",
     "confirmRevokeTitle": "Revocar enlace",
     "confirmRevoke": "El enlace dejará de funcionar al instante. ¿Continuar?",
     "confirmDeleteTitle": "Eliminar enlace",

@@ -2,9 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '../services/api'
-import { apiError } from '../stores/auth'
+import { apiError, useAuthStore } from '../stores/auth'
 
 const { t } = useI18n()
+const auth = useAuthStore()
 
 const forms = ref([]) // [{ form_id, name, account_label, daily_summary }]
 const defaultOn = ref(false) // ajuste global: suscripción por defecto en formularios visibles
@@ -61,6 +62,7 @@ onMounted(load)
       <div class="border-b border-slate-100 px-5 py-3">
         <h2 class="font-semibold text-slate-900">{{ $t('notifications.dailySummary') }}</h2>
         <p class="mt-0.5 text-sm text-slate-500">{{ $t('notifications.dailySummaryDesc') }}</p>
+        <p class="mt-1 text-xs text-slate-400">{{ $t('notifications.sentTo', { email: auth.user?.email }) }}</p>
       </div>
 
       <div v-if="loading" class="px-5 py-4 text-sm text-slate-500">{{ $t('common.loading') }}</div>

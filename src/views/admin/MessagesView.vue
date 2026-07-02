@@ -213,12 +213,14 @@ onMounted(load)
       <button
         class="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
         :disabled="page <= 1"
+        :aria-label="$t('audit.prev')"
         @click="goTo(page - 1)"
       >‹</button>
       <span class="text-xs text-slate-500">{{ page }} / {{ pages }}</span>
       <button
         class="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
         :disabled="page >= pages"
+        :aria-label="$t('audit.next')"
         @click="goTo(page + 1)"
       >›</button>
     </div>

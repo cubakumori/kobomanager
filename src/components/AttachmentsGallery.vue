@@ -35,7 +35,7 @@ const groups = computed(() => {
       <ul class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <li v-for="a in g.items" :key="a.uid" class="space-y-2">
           <a v-if="g.kind === 'image'" :href="urlFor(a)" target="_blank" rel="noopener" class="block">
-            <img :src="urlFor(a)" :alt="a.name" class="max-h-48 w-full rounded-lg object-contain ring-1 ring-slate-200" />
+            <img :src="urlFor(a)" :alt="a.name" loading="lazy" class="max-h-48 w-full rounded-lg object-contain ring-1 ring-slate-200" />
           </a>
           <audio v-else-if="g.kind === 'audio'" :src="urlFor(a)" controls class="w-full"></audio>
           <video v-else-if="g.kind === 'video'" :src="urlFor(a)" controls class="max-h-64 w-full rounded-lg ring-1 ring-slate-200"></video>

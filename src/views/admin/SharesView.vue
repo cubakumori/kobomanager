@@ -7,6 +7,7 @@ import { confirmDialog } from '../../composables/confirm'
 import Modal from '../../components/Modal.vue'
 import RowFilterEditor from '../../components/RowFilterEditor.vue'
 import Skeleton from '../../components/Skeleton.vue'
+import EmptyState from '../../components/EmptyState.vue'
 import { useTableFreeze } from '../../composables/appConfig'
 
 const { t } = useI18n()
@@ -511,7 +512,16 @@ onMounted(() => {
             </td>
           </tr>
           <tr v-if="!links.length">
-            <td colspan="5" class="px-4 py-8 text-center text-slate-400">{{ $t('shares.empty') }}</td>
+            <td colspan="5">
+              <EmptyState :title="$t('shares.empty')" :body="$t('shares.emptyBody')">
+                <template #action>
+                  <button
+                    class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+                    @click="openCreate"
+                  >{{ $t('shares.new') }}</button>
+                </template>
+              </EmptyState>
+            </td>
           </tr>
         </tbody>
       </table>

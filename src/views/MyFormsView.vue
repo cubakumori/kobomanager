@@ -7,6 +7,7 @@ import { useAuthStore, apiError } from '../stores/auth'
 import { confirmDialog } from '../composables/confirm'
 import { useDemoMode } from '../composables/appConfig'
 import Skeleton from '../components/Skeleton.vue'
+import EmptyState from '../components/EmptyState.vue'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -172,8 +173,20 @@ onMounted(load)
       <Skeleton variant="table" :rows="6" />
     </div>
 
-    <div v-else-if="!forms.length" class="rounded-xl bg-white p-6 text-sm text-slate-400 shadow-sm ring-1 ring-slate-200">
-      {{ $t('myForms.empty') }}
+    <!-- Vacío orientativo: el viewer sabe que le falta que le asignen acceso;
+         el admin, que aún no ha importado formularios (con atajo a admin/forms). -->
+    <div v-else-if="!forms.length" class="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+      <EmptyState
+        :title="$t('myForms.empty')"
+        :body="auth.isAdmin ? $t('myForms.emptyBodyAdmin') : $t('myForms.emptyBodyViewer')"
+      >
+        <template v-if="auth.isAdmin" #action>
+          <RouterLink
+            :to="{ name: 'admin-forms' }"
+            class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+          >{{ $t('myForms.goAdminForms') }}</RouterLink>
+        </template>
+      </EmptyState>
     </div>
 
     <template v-else>

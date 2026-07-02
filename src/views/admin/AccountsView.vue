@@ -6,6 +6,7 @@ import { apiError } from '../../stores/auth'
 import Modal from '../../components/Modal.vue'
 import { confirmDialog } from '../../composables/confirm'
 import Skeleton from '../../components/Skeleton.vue'
+import EmptyState from '../../components/EmptyState.vue'
 import { useTableFreeze, useDemoMode } from '../../composables/appConfig'
 
 const { t } = useI18n()
@@ -270,7 +271,21 @@ onMounted(load)
             </td>
           </tr>
           <tr v-if="!accounts.length">
-            <td colspan="5" class="px-4 py-6 text-center text-slate-400">{{ $t('accounts.empty') }}</td>
+            <td colspan="5">
+              <EmptyState :title="$t('accounts.empty')" :body="$t('accounts.emptyBody')">
+                <template #action>
+                  <button
+                    class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+                    :disabled="demoMode"
+                    :title="demoMode ? $t('common.demoDisabled') : undefined"
+                    @click="startCreate"
+                  >{{ $t('accounts.newAccount') }}</button>
+                  <RouterLink :to="{ name: 'about-kobo' }" class="text-sm font-medium text-primary-600 hover:underline">
+                    {{ $t('accounts.emptyHelp') }}
+                  </RouterLink>
+                </template>
+              </EmptyState>
+            </td>
           </tr>
         </tbody>
       </table>

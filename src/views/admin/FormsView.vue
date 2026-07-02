@@ -6,6 +6,7 @@ import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 import { confirmDialog } from '../../composables/confirm'
 import Skeleton from '../../components/Skeleton.vue'
+import EmptyState from '../../components/EmptyState.vue'
 import { useTableFreeze, useDemoMode } from '../../composables/appConfig'
 
 const { t } = useI18n()
@@ -349,7 +350,31 @@ onMounted(async () => {
             </td>
           </tr>
           <tr v-if="!filteredForms.length">
-            <td colspan="6" class="px-4 py-6 text-center text-slate-400">{{ $t('forms.empty') }}</td>
+            <!-- Sin formularios en absoluto → estado orientativo (según haya o no
+                 cuentas conectadas); con formularios pero filtro sin resultados → línea simple. -->
+            <td v-if="!forms.length && !accountsList.length" colspan="6">
+              <EmptyState :title="$t('forms.emptyTitle')" :body="$t('forms.emptyNoAccounts')">
+                <template #action>
+                  <RouterLink
+                    :to="{ name: 'admin-accounts' }"
+                    class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+                  >{{ $t('about.goToAccounts') }}</RouterLink>
+                </template>
+              </EmptyState>
+            </td>
+            <td v-else-if="!forms.length" colspan="6">
+              <EmptyState :title="$t('forms.emptyTitle')" :body="$t('forms.emptyBody')">
+                <template #action>
+                  <button
+                    :disabled="demoMode || syncing"
+                    class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+                    :title="demoMode ? $t('common.demoDisabled') : undefined"
+                    @click="onSync"
+                  >{{ syncing ? $t('forms.syncing') : $t('forms.syncAll') }}</button>
+                </template>
+              </EmptyState>
+            </td>
+            <td v-else colspan="6" class="px-4 py-6 text-center text-slate-400">{{ $t('forms.empty') }}</td>
           </tr>
         </tbody>
       </table>
