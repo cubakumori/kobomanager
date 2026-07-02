@@ -4,6 +4,56 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.9.0] - 2026-07-02
+
+Lote de robustez y pulido de la revisión general de julio (sin cambios de esquema).
+
+### Añadido
+
+- **Estados vacíos orientativos** (componente `EmptyState`). Las tablas clave dejan de
+  mostrar una línea gris al estar vacías y dicen qué hacer a continuación: **Cuentas
+  Kobo** (CTA «Nueva cuenta» + enlace a «¿Dónde está mi API token?»), **Formularios**
+  (distingue «sin cuentas conectadas» → ir a Cuentas de «sin formularios» → botón
+  Sincronizar), **Mis formularios** (viewer: pedir acceso; admin: atajo a Formularios) y
+  **Compartir** (qué es un enlace público + CTA).
+- **Dashboard: tarjeta «Primeros pasos»** para el administrador de una instancia recién
+  instalada (sin ninguna cuenta Kobo): los 3 pasos de arranque numerados —conectar
+  cuenta, sincronizar formularios, crear usuarios— con acceso directo y enlace a
+  «Acerca de Kobo».
+- **La tabla de envíos recuerda la vista**: el orden y el filtro de revisión (por
+  formulario) y el tamaño de página (global) persisten en el navegador, igual que ya
+  hacían el filtro avanzado y las columnas visibles. Navegar al detalle y volver ya no
+  resetea nada.
+
+### Cambiado
+
+- **Estadísticas públicas de enlaces compartidos con micro-caché** (TTL 5 min, un
+  archivo por enlace; cada sincronización la invalida sola): un enlace popular ya no
+  recalcula todas las métricas en cada visita anónima. La vista interna autenticada
+  sigue calculando en vivo.
+- **Modo demo: la bandeja de mensajes de contacto pasa a solo lectura** (se bloquean
+  marcar/archivar/borrar): la demo pública puede recibir mensajes reales de visitantes
+  interesados y un anónimo no debe poder borrarlos antes de que el operador los lea.
+- **Notificaciones: descripción precisa del resumen diario** — qué contiene (recuento
+  del día anterior por formulario), cuándo llega (una vez al día, solo si hubo envíos,
+  respetando el filtro por filas) y a qué dirección se envía.
+- **Accesibilidad**: el selector de columnas y el menú «Acciones» (móvil) de la tabla de
+  envíos se comportan como diálogos (Escape cierra, focus trap, el foco vuelve al botón
+  de origen); `aria-label` en los botones solo-icono («×» de limpiar filtros, ‹/› de la
+  paginación de mensajes); las imágenes de la galería de adjuntos cargan en diferido
+  (`loading="lazy"`).
+
+### Corregido
+
+- **Sincronizaciones solapadas del mismo formulario** (un cron retrasado + el siguiente,
+  o el cron + un «Actualizar» manual) podían duplicar revisiones sintéticas de Kobo en el
+  historial: `SubmissionSync::syncForm` adquiere ahora un lock por formulario (`GET_LOCK`
+  de MySQL, sin espera) y el segundo proceso se retira limpiamente (código nuevo
+  `SYNC_IN_PROGRESS`, 409; el cron lo registra como `[SKIP]`, no como error).
+- **Roles sin traducir**: «admin»/«viewer» aparecían en crudo en el alta/edición de
+  usuarios, la tabla de usuarios y el «Sesión iniciada como…» del Dashboard; ahora usan
+  `common.roleAdmin`/`roleViewer` (es/en).
+
 ## [1.8.0] - 2026-07-01
 
 ### Añadido

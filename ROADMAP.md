@@ -123,6 +123,34 @@ Quedan como ideas reabribles si aparece una necesidad real.
       ruta (vue-i18n `setLocaleMessage` + import dinámico). Solo merece la pena con un
       3.er idioma o si la Guía crece a documentación larga; adaptar entonces el check de
       paridad.
+- [ ] **Acciones en lote en las vistas de admin** *(de la revisión de jul-2026)* — la
+      revisión de envíos ya tiene selección múltiple, pero Usuarios / Formularios /
+      Cuentas no: cambiar el rol o activar/desactivar a varios usuarios, o archivar
+      varios formularios, exige ir uno a uno. Reutilizar el patrón de selección +
+      `confirmDialog` de la tabla de envíos. Útil sobre todo en instancias grandes;
+      esperar a demanda real.
+- [ ] **Búsqueda global (Cmd/Ctrl+K)** *(de la revisión de jul-2026)* — un buscador en el
+      shell que cruce formularios, usuarios, cuentas y enlaces (y quizá envíos por
+      formulario), con resultados en un popover. Esfuerzo alto; hoy cada tabla tiene su
+      búsqueda propia.
+- [ ] **Navegación por teclado en tablas** *(de la revisión de jul-2026)* — flechas para
+      moverse entre filas, Enter para abrir el detalle, Espacio para seleccionar,
+      Shift+clic para rangos. Para usuarios intensivos; esfuerzo alto.
+- [ ] **Pasada transversal de accesibilidad en formularios** *(de la revisión de
+      jul-2026)* — asociar `label`/`id` (via `useId()`) en todos los formularios de las
+      vistas (hoy los labels envuelven al input sin `for`); revisar validación inline y
+      marcado de campos requeridos. Los diálogos, popovers y botones-icono ya están
+      cubiertos.
+- [ ] **Aviso «nueva versión disponible» en la PWA** *(de la revisión de jul-2026)* — hoy
+      el service worker actualiza en silencio (`skipWaiting`); un toast «Hay una versión
+      nueva — recargar» daría visibilidad al cambio. Solo descubribilidad, el mecanismo
+      funciona.
+- [ ] **Escalabilidad más allá de ~200k envíos por formulario** *(de la revisión de
+      jul-2026; medir ANTES con slow query log)* — dos palancas si aparecen instancias
+      así: columnas generadas/índices MySQL para los filtros `JSON_EXTRACT` más usados, y
+      pasar `Stats::compute` de un bucle PHP sobre toda la caché a agregación SQL (o
+      cachear también la vista interna; la pública ya se cachea). A los volúmenes típicos
+      de Kobo no hace falta.
 
 ---
 
@@ -138,6 +166,14 @@ Quedan como ideas reabribles si aparece una necesidad real.
       HTTP, `lib/Mailer.php`). Ofrecer SMTP para quien prefiera su propio servidor — choca
       con la filosofía «sin dependencias»; valorar abstraer un `MailTransport` con
       back-ends `resend`|`smtp`.
+- [ ] **Circuit-breaker hacia Kobo en el cron de sync** *(de la revisión de jul-2026)* —
+      si Kobo está degradado (timeouts en cadena), el cron reintenta formulario a
+      formulario cada 15 min sin enfriamiento. Contar fallos consecutivos por cuenta y
+      saltarse el resto de la corrida (o esperar exponencialmente) tras N fallos.
+- [ ] **Registro de errores de API consultable** *(de la revisión de jul-2026)* — los
+      errores de sync quedan en `forms.last_sync_error` y los cron en `/health`, pero no
+      hay un historial de errores de endpoints consultable por el admin (tabla
+      `error_log` + vista). Valorar si la auditoría + logs del servidor no bastan.
 
 ---
 
