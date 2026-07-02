@@ -26,7 +26,7 @@ onMounted(async () => {
         {{ $t('dashboard.hello', { name: auth.user?.name }) }}
       </h1>
       <p class="mt-1 text-sm text-slate-500">
-        {{ $t('dashboard.loggedAs', { email: auth.user?.email, role: auth.user?.role }) }}
+        {{ $t('dashboard.loggedAs', { email: auth.user?.email, role: auth.isAdmin ? $t('common.roleAdmin') : $t('common.roleViewer') }) }}
       </p>
     </header>
 

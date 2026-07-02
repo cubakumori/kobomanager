@@ -20,6 +20,25 @@ class SubmissionSync {
      *    conserva el `_id` pero cambia el `_uuid`) y elimina las bajas.
      */
     public static function syncForm(int $formId, string $assetUid, KoboClient $client, bool $full = false): array {
+        // Lock por formulario (GET_LOCK de MySQL, sin espera): dos sincronizaciones
+        // simultáneas del mismo formulario (un cron retrasado + el siguiente, o el
+        // cron + un «Actualizar» manual) duplicarían revisiones sintéticas en
+        // reconcileValidation. El segundo en llegar se retira sin tocar nada; el
+        // lock se libera en el finally y, si el proceso muere, con su conexión.
+        $lockName = 'km.sync.form.' . $formId;
+        $got = (int) DB::run('SELECT GET_LOCK(?, 0) AS l', [$lockName])->fetch()['l'];
+        if ($got !== 1) {
+            throw new KoboException('SYNC_IN_PROGRESS', 'Ya hay una sincronización de este formulario en curso');
+        }
+        try {
+            return self::syncFormLocked($formId, $assetUid, $client, $full);
+        } finally {
+            DB::run('SELECT RELEASE_LOCK(?)', [$lockName]);
+        }
+    }
+
+    /** Cuerpo de la sincronización; se ejecuta con el lock del formulario ya adquirido. */
+    private static function syncFormLocked(int $formId, string $assetUid, KoboClient $client, bool $full): array {
         try {
             // Refrescar el esquema legible (labels) junto con los envíos. Es a prueba
             // de fallos: no interrumpe la sincronización si el contenido no se puede leer.

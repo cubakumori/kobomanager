@@ -57,6 +57,12 @@ foreach ($accounts as $acc) {
                 $res['removed'] ? sprintf(', %d eliminados', $res['removed']) : ''
             ));
         } catch (KoboException $e) {
+            // Otro proceso (cron solapado o sync manual) ya está sincronizando este
+            // formulario: no es un error, simplemente se omite en esta corrida.
+            if ($e->errorCode === 'SYNC_IN_PROGRESS') {
+                fwrite(STDOUT, sprintf("[SKIP] %s / form %d: sincronización ya en curso\n", $acc['label'], $formId));
+                continue;
+            }
             $errors++;
             fwrite(STDERR, sprintf("[ERR] %s / form %d: %s (%s)\n", $acc['label'], $formId, $e->getMessage(), $e->errorCode));
         }

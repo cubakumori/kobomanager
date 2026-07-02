@@ -6,10 +6,13 @@ import { apiError } from '../../stores/auth'
 import { confirmDialog } from '../../composables/confirm'
 import Modal from '../../components/Modal.vue'
 import Skeleton from '../../components/Skeleton.vue'
-import { useTableFreeze } from '../../composables/appConfig'
+import { useTableFreeze, useDemoMode } from '../../composables/appConfig'
 
 const { t } = useI18n()
 const { freezeFirst } = useTableFreeze()
+// En demo la bandeja es de solo lectura: pueden llegar mensajes reales y un
+// visitante no debe poder archivarlos ni borrarlos (la API también lo bloquea).
+const { demoMode } = useDemoMode()
 
 const items = ref([])
 const total = ref(0)
@@ -234,18 +237,27 @@ onMounted(load)
         <p class="whitespace-pre-wrap break-words text-sm text-slate-800">{{ current.message }}</p>
 
         <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-4">
-          <button class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40" @click="remove(current)">
+          <button
+            class="rounded-lg px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-50 disabled:hover:bg-transparent"
+            :disabled="demoMode"
+            :title="demoMode ? $t('common.demoDisabled') : undefined"
+            @click="remove(current)"
+          >
             {{ $t('common.delete') }}
           </button>
           <div class="flex flex-wrap gap-2">
             <button
               v-if="current.status !== 'archived'"
-              class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              :disabled="demoMode"
+              :title="demoMode ? $t('common.demoDisabled') : undefined"
               @click="setStatus(current, 'archived')"
             >{{ $t('messages.archive') }}</button>
             <button
               v-else
-              class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              :disabled="demoMode"
+              :title="demoMode ? $t('common.demoDisabled') : undefined"
               @click="setStatus(current, 'read')"
             >{{ $t('messages.unarchive') }}</button>
             <a

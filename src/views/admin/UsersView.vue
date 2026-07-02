@@ -184,8 +184,8 @@ onMounted(load)
         <label class="block space-y-1">
           <span class="block text-sm font-medium text-slate-700">{{ $t('common.role') }}</span>
           <select v-model="form.role" class="km-input">
-            <option value="viewer">viewer</option>
-            <option value="admin">admin</option>
+            <option value="viewer">{{ $t('common.roleViewer') }}</option>
+            <option value="admin">{{ $t('common.roleAdmin') }}</option>
           </select>
         </label>
         <div class="flex items-center gap-3 pt-1">
@@ -231,7 +231,7 @@ onMounted(load)
               <span
                 class="rounded-full px-2 py-0.5 text-xs font-medium"
                 :class="u.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300' : 'bg-slate-100 text-slate-600'"
-              >{{ u.role }}</span>
+              >{{ u.role === 'admin' ? $t('common.roleAdmin') : $t('common.roleViewer') }}</span>
             </td>
             <td class="px-4 py-3">
               <span :class="u.active ? 'text-success-600 dark:text-success-400' : 'text-slate-400'">
@@ -309,8 +309,8 @@ onMounted(load)
         <label class="block space-y-1">
           <span class="block text-sm font-medium text-slate-700">{{ $t('common.role') }}</span>
           <select v-model="editForm.role" class="km-input">
-            <option value="viewer">viewer</option>
-            <option value="admin">admin</option>
+            <option value="viewer">{{ $t('common.roleViewer') }}</option>
+            <option value="admin">{{ $t('common.roleAdmin') }}</option>
           </select>
         </label>
         <label class="block space-y-1">

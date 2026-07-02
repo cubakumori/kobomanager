@@ -13,6 +13,8 @@
  *     la BD local no lo desharía).
  *   - Sincronización manual contra Kobo (ahorra cuota; los cron del servidor
  *     siguen sincronizando solos).
+ *   - Gestión de la bandeja de mensajes de contacto (pueden llegar mensajes
+ *     reales a la demo y un visitante no debe poder borrarlos).
  *
  * Todo lo demás (revisión individual y en lote, filtros, export, enlaces
  * compartidos, estadísticas, mapa, idioma…) queda permitido: es local y el
@@ -77,6 +79,12 @@ class Demo {
         'admin/forms/sync'         => ['POST'],
         'admin/forms/:id/sync'     => ['POST'],
         'forms/:id/sync'           => ['POST'],
+        // Bandeja de mensajes de contacto: la demo pública puede recibir mensajes
+        // REALES (alguien interesado en el proyecto escribe desde /apoyar); un
+        // visitante anónimo no debe poder marcarlos ni borrarlos antes de que el
+        // operador los vea. (El reset periódico también los borraría, pero al menos
+        // no se pierden a manos de terceros dentro del ciclo.)
+        'admin/messages/:id'       => ['PUT', 'DELETE'],
     ];
 
     /** ¿Bloquea el modo demo este patrón de ruta + método? */

@@ -41,6 +41,10 @@ disabled with a tooltip, and the API enforces the same list centrally (403
   not undo it.
 - **Manual sync against Kobo** ("Update"/"Resync"/account discovery) — saves the demo
   account's API quota.
+- **Contact inbox management** (`PUT`/`DELETE /admin/messages/:id`) — the public demo
+  can receive *real* messages from interested visitors via the support page; an
+  anonymous visitor must not be able to archive or delete them before the operator
+  reads them.
 
 Everything else stays enabled on purpose — it is what the demo is for: browsing, search
 and filters, single and batch review, CSV export, statistics, the map, creating and
