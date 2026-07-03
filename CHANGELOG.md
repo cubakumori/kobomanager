@@ -4,6 +4,41 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.10.0] - 2026-07-03
+
+Semilla y reset de la demo gestionados por la app: desaparece todo el SQL manual del
+runbook (`mysqldump`, TRUNCATEs de privacidad y cron SQL). Sin cambios de esquema.
+
+### Añadido
+
+- **Ajustes → «Semilla de la demo»** (`POST /admin/demo/seed`, solo admin): genera en
+  `DEMO_SEED_PATH` (constante nueva, opcional) una instantánea SQL **solo-datos** de la
+  instancia con escritura atómica e instantánea consistente (`lib/DemoSeed`). Las tablas
+  privadas (sesiones, IPs, intentos de login, tokens de recuperación, auditoría,
+  mensajes de contacto) y la telemetría de crons **nunca** se incluyen — la privacidad
+  deja de ser un paso manual. La acción queda en la auditoría y está **bloqueada con la
+  demo encendida** (coherente con el bucle de mantenimiento de DEMO.md).
+- **Cron `api/cron/demo_reset.php`**: restaura la semilla en **una transacción InnoDB**
+  (los visitantes ven el estado anterior hasta el commit; un fallo a mitad hace rollback
+  y la demo nunca queda a medias). Se programa **cada minuto** y se auto-regula con
+  `DEMO_RESET_MINUTES` (que deja de ser informativo: gobierna el ciclo real, así el
+  diálogo de bienvenida nunca miente); `--force` restaura al momento. El reset vacía el
+  rastro de visitantes (auditoría, intentos, rate-limit, tokens), **conserva las
+  sesiones vivas** (ya no desloguea a los visitantes a mitad de clic) y **conserva los
+  mensajes de contacto** (los mensajes reales sobreviven a los ciclos hasta que el
+  operador los lea). Guardas: se niega con `DEMO_MODE` apagado (un crontab olvidado ya
+  no puede machacar una instancia real), valida la cabecera y el contenido de la
+  semilla (solo INSERT en tablas de semilla) y registra cada ejecución para `/health`.
+- **`lib/SqlScript`**: el splitter de sentencias SQL del instalador, extraído a una lib
+  compartida (la usan `cli/install.php` y `lib/DemoSeed`).
+
+### Cambiado
+
+- **DEMO.md / DEPLOY §13**: el runbook de la demo ya no contiene SQL manual; la semilla
+  se genera desde la app y el cron de reset es un script PHP como los de sync. La
+  semilla generada es SQL plano portable (MySQL 5.7+/MariaDB): desaparece también la
+  advertencia de la línea «sandbox» de `mysqldump` de MariaDB.
+
 ## [1.9.0] - 2026-07-02
 
 Lote de robustez y pulido de la revisión general de julio (sin cambios de esquema).
