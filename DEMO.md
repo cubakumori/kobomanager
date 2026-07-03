@@ -69,8 +69,8 @@ changing settings, manual sync):
    users, permissions, an example share link, settings — leave everything the way
    visitors should find it.
 3. Seed synthetic submissions (next section).
-4. Generate the seed from **Settings → Demo seed** (one click), add the reset cron
-   (see *Periodic reset*), set `DEMO_MODE = true`.
+4. Generate the seed from **Settings → Database → Generate demo seed** (one click),
+   add the reset cron (see *Periodic reset*), set `DEMO_MODE = true`.
 5. Only then publish the URL.
 
 To adjust something later, do the same loop: flip the flag off (over SSH), change what
@@ -164,8 +164,8 @@ empties the visitor-generated trail each cycle (see next section).
 
 Both halves are managed by the app — no `mysqldump`, no SQL by hand.
 
-1. **Generate the seed** with the demo ready and the flag still off: **Settings → Demo
-   seed → Generate demo seed** (the card appears once `DEMO_SEED_PATH` is set). The app
+1. **Generate the seed** with the demo ready and the flag still off: **Settings →
+   Database → Generate demo seed** (the tab appears once `DEMO_SEED_PATH` is set). The app
    writes a data-only SQL snapshot of the instance (accounts, users, forms, submissions
    cache, reviews, permissions, share links, settings) to `DEMO_SEED_PATH` — atomically,
    so the cron can never read a half-written file. Keep the path **outside the web

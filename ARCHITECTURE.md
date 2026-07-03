@@ -31,7 +31,7 @@ status** in both directions (see below).
   config.php                 secrets — NOT committed (see config.example.php)
   lib/                       one class per file, no namespaces
   v1/                        endpoint scripts, grouped by area
-  cron/                      CLI jobs (daily_summary, sync_submissions)
+  cron/                      CLI jobs (daily_summary, sync_submissions, demo_reset)
   cli/                       create_user.php, install.php, migrate.php, doctor.php, seed_demo.php, …
   tests/                     PHPUnit (only dev dependency)
 /db              *.sql schema files, applied in order (see Database)

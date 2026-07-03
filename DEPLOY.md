@@ -285,6 +285,8 @@ location /api/ {
 0    7 * * *  php /path/api/cron/daily_summary.php       # daily email summary
 ```
 
+(A **demo instance** adds a third cron, the periodic DB reset — see §13 / [DEMO.md](DEMO.md).)
+
 Both run only from the CLI (they reject web requests), so trigger them with the **PHP
 CLI binary on the file path** — not a URL/`wget`/`curl` job (that would hit the web
 front controller and get a 403). On panels like cPanel/DirectAdmin, cron jobs are
