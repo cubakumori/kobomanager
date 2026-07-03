@@ -4,6 +4,18 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.11.0] - 2026-07-03
+
+### Cambiado
+
+- **Ajustes organizados en pestañas temáticas**: General / Tablas y vistas /
+  Sincronización / Compartir / Seguridad, más una pestaña **Demo** que solo existe si
+  `DEMO_SEED_PATH` está configurada. La página había crecido a 17 secciones en un único
+  scroll. Pestañas accesibles (tablist con navegación por flechas), **deep-link
+  `?tab=`** (enlazable y sobrevive a recargas), fila con scroll horizontal en móvil, y
+  botón «Guardar» único: el estado es compartido, así que los cambios sin guardar
+  sobreviven al cambio de pestaña. Solo frontend — el endpoint de ajustes no cambia.
+
 ## [1.10.0] - 2026-07-03
 
 Semilla y reset de la demo gestionados por la app: desaparece todo el SQL manual del
