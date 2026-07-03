@@ -56,16 +56,18 @@ const saving = ref(false)
 const error = ref('')
 const saved = ref(false)
 
-// Pestañas temáticas. «Demo» solo existe si DEMO_SEED_PATH está configurada
-// (se sabe tras cargar los ajustes). El tab activo se refleja en ?tab= para
-// poder enlazarlo y sobrevivir a recargas; 'general' va sin query (URL limpia).
-const TAB_IDS = ['general', 'tables', 'sync', 'sharing', 'security', 'demo']
+// Pestañas temáticas. «Base de datos» hoy solo aloja la semilla de la demo, así
+// que solo existe si DEMO_SEED_PATH está configurada (se sabe tras cargar los
+// ajustes); cuando gane contenido propio (export/import de la BD, ver ROADMAP)
+// pasará a ser fija. El tab activo se refleja en ?tab= para poder enlazarlo y
+// sobrevivir a recargas; 'general' va sin query (URL limpia).
+const TAB_IDS = ['general', 'tables', 'sync', 'sharing', 'security', 'database']
 const initialTab = typeof route.query.tab === 'string' && TAB_IDS.includes(route.query.tab)
   ? route.query.tab
   : 'general'
 const tab = ref(initialTab)
 const tabs = computed(() =>
-  TAB_IDS.filter((id) => id !== 'demo' || demoSeed.value.configured)
+  TAB_IDS.filter((id) => id !== 'database' || demoSeed.value.configured)
 )
 
 function selectTab(id) {
@@ -151,8 +153,8 @@ async function load() {
     if (data.data.field_truncate_min != null) fieldTruncateMin.value = data.data.field_truncate_min
     if (data.data.field_truncate_max != null) fieldTruncateMax.value = data.data.field_truncate_max
     if (data.data.demo_seed) demoSeed.value = data.data.demo_seed
-    // ?tab=demo en una instancia sin DEMO_SEED_PATH: la pestaña no existe.
-    if (tab.value === 'demo' && !demoSeed.value.configured) selectTab('general')
+    // ?tab=database en una instancia sin DEMO_SEED_PATH: la pestaña no existe.
+    if (tab.value === 'database' && !demoSeed.value.configured) selectTab('general')
   } catch (e) {
     error.value = apiError(e, t('settings.loadError'))
   } finally {
@@ -256,7 +258,7 @@ onMounted(load)
       <div
         role="tablist"
         :aria-label="$t('settings.title')"
-        class="-mb-2 flex gap-1 overflow-x-auto border-b border-slate-200"
+        class="mb-8 flex gap-1 overflow-x-auto border-b border-slate-200"
         @keydown="onTablistKeydown"
       >
         <button
@@ -636,8 +638,8 @@ onMounted(load)
         </label>
       </section>
 
-      <!-- La pestaña Demo no tiene ajustes que guardar: su acción es el botón de la semilla -->
-      <div v-show="tab !== 'demo'" class="flex items-center gap-3">
+      <!-- La pestaña Base de datos no tiene ajustes que guardar: su acción es el botón de la semilla -->
+      <div v-show="tab !== 'database'" class="flex items-center gap-3">
         <button
           :disabled="demoMode || saving"
           class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
@@ -649,8 +651,8 @@ onMounted(load)
         <span v-if="saved" class="text-sm text-success-600 dark:text-success-400">{{ $t('common.saved') }}</span>
       </div>
 
-      <!-- Semilla de la demo (pestaña Demo; solo existe si DEMO_SEED_PATH está configurada) -->
-      <section v-if="demoSeed.configured" v-show="tab === 'demo'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+      <!-- Semilla de la demo (pestaña Base de datos; solo existe si DEMO_SEED_PATH está configurada) -->
+      <section v-if="demoSeed.configured" v-show="tab === 'database'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.demoSeed') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.demoSeedDesc') }}</p>

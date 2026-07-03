@@ -201,7 +201,7 @@
     "tab_sync": "Sincronización",
     "tab_sharing": "Compartir",
     "tab_security": "Seguridad",
-    "tab_demo": "Demo",
+    "tab_database": "Base de datos",
     "demoSeed": "Semilla de la demo",
     "demoSeedDesc": "Instantánea de la instancia (cuentas, usuarios, formularios, envíos, permisos, enlaces y ajustes) que el cron de reset restaura cada ciclo. Genérala con la demo apagada, después de dejar todo como deben encontrarlo los visitantes. Las tablas privadas (sesiones, IPs, auditoría, mensajes de contacto) nunca se incluyen.",
     "demoSeedPath": "Se escribe en {path}",

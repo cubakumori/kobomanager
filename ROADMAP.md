@@ -91,6 +91,14 @@ Quedan como ideas reabribles si aparece una necesidad real.
 
 - [ ] **«Organizaciones que usan KoboManager»** — acápite/escaparate en la landing o en
       `/apoyar` con las organizaciones que lo usan (con su permiso). Para cuando haya varias.
+- [ ] **Export/import de la BD desde Ajustes → Base de datos** *(idea del usuario,
+      jul-2026)*: la pestaña «Base de datos» (hoy solo la semilla de la demo, condicional
+      a `DEMO_SEED_PATH`) está pensada para crecer con copia de seguridad/restauración
+      generales de la instancia. La base ya existe: `lib/DemoSeed` (export solo-datos
+      consistente + restore transaccional validado) generalizada a rutas elegibles y a
+      TODAS las tablas (un backup general, a diferencia de la semilla, sí incluiría
+      sesiones/auditoría/mensajes o los ofrecería como opción). Al aterrizar, la pestaña
+      pasa a ser fija.
 
 ---
 

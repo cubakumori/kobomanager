@@ -201,7 +201,7 @@
     "tab_sync": "Sync",
     "tab_sharing": "Sharing",
     "tab_security": "Security",
-    "tab_demo": "Demo",
+    "tab_database": "Database",
     "demoSeed": "Demo seed",
     "demoSeedDesc": "Snapshot of the instance (accounts, users, forms, submissions, permissions, links and settings) that the reset cron restores every cycle. Generate it with demo mode off, after leaving everything the way visitors should find it. Private tables (sessions, IPs, audit trail, contact messages) are never included.",
     "demoSeedPath": "Written to {path}",
