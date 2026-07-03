@@ -1,5 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import api from '../../services/api'
 import { apiError } from '../../stores/auth'
@@ -10,6 +11,8 @@ import Skeleton from '../../components/Skeleton.vue'
 
 const { t } = useI18n()
 const auth = useAuthStore()
+const route = useRoute()
+const router = useRouter()
 
 const STATUS_KEYS = ['deployed', 'draft', 'archived']
 
@@ -53,7 +56,35 @@ const saving = ref(false)
 const error = ref('')
 const saved = ref(false)
 
-// Semilla de la demo (DEMO_SEED_PATH): la tarjeta solo aparece si está configurada.
+// Pestañas temáticas. «Demo» solo existe si DEMO_SEED_PATH está configurada
+// (se sabe tras cargar los ajustes). El tab activo se refleja en ?tab= para
+// poder enlazarlo y sobrevivir a recargas; 'general' va sin query (URL limpia).
+const TAB_IDS = ['general', 'tables', 'sync', 'sharing', 'security', 'demo']
+const initialTab = typeof route.query.tab === 'string' && TAB_IDS.includes(route.query.tab)
+  ? route.query.tab
+  : 'general'
+const tab = ref(initialTab)
+const tabs = computed(() =>
+  TAB_IDS.filter((id) => id !== 'demo' || demoSeed.value.configured)
+)
+
+function selectTab(id) {
+  tab.value = id
+  router.replace({ query: { ...route.query, tab: id === 'general' ? undefined : id } })
+}
+
+// Flechas izquierda/derecha mueven la pestaña activa (patrón tablist accesible).
+function onTablistKeydown(e) {
+  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
+  e.preventDefault()
+  const ids = tabs.value
+  const i = ids.indexOf(tab.value)
+  const next = ids[(i + (e.key === 'ArrowRight' ? 1 : ids.length - 1)) % ids.length]
+  selectTab(next)
+  nextTick(() => document.getElementById('settings-tab-' + next)?.focus())
+}
+
+// Semilla de la demo (DEMO_SEED_PATH): la pestaña solo aparece si está configurada.
 const demoSeed = ref({ configured: false, path: '', exists: false, bytes: null, generated_at: null })
 const seedBusy = ref(false)
 const seedError = ref('')
@@ -120,6 +151,8 @@ async function load() {
     if (data.data.field_truncate_min != null) fieldTruncateMin.value = data.data.field_truncate_min
     if (data.data.field_truncate_max != null) fieldTruncateMax.value = data.data.field_truncate_max
     if (data.data.demo_seed) demoSeed.value = data.data.demo_seed
+    // ?tab=demo en una instancia sin DEMO_SEED_PATH: la pestaña no existe.
+    if (tab.value === 'demo' && !demoSeed.value.configured) selectTab('general')
   } catch (e) {
     error.value = apiError(e, t('settings.loadError'))
   } finally {
@@ -219,8 +252,32 @@ onMounted(load)
     <Skeleton v-if="loading" variant="lines" :lines="6" />
 
     <template v-else>
+      <!-- Pestañas temáticas -->
+      <div
+        role="tablist"
+        :aria-label="$t('settings.title')"
+        class="-mb-2 flex gap-1 overflow-x-auto border-b border-slate-200"
+        @keydown="onTablistKeydown"
+      >
+        <button
+          v-for="id in tabs"
+          :id="'settings-tab-' + id"
+          :key="id"
+          role="tab"
+          :aria-selected="tab === id"
+          :tabindex="tab === id ? 0 : -1"
+          class="-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors"
+          :class="tab === id
+            ? 'border-primary-600 text-primary-700'
+            : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'"
+          @click="selectTab(id)"
+        >
+          {{ $t('settings.tab_' + id) }}
+        </button>
+      </div>
+
       <!-- Tipos a sincronizar -->
-      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+      <section v-show="tab === 'sync'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.syncTypes') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.syncTypesDesc') }}</p>
@@ -245,7 +302,7 @@ onMounted(load)
       </section>
 
       <!-- Idioma por defecto -->
-      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+      <section v-show="tab === 'general'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.language') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.languageDesc') }}</p>
@@ -260,7 +317,7 @@ onMounted(load)
       </section>
 
       <!-- Tema por defecto -->
-      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+      <section v-show="tab === 'general'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.theme') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.themeDesc') }}</p>
@@ -287,7 +344,7 @@ onMounted(load)
       </section>
 
       <!-- Parte pública (escaparate): página Apoyar y CTA de la portada -->
-      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+      <section v-show="tab === 'general'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.publicSurface') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.publicSurfaceDesc') }}</p>
@@ -319,7 +376,7 @@ onMounted(load)
       </section>
 
       <!-- Congelado de columnas en tablas -->
-      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+      <section v-show="tab === 'tables'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.tableFreeze') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.tableFreezeDesc') }}</p>
@@ -334,7 +391,7 @@ onMounted(load)
       </section>
 
       <!-- Orden de las tarjetas en «Mis formularios» -->
-      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+      <section v-show="tab === 'tables'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.formsOrder') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.formsOrderDesc') }}</p>
@@ -349,7 +406,7 @@ onMounted(load)
       </section>
 
       <!-- Alcance por defecto de las estadísticas -->
-      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+      <section v-show="tab === 'tables'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.statsDefaultScope') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.statsDefaultScopeDesc') }}</p>
@@ -364,7 +421,7 @@ onMounted(load)
       </section>
 
       <!-- Líneas del encabezado de columna en tablas -->
-      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+      <section v-show="tab === 'tables'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.headerLines') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.headerLinesDesc') }}</p>
@@ -379,7 +436,7 @@ onMounted(load)
       </section>
 
       <!-- Etiquetas en tabla y detalles -->
-      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+      <section v-show="tab === 'tables'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.labels') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.labelsDesc') }}</p>
@@ -405,7 +462,7 @@ onMounted(load)
       </section>
 
       <!-- Acortar nombres de campo -->
-      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+      <section v-show="tab === 'tables'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.fieldTruncate') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.fieldTruncateDesc') }}</p>
@@ -438,7 +495,7 @@ onMounted(load)
       </section>
 
       <!-- Recuperación de contraseña -->
-      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+      <section v-show="tab === 'security'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.passwordReset') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.passwordResetDesc') }}</p>
@@ -464,7 +521,7 @@ onMounted(load)
       </section>
 
       <!-- Auditoría propia (autoservicio) -->
-      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+      <section v-show="tab === 'security'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.auditSelfView') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.auditSelfViewDesc') }}</p>
@@ -484,7 +541,7 @@ onMounted(load)
       </section>
 
       <!-- Notificaciones por defecto -->
-      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+      <section v-show="tab === 'sync'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.notificationsDefault') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.notificationsDefaultDesc') }}</p>
@@ -504,7 +561,7 @@ onMounted(load)
       </section>
 
       <!-- Contraseña de los enlaces de compartir -->
-      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+      <section v-show="tab === 'sharing'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.sharePassword') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.sharePasswordDesc') }}</p>
@@ -530,7 +587,7 @@ onMounted(load)
       </section>
 
       <!-- Adjuntos en los enlaces de compartir -->
-      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+      <section v-show="tab === 'sharing'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.shareAttachments') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.shareAttachmentsDesc') }}</p>
@@ -556,7 +613,7 @@ onMounted(load)
       </section>
 
       <!-- Acciones de los viewers sobre formularios -->
-      <section class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+      <section v-show="tab === 'security'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.viewerActions') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.viewerActionsDesc') }}</p>
@@ -579,7 +636,8 @@ onMounted(load)
         </label>
       </section>
 
-      <div class="flex items-center gap-3">
+      <!-- La pestaña Demo no tiene ajustes que guardar: su acción es el botón de la semilla -->
+      <div v-show="tab !== 'demo'" class="flex items-center gap-3">
         <button
           :disabled="demoMode || saving"
           class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
@@ -591,8 +649,8 @@ onMounted(load)
         <span v-if="saved" class="text-sm text-success-600 dark:text-success-400">{{ $t('common.saved') }}</span>
       </div>
 
-      <!-- Semilla de la demo (solo si DEMO_SEED_PATH está configurada) -->
-      <section v-if="demoSeed.configured" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+      <!-- Semilla de la demo (pestaña Demo; solo existe si DEMO_SEED_PATH está configurada) -->
+      <section v-if="demoSeed.configured" v-show="tab === 'demo'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.demoSeed') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.demoSeedDesc') }}</p>
