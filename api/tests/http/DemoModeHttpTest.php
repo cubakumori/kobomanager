@@ -53,6 +53,8 @@ final class DemoModeHttpTest extends HttpTestCase
             ['POST',   'auth/reset-password'],
             // Ajustes globales
             ['PUT',    'admin/settings'],
+            // Generar la semilla de la demo (solo con la demo apagada)
+            ['POST',   'admin/demo/seed'],
             // Edición de envíos (escribe en Kobo real)
             ['PUT',    'submissions/algun-uid'],
             // Sync manual contra Kobo

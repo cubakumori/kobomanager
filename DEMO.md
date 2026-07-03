@@ -18,11 +18,13 @@ demo off):
 ```php
 // --- Public demo ---
 define('DEMO_MODE', true);          // demo notice + sensitive actions blocked
-define('DEMO_RESET_MINUTES', 60);   // informative: shown in the welcome dialog
+define('DEMO_RESET_MINUTES', 60);   // reset cycle: drives the reset cron AND the welcome dialog
 // Credentials shown in the dialog, per role ('' hides that line). The app adds the
 // role label translated to the visitor's language.
 define('DEMO_LOGIN_ADMIN', 'admin@demo.org / demo1234');
 define('DEMO_LOGIN_VIEWER', 'viewer@demo.org / demo1234');
+// Where the app writes/reads the demo seed (outside the web root).
+define('DEMO_SEED_PATH', '/opt/km-demo/seed.sql');
 ```
 
 With the flag on, `GET /api/v1/config` exposes `demo_mode`, and the frontend shows a
@@ -44,7 +46,10 @@ disabled with a tooltip, and the API enforces the same list centrally (403
 - **Contact inbox management** (`PUT`/`DELETE /admin/messages/:id`) — the public demo
   can receive *real* messages from interested visitors via the support page; an
   anonymous visitor must not be able to archive or delete them before the operator
-  reads them.
+  reads them. (The reset never deletes them either — see *Periodic reset*.)
+- **Generating the demo seed** (`POST /admin/demo/seed`) — it belongs to the
+  maintenance loop with the flag *off*; enabled, it would snapshot whatever mess
+  visitors have made.
 
 Everything else stays enabled on purpose — it is what the demo is for: browsing, search
 and filters, single and batch review, CSV export, statistics, the map, creating and
@@ -59,16 +64,17 @@ prepare the instance with `DEMO_MODE` **off** (or the constants absent), because
 needs exactly the actions the demo blocks (connecting the Kobo account, creating users,
 changing settings, manual sync):
 
-1. Install normally (§§1–10) with `DEMO_MODE = false`.
+1. Install normally (§§1–10) with `DEMO_MODE = false` and set `DEMO_SEED_PATH`.
 2. Connect the disposable Kobo account, discover the forms (sync), create the demo
    users, permissions, an example share link, settings — leave everything the way
    visitors should find it.
 3. Seed synthetic submissions (next section).
-4. Run the privacy cleanup, take the seed dump, add the reset cron, set `DEMO_MODE = true`.
+4. Generate the seed from **Settings → Demo seed** (one click), add the reset cron
+   (see *Periodic reset*), set `DEMO_MODE = true`.
 5. Only then publish the URL.
 
-To adjust something later, do the same loop over SSH: flip the flag off, change what
-you need, regenerate the seed dump, flip it back on.
+To adjust something later, do the same loop: flip the flag off (over SSH), change what
+you need in the app, click **Generate demo seed** again, flip it back on.
 
 ---
 
@@ -140,72 +146,80 @@ compare the access control — advertise it via `DEMO_LOGIN_VIEWER`.
 > better column-permission showcase.
 
 **Keep your real identity out of the seed.** Demo visitors sign in as an *admin*, so
-they see everything an admin sees: the user list (names and emails), the audit trail and
-per-user session info (IP, browser). Therefore the demo database must contain **only**
-the published demo users:
+they see everything an admin sees — starting with the user list (names and emails).
+Therefore the demo database must contain **only** the published demo users: make the
+demo admin itself (`admin@demo.org`) the first user you create, and do the whole setup
+logged in as that account — don't create a personal admin on this instance (if you
+already did, delete it before generating the seed, with `DEMO_MODE` still off).
 
-- Make the demo admin itself (`admin@demo.org`) the first user you create, and do the
-  whole setup logged in as that account — don't create a personal admin on this instance
-  (if you already did, delete it before the seed, with `DEMO_MODE` still off).
-- Just before taking the seed dump, empty the tables that carry your setup trail and
-  connection metadata (the demo refills them as visitors use it):
-  ```sql
-  TRUNCATE user_sessions; TRUNCATE login_attempts; TRUNCATE rate_hits;
-  TRUNCATE password_resets; TRUNCATE audit_log; TRUNCATE contact_messages;
-  ```
-  (Truncating `user_sessions` logs everyone out, you included — sign in again after the
-  dump. Skip `contact_messages` if you seeded an example message on purpose.)
+Your setup *trail*, on the other hand, needs no manual cleanup: the seed export
+**never includes** the private tables (sessions, login attempts, rate-limit hits,
+password-reset tokens, the audit trail, contact messages), so your IPs and browser
+fingerprints cannot end up in the seed even if you forget about them. The reset
+empties the visitor-generated trail each cycle (see next section).
 
 ---
 
 ## Periodic reset
 
-1. With the demo ready, take a seed dump of the demo database:
-   ```bash
-   mkdir -p /opt/km-demo
-   mysqldump --single-transaction kobomanager > /opt/km-demo/seed.sql
-   ```
-   (Equivalent: export the database from phpMyAdmin or any client connected to it and
-   place the file at that path.) Keep it **outside the web root**, readable only by the
-   cron user — and keep an off-server copy of `seed.sql` + `config.php` (hours of setup
-   live in that pair; the `CONFIG_TOKEN_KEY` in the config is the only thing that can
-   decrypt the Kobo token stored in the dump).
+Both halves are managed by the app — no `mysqldump`, no SQL by hand.
 
-   **Preparing the seed on another machine.** The dump is portable with ONE condition:
-   the Kobo token inside it is encrypted with the `CONFIG_TOKEN_KEY` of the instance that
-   created it, so the demo server must use the **same** `CONFIG_TOKEN_KEY`. With that in
-   place you can build the whole demo comfortably on your dev machine (Kobo account, sync,
-   users, permissions, seeding, the privacy cleanup above), dump it there, upload
-   `seed.sql` and load it once on the server (`mysql kobomanager < seed.sql`). Caveat when
-   dumping from **MariaDB** for a **MySQL** server: recent MariaDB `mysqldump` prepends a
-   `/*!999999\- enable the sandbox mode */` line that MySQL rejects — delete that first
-   line (`sed -i '1{/999999/d}' seed.sql`) before importing.
+1. **Generate the seed** with the demo ready and the flag still off: **Settings → Demo
+   seed → Generate demo seed** (the card appears once `DEMO_SEED_PATH` is set). The app
+   writes a data-only SQL snapshot of the instance (accounts, users, forms, submissions
+   cache, reviews, permissions, share links, settings) to `DEMO_SEED_PATH` — atomically,
+   so the cron can never read a half-written file. Keep the path **outside the web
+   root**, and keep an off-server copy of `seed.sql` + `config.php` (hours of setup live
+   in that pair; the `CONFIG_TOKEN_KEY` in the config is the only thing that can decrypt
+   the Kobo token stored in the seed).
 
-2. Add a reset cron aligned with `DEMO_RESET_MINUTES`:
+   **Preparing the seed on another machine.** The seed is portable with ONE condition:
+   the Kobo token inside it is encrypted with the `CONFIG_TOKEN_KEY` of the instance
+   that created it, so the demo server must use the **same** `CONFIG_TOKEN_KEY`. With
+   that in place you can build the whole demo comfortably on your dev machine (Kobo
+   account, sync, users, permissions, seeding), click *Generate demo seed* there and
+   upload the file to the server's `DEMO_SEED_PATH`. The app generates plain,
+   portable SQL — the MariaDB→MySQL `mysqldump` incompatibilities (sandbox line) are
+   gone, and in an emergency the file can still be imported by hand with
+   `mysql`/phpMyAdmin.
+
+2. **Add the reset cron** — every minute; the script paces itself:
    ```cron
-   0 * * * *  mysql kobomanager < /opt/km-demo/seed.sql >/dev/null 2>&1
+   * * * * *  php /var/www/kobomanager/api/cron/demo_reset.php >/dev/null 2>&1
    ```
-   The dump restores users, permissions, reviews, share links, settings and the
-   submissions cache. The encrypted Kobo token lives in the DB, so it is restored as-is
-   (the server's `CONFIG_TOKEN_KEY` does not change). `DEMO_MODE` itself lives in
-   `config.php`, not in the DB — the reset never touches it.
+   `DEMO_RESET_MINUTES` now *drives* the cycle: the script records the last reset and
+   only restores when the cycle has elapsed, so the welcome dialog and the actual reset
+   can never disagree, and there is no crontab syntax to get wrong. To change the
+   cadence, edit the constant — the cron follows. `php api/cron/demo_reset.php --force`
+   restores immediately (useful for a first run or after abuse).
 
-   > **`DEMO_RESET_MINUTES` is informational only** — it's the number shown in the welcome
-   > dialog, it does **not** drive the cron. Make the cron's frequency match it, or the
-   > dialog will lie. For `DEMO_RESET_MINUTES = 120` (every 2 hours) the cron is
-   > `0 */2 * * *` (minute 0, every 2nd hour). Watch the syntax: `0 2 * * *` would mean
-   > *2 a.m. once a day*, **not** every 2 hours — use the `*/2` interval form for "every N".
-   > Many panels (e.g. DirectAdmin) show the schedule in plain English as you type it
-   > ("At 0 minutes past the hour, every 2 hours") — a handy sanity check.
+   What a reset does — in **one transaction**, so visitors browsing at that moment see
+   the previous state until the commit and a mid-restore failure rolls back (the demo is
+   never left half-empty):
+
+   - restores the seeded tables (users, permissions, reviews, share links, settings and
+     the submissions cache — the encrypted Kobo token is restored as-is; the server's
+     `CONFIG_TOKEN_KEY` does not change);
+   - empties the visitor trail (audit log, login attempts, rate-limit hits,
+     password-reset tokens);
+   - **preserves live sessions** (visitors are *not* logged out mid-click; the data
+     under them just resets) and **preserves contact messages** (real messages from
+     interested visitors survive every cycle until you read them — clearing that inbox
+     is part of the maintenance loop, with the flag off).
+
+   `DEMO_MODE` itself lives in `config.php`, not in the DB — the reset never touches
+   it. As a safety net the cron also **refuses to run when `DEMO_MODE` is off** (a
+   forgotten crontab can no longer overwrite a real instance), and each run is recorded
+   for `/api/v1/health`, so a failing reset is visible there.
 
 > ⚠️ **Do not add a submissions-sync cron (§7) to a seeded demo.** Seeded submissions
 > exist only in the local cache, not in Kobo. A sync reconciles the cache against the
 > Kobo account and would **delete** every seeded row (their `_id`/`_uuid` are not in
 > Kobo), leaving the demo empty between resets. A seeded demo's data is a frozen snapshot:
 > the **reset** cron is the only one it needs. (Only run a sync cron if you chose the
-> other route — real submissions living in the disposable Kobo account — in which case
-> schedule it at minutes that never overlap the reset, e.g. reset at `0`, sync at
-> `15,30,45`.)
+> other route — real submissions living in the disposable Kobo account. Running both is
+> safe: the reset is one transaction, and if it collides with a sync mid-write it simply
+> retries and, at worst, waits for the next minute's pass.)
 
 ---
 
@@ -229,5 +243,8 @@ the published demo users:
   (`apt remove phpmyadmin`); reinstalling it the day you need it takes minutes, and what
   is not there cannot be attacked.
 - The audit viewer (Dashboard → Audit) is a handy way to watch what visitors try.
-- If the demo gets abused, shorten the reset cycle (15–30 min) — the welcome dialog
-  follows `DEMO_RESET_MINUTES` automatically.
+- Keep `DEMO_SEED_PATH` outside the web root, readable/writable only by the PHP and
+  cron user (it contains password hashes and the encrypted Kobo token).
+- If the demo gets abused, shorten `DEMO_RESET_MINUTES` (15–30 min) — the reset cron
+  and the welcome dialog both follow it automatically. `php api/cron/demo_reset.php
+  --force` resets right now.

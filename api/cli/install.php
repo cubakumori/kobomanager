@@ -75,6 +75,7 @@ foreach (['CONFIG_TOKEN_KEY', 'JWT_SECRET'] as $const) {
 ok('CONFIG_TOKEN_KEY y JWT_SECRET con formato válido');
 
 require $apiDir . '/lib/DB.php';
+require $apiDir . '/lib/SqlScript.php';
 try {
     $pdo = DB::conn();
 } catch (Throwable $e) {
@@ -123,7 +124,7 @@ if (count($present) === count($expected)) {
             . "     Sube la carpeta db/ junto a api/ (o aplica db/*.sql a mano) y reintenta.");
     }
     foreach ($files as $file) {
-        foreach (split_sql_statements((string) file_get_contents($file)) as $stmt) {
+        foreach (SqlScript::split((string) file_get_contents($file)) as $stmt) {
             try {
                 $pdo->exec($stmt);
             } catch (Throwable $e) {
@@ -180,56 +181,3 @@ if ($clean) {
 }
 
 echo "\nInstalación completa. Comprueba /api/v1/health y entra con tu administrador.\n";
-
-/**
- * Divide un .sql en sentencias ejecutables. Respeta `;` dentro de cadenas e
- * identificadores Y dentro de comentarios (`-- …` hasta fin de línea y
- * bloques estilo C), que se copian verbatim (MySQL los acepta dentro de la
- * sentencia). Suficiente para el DDL canónico de db/ (sin DELIMITER).
- */
-function split_sql_statements(string $sql): array
-{
-    $stmts = [];
-    $buf = '';
-    $len = strlen($sql);
-    $quote = null; // comilla abierta: ' " `
-    for ($i = 0; $i < $len; $i++) {
-        $ch = $sql[$i];
-        if ($quote !== null) {
-            $buf .= $ch;
-            if ($ch === '\\' && $quote !== '`') { $buf .= $sql[++$i] ?? ''; continue; }
-            if ($ch === $quote) { $quote = null; }
-            continue;
-        }
-        // Comentario `--` hasta fin de línea: copiar sin interpretar `;`.
-        if ($ch === '-' && ($sql[$i + 1] ?? '') === '-') {
-            while ($i < $len && $sql[$i] !== "\n") { $buf .= $sql[$i]; $i++; }
-            $buf .= "\n";
-            continue;
-        }
-        // Comentario de bloque: copiar sin interpretar `;`.
-        if ($ch === '/' && ($sql[$i + 1] ?? '') === '*') {
-            $end = strpos($sql, '*/', $i + 2);
-            $end = $end === false ? $len : $end + 2;
-            $buf .= substr($sql, $i, $end - $i);
-            $i = $end - 1;
-            continue;
-        }
-        if ($ch === "'" || $ch === '"' || $ch === '`') { $quote = $ch; $buf .= $ch; continue; }
-        if ($ch === ';') {
-            $stmt = trim($buf);
-            // Descartar restos que sean SOLO comentarios/espacio.
-            if ($stmt !== '' && (string) preg_replace('/^\s*--.*$/m', '', $stmt) !== '' && trim((string) preg_replace('/^\s*--.*$/m', '', $stmt)) !== '') {
-                $stmts[] = $stmt;
-            }
-            $buf = '';
-            continue;
-        }
-        $buf .= $ch;
-    }
-    $stmt = trim($buf);
-    if ($stmt !== '' && trim((string) preg_replace('/^\s*--.*$/m', '', $stmt)) !== '') {
-        $stmts[] = $stmt;
-    }
-    return $stmts;
-}

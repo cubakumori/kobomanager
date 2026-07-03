@@ -40,6 +40,8 @@ if (Request::method() === 'GET') {
         'valid_forms_order'          => Settings::VALID_FORMS_ORDER,
         'stats_default_scope'        => Settings::statsDefaultScope(),
         'valid_stats_default_scope'  => Settings::VALID_STATS_DEFAULT_SCOPE,
+        // Semilla de la demo (DEMO_SEED_PATH): la UI muestra la tarjeta solo si está configurada.
+        'demo_seed'                  => DemoSeed::status(),
     ]);
 }
 

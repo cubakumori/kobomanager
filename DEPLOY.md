@@ -183,7 +183,8 @@ define('REPO_URL',          'https://github.com/you/kobomanager');
 define('DONATE_PAYPAL_URL', '');  // e.g. 'https://paypal.me/you'
 define('DONATE_KOFI_URL',   '');  // e.g. 'https://ko-fi.com/you'
 
-// Optional — public demo (DEMO_MODE, DEMO_RESET_MINUTES, DEMO_LOGIN_ADMIN/VIEWER): see DEMO.md.
+// Optional — public demo (DEMO_MODE, DEMO_RESET_MINUTES, DEMO_LOGIN_ADMIN/VIEWER,
+// DEMO_SEED_PATH): see DEMO.md.
 ```
 
 > The public "Support" page and the homepage's closing call-to-action can also be

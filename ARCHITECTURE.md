@@ -207,16 +207,24 @@ share unlock — supports `clear()` on success) and a generic **bucketed** `rate
 throttling never trips the login throttle. `ShareLink::throttle()` uses the `share` bucket to
 cap public share GETs at 240 req/60 s per IP (anti‑scraping/DoS on a leaked link).
 
-### Demo mode (`lib/Demo.php`)
-Optional `DEMO_MODE` / `DEMO_RESET_MINUTES` / `DEMO_LOGIN_ADMIN`+`DEMO_LOGIN_VIEWER` constants (guarded with
+### Demo mode (`lib/Demo.php`, `lib/DemoSeed.php`)
+Optional `DEMO_MODE` / `DEMO_RESET_MINUTES` / `DEMO_LOGIN_ADMIN`+`DEMO_LOGIN_VIEWER` /
+`DEMO_SEED_PATH` constants (guarded with
 `defined()`, so existing configs behave as demo off) turn the instance into a public
-sandbox: `GET /config` exposes the three values, the frontend shows a welcome dialog on
+sandbox: `GET /config` exposes the demo values, the frontend shows a welcome dialog on
 the homepage plus a clickable **DEMO** badge next to the brand, and blocked buttons are
 disabled with a tooltip. Enforcement is central: a route-pattern + method denylist in the
 front controller returns 403 `DEMO_LOCKED` for anything that would break the demo or leak
 secrets (Kobo account CRUD, user/password/session management, global settings, submission
-editing, manual sync). Everything local that a periodic DB reset restores stays enabled.
-Operational guide (synthetic seeding via `api/cli/seed_demo.php`, seed dump, reset cron, hardening): [`DEMO.md`](DEMO.md).
+editing, manual sync). Everything local that the periodic reset restores stays enabled.
+Seed and reset are managed by the app (`lib/DemoSeed`): `POST /admin/demo/seed` (blocked
+in demo; part of the flag-off maintenance loop) exports a data-only SQL snapshot to
+`DEMO_SEED_PATH` — private tables (sessions, IPs, audit, contact messages) are never
+included — and `cron/demo_reset.php` (crontab every minute, self-paced by
+`DEMO_RESET_MINUTES`) restores it in one transaction, preserving live sessions and
+contact messages; it refuses to run with the flag off. The SQL split helper is shared
+with the installer (`lib/SqlScript`).
+Operational guide (synthetic seeding via `api/cli/seed_demo.php`, seed generation, reset cron, hardening): [`DEMO.md`](DEMO.md).
 
 ### Attachment proxies & CSV hardening
 The attachment proxies (`submissions/{id}/attachments/...` and the public share one) stream

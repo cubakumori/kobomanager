@@ -77,14 +77,13 @@ Quedan como ideas reabribles si aparece una necesidad real.
 > afiliación, el dominio propio, `SECURITY.md`, el release «deploy-ready» y el instalador
 > CLI también están entregados (ver `CHANGELOG.md`). Lo que queda abajo es pulido posterior.
 
-- [ ] **Semilla y reset de la demo gestionados por la app** *(idea del usuario en el QA,
-      jun-2026)*: hoy la demo exige `mysqldump` + cron SQL a mano (DEMO.md). En su
-      lugar: botón admin «Generar semilla de la demo» (exporta la BD a una ruta
-      configurada, p. ej. `DEMO_SEED_PATH`; disponible solo con `DEMO_MODE` apagado,
-      coherente con el bucle de mantenimiento) + cron `api/cron/demo_reset.php` (como
-      los de sync) que restaura esa semilla cada `DEMO_RESET_MINUTES`. Retos: dump y
-      restore desde PHP sin `mysqldump` (multi-statement, FK checks, tamaño) y restaurar
-      «en caliente» con visitantes activos. Eliminaría todo el SQL manual de DEMO.md.
+- [x] **Semilla y reset de la demo gestionados por la app** *(idea del usuario en el QA,
+      jun-2026; entregado en 1.10.0)*: botón admin «Generar semilla de la demo»
+      (Ajustes; export solo-datos a `DEMO_SEED_PATH`, bloqueado con la demo encendida)
+      + cron `api/cron/demo_reset.php` auto-regulado por `DEMO_RESET_MINUTES` que
+      restaura en UNA transacción (conserva sesiones vivas y mensajes de contacto;
+      se niega con `DEMO_MODE` apagado). Todo el SQL manual desapareció de DEMO.md
+      (mysqldump, TRUNCATEs de privacidad y cron SQL).
 
 ---
 

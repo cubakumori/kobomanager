@@ -67,7 +67,8 @@ define('DONATE_KOFI_URL', '');    // p. ej. 'https://ko-fi.com/tu-usuario'
 // globales, edición de envíos y sync manual). Pensado junto a un cron que
 // restaura la BD desde un dump semilla. Ver DEMO.md (runbook completo).
 define('DEMO_MODE', false);
-// Minutos del ciclo de reset (solo informativo: se muestra en el banner).
+// Minutos del ciclo de reset: gobierna el cron demo_reset.php (que se auto-regula
+// con este número) y es el que muestra el diálogo de bienvenida.
 define('DEMO_RESET_MINUTES', 60);
 // Credenciales de la demo que la portada ofrece al visitante, POR ROL (la
 // etiqueta «Administrador»/«Viewer» la pone la app, traducida). Texto libre
@@ -76,6 +77,11 @@ define('DEMO_RESET_MINUTES', 60);
 // Convención sugerida (la que usa DEMO.md):
 define('DEMO_LOGIN_ADMIN', '');   // p. ej. 'admin@demo.org / demo1234'
 define('DEMO_LOGIN_VIEWER', '');  // p. ej. 'viewer@demo.org / demo1234'
+// Ruta de la SEMILLA de la demo (fuera del webroot, escribible por PHP y por el
+// usuario del cron). La genera el botón de Ajustes «Generar semilla de la demo»
+// (con la demo apagada) y la restaura api/cron/demo_reset.php cada
+// DEMO_RESET_MINUTES. Vacío = la tarjeta no se muestra y el cron se niega.
+define('DEMO_SEED_PATH', '');     // p. ej. '/opt/km-demo/seed.sql'
 
 // --- Zona horaria de visualización ---
 // Kobo entrega `_submission_time` en UTC. En Estadísticas, la «Actividad por

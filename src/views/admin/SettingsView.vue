@@ -53,6 +53,37 @@ const saving = ref(false)
 const error = ref('')
 const saved = ref(false)
 
+// Semilla de la demo (DEMO_SEED_PATH): la tarjeta solo aparece si está configurada.
+const demoSeed = ref({ configured: false, path: '', exists: false, bytes: null, generated_at: null })
+const seedBusy = ref(false)
+const seedError = ref('')
+const seedDone = ref(null)
+
+function fmtSeedSize(bytes) {
+  if (bytes == null) return ''
+  return bytes >= 1024 * 1024 ? (bytes / (1024 * 1024)).toFixed(1) + ' MB' : Math.max(1, Math.round(bytes / 1024)) + ' KB'
+}
+
+function fmtSeedDate(iso) {
+  if (!iso) return ''
+  try { return new Date(iso).toLocaleString() } catch { return iso }
+}
+
+async function generateSeed() {
+  seedBusy.value = true
+  seedError.value = ''
+  seedDone.value = null
+  try {
+    const { data } = await api.post('/admin/demo/seed')
+    seedDone.value = data.data
+    if (data.data.status) demoSeed.value = data.data.status
+  } catch (e) {
+    seedError.value = apiError(e, t('settings.demoSeedError'))
+  } finally {
+    seedBusy.value = false
+  }
+}
+
 async function load() {
   loading.value = true
   error.value = ''
@@ -88,6 +119,7 @@ async function load() {
     if (data.data.field_truncate) fieldTruncate.value = data.data.field_truncate
     if (data.data.field_truncate_min != null) fieldTruncateMin.value = data.data.field_truncate_min
     if (data.data.field_truncate_max != null) fieldTruncateMax.value = data.data.field_truncate_max
+    if (data.data.demo_seed) demoSeed.value = data.data.demo_seed
   } catch (e) {
     error.value = apiError(e, t('settings.loadError'))
   } finally {
@@ -558,6 +590,37 @@ onMounted(load)
         </button>
         <span v-if="saved" class="text-sm text-success-600 dark:text-success-400">{{ $t('common.saved') }}</span>
       </div>
+
+      <!-- Semilla de la demo (solo si DEMO_SEED_PATH está configurada) -->
+      <section v-if="demoSeed.configured" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.demoSeed') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.demoSeedDesc') }}</p>
+        </div>
+        <p class="text-sm text-slate-600">
+          <template v-if="demoSeed.exists">
+            {{ $t('settings.demoSeedCurrent', { date: fmtSeedDate(demoSeed.generated_at), size: fmtSeedSize(demoSeed.bytes) }) }}
+          </template>
+          <template v-else>{{ $t('settings.demoSeedNone') }}</template>
+          <span class="mt-1 block break-all font-mono text-xs text-slate-400">{{ $t('settings.demoSeedPath', { path: demoSeed.path }) }}</span>
+        </p>
+        <div v-if="seedError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
+          {{ seedError }}
+        </div>
+        <div class="flex items-center gap-3">
+          <button
+            :disabled="demoMode || seedBusy"
+            class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+            :title="demoMode ? $t('common.demoDisabled') : undefined"
+            @click="generateSeed"
+          >
+            {{ seedBusy ? $t('settings.demoSeedGenerating') : $t('settings.demoSeedGenerate') }}
+          </button>
+          <span v-if="seedDone" class="text-sm text-success-600 dark:text-success-400">
+            {{ $t('settings.demoSeedDone', { rows: seedDone.rows, tables: seedDone.tables, size: fmtSeedSize(seedDone.bytes) }) }}
+          </span>
+        </div>
+      </section>
     </template>
   </div>
 </template>

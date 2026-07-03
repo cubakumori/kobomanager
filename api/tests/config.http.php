@@ -41,3 +41,6 @@ define('MAIL_FROM', 'KoboManager <noreply@test.local>');
 define('APP_URL', 'http://localhost:5173');
 define('CORS_ALLOWED_ORIGINS', ['http://localhost:5173']);
 define('APP_ENV', 'dev');
+
+// Semilla de la demo (lib/DemoSeed): archivo temporal aislado de los tests.
+define('DEMO_SEED_PATH', sys_get_temp_dir() . '/kobomanager_test_seed.sql');

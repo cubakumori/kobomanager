@@ -30,7 +30,8 @@ class Demo {
         return defined('DEMO_MODE') && DEMO_MODE;
     }
 
-    /** Minutos del ciclo de reset (informativo, para el banner del frontend). */
+    /** Minutos del ciclo de reset: gobierna cron/demo_reset.php (auto-regulado)
+     *  y se muestra en el diálogo de bienvenida del frontend. */
     public static function resetMinutes(): int {
         return defined('DEMO_RESET_MINUTES') ? max(1, (int) DEMO_RESET_MINUTES) : 60;
     }
@@ -73,6 +74,10 @@ class Demo {
         'auth/reset-password'      => ['POST'],
         // Ajustes globales.
         'admin/settings'           => ['PUT'],
+        // Generar la semilla de la demo: solo tiene sentido con la demo APAGADA
+        // (bucle de mantenimiento de DEMO.md); encendida, exportaría el estado
+        // sucio que los visitantes van dejando.
+        'admin/demo/seed'          => ['POST'],
         // Edición de envíos: escribe en la cuenta Kobo real.
         'submissions/:id'          => ['PUT'],
         // Sync manual contra Kobo (los cron del servidor siguen activos).
