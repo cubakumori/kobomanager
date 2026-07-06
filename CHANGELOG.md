@@ -4,6 +4,23 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.12.0] - 2026-07-06
+
+### Añadido
+
+- **Ordenar la tabla de envíos clicando las cabeceras**: todas las columnas son
+  ordenables — la fija «Enviado», las calculadas (duración, adjuntos, ubicación) y
+  cualquier **columna de datos del formulario** (nuevo `sort=field:<clave>` en la API).
+  Primer clic ascendente, segundo descendente, con indicador ▲/▼ y `aria-sort`. El
+  orden es **global** (SQL sobre toda la tabla, no sobre la página): las preguntas
+  numéricas (`integer`/`decimal`/`range`) ordenan por valor con `CAST` («9» antes que
+  «10»), los vacíos van **siempre al final**, y en los `select` se ordena por el valor
+  almacenado (código), no por la etiqueta mostrada. Un viewer no puede ordenar por una
+  columna que tiene oculta (el orden revelaría sus valores): la API cae al orden por
+  fecha sin romper la tabla, igual que ante una vista guardada que referencie un campo
+  eliminado. La elección persiste por formulario como el resto de la vista, y el
+  desplegable de «Vista» refleja la columna activa.
+
 ## [1.11.0] - 2026-07-03
 
 ### Cambiado
