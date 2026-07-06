@@ -4,6 +4,26 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.18.0] - 2026-07-06
+
+Último lote de pulido del Control de calidad. Sin cambios de esquema.
+
+### Añadido
+
+- **«n / total» en el desglose del control de calidad**: la cabecera de cada equipo y
+  la columna «Envíos» de cada encuestador muestran cuántas encuestas entran en el
+  alcance sobre el total recibido («20 / 25 encuesta(s)»), con tooltip explicativo.
+  Cuando el alcance es «todos los envíos» coinciden y se muestra la cifra sola.
+- **Enlaces cruzados Estadísticas ⇄ Control de calidad**: en ambas páginas, en la
+  línea del enlace «volver» pero al extremo derecho, un enlace lleva a la otra.
+
+### Cambiado
+
+- **`0` en los umbrales equivale a vacío** (comprobación desactivada; se guarda
+  `NULL`): antes el `PATCH` lo rechazaba. Las notas de los tres campos quedan
+  unificadas — «Vacío o 0 = sin comprobación» / «sin tope», y la de consecutividad
+  aclara además que la solapada se marca igual con el hueco desactivado.
+
 ## [1.17.0] - 2026-07-06
 
 Pulido de la página de Control de calidad (solo frontend; sin cambios de esquema ni de API).

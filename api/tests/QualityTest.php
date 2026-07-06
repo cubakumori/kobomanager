@@ -169,6 +169,13 @@ final class QualityTest extends DbTestCase
         $q = Quality::compute($formId, null, null, null, 'es', null, 'enum', 4, null, null, ['pending', 'on_hold']);
         $this->assertSame(2, $q['total']);   // solo pendiente + en espera cuentan
         $this->assertSame(2, $q['flagged']);
+        // El «total recibido» conserva el contexto completo: el equipo tiene 4 envíos
+        // (incluidos los de luis, que no se lista) y ana 3 (incluida su aprobada).
+        $this->assertSame(2, $q['teams'][0]['count']);
+        $this->assertSame(4, $q['teams'][0]['total']);
+        $ana = $q['teams'][0]['enumerators'][0];
+        $this->assertSame(2, $ana['count']);
+        $this->assertSame(3, $ana['total']);
         $v = $this->violationsByUid($q);
         $this->assertArrayHasKey($pend, $v);
         $this->assertArrayHasKey($held, $v);

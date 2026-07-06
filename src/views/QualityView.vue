@@ -135,12 +135,20 @@ onMounted(load)
 <template>
   <div class="space-y-6">
     <header>
-      <RouterLink
-        :to="{ name: 'submissions', params: { id: formId } }"
-        class="text-sm text-primary-600 hover:underline"
-      >
-        {{ $t('stats.back') }}
-      </RouterLink>
+      <div class="flex items-center justify-between gap-3">
+        <RouterLink
+          :to="{ name: 'submissions', params: { id: formId } }"
+          class="text-sm text-primary-600 hover:underline"
+        >
+          {{ $t('stats.back') }}
+        </RouterLink>
+        <RouterLink
+          :to="{ name: 'stats', params: { id: formId } }"
+          class="text-sm font-medium text-primary-600 hover:underline"
+        >
+          {{ $t('stats.qualityStatsLink') }}
+        </RouterLink>
+      </div>
       <h1 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
         {{ $t('stats.qualityTitle') }}{{ q ? ' · ' + q.form.name : '' }}
       </h1>
@@ -244,7 +252,12 @@ onMounted(load)
             :class="{ 'pointer-events-none': !hasTeams }"
           >
             <span class="font-semibold text-slate-900">{{ hasTeams ? team.name : $t('stats.qualityAllEnumerators') }}</span>
-            <span class="text-sm text-slate-500">{{ $t('stats.qualityTeamCount', { n: team.count }) }}</span>
+            <!-- «n / total» cuando el alcance deja fuera parte de lo recibido -->
+            <span class="text-sm text-slate-500" :title="team.total > team.count ? $t('stats.qualityCountOfTitle') : undefined">
+              {{ team.total > team.count
+                ? $t('stats.qualityTeamCountOf', { n: team.count, total: team.total })
+                : $t('stats.qualityTeamCount', { n: team.count }) }}
+            </span>
             <!-- Tasa de no admitidas del equipo: la métrica comparativa entre equipos -->
             <span
               v-if="team.flagged"
@@ -279,7 +292,9 @@ onMounted(load)
                   <template v-for="(e, j) in team.enumerators" :key="j">
                     <tr>
                       <td class="py-1.5 pr-3 font-medium text-slate-700">{{ e.name }}</td>
-                      <td class="py-1.5 pr-3 text-right text-slate-600">{{ e.count }}</td>
+                      <td class="py-1.5 pr-3 text-right text-slate-600" :title="e.total > e.count ? $t('stats.qualityCountOfTitle') : undefined">
+                        {{ e.total > e.count ? `${e.count} / ${e.total}` : e.count }}
+                      </td>
                       <td v-for="f in FLAGS" :key="f" class="py-1.5 pr-3 text-right" :class="e.flags[f] ? 'font-semibold text-slate-700' : 'text-slate-300'">
                         {{ e.flags[f] || '—' }}
                       </td>

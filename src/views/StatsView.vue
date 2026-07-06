@@ -57,12 +57,20 @@ onMounted(load)
 <template>
   <div class="space-y-6">
     <header>
-      <RouterLink
-        :to="{ name: 'submissions', params: { id: formId } }"
-        class="text-sm text-primary-600 hover:underline"
-      >
-        {{ $t('stats.back') }}
-      </RouterLink>
+      <div class="flex items-center justify-between gap-3">
+        <RouterLink
+          :to="{ name: 'submissions', params: { id: formId } }"
+          class="text-sm text-primary-600 hover:underline"
+        >
+          {{ $t('stats.back') }}
+        </RouterLink>
+        <RouterLink
+          :to="{ name: 'quality', params: { id: formId } }"
+          class="text-sm font-medium text-primary-600 hover:underline"
+        >
+          {{ $t('stats.qualityLink') }}
+        </RouterLink>
+      </div>
       <h1 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
         {{ $t('stats.title') }}{{ stats ? ' · ' + stats.form.name : '' }}
       </h1>

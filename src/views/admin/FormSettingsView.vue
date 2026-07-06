@@ -157,7 +157,7 @@ onMounted(load)
           <input
             v-model="qcMinDuration"
             type="number"
-            min="1"
+            min="0"
             max="10080"
             class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
           />
@@ -169,7 +169,7 @@ onMounted(load)
           <input
             v-model="qcMaxDuration"
             type="number"
-            min="1"
+            min="0"
             max="10080"
             class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
           />
@@ -181,7 +181,7 @@ onMounted(load)
           <input
             v-model="qcMinGap"
             type="number"
-            min="1"
+            min="0"
             max="10080"
             class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
           />

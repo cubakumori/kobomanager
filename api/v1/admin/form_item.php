@@ -74,13 +74,16 @@ if ($method === 'PATCH') {
         }
         return $v;
     };
-    // Normaliza un umbral a minutos (entero 1–10080, una semana) o null. '' → null.
+    // Normaliza un umbral a minutos (entero 1–10080, una semana) o null.
+    // '' y 0 → null (comprobación desactivada): un 0 «sin umbral» es lo que un
+    // operador espera al vaciar el campo con el teclado numérico.
     $cleanMin = function ($v, string $name): ?int {
         if ($v === null || $v === '') return null;
-        if (!is_numeric($v) || (int) $v != $v || (int) $v < 1 || (int) $v > 10080) {
-            ErrorResponse::send('VALIDATION_ERROR', "Umbral no válido ($name): minutos entre 1 y 10080, o vacío");
+        if (!is_numeric($v) || (int) $v != $v || (int) $v < 0 || (int) $v > 10080) {
+            ErrorResponse::send('VALIDATION_ERROR', "Umbral no válido ($name): minutos entre 1 y 10080, 0 o vacío");
         }
-        return (int) $v;
+        $n = (int) $v;
+        return $n === 0 ? null : $n;
     };
 
     // Clave ausente = conservar el valor actual (permite PATCH parciales).

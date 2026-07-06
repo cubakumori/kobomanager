@@ -168,13 +168,18 @@ class Quality {
             $teamOut = [
                 'name'        => $tKey === '—' ? '—'
                     : (($labelsOn && isset($teamOptMap[$tKey])) ? $teamOptMap[$tKey] : $tKey),
-                'count'       => 0,
+                'count'       => 0,  // envíos EN ALCANCE
+                'total'       => 0,  // TODOS los envíos recibidos del equipo (contexto del alcance)
                 'flagged'     => 0,
                 'flags'       => $zeroFlags,
                 'enumerators' => [],
             ];
 
             foreach ($enums as $eKey => $entries) {
+                // El total del equipo cuenta TODOS sus envíos, incluso los de
+                // encuestadores que luego no se listan por no tener nada en alcance.
+                $teamOut['total'] += count($entries);
+
                 // Sin envíos en alcance, el encuestador no aparece (sus envíos siguen
                 // participando como vecinos de cadena de los que sí están).
                 $inCount = count(array_filter($entries, fn($e) => $e['in']));
@@ -194,7 +199,8 @@ class Quality {
                 $enumOut = [
                     'name'       => $eKey === '—' ? '—'
                         : (($labelsOn && isset($enumOptMap[$eKey])) ? $enumOptMap[$eKey] : $eKey),
-                    'count'      => $inCount,
+                    'count'      => $inCount,        // en alcance
+                    'total'      => count($entries), // todos los recibidos del encuestador
                     'flagged'    => 0,
                     'flags'      => $zeroFlags,
                     'violations' => [],

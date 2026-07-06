@@ -47,6 +47,13 @@ final class FormSettingsHttpTest extends HttpTestCase
         $this->assertSame(10, (int) $row['qc_min_duration']);
         $this->assertNull($row['qc_min_gap']);
 
+        // 0 equivale a vacío: desactiva la comprobación (se guarda NULL).
+        $res = $this->request('PATCH', "admin/forms/$formId", ['qc_min_duration' => 0], $jar);
+        $this->assertSame(200, $res['status'], $res['raw']);
+        $this->assertNull($res['json']['data']['qc_min_duration']);
+        $row = DB::run('SELECT qc_min_duration FROM forms WHERE id = ?', [$formId])->fetch();
+        $this->assertNull($row['qc_min_duration']);
+
         // Ni borrar el suyo, ni leer el de otro formulario.
         $res = $this->request('DELETE', "admin/forms/$formId", null, $jar);
         $this->assertSame(403, $res['status']);
