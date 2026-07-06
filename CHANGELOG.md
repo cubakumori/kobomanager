@@ -4,6 +4,30 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.17.0] - 2026-07-06
+
+Pulido de la página de Control de calidad (solo frontend; sin cambios de esquema ni de API).
+
+### Añadido
+
+- **Tasa de no admitidas** como métrica comparativa: porcentaje junto a la tarjeta
+  «No admitidas» (sobre las evaluadas), en la cabecera de cada equipo (sobre sus
+  encuestas) y en la columna «No admitidas» de cada encuestador. Las comparativas de
+  fondo (duración mediana, completitud, volumen por equipo/encuestador) siguen en el
+  desglose de Estadísticas, que ya las cubre — aquí solo se añade la métrica propia
+  del control de calidad.
+- **Retorno con memoria de origen**: el enlace «Ver» de una encuesta infractora abre
+  el detalle con `?from=quality`, y allí el enlace «volver» pasa a ser **«← Volver a
+  control de calidad»** (los botones Anterior/Siguiente conservan el origen). Desde
+  la tabla de envíos todo sigue igual.
+
+### Cambiado
+
+- **El banner del lote explica la resta** que confundía («No admitidas 133» vs botón
+  con 35): ahora dice «De las {total} no admitidas, {held} ya están “En espera”» y el
+  botón pasa a «Marcar en espera las {n} restantes». Si ninguna está en espera, se
+  mantienen los textos originales.
+
 ## [1.16.0] - 2026-07-06
 
 Alcance del control de calidad por estado de revisión, para que sus recuentos no

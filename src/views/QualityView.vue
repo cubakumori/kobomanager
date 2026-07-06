@@ -51,6 +51,12 @@ const pendingHold = computed(() => {
       for (const v of e.violations) if (v.review_status !== 'on_hold') uids.push(v.uid)
   return uids
 })
+// Infractoras que YA están «en espera»: explica la resta entre la tarjeta
+// «No admitidas» y el número del botón de lote.
+const heldCount = computed(() => (q.value?.flagged ?? 0) - pendingHold.value.length)
+
+// Tasa de no admitidas (comparativa por equipo/encuestador y tarjeta general).
+const fmtRate = (n, d) => (d > 0 ? Math.round((n * 100) / d) + ' %' : '—')
 
 async function holdAll() {
   const uids = pendingHold.value
@@ -185,6 +191,7 @@ onMounted(load)
           <p class="text-xs text-slate-400">{{ $t('stats.qualityCardFlagged') }}</p>
           <p class="mt-1 text-2xl font-semibold" :class="q.flagged ? 'text-red-600 dark:text-red-400' : 'text-success-600 dark:text-success-400'">
             {{ q.flagged }}
+            <span v-if="q.flagged" class="text-sm font-medium text-slate-400">· {{ fmtRate(q.flagged, q.total - q.untimed) }}</span>
           </p>
         </div>
         <div v-for="f in FLAGS" :key="f" class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
@@ -200,7 +207,11 @@ onMounted(load)
         class="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-accent-50 px-4 py-3 ring-1 ring-accent-200 dark:bg-accent-900/25 dark:ring-accent-800"
       >
         <span class="text-sm text-accent-900 dark:text-accent-200">
-          {{ pendingHold.length ? $t('stats.qualityBatchHint') : $t('stats.qualityAllHeld') }}
+          {{ !pendingHold.length
+            ? $t('stats.qualityAllHeld')
+            : heldCount
+              ? $t('stats.qualityBatchHintHeld', { total: q.flagged, held: heldCount })
+              : $t('stats.qualityBatchHint') }}
         </span>
         <button
           v-if="pendingHold.length"
@@ -208,7 +219,11 @@ onMounted(load)
           class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
           @click="holdAll"
         >
-          {{ batchBusy ? $t('stats.qualityBatchBusy') : $t('stats.qualityBatchBtn', { n: pendingHold.length }) }}
+          {{ batchBusy
+            ? $t('stats.qualityBatchBusy')
+            : heldCount
+              ? $t('stats.qualityBatchBtnRest', { n: pendingHold.length })
+              : $t('stats.qualityBatchBtn', { n: pendingHold.length }) }}
         </button>
       </div>
 
@@ -230,6 +245,12 @@ onMounted(load)
           >
             <span class="font-semibold text-slate-900">{{ hasTeams ? team.name : $t('stats.qualityAllEnumerators') }}</span>
             <span class="text-sm text-slate-500">{{ $t('stats.qualityTeamCount', { n: team.count }) }}</span>
+            <!-- Tasa de no admitidas del equipo: la métrica comparativa entre equipos -->
+            <span
+              v-if="team.flagged"
+              class="text-sm font-semibold text-red-600 dark:text-red-400"
+              :title="$t('stats.qualityRateTitle')"
+            >{{ fmtRate(team.flagged, team.count) }}</span>
             <span class="ml-auto flex gap-1.5 text-xs font-medium">
               <span
                 v-for="f in FLAGS"
@@ -263,7 +284,10 @@ onMounted(load)
                         {{ e.flags[f] || '—' }}
                       </td>
                       <td class="py-1.5 text-right font-semibold" :class="e.flagged ? 'text-red-600 dark:text-red-400' : 'text-slate-300'">
-                        {{ e.flagged || '—' }}
+                        <template v-if="e.flagged">
+                          {{ e.flagged }} <span class="text-xs font-medium text-slate-400" :title="$t('stats.qualityRateTitle')">· {{ fmtRate(e.flagged, e.count) }}</span>
+                        </template>
+                        <template v-else>—</template>
                       </td>
                     </tr>
                     <!-- Drill-down: las encuestas infractoras del encuestador -->
@@ -301,7 +325,7 @@ onMounted(load)
                                 <td class="py-1.5 pr-3"><ReviewBadge :status="v.review_status" /></td>
                                 <td class="py-1.5 text-right">
                                   <RouterLink
-                                    :to="{ name: 'submission-detail', params: { id: formId, subId: v.uid } }"
+                                    :to="{ name: 'submission-detail', params: { id: formId, subId: v.uid }, query: { from: 'quality' } }"
                                     class="font-medium text-primary-600 hover:underline"
                                   >
                                     {{ $t('stats.qualityView') }}

@@ -32,12 +32,23 @@ const editHistory = ref([])
 
 const labeler = computed(() => makeLabeler(schema.value, labelMode.value, fieldTruncate.value))
 
+// Origen de la visita: desde el Control de calidad (`?from=quality`, lo pone su
+// enlace «Ver») el «volver» apunta allí; se propaga en anterior/siguiente para que
+// el retorno sobreviva a la navegación entre envíos.
+const fromQuality = computed(() => route.query.from === 'quality')
+const navQuery = computed(() => (fromQuality.value ? { from: 'quality' } : undefined))
+const backTo = computed(() =>
+  fromQuality.value
+    ? { name: 'quality', params: { id: route.params.id } }
+    : { name: 'submissions', params: { id: route.params.id } },
+)
+
 // Navegación al envío anterior/siguiente (mismo orden que la lista).
 const toPrev = computed(() =>
-  sub.value?.prev ? { name: 'submission-detail', params: { id: route.params.id, subId: sub.value.prev } } : null,
+  sub.value?.prev ? { name: 'submission-detail', params: { id: route.params.id, subId: sub.value.prev }, query: navQuery.value } : null,
 )
 const toNext = computed(() =>
-  sub.value?.next ? { name: 'submission-detail', params: { id: route.params.id, subId: sub.value.next } } : null,
+  sub.value?.next ? { name: 'submission-detail', params: { id: route.params.id, subId: sub.value.next }, query: navQuery.value } : null,
 )
 
 // Adjunto indexado por la clave del campo que lo originó (question_xpath).
@@ -178,10 +189,10 @@ onMounted(load)
     <header>
       <div class="flex items-center justify-between gap-3">
         <RouterLink
-          :to="{ name: 'submissions', params: { id: route.params.id } }"
+          :to="backTo"
           class="text-sm text-primary-600 hover:underline"
         >
-          <span class="hidden min-[412px]:inline">{{ $t('detail.back') }}</span><span class="min-[412px]:hidden">{{ $t('detail.backShort') }}</span>
+          <span class="hidden min-[412px]:inline">{{ fromQuality ? $t('detail.backQuality') : $t('detail.back') }}</span><span class="min-[412px]:hidden">{{ fromQuality ? $t('detail.backQualityShort') : $t('detail.backShort') }}</span>
         </RouterLink>
         <!-- Navegación entre envíos -->
         <div class="flex items-center gap-1">
@@ -442,10 +453,10 @@ onMounted(load)
       <!-- Navegación entre envíos (repetida al final) -->
       <div class="flex items-center justify-between gap-3">
         <RouterLink
-          :to="{ name: 'submissions', params: { id: route.params.id } }"
+          :to="backTo"
           class="text-sm text-primary-600 hover:underline"
         >
-          <span class="hidden min-[412px]:inline">{{ $t('detail.back') }}</span><span class="min-[412px]:hidden">{{ $t('detail.backShort') }}</span>
+          <span class="hidden min-[412px]:inline">{{ fromQuality ? $t('detail.backQuality') : $t('detail.back') }}</span><span class="min-[412px]:hidden">{{ fromQuality ? $t('detail.backQualityShort') : $t('detail.backShort') }}</span>
         </RouterLink>
         <div class="flex items-center gap-1">
           <component
