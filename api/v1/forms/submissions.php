@@ -5,7 +5,9 @@
  * Query:
  *   page (1+), per_page (1-100), search (texto libre sobre el JSON),
  *   review (pending|approved|on_hold|rejected) → filtra por estado de revisión más reciente,
- *   sort (date_desc|date_asc) → orden por fecha de envío (por defecto, más recientes),
+ *   sort → orden GLOBAL de la tabla: date_asc|date_desc (por defecto), las columnas
+ *     calculadas (duration|attachments|geo con sufijo _asc/_desc) o una columna de
+ *     datos del formulario: `field:<clave>_asc|_desc` (cabeceras clicables),
  *   filter (JSON, mismo formato que row_filter) → FILTRO AVANZADO del usuario; solo
  *     RESTRINGE (se combina en AND con el scoping obligatorio) y se rechaza si
  *     referencia campos ocultos para el usuario.
@@ -64,7 +66,28 @@ $sort = (string) ($_GET['sort'] ?? 'date_desc');
 $dir  = str_ends_with($sort, '_asc') ? 'ASC' : 'DESC';
 $sortKey = preg_replace('/_(asc|desc)$/', '', $sort);
 $orderParams = [];
-switch ($sortKey) {
+if (str_starts_with($sortKey, 'field:')) {
+    // Orden por una COLUMNA DE DATOS del formulario (cabecera clicable). La clave debe
+    // ser una pregunta del esquema y no estar oculta para el usuario (ordenar por un
+    // campo oculto filtraría sus valores); si no cumple —p. ej. una vista guardada que
+    // referencia un campo ocultado o eliminado después— se cae al orden por fecha en
+    // vez de romper la tabla. Vacíos SIEMPRE al final; los tipos numéricos se ordenan
+    // con CAST («9» < «10», no orden lexicográfico). El orden es por el VALOR
+    // almacenado (códigos en los select), no por la etiqueta mostrada.
+    $fieldKey = substr($sortKey, 6);
+    $known    = is_array($schema['fields'] ?? null) && array_key_exists($fieldKey, $schema['fields']);
+    if ($known && !FieldScope::isHidden($fieldScope, $fieldKey)) {
+        $ex   = "JSON_UNQUOTE(JSON_EXTRACT(sc.json_payload, ?))";
+        $type = (string) ($schema['fields'][$fieldKey]['type'] ?? '');
+        $val  = in_array($type, ['integer', 'decimal', 'range'], true)
+            ? "CAST($ex AS DECIMAL(30,10))"
+            : $ex;
+        $orderBy     = "(COALESCE($ex, '') = '') ASC, $val $dir, sc.submitted_at DESC, sc.id DESC";
+        $orderParams = [RowScope::jsonPath($fieldKey), RowScope::jsonPath($fieldKey)];
+    } else {
+        $orderBy = 'sc.submitted_at DESC, sc.id DESC';
+    }
+} else switch ($sortKey) {
     case 'duration':
         // Duración = end − start (claves meta del esquema, con respaldo de convención).
         // STR_TO_DATE sobre los primeros 19 chars del ISO («YYYY-MM-DDTHH:MM:SS», sin ms

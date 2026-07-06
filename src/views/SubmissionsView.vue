@@ -39,12 +39,16 @@ const sort = ref('date_desc')
 // a un detalle y volver. Se restauran AHORA, antes de registrar los watchers, para
 // no disparar una recarga extra al montar.
 const SORTS = ['date_desc', 'date_asc', 'duration_desc', 'duration_asc', 'attachments_desc', 'geo_desc']
+// Además del catálogo fijo, es válido el orden por columna de datos («field:<clave>»,
+// cabeceras clicables). Si la clave guardada ya no existe o se ocultó, el backend cae
+// al orden por fecha sin romper la tabla.
+const isValidSort = (s) => SORTS.includes(s) || /^field:.+_(asc|desc)$/.test(s || '')
 const REVIEWS = ['', 'pending', 'approved', 'on_hold', 'rejected']
 const viewKey = (id) => `km.view.${id}`
 function loadViewPrefs() {
   try {
     const saved = JSON.parse(localStorage.getItem(viewKey(formId.value)) || 'null')
-    if (SORTS.includes(saved?.sort)) sort.value = saved.sort
+    if (isValidSort(saved?.sort)) sort.value = saved.sort
     if (REVIEWS.includes(saved?.review)) reviewFilter.value = saved.review
     const pp = Number(localStorage.getItem('km.perPage'))
     if (perPageOptions.includes(pp)) perPage.value = pp
@@ -257,6 +261,27 @@ function savePrefs() {
 }
 
 const shownColumns = computed(() => orderedCols.value.filter((k) => visibleCols.value.includes(k)))
+
+// --- Orden por cabecera: cada columna mapea a un token de orden del backend ---
+// (la fija «Enviado» → date; las calculadas → sus órdenes de siempre; las de datos →
+// field:<clave>). Primer clic asc, segundo desc.
+const DERIVED_SORT = { '@duration': 'duration', '@has_attachments': 'attachments', '@has_geo': 'geo' }
+const sortToken = (c) => (isDerivedCol(c) ? DERIVED_SORT[c] : 'field:' + c)
+const sortDirFor = (token) =>
+  sort.value === token + '_asc' ? 'asc' : sort.value === token + '_desc' ? 'desc' : null
+const ariaSort = (token) =>
+  sortDirFor(token) === 'asc' ? 'ascending' : sortDirFor(token) === 'desc' ? 'descending' : null
+const sortArrow = (token) => (sortDirFor(token) === 'asc' ? '▲' : sortDirFor(token) === 'desc' ? '▼' : '')
+function toggleSort(token) {
+  sort.value = token + (sortDirFor(token) === 'asc' ? '_desc' : '_asc')
+}
+
+// Etiqueta para el desplegable cuando el orden activo es una columna de datos
+// (si no, el <select> se mostraría vacío).
+const fieldSortLabel = computed(() => {
+  const m = sort.value.match(/^field:(.+)_(asc|desc)$/)
+  return m ? labeler.value.label(m[1]) + (m[2] === 'asc' ? ' ▲' : ' ▼') : ''
+})
 
 function toggleCol(key) {
   const i = visibleCols.value.indexOf(key)
@@ -552,9 +577,35 @@ onMounted(() => { loadAdvFilter(); load() })
             <th
               class="whitespace-nowrap px-4 py-3"
               :class="freezeFirst() ? (canReview ? 'min-[540px]:sticky min-[540px]:left-12 z-20 bg-accent-50 dark:bg-slate-50' : 'sticky left-0 z-20 bg-accent-50 dark:bg-slate-50') : ''"
-            >{{ $t('submissions.colSubmitted') }}</th>
-            <th v-for="c in shownColumns" :key="c" class="px-4 py-3 align-bottom" :title="colFullLabel(c)">
-              <div :class="headerLinesClass()">{{ colLabel(c) }}</div>
+              :aria-sort="ariaSort('date')"
+            >
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 hover:underline"
+                :title="$t('submissions.sortByColumn')"
+                @click="toggleSort('date')"
+              >
+                {{ $t('submissions.colSubmitted') }}
+                <span v-if="sortArrow('date')" aria-hidden="true">{{ sortArrow('date') }}</span>
+              </button>
+            </th>
+            <th
+              v-for="c in shownColumns"
+              :key="c"
+              class="px-4 py-3 align-bottom"
+              :title="colFullLabel(c)"
+              :aria-sort="ariaSort(sortToken(c))"
+            >
+              <button
+                type="button"
+                class="w-full text-left hover:underline"
+                @click="toggleSort(sortToken(c))"
+              >
+                <div :class="headerLinesClass()">
+                  {{ colLabel(c) }}
+                  <span v-if="sortArrow(sortToken(c))" aria-hidden="true">{{ sortArrow(sortToken(c)) }}</span>
+                </div>
+              </button>
             </th>
             <th class="px-4 py-3">{{ $t('submissions.colReview') }}</th>
             <th class="px-4 py-3"></th>
@@ -642,6 +693,10 @@ onMounted(() => { loadAdvFilter(); load() })
           >
             <option value="date_desc">{{ $t('submissions.sortNewest') }}</option>
             <option value="date_asc">{{ $t('submissions.sortOldest') }}</option>
+            <!-- Orden activo por columna de datos (se fija clicando la cabecera) -->
+            <option v-if="fieldSortLabel" :value="sort">
+              {{ $t('submissions.sortColumn', { label: fieldSortLabel }) }}
+            </option>
             <optgroup :label="$t('submissions.columnsCalculated')">
               <option value="duration_desc">{{ $t('submissions.sortDurationDesc') }}</option>
               <option value="duration_asc">{{ $t('submissions.sortDurationAsc') }}</option>

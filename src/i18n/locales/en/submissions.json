@@ -18,6 +18,8 @@
     "sort": "Sort:",
     "sortNewest": "Newest first",
     "sortOldest": "Oldest first",
+    "sortColumn": "Column: {label}",
+    "sortByColumn": "Sort by this column",
     "sortDurationDesc": "Duration (longest first)",
     "sortDurationAsc": "Duration (shortest first)",
     "sortAttachments": "Most attachments",

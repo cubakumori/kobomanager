@@ -104,6 +104,11 @@ Quedan como ideas reabribles si aparece una necesidad real.
 
 ## Optimización y UX
 
+- [ ] **Cabeceras ordenables también en la tabla pública de enlaces compartidos**
+      *(extensión de 1.12.0)*: la tabla interna ya ordena por cualquier columna clicando
+      la cabecera (`sort=field:<clave>`); la vista pública `/s/<token>` podría heredar el
+      mismo mecanismo (respetando el `field_filter` del enlace, como ya hace la interna
+      con FieldScope).
 - [ ] **Creación de enlaces en lote sobre más tipos de campo** *(extensión de lo ya
       entregado)* — la creación en lote de enlaces de solo lectura (un enlace por valor de
       un campo distintivo) hoy admite solo campos de **opción única (`select_one`)**, cuyos
