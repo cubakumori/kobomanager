@@ -140,7 +140,10 @@ class Stats {
              WHERE form_id = ? AND submitted_at IS NOT NULL AND $scopeSql AND $statusSql AND $teamSql",
             array_merge([$formId], $scopeP, $statusP, $teamP)
         )->fetch();
-        $pct = fn(int $cur, int $prev): ?float => $prev > 0 ? round(($cur - $prev) * 100 / $prev, 1) : null;
+        // Los % viajan con 4 decimales (aquí y en el resto de métricas): el REDONDEO
+        // final (entero o dos decimales) lo decide el ajuste global `pct_format` en
+        // el frontend, no el backend.
+        $pct = fn(int $cur, int $prev): ?float => $prev > 0 ? round(($cur - $prev) * 100 / $prev, 4) : null;
         $last7 = (int) ($tr['last7'] ?? 0); $prev7 = (int) ($tr['prev7'] ?? 0);
         $last30 = (int) ($tr['last30'] ?? 0); $prev30 = (int) ($tr['prev30'] ?? 0);
         $trend = [
@@ -326,7 +329,7 @@ class Stats {
                     $opts[] = [
                         'label' => $label,
                         'count' => $c,
-                        'pct'   => $answered > 0 ? round($c * 100 / $answered, 1) : 0,
+                        'pct'   => $answered > 0 ? round($c * 100 / $answered, 4) : 0,
                     ];
                 } else {
                     $othersCount += $c;
@@ -351,7 +354,7 @@ class Stats {
         $rank = 0;
         foreach ($enumCounts as $name => $c) {
             if ($rank++ < 20) {
-                $byEnumerator[] = ['name' => $name, 'count' => $c, 'pct' => $base > 0 ? round($c * 100 / $base, 1) : 0];
+                $byEnumerator[] = ['name' => $name, 'count' => $c, 'pct' => $base > 0 ? round($c * 100 / $base, 4) : 0];
             } else {
                 $enumOthers += $c;
             }
@@ -407,7 +410,7 @@ class Stats {
                 }
                 $out = [
                     'count'             => $leaf['count'],
-                    'pct'               => $base > 0 ? round($leaf['count'] * 100 / $base, 1) : 0,
+                    'pct'               => $base > 0 ? round($leaf['count'] * 100 / $base, 4) : 0,
                     'duration'          => $dur,
                     'completeness_mean' => $leaf['compN'] > 0 ? round($leaf['compSum'] / $leaf['compN'], 4) : null,
                     'last_activity'     => $leaf['last'],
@@ -464,13 +467,13 @@ class Stats {
             'attachments'     => [
                 'with'    => $attWith,
                 'without' => $base - $attWith,
-                'with_pct'=> $base > 0 ? round($attWith * 100 / $base, 1) : 0,
+                'with_pct'=> $base > 0 ? round($attWith * 100 / $base, 4) : 0,
                 'by_kind' => $attByKind,
             ],
             'geo'             => [
                 'with'    => $geoWith,
                 'without' => $base - $geoWith,
-                'with_pct'=> $base > 0 ? round($geoWith * 100 / $base, 1) : 0,
+                'with_pct'=> $base > 0 ? round($geoWith * 100 / $base, 4) : 0,
             ],
             'label_mode'      => Settings::labelMode(),
         ];

@@ -102,20 +102,24 @@ export function useTableHeaderLines() {
 }
 
 /**
- * Formato de porcentajes (reactivo). `formatRatio(n, d, locale)` calcula
- * n/d como % según el ajuste global: entero («28 %») o dos decimales con el
- * separador del idioma («28,36 %» / «28.36 %»). d ≤ 0 → «—».
+ * Formato de porcentajes (reactivo), según el ajuste global: entero («28 %») o
+ * dos decimales con el separador del idioma («28,36 %» / «28.36 %»).
+ *  - `formatPctNumber(v, locale)`: v ya es un porcentaje (0–100) → solo el número
+ *    («28» / «28,36»), para textos que ponen el «%» aparte. null → «—».
+ *  - `formatPct(v, locale)`: número + « %».
+ *  - `formatRatio(n, d, locale)`: calcula n/d como % y lo formatea. d ≤ 0 → «—».
  */
 export function usePctFormat() {
-  const formatRatio = (n, d, locale) => {
-    if (!(d > 0)) return '—'
-    const v = (n * 100) / d
+  const formatPctNumber = (v, locale) => {
+    if (v == null) return '—'
     if (pctFormat.value === 'decimals') {
-      return v.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' %'
+      return v.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     }
-    return Math.round(v) + ' %'
+    return String(Math.round(v))
   }
-  return { pctFormat, formatRatio }
+  const formatPct = (v, locale) => (v == null ? '—' : formatPctNumber(v, locale) + ' %')
+  const formatRatio = (n, d, locale) => (d > 0 ? formatPct((n * 100) / d, locale) : '—')
+  return { pctFormat, formatPctNumber, formatPct, formatRatio }
 }
 
 /** Modo demo (reactivo): flag, minutos del ciclo de reset y credenciales por rol. */

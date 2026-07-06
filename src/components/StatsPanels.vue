@@ -11,9 +11,13 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import { fmtDuration } from '../composables/derived'
+import { usePctFormat } from '../composables/appConfig'
 import StatsChart from './StatsChart.vue'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
+// Formato global de porcentajes (entero o dos decimales); los valores llegan del
+// backend con 4 decimales y aquí se les da la presentación final.
+const { formatPct, formatPctNumber } = usePctFormat()
 const props = defineProps({
   stats: { type: Object, required: true },
   // Cabecera clicable: al pulsar una tarjeta se emite `select` con el estado y
@@ -203,8 +207,9 @@ const barValueOptions = {
 
 function trendInfo(pct) {
   if (pct == null) return { text: '—', cls: 'text-slate-400', arrow: '' }
-  if (pct > 0) return { text: `+${pct}%`, cls: 'text-success-600 dark:text-success-400', arrow: '▲' }
-  if (pct < 0) return { text: `${pct}%`, cls: 'text-red-600 dark:text-red-400', arrow: '▼' }
+  const n = formatPctNumber(pct, locale.value)
+  if (pct > 0) return { text: `+${n}%`, cls: 'text-success-600 dark:text-success-400', arrow: '▲' }
+  if (pct < 0) return { text: `${n}%`, cls: 'text-red-600 dark:text-red-400', arrow: '▼' }
   return { text: '0%', cls: 'text-slate-400', arrow: '' }
 }
 
@@ -238,8 +243,10 @@ const showTeam = computed(() => {
   return ts.length >= 2 || (ts[0]?.enumerators?.length ?? 0) >= 2 || (stats.value?.team_others ?? 0) > 0
 })
 
-const fmtPct = (p) => (p == null ? '—' : p + '%')
-const fmtCompleteness = (c) => (c == null ? '—' : Math.round(c * 100) + '%')
+const fmtPct = (p) => formatPct(p, locale.value)
+// Solo el número (para textos i18n que ya llevan el «%» en la frase).
+const fmtPctNum = (p) => formatPctNumber(p, locale.value)
+const fmtCompleteness = (c) => (c == null ? '—' : formatPct(c * 100, locale.value))
 const fmtMedian = (d) => (d ? fmtDuration(d.median_s) : '—')
 
 // Conteos de revisión con color (omite los que están a 0). `status` solo viene en la
@@ -369,13 +376,13 @@ const reviewPills = (st) =>
       <div v-if="stats.attachments.with > 0" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <h2 class="mb-1 font-semibold text-slate-900">{{ $t('stats.attachments') }}</h2>
         <p class="mb-3 text-sm text-slate-500">
-          {{ $t('stats.attSummary', { pct: stats.attachments.with_pct }) }}<span v-if="attByKindText"> · {{ attByKindText }}</span>
+          {{ $t('stats.attSummary', { pct: fmtPctNum(stats.attachments.with_pct) }) }}<span v-if="attByKindText"> · {{ attByKindText }}</span>
         </p>
         <div class="h-56"><StatsChart type="doughnut" :data="attachmentsData" :options="doughnutValueOpts(stats.base)" /></div>
       </div>
       <div v-if="stats.geo.with > 0" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <h2 class="mb-1 font-semibold text-slate-900">{{ $t('stats.geo') }}</h2>
-        <p class="mb-3 text-sm text-slate-500">{{ $t('stats.geoSummary', { pct: stats.geo.with_pct }) }}</p>
+        <p class="mb-3 text-sm text-slate-500">{{ $t('stats.geoSummary', { pct: fmtPctNum(stats.geo.with_pct) }) }}</p>
         <div class="h-56"><StatsChart type="doughnut" :data="geoData" :options="doughnutValueOpts(stats.base)" /></div>
       </div>
     </div>

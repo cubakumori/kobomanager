@@ -280,7 +280,7 @@
     "qcScope_pending_hold": "Only pending or on hold",
     "qcScope_all": "All submissions",
     "pctFormat": "Percentage values",
-    "pctFormatDesc": "How to display the percentages the app computes over counts (e.g. the Quality control rates).",
+    "pctFormatDesc": "How to display the app's percentages: Statistics (including charts and public links) and Quality control.",
     "pctFormat_integer": "Rounded to integer",
     "pctFormat_decimals": "Two decimal places",
     "headerLines": "Tables: header lines",

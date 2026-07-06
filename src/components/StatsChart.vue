@@ -1,7 +1,16 @@
 <script setup>
 import { computed, watchEffect } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Bar, Doughnut } from 'vue-chartjs'
 import { useDarkMode } from '../composables/darkMode'
+import { usePctFormat } from '../composables/appConfig'
+
+// Formato global de porcentajes para las etiquetas «valor (p%)» del plugin.
+// El plugin dibuja fuera del ciclo reactivo: lee esta variable en cada draw.
+const { formatPctNumber } = usePctFormat()
+const { locale } = useI18n()
+let chartLocale = locale.value
+watchEffect(() => { chartLocale = locale.value })
 import {
   Chart as ChartJS,
   Title,
@@ -68,7 +77,7 @@ const valueLabelsPlugin = {
       meta.data.forEach((el, i) => {
         const v = Number(ds.data[i])
         if (!v) return
-        const pct = base && base > 0 ? Math.round((v * 100) / base) : null
+        const pct = base && base > 0 ? formatPctNumber((v * 100) / base, chartLocale) : null
         const txt = pct != null ? `${v} (${pct}%)` : `${v}`
         if (type === 'doughnut') {
           if (el.endAngle - el.startAngle < 0.3) return // segmento muy pequeño: solo en leyenda/hover

@@ -12,11 +12,15 @@ Sin cambios de esquema (ajuste en la tabla `settings`).
 ### Añadido
 
 - **«Valores porcentuales»** (Configuración → Tablas y vistas): cómo mostrar los
-  porcentajes que la app calcula sobre recuentos (hoy, las tasas del Control de
-  calidad) — **«Redondeado a entero»** (por defecto) o **«Dos cifras decimales»**,
-  estas últimas con el separador del idioma («28,36 %» en español, «28.36 %» en
-  inglés). El ajuste viaja en `GET /config` (como el congelado de columnas) y se
-  cachea en el navegador para pintar bien desde el primer render.
+  porcentajes de la app — **«Redondeado a entero»** (por defecto) o **«Dos cifras
+  decimales»**, estas últimas con el separador del idioma («28,36 %» en español,
+  «28.36 %» en inglés). Aplica al Control de calidad y a TODAS las Estadísticas
+  (desglose por equipo, por enumerador, tendencia 7/30 d, completitud, resúmenes de
+  adjuntos/geo y las etiquetas «valor (p %)» de los gráficos), también en los enlaces
+  públicos. El backend deja de pre-redondear a 1 decimal (los % viajan con 4; la
+  presentación la decide este ajuste), y el ajuste viaja en `GET /config` (como el
+  congelado de columnas) y se cachea en el navegador para pintar bien desde el primer
+  render. Con el valor por defecto, las Estadísticas pasan de «81.3 %» a «81 %».
 
 ### Cambiado
 

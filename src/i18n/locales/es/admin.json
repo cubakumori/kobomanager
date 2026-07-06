@@ -280,7 +280,7 @@
     "qcScope_pending_hold": "Únicamente pendientes o en espera",
     "qcScope_all": "Todos los envíos",
     "pctFormat": "Valores porcentuales",
-    "pctFormatDesc": "Cómo mostrar los porcentajes que la app calcula sobre recuentos (p. ej. las tasas del Control de calidad).",
+    "pctFormatDesc": "Cómo mostrar los porcentajes de la app: Estadísticas (incluidos los gráficos y los enlaces públicos) y Control de calidad.",
     "pctFormat_integer": "Redondeado a entero",
     "pctFormat_decimals": "Dos cifras decimales",
     "headerLines": "Tablas: líneas del encabezado",
