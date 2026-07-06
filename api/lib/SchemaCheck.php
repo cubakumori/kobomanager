@@ -57,6 +57,10 @@ class SchemaCheck {
          'fix' => "ALTER TABLE forms ADD COLUMN qc_max_duration INT UNSIGNED NULL DEFAULT NULL AFTER qc_min_duration"],
         ['table' => 'forms', 'column' => 'qc_min_gap', 'since' => '1.14.0',
          'fix' => "ALTER TABLE forms ADD COLUMN qc_min_gap INT UNSIGNED NULL DEFAULT 4 AFTER qc_max_duration"],
+
+        // Permiso «Ajustes» por formulario (editar desglose por equipo + umbrales QC sin ser admin).
+        ['table' => 'user_form_permissions', 'column' => 'can_settings', 'since' => '1.15.0',
+         'fix' => "ALTER TABLE user_form_permissions ADD COLUMN can_settings TINYINT(1) DEFAULT 0 AFTER can_validate"],
     ];
 
     /**

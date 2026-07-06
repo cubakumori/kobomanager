@@ -119,6 +119,8 @@
     "colView": "Ver",
     "colEdit": "Editar",
     "colValidate": "Validar",
+    "colSettings": "Ajustes",
+    "colSettingsHint": "Puede editar los ajustes de este formulario (desglose por equipo y umbrales del control de calidad). No incluye borrarlo.",
     "empty": "No hay formularios. Sincroniza primero en «Formularios».",
     "save": "Guardar permisos",
     "loadUsersError": "No se pudieron cargar los usuarios",

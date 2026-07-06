@@ -119,6 +119,8 @@
     "colView": "View",
     "colEdit": "Edit",
     "colValidate": "Validate",
+    "colSettings": "Settings",
+    "colSettingsHint": "Can edit this form's settings (team breakdown and quality control thresholds). Does not include deleting it.",
     "empty": "No forms. Sync first in “Forms”.",
     "save": "Save permissions",
     "loadUsersError": "Could not load the users",

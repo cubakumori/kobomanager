@@ -73,7 +73,12 @@ to HTTP statuses in one table; the frontend maps codes → localized messages (`
   (the current one flagged via `Auth::currentTokenId()`) / close all but the current. Mirrors
   the admin remote‑revoke at `/admin/users/{id}/sessions`.
 - Guards: `require()`, `requireAdmin()`, and per‑form `canForm($user,$id,$cap)` /
-  `requireForm(...)` where `cap ∈ {view,edit,validate}` (admins bypass).
+  `requireForm(...)` where `cap ∈ {view,edit,validate,settings}` (admins bypass). `settings`
+  (`user_form_permissions.can_settings`, the *Settings* checkbox in the permissions UI) lets a
+  non‑admin edit that form's per‑form settings (team breakdown + quality‑control thresholds):
+  `admin/forms/{id}` `GET`/`PATCH` accept it, `DELETE` stays admin‑only. Any extra capability
+  implies `can_view` (enforced on save). The forms list and the quality endpoint expose the flag
+  so the UI can offer the form card's *Settings* shortcut and the threshold link.
 
 ### Row‑level scoping (`lib/RowScope.php`)
 A per‑(user, form) filter (`user_form_permissions.row_filter`, JSON) can restrict **which

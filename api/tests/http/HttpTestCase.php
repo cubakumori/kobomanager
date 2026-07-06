@@ -233,12 +233,12 @@ abstract class HttpTestCase extends TestCase
         return (int) DB::conn()->lastInsertId();
     }
 
-    protected function grant(int $userId, int $formId, bool $view = true, bool $edit = false, bool $validate = false, ?array $rowFilter = null, ?array $fieldFilter = null): void
+    protected function grant(int $userId, int $formId, bool $view = true, bool $edit = false, bool $validate = false, ?array $rowFilter = null, ?array $fieldFilter = null, bool $settings = false): void
     {
         DB::run(
-            'INSERT INTO user_form_permissions (user_id, form_id, can_view, can_edit, can_validate, row_filter, field_filter)
-             VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [$userId, $formId, $view ? 1 : 0, $edit ? 1 : 0, $validate ? 1 : 0,
+            'INSERT INTO user_form_permissions (user_id, form_id, can_view, can_edit, can_validate, can_settings, row_filter, field_filter)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [$userId, $formId, $view ? 1 : 0, $edit ? 1 : 0, $validate ? 1 : 0, $settings ? 1 : 0,
              $rowFilter !== null ? json_encode($rowFilter) : null,
              $fieldFilter !== null ? json_encode($fieldFilter) : null]
         );

@@ -157,7 +157,7 @@ onMounted(load)
           {{ th.label }}: <span class="font-semibold text-slate-700">{{ th.value }}</span>
         </span>
         <RouterLink
-          v-if="auth.isAdmin"
+          v-if="auth.isAdmin || q.can_settings"
           :to="{ name: 'admin-form-settings', params: { id: formId } }"
           class="font-medium text-primary-600 hover:underline"
         >

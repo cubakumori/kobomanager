@@ -86,7 +86,9 @@
     "count": "{n} envío(s)",
     "notSynced": "Sin sincronizar todavía",
     "loadError": "No se pudieron cargar los formularios",
-    "viewSubmissions": "Ver envíos"
+    "viewSubmissions": "Ver envíos",
+    "settings": "Ajustes",
+    "settingsTitle": "Ajustes del formulario (desglose por equipo y control de calidad)"
   },
   "about": {
     "title": "Acerca de KoboToolbox",

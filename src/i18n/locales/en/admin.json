@@ -131,6 +131,7 @@
     "title": "Form settings",
     "subtitle": "Per-form KoboManager settings (they do not affect KoboToolbox).",
     "back": "← Forms",
+    "backForms": "← My forms",
     "teamSection": "Team breakdown (statistics)",
     "teamSectionDesc": "Breaks statistics down by team and, within each team, by enumerator. Respects row scoping and column hiding.",
     "teamField": "Team field",

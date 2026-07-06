@@ -45,4 +45,5 @@ ErrorResponse::ok(array_merge([
     'form'              => ['id' => (int) $form['id'], 'name' => $form['name']],
     'deployment_status' => $form['deployment_status'] ?? null,
     'can_validate'      => Auth::canForm($user, $formId, 'validate'),
+    'can_settings'      => Auth::canForm($user, $formId, 'settings'),
 ], $quality));

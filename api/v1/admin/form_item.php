@@ -1,6 +1,6 @@
 <?php
 /**
- * /api/v1/admin/forms/{id}   (solo admin)
+ * /api/v1/admin/forms/{id}   (admin, o permiso «Ajustes» sobre el formulario)
  *
  *   GET    → datos editables del formulario: la config del desglose de
  *            estadísticas por equipo → encuestador y los umbrales del control
@@ -11,14 +11,25 @@
  *            Los campos de equipo son rutas del esquema o null
  *            (`stats_enumerator_field` null = usar `_submitted_by`). Los umbrales
  *            son minutos (entero ≥ 1) o null = comprobación desactivada.
- *   DELETE → elimina el formulario de KoboManager y su caché (no toca Kobo).
- *            Si sigue cumpliendo el filtro de sincronización, una nueva
+ *   DELETE → SOLO admin: elimina el formulario de KoboManager y su caché (no toca
+ *            Kobo). Si sigue cumpliendo el filtro de sincronización, una nueva
  *            sincronización de la cuenta volverá a traerlo.
+ *
+ * GET/PATCH admiten además a un usuario con `can_settings` sobre ESTE formulario
+ * (permiso «Ajustes» de /admin/permissions); el borrado no se delega.
  */
 
-$admin  = Auth::requireAdmin();
+$user   = Auth::require();
 $formId = (int) Request::param('id');
 $method = Request::method();
+
+if ($method === 'DELETE') {
+    if ($user['role'] !== 'admin') {
+        ErrorResponse::send('AUTH_INSUFFICIENT_PERMISSIONS');
+    }
+} else {
+    Auth::requireForm($user, $formId, 'settings');
+}
 
 $form = DB::run(
     'SELECT id, name, schema_json, stats_team_field, stats_enumerator_field,
@@ -94,7 +105,7 @@ if ($method === 'PATCH') {
         'stats_team_field'       => $team,
         'stats_enumerator_field' => $enum,
     ] + $qc;
-    Audit::log($admin['id'], 'update_form_stats', $formId, null, $out);
+    Audit::log($user['id'], 'update_form_stats', $formId, null, $out);
     ErrorResponse::ok($out);
 }
 
@@ -105,5 +116,5 @@ if ($method !== 'DELETE') {
 // El borrado hace cascade sobre submissions_cache, user_form_permissions y notification_config.
 DB::run('DELETE FROM forms WHERE id = ?', [$formId]);
 
-Audit::log($admin['id'], 'delete_form', $formId, null, ['name' => $form['name']]);
+Audit::log($user['id'], 'delete_form', $formId, null, ['name' => $form['name']]);
 ErrorResponse::ok(['deleted' => true]);

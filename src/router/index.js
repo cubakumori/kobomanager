@@ -30,7 +30,9 @@ const routes = [
   { path: '/admin/users', name: 'admin-users', component: () => import('../views/admin/UsersView.vue'), meta: shell({ requiresAdmin: true }) },
   { path: '/admin/accounts', name: 'admin-accounts', component: () => import('../views/admin/AccountsView.vue'), meta: shell({ requiresAdmin: true }) },
   { path: '/admin/forms', name: 'admin-forms', component: () => import('../views/admin/FormsView.vue'), meta: shell({ requiresAdmin: true }) },
-  { path: '/admin/forms/:id/settings', name: 'admin-form-settings', component: () => import('../views/admin/FormSettingsView.vue'), meta: shell({ requiresAdmin: true }) },
+  // Sin requiresAdmin: también entra un usuario con permiso «Ajustes» sobre ese
+  // formulario (el gate real es la API, que responde 403 si no lo tiene).
+  { path: '/admin/forms/:id/settings', name: 'admin-form-settings', component: () => import('../views/admin/FormSettingsView.vue'), meta: shell() },
   { path: '/admin/permissions', name: 'admin-permissions', component: () => import('../views/admin/PermissionsView.vue'), meta: shell({ requiresAdmin: true }) },
   { path: '/admin/shares', name: 'admin-shares', component: () => import('../views/admin/SharesView.vue'), meta: shell({ requiresAdmin: true }) },
   { path: '/admin/audit', name: 'admin-audit', component: () => import('../views/admin/AuditView.vue'), meta: shell({ requiresAdmin: true }) },

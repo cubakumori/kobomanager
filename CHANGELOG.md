@@ -4,6 +4,35 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.15.0] - 2026-07-06
+
+> **Nota de actualización (esquema).** Añade una columna a `user_form_permissions`.
+> Instalación nueva: nada que hacer (`db/001_schema.sql` ya lo incluye). Sobre una BD
+> existente, ejecuta `php api/cli/migrate.php` **o** aplica:
+>
+> ```sql
+> ALTER TABLE user_form_permissions ADD COLUMN can_settings TINYINT(1) DEFAULT 0 AFTER can_validate;
+> ```
+
+### Añadido
+
+- **Permiso «Ajustes» por formulario** (`can_settings`, checkbox nuevo en
+  /admin/permissions): un usuario no-admin puede editar los ajustes de ESE formulario
+  — desglose por equipo y umbrales del control de calidad — sin ser administrador.
+  `admin/forms/{id}` (`GET`/`PATCH`) lo acepta; **borrar el formulario sigue siendo
+  solo-admin**. Como con editar/validar, marcarlo implica poder ver el formulario
+  (la UI y el guardado lo fuerzan). El selector de campos que ve un usuario con
+  «Ajustes» respeta sus columnas ocultas (usa el endpoint de campos no-admin).
+- **Acceso directo «Ajustes» en la tarjeta del formulario** (Mis formularios), para
+  admins y usuarios con el permiso; el enlace «Ajustar umbrales» de la página de
+  Control de calidad también aparece para ellos.
+
+### Cambiado
+
+- La ruta `/admin/forms/{id}/settings` deja de exigir rol admin en el router: el
+  gate real es la API (403 sin permiso); el enlace «volver» apunta a Mis formularios
+  para no-admins.
+
 ## [1.14.0] - 2026-07-06
 
 > **Nota de actualización (esquema).** Primera versión con cambio de esquema desde 1.8.0:

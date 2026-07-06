@@ -4,7 +4,7 @@
  *
  *   GET  ?user_id=ID  → todos los formularios con el permiso actual de ese usuario
  *                       (los que no tienen fila aparecen con permisos en false).
- *   PUT  { user_id, permissions: [ { form_id, can_view, can_edit, can_validate } ] }
+ *   PUT  { user_id, permissions: [ { form_id, can_view, can_edit, can_validate, can_settings } ] }
  *                     → guarda (upsert) los permisos del usuario.
  */
 
@@ -26,6 +26,7 @@ if ($method === 'GET') {
                 COALESCE(p.can_view, 0)     AS can_view,
                 COALESCE(p.can_edit, 0)     AS can_edit,
                 COALESCE(p.can_validate, 0) AS can_validate,
+                COALESCE(p.can_settings, 0) AS can_settings,
                 p.row_filter, p.field_filter
          FROM forms f
          JOIN kobo_accounts a ON a.id = f.kobo_account_id
@@ -41,6 +42,7 @@ if ($method === 'GET') {
         $r['can_view']     = (bool) $r['can_view'];
         $r['can_edit']     = (bool) $r['can_edit'];
         $r['can_validate'] = (bool) $r['can_validate'];
+        $r['can_settings'] = (bool) $r['can_settings'];
         // Filtro por filas (scoping): objeto canónico {conditions:[...]} o null.
         $r['row_filter']   = RowScope::normalize($r['row_filter'] ? json_decode($r['row_filter'], true) : null);
         // Filtro por columna: objeto canónico {hidden:[...]} o null.
@@ -68,6 +70,9 @@ if ($method === 'PUT') {
         $canView     = !empty($p['can_view']) ? 1 : 0;
         $canEdit     = !empty($p['can_edit']) ? 1 : 0;
         $canValidate = !empty($p['can_validate']) ? 1 : 0;
+        $canSettings = !empty($p['can_settings']) ? 1 : 0;
+        // Cualquier capacidad extra implica poder ver el formulario (la UI ya lo fuerza).
+        if ($canEdit || $canValidate || $canSettings) $canView = 1;
 
         // Filtro por filas: solo tiene sentido con can_view; se guarda canónico o NULL.
         $rule       = $canView ? RowScope::normalize($p['row_filter'] ?? null) : null;
@@ -78,15 +83,16 @@ if ($method === 'PUT') {
         $fieldJson  = $fieldRule ? json_encode($fieldRule, JSON_UNESCAPED_UNICODE) : null;
 
         DB::run(
-            'INSERT INTO user_form_permissions (user_id, form_id, can_view, can_edit, can_validate, row_filter, field_filter)
-             VALUES (?, ?, ?, ?, ?, ?, ?)
+            'INSERT INTO user_form_permissions (user_id, form_id, can_view, can_edit, can_validate, can_settings, row_filter, field_filter)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                 can_view = VALUES(can_view),
                 can_edit = VALUES(can_edit),
                 can_validate = VALUES(can_validate),
+                can_settings = VALUES(can_settings),
                 row_filter = VALUES(row_filter),
                 field_filter = VALUES(field_filter)',
-            [$userId, $formId, $canView, $canEdit, $canValidate, $filterJson, $fieldJson]
+            [$userId, $formId, $canView, $canEdit, $canValidate, $canSettings, $filterJson, $fieldJson]
         );
     }
 

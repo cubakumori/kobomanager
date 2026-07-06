@@ -1,19 +1,20 @@
 <script setup>
 /**
- * Ajustes por formulario (solo admin). Hoy alberga la configuración del desglose
- * de estadísticas «por equipo → encuestador»: se eligen dos campos del esquema.
- * Pensada para crecer con futuros ajustes por formulario.
+ * Ajustes por formulario: desglose de estadísticas «por equipo → encuestador» y
+ * umbrales del control de calidad. Accesible para admins y para usuarios con el
+ * permiso «Ajustes» sobre ese formulario (la API responde 403 si no lo tienen).
  */
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, RouterLink } from 'vue-router'
 import api from '../../services/api'
-import { apiError } from '../../stores/auth'
+import { useAuthStore, apiError } from '../../stores/auth'
 import Skeleton from '../../components/Skeleton.vue'
 import { useDemoMode } from '../../composables/appConfig'
 
 const { t } = useI18n()
 const route = useRoute()
+const auth = useAuthStore()
 const { demoMode } = useDemoMode()
 const formId = computed(() => Number(route.params.id))
 
@@ -35,9 +36,15 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
+    // El listado de campos: la variante admin (completa) o la de usuario, que
+    // respeta sus columnas ocultas (un usuario con «Ajustes» no elige campos que
+    // no ve). Ambas devuelven la misma forma { fields: [...] }.
+    const scopeFieldsUrl = auth.isAdmin
+      ? `/admin/forms/${formId.value}/scope-fields`
+      : `/forms/${formId.value}/scope-fields`
     const [cfg, sf] = await Promise.all([
       api.get(`/admin/forms/${formId.value}`),
-      api.get(`/admin/forms/${formId.value}/scope-fields`),
+      api.get(scopeFieldsUrl),
     ])
     formName.value = cfg.data.data.name
     teamField.value = cfg.data.data.stats_team_field || ''
@@ -82,8 +89,11 @@ onMounted(load)
 <template>
   <div class="space-y-6">
     <header>
-      <RouterLink :to="{ name: 'admin-forms' }" class="text-sm text-primary-600 hover:underline">
-        {{ $t('formSettings.back') }}
+      <RouterLink
+        :to="{ name: auth.isAdmin ? 'admin-forms' : 'forms' }"
+        class="text-sm text-primary-600 hover:underline"
+      >
+        {{ auth.isAdmin ? $t('formSettings.back') : $t('formSettings.backForms') }}
       </RouterLink>
       <h1 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
         {{ $t('formSettings.title') }}{{ formName ? ' · ' + formName : '' }}

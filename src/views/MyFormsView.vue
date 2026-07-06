@@ -81,6 +81,8 @@ const tone = (f) => TONES[f.deployment_status] || TONES.deployed
 const actions = ref({ enketo: false, update: false, resync: false, login: false })
 const can = (a) => auth.isAdmin || !!actions.value[a]
 const anyAction = computed(() => ['enketo', 'update', 'resync', 'login'].some(can))
+// «Ajustes» es un permiso POR FORMULARIO (can_settings), no una acción global.
+const canSettings = (f) => auth.isAdmin || !!f.can_settings
 
 const enketoId = ref(null)
 const busyId = ref(null)         // formulario en actualización/resync
@@ -233,13 +235,22 @@ onMounted(load)
           <p v-else class="mt-2 text-sm" :class="tone(f).body">{{ $t('myForms.count', { n: f.submission_count }) }}</p>
         </RouterLink>
 
-        <div v-if="anyAction" class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-3 text-sm" :class="tone(f).divider">
+        <div v-if="anyAction || canSettings(f)" class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-3 text-sm" :class="tone(f).divider">
           <RouterLink
             :to="{ name: 'submissions', params: { id: f.id } }"
             class="font-medium hover:underline"
             :class="tone(f).link"
           >
             {{ $t('myForms.viewSubmissions') }}
+          </RouterLink>
+          <RouterLink
+            v-if="canSettings(f)"
+            :to="{ name: 'admin-form-settings', params: { id: f.id } }"
+            class="font-medium hover:underline"
+            :class="tone(f).link"
+            :title="$t('myForms.settingsTitle')"
+          >
+            {{ $t('myForms.settings') }}
           </RouterLink>
           <button
             v-if="can('enketo') && f.deployment_status === 'deployed'"

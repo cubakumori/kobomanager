@@ -144,6 +144,9 @@ CREATE TABLE IF NOT EXISTS user_form_permissions (
     can_view        TINYINT(1) DEFAULT 1,
     can_edit        TINYINT(1) DEFAULT 0,
     can_validate    TINYINT(1) DEFAULT 0,
+    -- «Ajustes»: puede editar los ajustes de ESTE formulario (desglose por equipo y
+    -- umbrales del control de calidad) sin ser admin. No incluye borrar el formulario.
+    can_settings    TINYINT(1) DEFAULT 0,
     -- Scoping por filas: restringe qué envíos ve/edita/valida este usuario en este
     -- formulario, sin tocar las capacidades. NULL = sin restricción. Objeto JSON con
     -- grupos a 2 niveles (AND/OR + operadores); ver lib/RowScope:

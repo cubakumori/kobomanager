@@ -208,8 +208,8 @@ class Auth {
     }
 
     /**
-     * ¿El usuario tiene la capacidad ('view'|'edit'|'validate') sobre un formulario?
-     * Los admin tienen acceso total.
+     * ¿El usuario tiene la capacidad ('view'|'edit'|'validate'|'settings') sobre un
+     * formulario? Los admin tienen acceso total.
      */
     public static function canForm(array $user, int $formId, string $cap): bool {
         if (($user['role'] ?? '') === 'admin') {
@@ -219,6 +219,7 @@ class Auth {
             'view'     => 'can_view',
             'edit'     => 'can_edit',
             'validate' => 'can_validate',
+            'settings' => 'can_settings',
             default    => null,
         };
         if ($col === null) return false;

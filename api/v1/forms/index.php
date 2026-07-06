@@ -27,7 +27,7 @@ if ($user['role'] === 'admin') {
     $rows = DB::run(
         'SELECT f.id, f.name, a.id AS account_id, a.label AS account_label, f.last_synced_at, f.sync_status,
                 f.submissions_synced_at, f.server_url, f.kobo_asset_uid, f.deployment_status,
-                1 AS can_edit, 1 AS can_validate,
+                1 AS can_edit, 1 AS can_validate, 1 AS can_settings,
                 (SELECT COUNT(*) FROM submissions_cache sc WHERE sc.form_id = f.id) AS submission_count
          FROM forms f
          JOIN kobo_accounts a ON a.id = f.kobo_account_id
@@ -38,7 +38,7 @@ if ($user['role'] === 'admin') {
     $rows = DB::run(
         'SELECT f.id, f.name, a.id AS account_id, a.label AS account_label, f.last_synced_at, f.sync_status,
                 f.submissions_synced_at, f.server_url, f.kobo_asset_uid, f.deployment_status,
-                p.can_edit, p.can_validate, p.row_filter,
+                p.can_edit, p.can_validate, p.can_settings, p.row_filter,
                 (SELECT COUNT(*) FROM submissions_cache sc WHERE sc.form_id = f.id) AS submission_count
          FROM forms f
          JOIN kobo_accounts a ON a.id = f.kobo_account_id
@@ -69,6 +69,7 @@ foreach ($rows as &$r) {
     $r['id']               = (int) $r['id'];
     $r['can_edit']         = (bool) $r['can_edit'];
     $r['can_validate']     = (bool) $r['can_validate'];
+    $r['can_settings']     = (bool) $r['can_settings'];
     $r['submission_count'] = (int) $r['submission_count'];
     // ¿Se han sincronizado ya los envíos alguna vez? (para distinguir «0 real»
     // de «aún sin sincronizar» en la UI.)
