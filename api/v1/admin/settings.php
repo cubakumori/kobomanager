@@ -42,6 +42,8 @@ if (Request::method() === 'GET') {
         'valid_stats_default_scope'  => Settings::VALID_STATS_DEFAULT_SCOPE,
         'qc_scope'                   => Settings::qcScope(),
         'valid_qc_scope'             => Settings::VALID_QC_SCOPE,
+        'pct_format'                 => Settings::pctFormat(),
+        'valid_pct_format'           => Settings::VALID_PCT_FORMAT,
         // Semilla de la demo (DEMO_SEED_PATH): la UI muestra la tarjeta solo si está configurada.
         'demo_seed'                  => DemoSeed::status(),
     ]);
@@ -148,6 +150,15 @@ if (Request::method() === 'PUT') {
         }
         Settings::set('qc_scope', $sc);
         $out['qc_scope'] = $sc;
+    }
+
+    if (array_key_exists('pct_format', $body)) {
+        $pf = (string) $body['pct_format'];
+        if (!in_array($pf, Settings::VALID_PCT_FORMAT, true)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Formato de porcentajes no válido');
+        }
+        Settings::set('pct_format', $pf);
+        $out['pct_format'] = $pf;
     }
 
     if (array_key_exists('label_mode', $body)) {

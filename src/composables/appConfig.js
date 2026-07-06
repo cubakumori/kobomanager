@@ -23,6 +23,13 @@ const VALID_LINES = [1, 2, 3]
 const cachedLines = Number(localStorage.getItem(HEADER_LINES_KEY))
 const tableHeaderLines = ref(VALID_LINES.includes(cachedLines) ? cachedLines : 2)
 
+// Formato de los porcentajes que la UI calcula sobre recuentos crudos
+// ('integer' = entero, 'decimals' = dos decimales). Cacheado como los demás.
+const PCT_FORMAT_KEY = 'km.cfg.pctFormat'
+const VALID_PCT = ['integer', 'decimals']
+const cachedPct = localStorage.getItem(PCT_FORMAT_KEY)
+const pctFormat = ref(VALID_PCT.includes(cachedPct) ? cachedPct : 'integer')
+
 // Modo demo (instancia pública de demostración): banner global + acciones
 // sensibles deshabilitadas. Sin caché local: que un banner de demo nunca se
 // quede pegado en una instancia normal (y viceversa); un parpadeo es aceptable.
@@ -53,6 +60,11 @@ const configReady = publicApi
     if (VALID_LINES.includes(hl)) {
       tableHeaderLines.value = hl
       localStorage.setItem(HEADER_LINES_KEY, String(hl))
+    }
+    const pf = data.data.pct_format
+    if (VALID_PCT.includes(pf)) {
+      pctFormat.value = pf
+      localStorage.setItem(PCT_FORMAT_KEY, pf)
     }
     demoMode.value = !!data.data.demo_mode
     demoResetMinutes.value = Number(data.data.demo_reset_minutes) || 60
@@ -87,6 +99,23 @@ const HEADER_LINES_CLASS = {
 export function useTableHeaderLines() {
   const headerLinesClass = () => HEADER_LINES_CLASS[tableHeaderLines.value] || HEADER_LINES_CLASS[1]
   return { tableHeaderLines, headerLinesClass }
+}
+
+/**
+ * Formato de porcentajes (reactivo). `formatRatio(n, d, locale)` calcula
+ * n/d como % según el ajuste global: entero («28 %») o dos decimales con el
+ * separador del idioma («28,36 %» / «28.36 %»). d ≤ 0 → «—».
+ */
+export function usePctFormat() {
+  const formatRatio = (n, d, locale) => {
+    if (!(d > 0)) return '—'
+    const v = (n * 100) / d
+    if (pctFormat.value === 'decimals') {
+      return v.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' %'
+    }
+    return Math.round(v) + ' %'
+  }
+  return { pctFormat, formatRatio }
 }
 
 /** Modo demo (reactivo): flag, minutos del ciclo de reset y credenciales por rol. */

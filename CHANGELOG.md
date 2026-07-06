@@ -4,6 +4,28 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.19.0] - 2026-07-06
+
+Formato configurable de porcentajes y rediseño de la tabla del Control de calidad.
+Sin cambios de esquema (ajuste en la tabla `settings`).
+
+### Añadido
+
+- **«Valores porcentuales»** (Configuración → Tablas y vistas): cómo mostrar los
+  porcentajes que la app calcula sobre recuentos (hoy, las tasas del Control de
+  calidad) — **«Redondeado a entero»** (por defecto) o **«Dos cifras decimales»**,
+  estas últimas con el separador del idioma («28,36 %» en español, «28.36 %» en
+  inglés). El ajuste viaja en `GET /config` (como el congelado de columnas) y se
+  cachea en el navegador para pintar bien desde el primer render.
+
+### Cambiado
+
+- **Tabla del Control de calidad rediseñada**: cada encuestador es ahora un bloque
+  con su PROPIO encabezado (Encuestador / Envíos / Cortas / …) repetido — con muchas
+  infractoras del encuestador anterior, la fila siguiente quedaba «en el aire» — y
+  TODOS los valores de ambas tablas (encuestadores e infractoras) quedan alineados a
+  la izquierda, incluida la duración y el hueco.
+
 ## [1.18.0] - 2026-07-06
 
 Último lote de pulido del Control de calidad. Sin cambios de esquema.

@@ -12,10 +12,11 @@ import api from '../services/api'
 import { useAuthStore, apiError } from '../stores/auth'
 import { confirmDialog } from '../composables/confirm'
 import { fmtDuration } from '../composables/derived'
+import { usePctFormat } from '../composables/appConfig'
 import Skeleton from '../components/Skeleton.vue'
 import ReviewBadge from '../components/ReviewBadge.vue'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 const auth = useAuthStore()
 const formId = computed(() => Number(route.params.id))
@@ -57,8 +58,10 @@ const heldCount = computed(() => (q.value?.flagged ?? 0) - pendingHold.value.len
 
 // Tasa de no admitidas. Regla ÚNICA en toda la página: no admitidas sobre el
 // TOTAL de encuestas recibidas (del formulario, del equipo o del encuestador),
-// para que el «x / y» y el % compartan siempre el mismo denominador.
-const fmtRate = (n, d) => (d > 0 ? Math.round((n * 100) / d) + ' %' : '—')
+// para que el «x / y» y el % compartan siempre el mismo denominador. El formato
+// (entero o dos decimales) es el ajuste global «Valores porcentuales».
+const { formatRatio } = usePctFormat()
+const fmtRate = (n, d) => formatRatio(n, d, locale.value)
 
 async function holdAll() {
   const uids = pendingHold.value
@@ -276,82 +279,84 @@ onMounted(load)
             </span>
           </summary>
 
-          <div class="border-t border-slate-100 px-5 py-3">
-            <div class="overflow-x-auto">
-              <table class="w-full whitespace-nowrap text-left text-sm">
-                <thead class="text-xs uppercase tracking-wider text-slate-400">
-                  <tr>
-                    <th class="py-1 pr-3">{{ $t('stats.colEnumerator') }}</th>
-                    <th class="py-1 pr-3 text-right">{{ $t('stats.colVolume') }}</th>
-                    <th v-for="f in FLAGS" :key="f" class="py-1 pr-3 text-right">{{ $t('stats.' + FLAG_KEY[f], 2) }}</th>
-                    <th class="py-1 text-right">{{ $t('stats.qualityCardFlagged') }}</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                  <template v-for="(e, j) in team.enumerators" :key="j">
+          <!-- Un bloque por encuestador, con SU PROPIO encabezado repetido (con muchas
+               infractoras del anterior, una fila suelta quedaba «en el aire»).
+               Todos los valores alineados a la izquierda. -->
+          <div class="space-y-4 border-t border-slate-100 px-5 py-3">
+            <div v-for="(e, j) in team.enumerators" :key="j">
+              <div class="overflow-x-auto">
+                <table class="w-full whitespace-nowrap text-left text-sm">
+                  <thead class="text-xs uppercase tracking-wider text-slate-400">
                     <tr>
-                      <td class="py-1.5 pr-3 font-medium text-slate-700">{{ e.name }}</td>
-                      <td class="py-1.5 pr-3 text-right text-slate-600">{{ e.total }}</td>
-                      <td v-for="f in FLAGS" :key="f" class="py-1.5 pr-3 text-right" :class="e.flags[f] ? 'font-semibold text-slate-700' : 'text-slate-300'">
+                      <th class="py-1 pr-4">{{ $t('stats.colEnumerator') }}</th>
+                      <th class="py-1 pr-4">{{ $t('stats.colVolume') }}</th>
+                      <th v-for="f in FLAGS" :key="f" class="py-1 pr-4">{{ $t('stats.' + FLAG_KEY[f], 2) }}</th>
+                      <th class="py-1">{{ $t('stats.qualityCardFlagged') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="py-1.5 pr-4 font-medium text-slate-700">{{ e.name }}</td>
+                      <td class="py-1.5 pr-4 text-slate-600">{{ e.total }}</td>
+                      <td v-for="f in FLAGS" :key="f" class="py-1.5 pr-4" :class="e.flags[f] ? 'font-semibold text-slate-700' : 'text-slate-300'">
                         {{ e.flags[f] || '—' }}
                       </td>
-                      <td class="py-1.5 text-right font-semibold" :class="e.flagged ? 'text-red-600 dark:text-red-400' : 'text-slate-300'">
+                      <td class="py-1.5 font-semibold" :class="e.flagged ? 'text-red-600 dark:text-red-400' : 'text-slate-300'">
                         <template v-if="e.flagged">
                           {{ e.flagged }} <span class="text-xs font-medium text-slate-400" :title="$t('stats.qualityRateTitle')">· {{ fmtRate(e.flagged, e.total) }}</span>
                         </template>
                         <template v-else>—</template>
                       </td>
                     </tr>
-                    <!-- Drill-down: las encuestas infractoras del encuestador -->
-                    <tr v-if="e.violations.length">
-                      <td colspan="8" class="bg-slate-50/60 px-3 pb-3 pt-1 dark:bg-slate-800/30">
-                        <div class="overflow-x-auto">
-                          <table class="w-full whitespace-nowrap text-left text-xs">
-                            <thead class="uppercase tracking-wider text-slate-400">
-                              <tr>
-                                <th class="py-1 pr-3">{{ $t('stats.qualityColStart') }}</th>
-                                <th class="py-1 pr-3">{{ $t('stats.qualityColEnd') }}</th>
-                                <th class="py-1 pr-3 text-right">{{ $t('stats.qualityColDuration') }}</th>
-                                <th class="py-1 pr-3 text-right">{{ $t('stats.qualityColGap') }}</th>
-                                <th class="py-1 pr-3">{{ $t('stats.qualityColFlags') }}</th>
-                                <th class="py-1 pr-3">{{ $t('stats.qualityColReview') }}</th>
-                                <th class="py-1"></th>
-                              </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100">
-                              <tr v-for="v in e.violations" :key="v.uid">
-                                <td class="py-1.5 pr-3 text-slate-600">{{ v.start_at ?? '—' }}</td>
-                                <td class="py-1.5 pr-3 text-slate-600">{{ v.end_at ?? '—' }}</td>
-                                <td class="py-1.5 pr-3 text-right text-slate-600">{{ fmtDuration(v.duration_s) }}</td>
-                                <td class="py-1.5 pr-3 text-right" :class="v.gap_s != null && v.gap_s < 0 ? 'font-semibold text-red-600 dark:text-red-400' : 'text-slate-600'">
-                                  {{ fmtGap(v.gap_s) }}
-                                </td>
-                                <td class="py-1.5 pr-3">
-                                  <span
-                                    v-for="f in v.flags"
-                                    :key="f"
-                                    class="mr-1 inline-block rounded-full px-2 py-0.5 font-medium"
-                                    :class="FLAG_CLS[f]"
-                                  >{{ $t('stats.' + FLAG_KEY[f], 1) }}</span>
-                                </td>
-                                <td class="py-1.5 pr-3"><ReviewBadge :status="v.review_status" /></td>
-                                <td class="py-1.5 text-right">
-                                  <RouterLink
-                                    :to="{ name: 'submission-detail', params: { id: formId, subId: v.uid }, query: { from: 'quality' } }"
-                                    class="font-medium text-primary-600 hover:underline"
-                                  >
-                                    {{ $t('stats.qualityView') }}
-                                  </RouterLink>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </td>
-                    </tr>
-                  </template>
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Drill-down: las encuestas infractoras del encuestador -->
+              <div v-if="e.violations.length" class="mt-1 rounded-lg bg-slate-50/60 px-3 pb-3 pt-1 dark:bg-slate-800/30">
+                <div class="overflow-x-auto">
+                  <table class="w-full whitespace-nowrap text-left text-xs">
+                    <thead class="uppercase tracking-wider text-slate-400">
+                      <tr>
+                        <th class="py-1 pr-4">{{ $t('stats.qualityColStart') }}</th>
+                        <th class="py-1 pr-4">{{ $t('stats.qualityColEnd') }}</th>
+                        <th class="py-1 pr-4">{{ $t('stats.qualityColDuration') }}</th>
+                        <th class="py-1 pr-4">{{ $t('stats.qualityColGap') }}</th>
+                        <th class="py-1 pr-4">{{ $t('stats.qualityColFlags') }}</th>
+                        <th class="py-1 pr-4">{{ $t('stats.qualityColReview') }}</th>
+                        <th class="py-1"></th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      <tr v-for="v in e.violations" :key="v.uid">
+                        <td class="py-1.5 pr-4 text-slate-600">{{ v.start_at ?? '—' }}</td>
+                        <td class="py-1.5 pr-4 text-slate-600">{{ v.end_at ?? '—' }}</td>
+                        <td class="py-1.5 pr-4 text-slate-600">{{ fmtDuration(v.duration_s) }}</td>
+                        <td class="py-1.5 pr-4" :class="v.gap_s != null && v.gap_s < 0 ? 'font-semibold text-red-600 dark:text-red-400' : 'text-slate-600'">
+                          {{ fmtGap(v.gap_s) }}
+                        </td>
+                        <td class="py-1.5 pr-4">
+                          <span
+                            v-for="f in v.flags"
+                            :key="f"
+                            class="mr-1 inline-block rounded-full px-2 py-0.5 font-medium"
+                            :class="FLAG_CLS[f]"
+                          >{{ $t('stats.' + FLAG_KEY[f], 1) }}</span>
+                        </td>
+                        <td class="py-1.5 pr-4"><ReviewBadge :status="v.review_status" /></td>
+                        <td class="py-1.5">
+                          <RouterLink
+                            :to="{ name: 'submission-detail', params: { id: formId, subId: v.uid }, query: { from: 'quality' } }"
+                            class="font-medium text-primary-600 hover:underline"
+                          >
+                            {{ $t('stats.qualityView') }}
+                          </RouterLink>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         </details>

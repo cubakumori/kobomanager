@@ -284,6 +284,21 @@ class Settings {
         return in_array($v, self::VALID_QC_SCOPE, true) ? $v : self::DEFAULT_QC_SCOPE;
     }
 
+    /**
+     * Formato de los VALORES PORCENTUALES que la interfaz calcula sobre recuentos
+     * crudos (hoy: la página de Control de calidad).
+     *   'integer'  → redondeado a entero («28 %», por defecto).
+     *   'decimals' → dos cifras decimales («28,36 %», con el separador del idioma).
+     */
+    public const VALID_PCT_FORMAT = ['integer', 'decimals'];
+    private const DEFAULT_PCT_FORMAT = 'integer';
+
+    /** Formato de porcentajes de la UI ('integer'|'decimals'). */
+    public static function pctFormat(): string {
+        $v = self::get('pct_format', self::DEFAULT_PCT_FORMAT);
+        return in_array($v, self::VALID_PCT_FORMAT, true) ? $v : self::DEFAULT_PCT_FORMAT;
+    }
+
     public const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login'];
 
     /**

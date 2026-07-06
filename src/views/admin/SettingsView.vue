@@ -6,7 +6,7 @@ import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 import { useAuthStore } from '../../stores/auth'
 import { setLocale } from '../../i18n'
-import { useTableFreeze, useTableHeaderLines, useDemoMode } from '../../composables/appConfig'
+import { useTableFreeze, useTableHeaderLines, useDemoMode, usePctFormat } from '../../composables/appConfig'
 import Skeleton from '../../components/Skeleton.vue'
 
 const { t } = useI18n()
@@ -30,6 +30,7 @@ const showThemeToggle = ref(true)
 const supportPageEnabled = ref(true)
 const landingCtaEnabled = ref(true)
 const { tableFreeze: appTableFreeze } = useTableFreeze()
+const { pctFormat: appPctFormat } = usePctFormat()
 const { tableHeaderLines: appHeaderLines } = useTableHeaderLines()
 // En demo los ajustes globales son de solo lectura (PUT bloqueado).
 const { demoMode } = useDemoMode()
@@ -41,6 +42,8 @@ const statsDefaultScope = ref('approved')
 const validStatsDefaultScope = ref(['all', 'approved'])
 const qcScope = ref('pending_hold')
 const validQcScope = ref(['pending_hold', 'all'])
+const pctFormat = ref('integer')
+const validPctFormat = ref(['integer', 'decimals'])
 const tableHeaderLines = ref(2)
 const validTableHeaderLines = ref([1, 2, 3])
 const mailConfigured = ref(false)
@@ -183,6 +186,8 @@ async function load() {
     validStatsDefaultScope.value = data.data.valid_stats_default_scope ?? validStatsDefaultScope.value
     if (data.data.qc_scope != null) qcScope.value = data.data.qc_scope
     validQcScope.value = data.data.valid_qc_scope ?? validQcScope.value
+    if (data.data.pct_format != null) pctFormat.value = data.data.pct_format
+    validPctFormat.value = data.data.valid_pct_format ?? validPctFormat.value
     mailConfigured.value = data.data.mail_configured
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     sharePasswordPolicy.value = data.data.share_password_policy
@@ -232,6 +237,7 @@ async function save() {
       forms_order: formsOrder.value,
       stats_default_scope: statsDefaultScope.value,
       qc_scope: qcScope.value,
+      pct_format: pctFormat.value,
       viewer_actions: viewerActions.value,
       share_password_policy: sharePasswordPolicy.value,
       share_attachments_policy: shareAttachmentsPolicy.value,
@@ -264,6 +270,12 @@ async function save() {
     if (data.data.forms_order != null) formsOrder.value = data.data.forms_order
     if (data.data.stats_default_scope != null) statsDefaultScope.value = data.data.stats_default_scope
     if (data.data.qc_scope != null) qcScope.value = data.data.qc_scope
+    if (data.data.pct_format != null) {
+      pctFormat.value = data.data.pct_format
+      // Reflejar el cambio al instante en esta pestaña (módulo reactivo + caché local).
+      appPctFormat.value = data.data.pct_format
+      try { localStorage.setItem('km.cfg.pctFormat', data.data.pct_format) } catch { /* noop */ }
+    }
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     if (data.data.share_password_policy) sharePasswordPolicy.value = data.data.share_password_policy
     if (data.data.share_attachments_policy) shareAttachmentsPolicy.value = data.data.share_attachments_policy
@@ -474,6 +486,21 @@ onMounted(load)
           @change="saved = false"
         >
           <option v-for="sc in validQcScope" :key="sc" :value="sc">{{ $t('settings.qcScope_' + sc) }}</option>
+        </select>
+      </section>
+
+      <!-- Formato de los valores porcentuales -->
+      <section v-show="tab === 'tables'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.pctFormat') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.pctFormatDesc') }}</p>
+        </div>
+        <select
+          v-model="pctFormat"
+          class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          @change="saved = false"
+        >
+          <option v-for="pf in validPctFormat" :key="pf" :value="pf">{{ $t('settings.pctFormat_' + pf) }}</option>
         </select>
       </section>
 
