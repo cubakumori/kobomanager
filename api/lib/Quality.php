@@ -251,6 +251,9 @@ class Quality {
 
         $out = [
             'total'      => $total,
+            // TODOS los envíos recibidos (en el RowScope del usuario, sin filtrar por
+            // estado de revisión): denominador del «{flagged} / {received}» de la UI.
+            'received'   => count($rows),
             'untimed'    => $untimed,
             'flagged'    => $flaggedTotal,
             'flags'      => $flagsTotal,

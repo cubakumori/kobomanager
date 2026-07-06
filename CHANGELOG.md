@@ -10,10 +10,14 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ### Añadido
 
-- **«n / total» en el desglose del control de calidad**: la cabecera de cada equipo y
-  la columna «Envíos» de cada encuestador muestran cuántas encuestas entran en el
-  alcance sobre el total recibido («20 / 25 encuesta(s)»), con tooltip explicativo.
-  Cuando el alcance es «todos los envíos» coinciden y se muestra la cifra sola.
+- **«No admitidas / total recibido» en el control de calidad, con denominador único**:
+  la cabecera de cada equipo muestra «{no admitidas} / {total recibido} no admitidas»
+  y su % — siempre las no admitidas sobre TODAS las encuestas recibidas (del
+  formulario, del equipo o del encuestador), para que la fracción y el porcentaje
+  cuadren a la vista. La columna «Envíos» de cada encuestador pasa a ser su total
+  recibido, su columna «No admitidas» lleva el mismo %, y la tarjeta superior
+  «No admitidas» lo calcula sobre el nuevo `received` del backend (todos los envíos
+  en el alcance por filas del usuario, sin filtrar por estado de revisión).
 - **Enlaces cruzados Estadísticas ⇄ Control de calidad**: en ambas páginas, en la
   línea del enlace «volver» pero al extremo derecho, un enlace lleva a la otra.
 

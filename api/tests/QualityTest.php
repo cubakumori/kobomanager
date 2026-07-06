@@ -167,7 +167,8 @@ final class QualityTest extends DbTestCase
         DB::run('INSERT INTO submission_reviews (submission_uid, user_id, status) VALUES (?, ?, ?)', [$rej, $admin, 'rejected']);
 
         $q = Quality::compute($formId, null, null, null, 'es', null, 'enum', 4, null, null, ['pending', 'on_hold']);
-        $this->assertSame(2, $q['total']);   // solo pendiente + en espera cuentan
+        $this->assertSame(2, $q['total']);    // solo pendiente + en espera cuentan
+        $this->assertSame(4, $q['received']); // pero el total recibido conserva las 4
         $this->assertSame(2, $q['flagged']);
         // El «total recibido» conserva el contexto completo: el equipo tiene 4 envíos
         // (incluidos los de luis, que no se lista) y ana 3 (incluida su aprobada).

@@ -55,7 +55,9 @@ const pendingHold = computed(() => {
 // «No admitidas» y el número del botón de lote.
 const heldCount = computed(() => (q.value?.flagged ?? 0) - pendingHold.value.length)
 
-// Tasa de no admitidas (comparativa por equipo/encuestador y tarjeta general).
+// Tasa de no admitidas. Regla ÚNICA en toda la página: no admitidas sobre el
+// TOTAL de encuestas recibidas (del formulario, del equipo o del encuestador),
+// para que el «x / y» y el % compartan siempre el mismo denominador.
 const fmtRate = (n, d) => (d > 0 ? Math.round((n * 100) / d) + ' %' : '—')
 
 async function holdAll() {
@@ -199,7 +201,7 @@ onMounted(load)
           <p class="text-xs text-slate-400">{{ $t('stats.qualityCardFlagged') }}</p>
           <p class="mt-1 text-2xl font-semibold" :class="q.flagged ? 'text-red-600 dark:text-red-400' : 'text-success-600 dark:text-success-400'">
             {{ q.flagged }}
-            <span v-if="q.flagged" class="text-sm font-medium text-slate-400">· {{ fmtRate(q.flagged, q.total - q.untimed) }}</span>
+            <span v-if="q.flagged" class="text-sm font-medium text-slate-400" :title="$t('stats.qualityRateTitle')">· {{ fmtRate(q.flagged, q.received) }}</span>
           </p>
         </div>
         <div v-for="f in FLAGS" :key="f" class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
@@ -252,18 +254,15 @@ onMounted(load)
             :class="{ 'pointer-events-none': !hasTeams }"
           >
             <span class="font-semibold text-slate-900">{{ hasTeams ? team.name : $t('stats.qualityAllEnumerators') }}</span>
-            <!-- «n / total» cuando el alcance deja fuera parte de lo recibido -->
-            <span class="text-sm text-slate-500" :title="team.total > team.count ? $t('stats.qualityCountOfTitle') : undefined">
-              {{ team.total > team.count
-                ? $t('stats.qualityTeamCountOf', { n: team.count, total: team.total })
-                : $t('stats.qualityTeamCount', { n: team.count }) }}
+            <!-- No admitidas / total recibido del equipo, y su % (mismo denominador) -->
+            <span class="text-sm text-slate-500" :title="$t('stats.qualityRateTitle')">
+              {{ $t('stats.qualityTeamFlagged', { flagged: team.flagged, total: team.total }) }}
             </span>
-            <!-- Tasa de no admitidas del equipo: la métrica comparativa entre equipos -->
             <span
               v-if="team.flagged"
               class="text-sm font-semibold text-red-600 dark:text-red-400"
               :title="$t('stats.qualityRateTitle')"
-            >{{ fmtRate(team.flagged, team.count) }}</span>
+            >{{ fmtRate(team.flagged, team.total) }}</span>
             <span class="ml-auto flex gap-1.5 text-xs font-medium">
               <span
                 v-for="f in FLAGS"
@@ -292,15 +291,13 @@ onMounted(load)
                   <template v-for="(e, j) in team.enumerators" :key="j">
                     <tr>
                       <td class="py-1.5 pr-3 font-medium text-slate-700">{{ e.name }}</td>
-                      <td class="py-1.5 pr-3 text-right text-slate-600" :title="e.total > e.count ? $t('stats.qualityCountOfTitle') : undefined">
-                        {{ e.total > e.count ? `${e.count} / ${e.total}` : e.count }}
-                      </td>
+                      <td class="py-1.5 pr-3 text-right text-slate-600">{{ e.total }}</td>
                       <td v-for="f in FLAGS" :key="f" class="py-1.5 pr-3 text-right" :class="e.flags[f] ? 'font-semibold text-slate-700' : 'text-slate-300'">
                         {{ e.flags[f] || '—' }}
                       </td>
                       <td class="py-1.5 text-right font-semibold" :class="e.flagged ? 'text-red-600 dark:text-red-400' : 'text-slate-300'">
                         <template v-if="e.flagged">
-                          {{ e.flagged }} <span class="text-xs font-medium text-slate-400" :title="$t('stats.qualityRateTitle')">· {{ fmtRate(e.flagged, e.count) }}</span>
+                          {{ e.flagged }} <span class="text-xs font-medium text-slate-400" :title="$t('stats.qualityRateTitle')">· {{ fmtRate(e.flagged, e.total) }}</span>
                         </template>
                         <template v-else>—</template>
                       </td>
