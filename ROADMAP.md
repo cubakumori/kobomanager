@@ -14,10 +14,13 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 
 ## Control de calidad por equipo/encuestador — extensiones diferidas
 
-> El hito base está **entregado en 1.14.0** (ver CHANGELOG): umbrales por formulario
-> (duración mín/máx y consecutividad mínima), página `forms/<id>/quality` con las
-> cuatro banderas (corta, larga, hueco corto, solapada) y drill-down, y el botón
-> «Marcar en espera las N no admitidas» sobre el flujo de revisión en lote existente.
+> El hito base está **entregado en 1.14.0 y pulido hasta 1.19.0** (ver CHANGELOG):
+> umbrales por formulario (duración mín/máx y consecutividad mínima), página
+> `forms/<id>/quality` con las cuatro banderas (corta, larga, hueco corto, solapada) y
+> drill-down, el botón «Marcar en espera las N no admitidas» sobre el flujo de revisión
+> en lote existente, alcance por estado de revisión configurable (`qc_scope`), tasa de
+> no admitidas con denominador único (n / total recibido) y formato de porcentajes
+> configurable (`pct_format`, aplicado también a Estadísticas).
 > Quedan estas extensiones, para cuando haya demanda:
 
 - [ ] **Marcado on-hold totalmente automático al sincronizar** *(el checkbox original)*:

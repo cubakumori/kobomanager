@@ -359,6 +359,9 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   per‑form columns edited from the same settings screen (`forms.qc_min_duration` /
   `qc_max_duration` / `qc_min_gap`, minutes, `NULL` = check off) — grouped by the same
   team/enumerator pair as the stats breakdown, with a drill‑down to each offending submission.
+  Non‑admissible counts are always shown over a **single denominator** — the total *received*
+  (all submissions in the user's row scope, unfiltered by review status), per form, team and
+  enumerator — so the `n / total` fraction and its % always agree at a glance.
   Four flags: **short**/**long** (duration from the schema's `start`/`end` meta keys, same as
   the duration sort) and **short gap**/**overlap** per enumerator *consecutiveness* (gap between
   a survey's start and the max `end` seen so far in that enumerator's start‑ordered chain; a
@@ -400,7 +403,10 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   password‑reset flag, self‑service audit flag (`audit_self_view_enabled`), viewer action
   flags, share password policy, share attachments policy (`share_attachments_policy`),
   the default daily‑summary subscription (`notifications_default_on`), table display
-  (`table_freeze`, `table_header_lines`),
+  (`table_freeze`, `table_header_lines`), stats/QC display (`stats_default_scope` —
+  default review‑status scope on opening stats; `qc_scope` — which submissions quality
+  control reports on; `pct_format` — app‑wide percent rendering, integer or two decimals,
+  served by the public `GET /config` so public share views honor it too),
   public-surface toggles (`support_page_enabled` / `landing_cta_enabled`, served by the
   public `GET /config`), and `cron_runs`
   (last run per cron, written by `recordCronRun()` at the end of each cron job).
@@ -438,10 +444,12 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   `$t()`). `src/i18n/index.js` merges them via `import.meta.glob`, so adding a file needs no
   loader change. Every new key must exist in **both** locales (`npm run i18n:check`).
   Effective locale = user preference → system default → `es`.
-- **Theming**: Tailwind v4 `@theme` in `src/style.css` defines semantic `primary`/`accent`
-  color scales as CSS variables; components use `bg-primary-600`, `text-accent-700`, etc.
-  Recoloring = editing those scales (or applying a `.theme-*` class on `<html>`). Success green
-  stays on Tailwind's `green` on purpose. The mobile hamburger is themed via `.km-hamburger`
+- **Theming**: Tailwind v4 `@theme` in `src/style.css` defines semantic `primary`/`accent`/
+  `success` color scales as CSS variables; components use `bg-primary-600`, `text-accent-700`,
+  `ring-success-200`, etc. Recoloring = editing those scales (or applying a `.theme-*` class
+  on `<html>`). `success` is its own themable scale (default: Tailwind's `green`), separate
+  from `accent` so "success" never gets tied to the brand color; chart colors set in JS read
+  the same variables via `getComputedStyle`. The mobile hamburger is themed via `.km-hamburger`
   + `--km-burger-*` tokens.
 - **Dark mode**: the `.dark` class on `<html>` remaps only the **neutrals** (`white` + the
   `slate` scale) in `src/style.css` — brand/semantic tokens don't change, so dark mode is
@@ -499,7 +507,9 @@ DB that wasn't migrated would otherwise fail with a cryptic `Unknown column` 500
 `lib/SchemaCheck` is the single declarative list of post‑1.0 columns the code expects (with
 each idempotent `ALTER`); it powers three things: `php api/cli/doctor.php` (reports drift +
 the exact `ALTER`s, exit 1), `php api/cli/migrate.php` (idempotently applies only the missing
-ones — run it on every deploy), and an admin‑only **"DB out of date" banner** (`/auth/me`
+ones — run it on every deploy; honours `KM_CONFIG` like the front controller and the
+installer, so an alternate DB — e.g. the test one — can be migrated too), and an
+admin‑only **"DB out of date" banner** (`/auth/me`
 returns `schema_missing` for admins; the shell shows it). Defense in depth: the front
 controller maps a `42S22`/`42S02` `PDOException` to a clear `DB_SCHEMA_OUTDATED` error
 (no raw SQL leak), and the service worker no longer masks API `5xx` as an opaque network

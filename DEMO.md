@@ -52,8 +52,10 @@ disabled with a tooltip, and the API enforces the same list centrally (403
   visitors have made.
 
 Everything else stays enabled on purpose — it is what the demo is for: browsing, search
-and filters, single and batch review, CSV export, statistics, the map, creating and
-revoking share links, language and theme… All of it is local and restored by the reset.
+and filters, single and batch review, the quality-control page (including its batch
+"put on hold" button — the review it rides is local in demo, Kobo is never touched),
+CSV export, statistics, the map, creating and revoking share links, language and theme…
+All of it is local and restored by the reset.
 
 ---
 

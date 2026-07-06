@@ -24,7 +24,9 @@ native validation status.
 
 - Your team signs in with app users — **no KoboToolbox account needed**, and the API
   token is never exposed to the browser (stored encrypted on the server).
-- Per-form permissions (view / edit / validate).
+- Per-form permissions (view / edit / validate / settings — the last one lets a trusted
+  user tune that form's team-breakdown fields and quality-control thresholds without
+  being an admin).
 - **Multi-condition row-level scoping** (AND/OR groups; `in`, `not in`, ranges, empty,
   and `has_any/all/none` for multi-selects) — each user sees only the rows that match.
 - **Column-level permissions**: hide fields or mark them read-only, per user.
@@ -54,7 +56,16 @@ native validation status.
   (configurable timezone), 7/30-day trends, fill-in duration, and distribution by review
   status and by question. **Filterable** by review status (header cards) and by team
   (toggles on the team breakdown); the default scope on open is configurable in *Settings*
-  (all submissions or approved only).
+  (all submissions or approved only). A **team → enumerator breakdown** (you pick the
+  form's team and enumerator fields) adds volume, review mix, duration and completeness
+  per team and per enumerator.
+- **Quality control**: flags interviews outside the form's admissible thresholds — too
+  **short** or too **long**, and, per enumerator, **overlapping** in time (a fabrication
+  signal) or with a suspiciously **short gap** between consecutive interviews — grouped
+  by team → enumerator with a drill-down to each offending submission. Per-form
+  thresholds, a configurable review-status scope (by default only pending / on-hold
+  submissions are reported), and a one-click batch **"put the N non-admissible on
+  hold"** over the normal review flow.
 - **Map** of submission geopoints.
 
 **Data**
@@ -69,7 +80,8 @@ native validation status.
 
 - Bilingual UI (Spanish / English), light/dark theme, installable **PWA** with offline
   reads, **email notifications**, a built-in **demo mode**, a one-command **CLI
-  installer**, and fully **themable** colors (below).
+  installer**, in-app **database backup & restore** (full or settings-only, no shell
+  needed), and fully **themable** colors (below).
 
 ## Repository layout
 

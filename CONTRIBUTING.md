@@ -40,7 +40,10 @@ overview read [`ARCHITECTURE.md`](./ARCHITECTURE.md); for setup read [`README.md
   new table → add it to `001` with `CREATE TABLE IF NOT EXISTS`; new setting default →
   `002`. To pick up a change on an existing DB, run `php api/cli/migrate.php` (idempotent —
   applies only the missing columns), recreate it, or apply the DDL by hand in dev/test.
-  Runtime‑configurable behavior goes in the `settings` table, not the schema.
+  Runtime‑configurable behavior goes in the `settings` table, not the schema. A new
+  global setting normally needs **no** SQL at all: give it a getter with a code default
+  in `api/lib/Settings.php` (see `qc_scope` / `pct_format`) and expose it via
+  `admin/settings.php`; seed a row in `002` only when the default must live in the DB.
   - **When you add a column, also**: (1) add a `SchemaCheck::CHECKS` entry in
     `api/lib/SchemaCheck.php` with its idempotent `ALTER` (this powers `cli/doctor.php`,
     `cli/migrate.php` and the admin "DB out of date" banner so operators upgrading a live
@@ -99,8 +102,9 @@ overview read [`ARCHITECTURE.md`](./ARCHITECTURE.md); for setup read [`README.md
 
 - Small, focused commits with clear messages (the history uses an
   `area: short summary` style, e.g. `seguridad: …`, `ux: …`, `docs: …`).
-- Update [`CHANGELOG.md`](./CHANGELOG.md) (under *Sin publicar*) and, when relevant,
-  [`ROADMAP.md`](./ROADMAP.md) in the same change.
+- Update [`CHANGELOG.md`](./CHANGELOG.md) — under the version entry being prepared (each
+  milestone bumps `package.json` and gets its own numbered entry; there is no *Unreleased*
+  section) — and, when relevant, [`ROADMAP.md`](./ROADMAP.md) in the same change.
 - Verify your change runs (the app and, for backend logic, the test suite) before opening a PR.
 
 ## License of contributions
