@@ -26,6 +26,7 @@ require __DIR__ . '/../lib/DB.php';
 require __DIR__ . '/../lib/Settings.php';
 require __DIR__ . '/../lib/Demo.php';
 require __DIR__ . '/../lib/SqlScript.php';
+require __DIR__ . '/../lib/DbSnapshot.php';
 require __DIR__ . '/../lib/DemoSeed.php';
 
 $force = in_array('--force', array_slice($argv, 1), true);

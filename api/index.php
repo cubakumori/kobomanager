@@ -34,7 +34,9 @@ require __DIR__ . '/lib/Stats.php';
 require __DIR__ . '/lib/ShareLink.php';
 require __DIR__ . '/lib/SubmissionSync.php';
 require __DIR__ . '/lib/SqlScript.php';
+require __DIR__ . '/lib/DbSnapshot.php';
 require __DIR__ . '/lib/DemoSeed.php';
+require __DIR__ . '/lib/DbBackup.php';
 
 // --- CORS (frontend en dev sobre otro origen) ---
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
@@ -123,6 +125,8 @@ $routes = [
     'admin/forms/:id/scope-fields' => 'admin/scope_fields.php',
     'admin/settings'            => 'admin/settings.php',
     'admin/demo/seed'           => 'admin/demo_seed.php',
+    'admin/db/export'           => 'admin/db_export.php',
+    'admin/db/import'           => 'admin/db_import.php',
     'admin/shares'              => 'admin/shares.php',
     'admin/shares/bulk'         => 'admin/shares_bulk.php',
     'admin/shares/:id'          => 'admin/share_item.php',

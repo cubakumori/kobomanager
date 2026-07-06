@@ -399,6 +399,17 @@ Two things need backing up; **everything else is in git** and rebuilds with
 No uploaded files on disk: attachments are streamed from Kobo on demand, never stored
 locally.
 
+**From the app (no shell needed): Settings → Database.** *Backup* downloads an
+app-generated, data-only SQL snapshot (full instance, or settings-only to replicate the
+configuration elsewhere; sessions, login attempts and password-reset tokens are never
+included), and *Restore* uploads one back — validated before touching anything and
+applied in a single transaction (a mid-restore failure rolls back). Restoring uploads
+is capped by PHP's `upload_max_filesize`/`post_max_size` (often 2–8 MB by default —
+raise them in `php.ini` or the hosting panel if your backup is bigger). The Kobo tokens
+inside a backup are only decryptable by an instance with the **same
+`CONFIG_TOKEN_KEY`**, hence point 2 above. For *scheduled* backups, use the cron below
+(or download from the app on your own cadence).
+
 **Nightly dump (cron), 14-day retention:**
 
 ```cron

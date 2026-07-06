@@ -55,6 +55,9 @@ final class DemoModeHttpTest extends HttpTestCase
             ['PUT',    'admin/settings'],
             // Generar la semilla de la demo (solo con la demo apagada)
             ['POST',   'admin/demo/seed'],
+            // Copia de seguridad de la BD (el export descargaría hashes y el token cifrado)
+            ['GET',    'admin/db/export'],
+            ['POST',   'admin/db/import'],
             // Edición de envíos (escribe en Kobo real)
             ['PUT',    'submissions/algun-uid'],
             // Sync manual contra Kobo

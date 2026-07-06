@@ -91,14 +91,16 @@ Quedan como ideas reabribles si aparece una necesidad real.
 
 - [ ] **«Organizaciones que usan KoboManager»** — acápite/escaparate en la landing o en
       `/apoyar` con las organizaciones que lo usan (con su permiso). Para cuando haya varias.
-- [ ] **Export/import de la BD desde Ajustes → Base de datos** *(idea del usuario,
-      jul-2026)*: la pestaña «Base de datos» (hoy solo la semilla de la demo, condicional
-      a `DEMO_SEED_PATH`) está pensada para crecer con copia de seguridad/restauración
-      generales de la instancia. La base ya existe: `lib/DemoSeed` (export solo-datos
-      consistente + restore transaccional validado) generalizada a rutas elegibles y a
-      TODAS las tablas (un backup general, a diferencia de la semilla, sí incluiría
-      sesiones/auditoría/mensajes o los ofrecería como opción). Al aterrizar, la pestaña
-      pasa a ser fija.
+- [x] **Export/import de la BD desde Configuración → Base de datos** *(idea del usuario,
+      jul-2026; entregado en 1.13.0)*: copia de seguridad descargable (completa o solo
+      configuración) + restauración por subida de archivo, sobre el motor común
+      `lib/DbSnapshot` compartido con la semilla de la demo; la pestaña «Base de datos»
+      pasó a ser fija. Extensión futura anotada abajo (usuarios/permisos portables).
+- [ ] **Export/import PARTICULAR de usuarios y permisos entre instancias** *(extensión
+      de 1.13.0)*: clonar el equipo (usuarios + permisos por formulario) a otra
+      instancia exige re-mapear ids por claves naturales (usuario→email,
+      formulario→`kobo_asset_uid`) — diseño propio, no un recorte del backup general.
+      Para cuando haya demanda real.
 
 ---
 

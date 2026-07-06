@@ -224,6 +224,20 @@ included — and `cron/demo_reset.php` (crontab every minute, self-paced by
 `DEMO_RESET_MINUTES`) restores it in one transaction, preserving live sessions and
 contact messages; it refuses to run with the flag off. The SQL split helper is shared
 with the installer (`lib/SqlScript`).
+
+### Database backup & restore (`lib/DbSnapshot.php`, `lib/DbBackup.php`)
+`lib/DbSnapshot` is the shared data-only snapshot engine (consistent-read multi-row
+INSERT dump streamed by chunks; validated single-transaction restore with rollback)
+under both the demo seed and the **backup** feature: `GET /admin/db/export?scope=full|settings`
+streams a download (full = the seed tables + audit trail + contact messages; sessions,
+login attempts and password-reset tokens never travel; `settings` = portable
+configuration only) and `POST /admin/db/import` (multipart upload) restores it — scope
+is read from the file header, content is validated against that scope's table
+whitelist before touching the DB, and a full restore purges sessions of users absent
+from the backup. Each consumer has its own header line, so a demo seed is not accepted
+as a backup nor vice versa. Both endpoints are admin-only, audited and in the demo
+denylist (the export would hand any demo visitor the password hashes and the encrypted
+Kobo token).
 Operational guide (synthetic seeding via `api/cli/seed_demo.php`, seed generation, reset cron, hardening): [`DEMO.md`](DEMO.md).
 
 ### Attachment proxies & CSV hardening

@@ -56,19 +56,16 @@ const saving = ref(false)
 const error = ref('')
 const saved = ref(false)
 
-// Pestañas temáticas. «Base de datos» hoy solo aloja la semilla de la demo, así
-// que solo existe si DEMO_SEED_PATH está configurada (se sabe tras cargar los
-// ajustes); cuando gane contenido propio (export/import de la BD, ver ROADMAP)
-// pasará a ser fija. El tab activo se refleja en ?tab= para poder enlazarlo y
-// sobrevivir a recargas; 'general' va sin query (URL limpia).
+// Pestañas temáticas. «Base de datos» es fija (copia de seguridad/restauración
+// para toda instancia); dentro, la tarjeta de la semilla de la demo sigue siendo
+// condicional a DEMO_SEED_PATH. El tab activo se refleja en ?tab= para poder
+// enlazarlo y sobrevivir a recargas; 'general' va sin query (URL limpia).
 const TAB_IDS = ['general', 'tables', 'sync', 'sharing', 'security', 'database']
 const initialTab = typeof route.query.tab === 'string' && TAB_IDS.includes(route.query.tab)
   ? route.query.tab
   : 'general'
 const tab = ref(initialTab)
-const tabs = computed(() =>
-  TAB_IDS.filter((id) => id !== 'database' || demoSeed.value.configured)
-)
+const tabs = computed(() => TAB_IDS)
 
 function selectTab(id) {
   tab.value = id
@@ -100,6 +97,45 @@ function fmtSeedSize(bytes) {
 function fmtSeedDate(iso) {
   if (!iso) return ''
   try { return new Date(iso).toLocaleString() } catch { return iso }
+}
+
+// --- Copia de seguridad / restauración de la BD (pestaña Base de datos) ---
+const backupScope = ref('full')
+const BACKUP_SCOPES = ['full', 'settings']
+// La descarga es una navegación GET normal (attachment): mismo origen, lleva la
+// cookie de sesión; en demo el backend responde DEMO_LOCKED igualmente.
+const backupHref = computed(() => `/api/v1/admin/db/export?scope=${backupScope.value}`)
+
+const importFile = ref(null)
+const importArmed = ref(false) // segundo paso: mostrar aviso + confirmación
+const importBusy = ref(false)
+const importError = ref('')
+const importDone = ref(null)
+
+function onImportFileChange(e) {
+  importFile.value = e.target.files?.[0] || null
+  importArmed.value = false
+  importDone.value = null
+  importError.value = ''
+}
+
+async function runImport() {
+  if (!importFile.value) return
+  importBusy.value = true
+  importError.value = ''
+  importDone.value = null
+  try {
+    const fd = new FormData()
+    fd.append('file', importFile.value)
+    // Content-Type indefinido: el navegador pone multipart/form-data con su boundary.
+    const { data } = await api.post('/admin/db/import', fd, { headers: { 'Content-Type': undefined } })
+    importDone.value = data.data
+    importArmed.value = false
+  } catch (e) {
+    importError.value = apiError(e, t('settings.dbImportError'))
+  } finally {
+    importBusy.value = false
+  }
 }
 
 async function generateSeed() {
@@ -153,8 +189,6 @@ async function load() {
     if (data.data.field_truncate_min != null) fieldTruncateMin.value = data.data.field_truncate_min
     if (data.data.field_truncate_max != null) fieldTruncateMax.value = data.data.field_truncate_max
     if (data.data.demo_seed) demoSeed.value = data.data.demo_seed
-    // ?tab=database en una instancia sin DEMO_SEED_PATH: la pestaña no existe.
-    if (tab.value === 'database' && !demoSeed.value.configured) selectTab('general')
   } catch (e) {
     error.value = apiError(e, t('settings.loadError'))
   } finally {
@@ -650,6 +684,108 @@ onMounted(load)
         </button>
         <span v-if="saved" class="text-sm text-success-600 dark:text-success-400">{{ $t('common.saved') }}</span>
       </div>
+
+      <!-- Copia de seguridad (pestaña Base de datos) -->
+      <section v-show="tab === 'database'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.dbBackup') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.dbBackupDesc') }}</p>
+        </div>
+        <label
+          v-for="sc in BACKUP_SCOPES"
+          :key="sc"
+          class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50"
+        >
+          <input
+            type="radio"
+            class="mt-0.5 h-4 w-4"
+            name="backup_scope"
+            :value="sc"
+            :checked="backupScope === sc"
+            @change="backupScope = sc"
+          />
+          <span>
+            <span class="block text-sm font-medium text-slate-800">{{ $t('settings.dbScope_' + sc) }}</span>
+            <span class="block text-xs text-slate-400">{{ $t('settings.dbScope_' + sc + 'Hint') }}</span>
+          </span>
+        </label>
+        <div>
+          <a
+            v-if="!demoMode"
+            :href="backupHref"
+            class="inline-block rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+          >
+            {{ $t('settings.dbDownload') }}
+          </a>
+          <button
+            v-else
+            type="button"
+            disabled
+            class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white opacity-60"
+            :title="$t('common.demoDisabled')"
+          >
+            {{ $t('settings.dbDownload') }}
+          </button>
+        </div>
+      </section>
+
+      <!-- Restaurar (pestaña Base de datos) -->
+      <section v-show="tab === 'database'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.dbRestore') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.dbRestoreDesc') }}</p>
+        </div>
+        <input
+          type="file"
+          accept=".sql"
+          class="block w-full max-w-md text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200"
+          :disabled="demoMode || importBusy"
+          @change="onImportFileChange"
+        />
+        <div v-if="importError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
+          {{ importError }}
+        </div>
+        <!-- Confirmación en dos pasos: el aviso aparece antes del botón definitivo -->
+        <div
+          v-if="importArmed"
+          class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900"
+        >
+          {{ $t('settings.dbRestoreWarn') }}
+        </div>
+        <div class="flex items-center gap-3">
+          <button
+            v-if="!importArmed"
+            type="button"
+            :disabled="demoMode || !importFile || importBusy"
+            class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+            :title="demoMode ? $t('common.demoDisabled') : undefined"
+            @click="importArmed = true"
+          >
+            {{ $t('settings.dbRestoreArm') }}
+          </button>
+          <template v-else>
+            <button
+              type="button"
+              :disabled="importBusy"
+              class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+              @click="runImport"
+            >
+              {{ importBusy ? $t('settings.dbRestoring') : $t('settings.dbRestoreConfirm') }}
+            </button>
+            <button
+              type="button"
+              :disabled="importBusy"
+              class="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+              @click="importArmed = false"
+            >
+              {{ $t('common.cancel') }}
+            </button>
+          </template>
+          <span v-if="importDone" class="text-sm text-success-600 dark:text-success-400">
+            {{ $t('settings.dbRestoreDone', { scope: $t('settings.dbScope_' + importDone.scope), rows: importDone.rows }) }}
+          </span>
+        </div>
+      </section>
 
       <!-- Semilla de la demo (pestaña Base de datos; solo existe si DEMO_SEED_PATH está configurada) -->
       <section v-if="demoSeed.configured" v-show="tab === 'database'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">

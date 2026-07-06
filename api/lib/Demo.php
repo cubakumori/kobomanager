@@ -78,6 +78,11 @@ class Demo {
         // (bucle de mantenimiento de DEMO.md); encendida, exportaría el estado
         // sucio que los visitantes van dejando.
         'admin/demo/seed'          => ['POST'],
+        // Copia de seguridad de la BD: el export dejaría a cualquier visitante
+        // (que en la demo es «admin») descargarse hashes de contraseña y el
+        // token Kobo cifrado; el import machacaría la demo entera.
+        'admin/db/export'          => ['GET'],
+        'admin/db/import'          => ['POST'],
         // Edición de envíos: escribe en la cuenta Kobo real.
         'submissions/:id'          => ['PUT'],
         // Sync manual contra Kobo (los cron del servidor siguen activos).

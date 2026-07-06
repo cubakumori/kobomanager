@@ -2,24 +2,11 @@
 /**
  * Semilla y reset de la DEMO gestionados por la app (sin mysqldump ni SQL a mano).
  *
- * `export()` vuelca el estado de la instancia a `DEMO_SEED_PATH` como SQL
- * SOLO-DATOS (INSERT multi-fila con ids y lista de columnas explícitos; nada de
- * DDL) y `restore()` lo devuelve a la BD en UNA transacción InnoDB. Lo llaman
- * el endpoint admin `POST /admin/demo/seed` (con la demo APAGADA) y el cron
- * `cron/demo_reset.php` (con la demo ENCENDIDA). Ver DEMO.md.
- *
- * Decisiones de formato (por qué solo-datos):
- *   - `db/001_schema.sql` sigue siendo la única fuente del esquema; una semilla
- *     vieja sobrevive a columnas nuevas (el INSERT lista sus columnas y lo nuevo
- *     toma su DEFAULT).
- *   - Sin DDL no hay commits implícitos → el restore cabe en una transacción:
- *     los visitantes ven la instantánea previa hasta el COMMIT y un fallo a
- *     mitad hace ROLLBACK (la demo nunca queda medio vacía). Por eso DELETE y
- *     no TRUNCATE (TRUNCATE es DDL); los AUTO_INCREMENT no se reinician, las
- *     filas semilla recuperan su id explícito.
- *   - Lo generamos nosotros → portable MySQL 5.7+/MariaDB por construcción
- *     (sin línea sandbox de MariaDB ni comentarios condicionales), y sigue
- *     siendo importable a mano con mysql/phpMyAdmin en una emergencia.
+ * Cliente de `lib/DbSnapshot` (motor común de volcado/restauración solo-datos,
+ * compartido con la copia de seguridad `lib/DbBackup`): `export()` vuelca el
+ * estado de la instancia a `DEMO_SEED_PATH` y `restore()` lo devuelve a la BD en
+ * UNA transacción. Lo llaman el endpoint admin `POST /admin/demo/seed` (con la
+ * demo APAGADA) y el cron `cron/demo_reset.php` (con la demo ENCENDIDA). Ver DEMO.md.
  *
  * Privacidad por formato: las tablas efímeras (sesiones, IPs, auditoría,
  * mensajes de contacto) NUNCA entran en la semilla — sustituye a los TRUNCATE
@@ -48,16 +35,9 @@ class DemoSeed {
      */
     public const UNTOUCHED_TABLES = ['user_sessions', 'contact_messages'];
 
-    /** Claves de `settings` que NO viajan en la semilla y que el reset preserva:
-     *  telemetría de crons (/health) y la marca del propio ciclo de reset. Si se
-     *  restauraran, cada reset resucitaría marcas de ejecución fósiles. */
-    public const VOLATILE_SETTINGS = ['cron_runs', 'demo_last_reset_at'];
-
-    /** Primera línea del archivo; el restore se niega a tocar la BD sin ella. */
+    /** Primera línea del archivo; el restore se niega a tocar la BD sin ella
+     *  (y no acepta una copia de seguridad de DbBackup, que lleva otra cabecera). */
     private const HEADER = '-- kobomanager-demo-seed v1';
-
-    /** Tamaño objetivo por sentencia INSERT multi-fila (muy por debajo de max_allowed_packet). */
-    private const CHUNK_BYTES = 500_000;
 
     /** Ruta configurada de la semilla ('' = no configurada). */
     public static function path(): string {
@@ -80,7 +60,6 @@ class DemoSeed {
 
     /**
      * Exporta las tablas de semilla a DEMO_SEED_PATH (escritura atómica: .tmp + rename).
-     * Instantánea consistente (equivalente a mysqldump --single-transaction).
      *
      * @return array{tables:int, rows:int, bytes:int, path:string}
      * @throws RuntimeException si la ruta no está configurada o no se puede escribir.
@@ -95,30 +74,12 @@ class DemoSeed {
             throw new RuntimeException("El directorio de DEMO_SEED_PATH no existe o no es escribible: $dir");
         }
 
-        $pdo = DB::conn();
-        $pdo->exec('START TRANSACTION WITH CONSISTENT SNAPSHOT');
-        try {
-            $sql  = self::HEADER . ' | generado ' . gmdate('Y-m-d H:i:s') . " UTC\n";
-            $sql .= "-- Solo datos (INSERT); el esquema vive en db/001_schema.sql. Restaurable con\n";
-            $sql .= "-- cron/demo_reset.php o, en emergencia, a mano: mysql <bd> < seed.sql\n";
-            $sql .= "SET NAMES utf8mb4;\nSET FOREIGN_KEY_CHECKS = 0;\n";
-
-            $totalRows = 0;
-            foreach (self::SEEDED_TABLES as $table) {
-                $query = "SELECT * FROM `$table`";
-                if ($table === 'settings') {
-                    $ph = implode(',', array_fill(0, count(self::VOLATILE_SETTINGS), '?'));
-                    $query .= " WHERE `key` NOT IN ($ph)";
-                    $stmt = DB::run($query, self::VOLATILE_SETTINGS);
-                } else {
-                    $stmt = DB::run($query);
-                }
-                $totalRows += self::appendInserts($sql, $pdo, $table, $stmt);
-            }
-            $sql .= "SET FOREIGN_KEY_CHECKS = 1;\n";
-        } finally {
-            $pdo->exec('COMMIT'); // solo lecturas: cierra la instantánea
-        }
+        $sql  = self::HEADER . ' | generado ' . gmdate('Y-m-d H:i:s') . " UTC\n";
+        $sql .= "-- Solo datos (INSERT); el esquema vive en db/001_schema.sql. Restaurable con\n";
+        $sql .= "-- cron/demo_reset.php o, en emergencia, a mano: mysql <bd> < seed.sql\n";
+        $rows = DbSnapshot::dump(self::SEEDED_TABLES, function (string $chunk) use (&$sql) {
+            $sql .= $chunk;
+        });
 
         $tmp = $path . '.tmp';
         if (file_put_contents($tmp, $sql) === false) {
@@ -132,7 +93,7 @@ class DemoSeed {
 
         return [
             'tables' => count(self::SEEDED_TABLES),
-            'rows'   => $totalRows,
+            'rows'   => $rows,
             'bytes'  => strlen($sql),
             'path'   => $path,
         ];
@@ -160,89 +121,12 @@ class DemoSeed {
             throw new RuntimeException("El archivo $path no es una semilla de KoboManager (cabecera ausente).");
         }
 
-        // Validar ANTES de tocar la BD: solo SET de sesión e INSERT en tablas de
-        // semilla. El splitter copia los comentarios verbatim (van pegados a la
-        // sentencia siguiente), así que se descartan solo para VALIDAR.
         $stmts = SqlScript::split($sql);
-        $clean = static fn(string $s): string => trim((string) preg_replace('/^\s*--[^\n]*$/m', '', $s));
-        foreach ($stmts as $stmt) {
-            $s = $clean($stmt);
-            if (preg_match('/^SET\s/i', $s)) continue;
-            if (preg_match('/^INSERT\s+INTO\s+`?(\w+)`?\s/i', $s, $m)
-                && in_array($m[1], self::SEEDED_TABLES, true)) continue;
-            throw new RuntimeException('Sentencia no permitida en la semilla: ' . substr($s, 0, 80) . '…');
-        }
-
-        $pdo = DB::conn();
-        $pdo->beginTransaction();
-        try {
-            $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
-            // Con FK checks off los DELETE no disparan cascadas: borrado explícito y
-            // determinista (y no arrasa user_sessions por la cascada de users).
-            foreach (self::SEEDED_TABLES as $table) {
-                if ($table === 'settings') {
-                    // Preservar la telemetría de crons y la marca del reset.
-                    $ph = implode(',', array_fill(0, count(self::VOLATILE_SETTINGS), '?'));
-                    DB::run("DELETE FROM settings WHERE `key` NOT IN ($ph)", self::VOLATILE_SETTINGS);
-                } else {
-                    $pdo->exec("DELETE FROM `$table`");
-                }
-            }
-            foreach (self::EPHEMERAL_TABLES as $table) {
-                $pdo->exec("DELETE FROM `$table`");
-            }
-
-            $rows = 0;
-            foreach ($stmts as $stmt) {
-                $n = $pdo->exec($stmt);
-                if (preg_match('/^INSERT\s/i', $clean($stmt))) {
-                    $rows += (int) $n;
-                }
-            }
-
-            // Cinturón: sesiones de usuarios que ya no existen en la semilla.
-            $pdo->exec('DELETE FROM user_sessions WHERE user_id NOT IN (SELECT id FROM users)');
-            $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
-            $pdo->commit();
-            return ['statements' => count($stmts), 'rows' => $rows];
-        } catch (Throwable $e) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-            $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
-            throw $e;
-        }
-    }
-
-    /** Añade a $sql los INSERT multi-fila de una tabla, troceados por bytes. */
-    private static function appendInserts(string &$sql, PDO $pdo, string $table, PDOStatement $stmt): int {
-        $rows = 0;
-        $head = '';
-        $buf  = '';
-        while (($row = $stmt->fetch()) !== false) {
-            if ($head === '') {
-                $cols = array_map(static fn($c) => "`$c`", array_keys($row));
-                $head = "INSERT INTO `$table` (" . implode(', ', $cols) . ") VALUES\n";
-            }
-            $vals = array_map(static fn($v) => self::sqlValue($pdo, $v), array_values($row));
-            $line = '(' . implode(', ', $vals) . ')';
-            $buf .= ($buf === '' ? '' : ",\n") . $line;
-            $rows++;
-            if (strlen($buf) >= self::CHUNK_BYTES) {
-                $sql .= $head . $buf . ";\n";
-                $buf = '';
-            }
-        }
-        if ($buf !== '') {
-            $sql .= $head . $buf . ";\n";
-        }
-        return $rows;
-    }
-
-    /** Literal SQL de un valor de columna (NULL, número o cadena escapada por PDO). */
-    private static function sqlValue(PDO $pdo, mixed $v): string {
-        if ($v === null) return 'NULL';
-        if (is_int($v) || is_float($v)) return (string) $v;
-        return $pdo->quote((string) $v);
+        DbSnapshot::validate($stmts, self::SEEDED_TABLES);
+        return DbSnapshot::restore(
+            $stmts,
+            array_merge(self::SEEDED_TABLES, self::EPHEMERAL_TABLES),
+            true // purga de sesiones de usuarios fuera de la semilla
+        );
     }
 }
