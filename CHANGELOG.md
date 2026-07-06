@@ -4,6 +4,40 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.13.0] - 2026-07-06
+
+Copia de seguridad y restauración de la BD desde la app (Configuración → Base de
+datos). Sin cambios de esquema ni constantes nuevas.
+
+### Añadido
+
+- **Copia de seguridad descargable** (`GET /admin/db/export`, solo admin, auditado):
+  instantánea SQL solo-datos generada por la app y emitida en streaming, con dos
+  alcances — **completa** (las tablas de la semilla de la demo + auditoría + mensajes
+  de contacto) y **solo configuración** (portable entre instancias, sin ids). Nunca
+  viajan las sesiones, los intentos de login ni los tokens de recuperación (restaurar
+  un backup no debe revalidar un token viejo), ni la telemetría de crons.
+- **Restauración por subida de archivo** (`POST /admin/db/import`, multipart): el
+  alcance se lee de la cabecera del propio archivo y el contenido se valida contra la
+  lista blanca de ese alcance ANTES de tocar la BD; la restauración es una única
+  transacción (fallo a mitad → rollback) y, en alcance completo, purga las sesiones de
+  usuarios que no viajen en el backup (la propia incluida — avisado en la confirmación
+  en dos pasos de la UI). Mensajes claros cuando el archivo supera
+  `upload_max_filesize`/`post_max_size`.
+- **Motor común `lib/DbSnapshot`**: el volcado/restore de la semilla de la demo,
+  extraído y compartido con el backup (`DemoSeed` y `DbBackup` son clientes finos).
+  Cada consumidor valida su propia cabecera: una semilla no se acepta como backup ni
+  viceversa. Ambos endpoints en la denylist de la demo (el export entregaría hashes y
+  el token cifrado a cualquier visitante).
+
+### Cambiado
+
+- **La pestaña «Base de datos» de Configuración pasa a ser fija** (antes solo existía
+  con `DEMO_SEED_PATH`): aloja Copia de seguridad, Restaurar y — condicional — la
+  semilla de la demo. DEPLOY §11 documenta la vía sin shell y los límites de subida.
+- El servidor de la API en desarrollo (`npm run dev`) sube sus límites de subida a
+  64 MB para poder probar restauraciones.
+
 ## [1.12.0] - 2026-07-06
 
 ### Añadido

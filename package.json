@@ -1,13 +1,13 @@
 {
   "name": "kobomanager",
   "private": true,
-  "version": "1.12.0",
+  "version": "1.13.0",
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "scripts": {
     "predev": "(lsof -ti:8787 -sTCP:LISTEN 2>/dev/null; lsof -ti:5173 -sTCP:LISTEN 2>/dev/null) | xargs kill 2>/dev/null || true",
     "dev": "concurrently -n api,web -c blue,green -k \"npm:dev:api\" \"npm:dev:web\"",
-    "dev:api": "php -S 127.0.0.1:8787 api/index.php",
+    "dev:api": "php -d upload_max_filesize=64M -d post_max_size=64M -S 127.0.0.1:8787 api/index.php",
     "dev:web": "vite",
     "build": "vite build",
     "prepreview": "lsof -ti:4173 -sTCP:LISTEN 2>/dev/null | xargs kill 2>/dev/null || true",
