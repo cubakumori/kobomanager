@@ -4,6 +4,7 @@
     "title": "Submissions",
     "total": "{n} submission(s) in total.",
     "stats": "Statistics",
+    "quality": "Quality control",
     "map": "Map",
     "mapDisabled": "No submission has coordinates",
     "actions": "Actions",

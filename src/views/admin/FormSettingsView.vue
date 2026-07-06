@@ -26,6 +26,10 @@ const formName = ref('')
 const fields = ref([])           // [{ key, label, type, ... }]
 const teamField = ref('')        // '' = sin desglose
 const enumField = ref('')        // '' = _submitted_by
+// Umbrales del control de calidad (minutos; '' = comprobación desactivada).
+const qcMinDuration = ref('')
+const qcMaxDuration = ref('')
+const qcMinGap = ref('')
 
 async function load() {
   loading.value = true
@@ -38,6 +42,9 @@ async function load() {
     formName.value = cfg.data.data.name
     teamField.value = cfg.data.data.stats_team_field || ''
     enumField.value = cfg.data.data.stats_enumerator_field || ''
+    qcMinDuration.value = cfg.data.data.qc_min_duration ?? ''
+    qcMaxDuration.value = cfg.data.data.qc_max_duration ?? ''
+    qcMinGap.value = cfg.data.data.qc_min_gap ?? ''
     fields.value = sf.data.data.fields || []
   } catch (e) {
     error.value = apiError(e, t('formSettings.loadError'))
@@ -45,6 +52,9 @@ async function load() {
     loading.value = false
   }
 }
+
+// Umbral de la UI ('' | número) → minutos (entero) o null.
+const minutes = (v) => (v === '' || v === null ? null : Number(v))
 
 async function save() {
   saving.value = true
@@ -54,6 +64,9 @@ async function save() {
     await api.patch(`/admin/forms/${formId.value}`, {
       stats_team_field: teamField.value || null,
       stats_enumerator_field: enumField.value || null,
+      qc_min_duration: minutes(qcMinDuration.value),
+      qc_max_duration: minutes(qcMaxDuration.value),
+      qc_min_gap: minutes(qcMinGap.value),
     })
     flash.value = t('formSettings.saved')
   } catch (e) {
@@ -85,9 +98,10 @@ onMounted(load)
       {{ flash }}
     </div>
 
-    <Skeleton v-if="loading" variant="cards" :count="1" />
+    <Skeleton v-if="loading" variant="cards" :count="2" />
 
-    <section v-else class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+    <template v-else>
+    <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
       <h2 class="font-semibold text-slate-900">{{ $t('formSettings.teamSection') }}</h2>
       <p class="mt-1 text-sm text-slate-500">{{ $t('formSettings.teamSectionDesc') }}</p>
 
@@ -120,16 +134,62 @@ onMounted(load)
         </label>
       </div>
 
-      <div class="mt-5 flex justify-end">
-        <button
-          :disabled="demoMode || saving || !fields.length"
-          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
-          :title="demoMode ? $t('common.demoDisabled') : undefined"
-          @click="save"
-        >
-          {{ saving ? $t('formSettings.saving') : $t('formSettings.save') }}
-        </button>
+    </section>
+
+    <!-- Umbrales del control de calidad (página «Control de calidad» del formulario) -->
+    <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <h2 class="font-semibold text-slate-900">{{ $t('formSettings.qcSection') }}</h2>
+      <p class="mt-1 text-sm text-slate-500">{{ $t('formSettings.qcSectionDesc') }}</p>
+
+      <div class="mt-4 grid gap-4 sm:grid-cols-3">
+        <label class="block">
+          <span class="text-sm font-medium text-slate-700">{{ $t('formSettings.qcMinDuration') }}</span>
+          <input
+            v-model="qcMinDuration"
+            type="number"
+            min="1"
+            max="10080"
+            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          />
+          <span class="mt-1 block text-xs text-slate-400">{{ $t('formSettings.qcEmptyHint') }}</span>
+        </label>
+
+        <label class="block">
+          <span class="text-sm font-medium text-slate-700">{{ $t('formSettings.qcMaxDuration') }}</span>
+          <input
+            v-model="qcMaxDuration"
+            type="number"
+            min="1"
+            max="10080"
+            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          />
+          <span class="mt-1 block text-xs text-slate-400">{{ $t('formSettings.qcMaxDurationHint') }}</span>
+        </label>
+
+        <label class="block">
+          <span class="text-sm font-medium text-slate-700">{{ $t('formSettings.qcMinGap') }}</span>
+          <input
+            v-model="qcMinGap"
+            type="number"
+            min="1"
+            max="10080"
+            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          />
+          <span class="mt-1 block text-xs text-slate-400">{{ $t('formSettings.qcMinGapHint') }}</span>
+        </label>
       </div>
     </section>
+
+    <div class="flex justify-end">
+      <button
+        :disabled="demoMode || saving"
+        class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+        :title="demoMode ? $t('common.demoDisabled') : undefined"
+        @click="save"
+      >
+        {{ saving ? $t('formSettings.saving') : $t('formSettings.save') }}
+      </button>
+    </div>
+    </template>
   </div>
 </template>

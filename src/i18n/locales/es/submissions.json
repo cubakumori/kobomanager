@@ -4,6 +4,7 @@
     "title": "Envíos",
     "total": "{n} envío(s) en total.",
     "stats": "Estadísticas",
+    "quality": "Control de calidad",
     "map": "Mapa",
     "mapDisabled": "Ningún envío tiene coordenadas",
     "actions": "Acciones",

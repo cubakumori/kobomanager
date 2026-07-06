@@ -97,6 +97,7 @@ const flowSteps = [1, 2, 3, 4]
       <ul class="list-disc space-y-1 pl-5 text-sm text-slate-600">
         <li><strong>{{ $t('guide.reviewSingle') }}:</strong> {{ $t('guide.reviewSingleBody') }}</li>
         <li><strong>{{ $t('guide.reviewBatch') }}:</strong> {{ $t('guide.reviewBatchBody') }}</li>
+        <li><strong>{{ $t('guide.reviewQuality') }}:</strong> {{ $t('guide.reviewQualityBody') }}</li>
         <li><strong>{{ $t('guide.reviewExport') }}:</strong> {{ $t('guide.reviewExportBody') }}</li>
       </ul>
     </section>

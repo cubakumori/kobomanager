@@ -2,11 +2,15 @@
 /**
  * /api/v1/admin/forms/{id}   (solo admin)
  *
- *   GET    → datos editables del formulario (hoy: la config del desglose de
- *            estadísticas por equipo → encuestador).
- *   PATCH  { stats_team_field, stats_enumerator_field } → guarda esa config.
- *            Cada campo es una ruta del esquema o null. `stats_enumerator_field`
- *            null = usar `_submitted_by` (el usuario Kobo que envió).
+ *   GET    → datos editables del formulario: la config del desglose de
+ *            estadísticas por equipo → encuestador y los umbrales del control
+ *            de calidad.
+ *   PATCH  { stats_team_field?, stats_enumerator_field?,
+ *            qc_min_duration?, qc_max_duration?, qc_min_gap? } → guarda esa
+ *            config. Clave AUSENTE = no tocar; presente (aunque sea null) = fijar.
+ *            Los campos de equipo son rutas del esquema o null
+ *            (`stats_enumerator_field` null = usar `_submitted_by`). Los umbrales
+ *            son minutos (entero ≥ 1) o null = comprobación desactivada.
  *   DELETE → elimina el formulario de KoboManager y su caché (no toca Kobo).
  *            Si sigue cumpliendo el filtro de sincronización, una nueva
  *            sincronización de la cuenta volverá a traerlo.
@@ -17,12 +21,21 @@ $formId = (int) Request::param('id');
 $method = Request::method();
 
 $form = DB::run(
-    'SELECT id, name, schema_json, stats_team_field, stats_enumerator_field FROM forms WHERE id = ?',
+    'SELECT id, name, schema_json, stats_team_field, stats_enumerator_field,
+            qc_min_duration, qc_max_duration, qc_min_gap
+     FROM forms WHERE id = ?',
     [$formId]
 )->fetch();
 if (!$form) {
     ErrorResponse::send('NOT_FOUND', 'Formulario no encontrado');
 }
+
+// Los umbrales viajan como enteros (minutos) o null.
+$qcOut = fn(array $f): array => [
+    'qc_min_duration' => $f['qc_min_duration'] !== null ? (int) $f['qc_min_duration'] : null,
+    'qc_max_duration' => $f['qc_max_duration'] !== null ? (int) $f['qc_max_duration'] : null,
+    'qc_min_gap'      => $f['qc_min_gap'] !== null ? (int) $f['qc_min_gap'] : null,
+];
 
 if ($method === 'GET') {
     ErrorResponse::ok([
@@ -30,7 +43,7 @@ if ($method === 'GET') {
         'name'                   => $form['name'],
         'stats_team_field'       => $form['stats_team_field'],
         'stats_enumerator_field' => $form['stats_enumerator_field'],
-    ]);
+    ] + $qcOut($form));
 }
 
 if ($method === 'PATCH') {
@@ -50,22 +63,39 @@ if ($method === 'PATCH') {
         }
         return $v;
     };
+    // Normaliza un umbral a minutos (entero 1–10080, una semana) o null. '' → null.
+    $cleanMin = function ($v, string $name): ?int {
+        if ($v === null || $v === '') return null;
+        if (!is_numeric($v) || (int) $v != $v || (int) $v < 1 || (int) $v > 10080) {
+            ErrorResponse::send('VALIDATION_ERROR', "Umbral no válido ($name): minutos entre 1 y 10080, o vacío");
+        }
+        return (int) $v;
+    };
 
-    $team = $clean($body['stats_team_field'] ?? null);
-    $enum = $clean($body['stats_enumerator_field'] ?? null);
+    // Clave ausente = conservar el valor actual (permite PATCH parciales).
+    $team = array_key_exists('stats_team_field', $body) ? $clean($body['stats_team_field']) : $form['stats_team_field'];
+    $enum = array_key_exists('stats_enumerator_field', $body) ? $clean($body['stats_enumerator_field']) : $form['stats_enumerator_field'];
+    $qc   = $qcOut($form);
+    foreach (array_keys($qc) as $k) {
+        if (array_key_exists($k, $body)) $qc[$k] = $cleanMin($body[$k], $k);
+    }
+    if ($qc['qc_min_duration'] !== null && $qc['qc_max_duration'] !== null
+        && $qc['qc_max_duration'] < $qc['qc_min_duration']) {
+        ErrorResponse::send('VALIDATION_ERROR', 'La duración mayor admisible no puede ser menor que la menor');
+    }
 
     DB::run(
-        'UPDATE forms SET stats_team_field = ?, stats_enumerator_field = ? WHERE id = ?',
-        [$team, $enum, $formId]
+        'UPDATE forms SET stats_team_field = ?, stats_enumerator_field = ?,
+                qc_min_duration = ?, qc_max_duration = ?, qc_min_gap = ?
+         WHERE id = ?',
+        [$team, $enum, $qc['qc_min_duration'], $qc['qc_max_duration'], $qc['qc_min_gap'], $formId]
     );
-    Audit::log($admin['id'], 'update_form_stats', $formId, null, [
+    $out = [
         'stats_team_field'       => $team,
         'stats_enumerator_field' => $enum,
-    ]);
-    ErrorResponse::ok([
-        'stats_team_field'       => $team,
-        'stats_enumerator_field' => $enum,
-    ]);
+    ] + $qc;
+    Audit::log($admin['id'], 'update_form_stats', $formId, null, $out);
+    ErrorResponse::ok($out);
 }
 
 if ($method !== 'DELETE') {

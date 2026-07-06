@@ -349,6 +349,24 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   is gated by `$includeReview` (so public links get the volume/quality but not the review mix,
   mirroring `by_status`). The two fields are configured from a per‑form **settings screen**
   (`admin/forms/{id}` `GET`/`PATCH`, view `FormSettingsView.vue`, route `admin-form-settings`).
+- **Quality control** (`lib/Quality.php`, `v1/forms/quality.php`, view `QualityView.vue` at
+  `forms/{id}/quality`): flags submissions outside the form's admissible thresholds — three
+  per‑form columns edited from the same settings screen (`forms.qc_min_duration` /
+  `qc_max_duration` / `qc_min_gap`, minutes, `NULL` = check off) — grouped by the same
+  team/enumerator pair as the stats breakdown, with a drill‑down to each offending submission.
+  Four flags: **short**/**long** (duration from the schema's `start`/`end` meta keys, same as
+  the duration sort) and **short gap**/**overlap** per enumerator *consecutiveness* (gap between
+  a survey's start and the max `end` seen so far in that enumerator's start‑ordered chain; a
+  negative gap — overlapping surveys, a fabrication signal — is always flagged, regardless of
+  the threshold). Submissions without valid timestamps are counted apart (`untimed`) and never
+  flagged. Start/end render in `APP_TIMEZONE` via `Derived::formatLocal`. The analysis is
+  **read‑only**: the *"put the N non‑admissible on hold"* button rides the existing batch review
+  endpoint (`forms/{id}/review`, attribution = the admin who clicks, normal Kobo push, chunks of
+  1000, already‑on‑hold ones excluded), so `submission_reviews` needs no schema change. Respects
+  `RowScope`/`FieldScope` like `lib/Stats` (a hidden team field drops the team level); the page
+  requires `can_view`, the batch button `can_validate` on a non‑archived form. Entry points: a
+  button next to the stats team breakdown (internal view only — share links never expose it) and
+  the submission table's actions.
 - **Search** (`lib/SubmissionSearch.php`, M4a): submission‑table search no longer does a `LIKE`
   over the whole JSON. `textFor()` builds a plain‑text projection of the answer **values**
   (skipping `_*` metadata keys) into the indexed `submissions_cache.search_text` column,

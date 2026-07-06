@@ -104,8 +104,9 @@ class Derived {
      * Ancla las cadenas SIN zona como UTC (así llega `_submission_time`),
      * independientemente de la zona del servidor PHP. Si la cadena trae offset
      * propio (p. ej. `start`/`end` del dispositivo), ese offset manda.
+     * Pública porque lib/Quality la reutiliza para las mismas claves start/end.
      */
-    private static function ts($v): ?int {
+    public static function ts($v): ?int {
         if (!is_string($v) || trim($v) === '') return null;
         try {
             return (new DateTime($v, new DateTimeZone('UTC')))->getTimestamp();
@@ -137,6 +138,16 @@ class Derived {
         $lbl = (defined('APP_TIMEZONE_LABEL') && APP_TIMEZONE_LABEL !== '') ? APP_TIMEZONE_LABEL : $id;
         $min = (int) round($tz->getOffset(new DateTime('now', new DateTimeZone('UTC'))) / 60);
         return ['id' => $id, 'label' => $lbl, 'offset' => self::offsetLabel($min), 'offset_min' => $min];
+    }
+
+    /**
+     * Epoch → «YYYY-MM-DD HH:MM» en la zona de visualización (APP_TIMEZONE), o null.
+     * Para mostrar instantes concretos (p. ej. inicio/fin de una encuesta en el
+     * control de calidad) en la misma hora local que «Actividad por hora/día».
+     */
+    public static function formatLocal(?int $ts): ?string {
+        if ($ts === null) return null;
+        return (new DateTime('@' . $ts))->setTimezone(self::displayTz(null))->format('Y-m-d H:i');
     }
 
     /** Minutos de offset → etiqueta «UTC», «UTC-5», «UTC+5:30». */

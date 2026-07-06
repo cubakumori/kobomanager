@@ -9,6 +9,7 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { RouterLink } from 'vue-router'
 import { fmtDuration } from '../composables/derived'
 import StatsChart from './StatsChart.vue'
 
@@ -400,11 +401,21 @@ const reviewPills = (st) =>
           </p>
           <p v-if="interactive" class="mt-0.5 text-xs text-slate-400">{{ $t('stats.teamToggleHint') }}</p>
         </div>
-        <div v-if="interactive && teamSubsetActive" class="flex items-center gap-2 text-xs">
-          <span class="text-slate-500">{{ $t('stats.teamsSubset', { k: teamsOnCount, m: stats.by_team.length }) }}</span>
-          <button type="button" class="font-medium text-primary-600 hover:underline" :disabled="reloading" @click="$emit('select-teams', null)">
-            {{ $t('stats.teamsShowAll') }}
-          </button>
+        <div class="flex items-center gap-4">
+          <div v-if="interactive && teamSubsetActive" class="flex items-center gap-2 text-xs">
+            <span class="text-slate-500">{{ $t('stats.teamsSubset', { k: teamsOnCount, m: stats.by_team.length }) }}</span>
+            <button type="button" class="font-medium text-primary-600 hover:underline" :disabled="reloading" @click="$emit('select-teams', null)">
+              {{ $t('stats.teamsShowAll') }}
+            </button>
+          </div>
+          <!-- Control de calidad: solo en la vista interna (los enlaces públicos no lo exponen) -->
+          <RouterLink
+            v-if="interactive && stats.form"
+            :to="{ name: 'quality', params: { id: stats.form.id } }"
+            class="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-300 hover:bg-slate-50"
+          >
+            {{ $t('stats.qualityLink') }}
+          </RouterLink>
         </div>
       </div>
 

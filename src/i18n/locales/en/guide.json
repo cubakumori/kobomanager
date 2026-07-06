@@ -62,6 +62,8 @@
     "reviewSingleBody": "On a submission's detail, approve it, reject it or put it «On hold» (reviewed but awaiting verification) with a comment; the status syncs with Kobo's native validation: reviewing writes it to Kobo, and if someone changes it directly in Kobo it shows up here after a sync (Kobo wins on conflict; those entries appear as «Kobo» in the history). The button for the current status is disabled. If you can edit, only question answers are editable (metadata —dates, identifiers, etc.— is not), and an «Edit history» block shows the changes from each edit (field, old and new value). To push the status to a form shared with you, the Kobo account must have the “Validate Submissions” permission (on forms you own it's automatic).",
     "reviewBatch": "Batch review",
     "reviewBatchBody": "Select several submissions with the checkboxes (or all on the page) and approve, reject or put them «On hold» at once with a shared comment. Requires validate permission.",
+    "reviewQuality": "Quality control",
+    "reviewQualityBody": "Each form's “Quality control” page (from the table actions or from Statistics) flags the surveys outside the form's admissible thresholds — too short, too long, with a short gap after the same enumerator's previous survey, or overlapping it — grouped by team and enumerator, with access to each offending survey. An admin sets the thresholds in the form settings, and anyone with validation permission can put all the non-admissible ones on hold at once through the normal review flow.",
     "reviewExport": "Export to CSV",
     "reviewExportBody": "Download the submissions —with the active filters— as a CSV (UTF-8, opens fine in Excel) with each question's readable labels.",
     "shareTitle": "Sharing: read-only links",

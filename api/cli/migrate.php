@@ -18,7 +18,9 @@ if (PHP_SAPI !== 'cli') {
     exit(1);
 }
 
-require __DIR__ . '/../config.php';
+// Config: por defecto config.php; KM_CONFIG permite apuntar a otra (p. ej. la BD de test),
+// igual que el front controller y el instalador.
+require getenv('KM_CONFIG') ?: __DIR__ . '/../config.php';
 require __DIR__ . '/../lib/DB.php';
 require __DIR__ . '/../lib/SchemaCheck.php';
 

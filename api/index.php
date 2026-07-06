@@ -31,6 +31,7 @@ require __DIR__ . '/lib/RowScope.php';
 require __DIR__ . '/lib/FieldScope.php';
 require __DIR__ . '/lib/SubmissionSearch.php';
 require __DIR__ . '/lib/Stats.php';
+require __DIR__ . '/lib/Quality.php';
 require __DIR__ . '/lib/ShareLink.php';
 require __DIR__ . '/lib/SubmissionSync.php';
 require __DIR__ . '/lib/SqlScript.php';
@@ -143,6 +144,7 @@ $routes = [
     'forms/:id/sync'            => 'forms/sync.php',
     'forms/:id/submissions'     => 'forms/submissions.php',
     'forms/:id/stats'           => 'forms/stats.php',
+    'forms/:id/quality'         => 'forms/quality.php',
     'forms/:id/map'             => 'forms/map.php',
     'forms/:id/review'          => 'forms/review_batch.php',
     'forms/:id/export'          => 'forms/export.php',

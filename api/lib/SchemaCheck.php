@@ -47,6 +47,16 @@ class SchemaCheck {
          'fix' => "ALTER TABLE share_links ADD COLUMN team_filter JSON NULL AFTER field_filter"],
         ['table' => 'share_links', 'column' => 'stats_status', 'since' => '1.7.0',
          'fix' => "ALTER TABLE share_links ADD COLUMN stats_status VARCHAR(16) NULL AFTER team_filter"],
+
+        // Umbrales del control de calidad (minutos; NULL = comprobación desactivada).
+        // El DEFAULT rellena las filas existentes al aplicar el ALTER (mismo valor que
+        // recibe una instalación nueva).
+        ['table' => 'forms', 'column' => 'qc_min_duration', 'since' => '1.14.0',
+         'fix' => "ALTER TABLE forms ADD COLUMN qc_min_duration INT UNSIGNED NULL DEFAULT 4 AFTER stats_enumerator_field"],
+        ['table' => 'forms', 'column' => 'qc_max_duration', 'since' => '1.14.0',
+         'fix' => "ALTER TABLE forms ADD COLUMN qc_max_duration INT UNSIGNED NULL DEFAULT NULL AFTER qc_min_duration"],
+        ['table' => 'forms', 'column' => 'qc_min_gap', 'since' => '1.14.0',
+         'fix' => "ALTER TABLE forms ADD COLUMN qc_min_gap INT UNSIGNED NULL DEFAULT 4 AFTER qc_max_duration"],
     ];
 
     /**

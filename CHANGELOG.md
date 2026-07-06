@@ -4,6 +4,55 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.14.0] - 2026-07-06
+
+> **Nota de actualización (esquema).** Primera versión con cambio de esquema desde 1.8.0:
+> añade los tres umbrales del control de calidad a `forms`. Instalación nueva: nada que
+> hacer (`db/001_schema.sql` ya lo incluye). Sobre una BD existente, ejecuta
+> `php api/cli/migrate.php` **o** aplica:
+>
+> ```sql
+> ALTER TABLE forms ADD COLUMN qc_min_duration INT UNSIGNED NULL DEFAULT 4 AFTER stats_enumerator_field,
+>   ADD COLUMN qc_max_duration INT UNSIGNED NULL DEFAULT NULL AFTER qc_min_duration,
+>   ADD COLUMN qc_min_gap INT UNSIGNED NULL DEFAULT 4 AFTER qc_max_duration;
+> ```
+
+### Añadido
+
+- **Control de calidad por equipo/encuestador** (`forms/{id}/quality`, permiso de
+  lectura): página propia que marca las encuestas fuera de los umbrales admisibles del
+  formulario con cuatro banderas — **corta** y **larga** (duración `end − start`, las
+  mismas claves meta del orden por duración) y, por consecutividad del MISMO
+  encuestador, **hueco corto** (entre el fin de una encuesta y el inicio de la
+  siguiente) y **solapada** (hueco negativo, señal de fabricación; se marca SIEMPRE,
+  sin umbral configurable). Tabla por equipo → encuestador (el mismo par de campos del
+  desglose de estadísticas; sin campo de equipo, un único grupo) con drill-down a cada
+  encuesta infractora (inicio/fin en `APP_TIMEZONE`, duración, hueco, banderas, estado
+  de revisión y enlace al detalle). Los envíos sin marcas de tiempo válidas cuentan
+  aparte («no evaluables») y nunca marcan. Respeta el scoping por filas y el ocultado
+  de columnas igual que las estadísticas. Accesos: botón junto al desglose «Por equipo
+  → encuestador» de Estadísticas (solo vista interna; los enlaces públicos no lo
+  exponen) y en las acciones de la tabla de envíos.
+- **Umbrales por formulario** (Ajustes del formulario, junto a los campos de equipo;
+  solo admin): «Duración menor admisible» (por defecto 4 min), «Duración mayor
+  admisible» (vacío = sin tope) y «Consecutividad menor admisible» (por defecto 4 min).
+  Minutos enteros (1–10080) o vacío = comprobación desactivada; la BD es la fuente de
+  verdad (columnas de `forms`). El `PATCH` de `admin/forms/{id}` pasa a ser parcial
+  (clave ausente = no tocar) y valida que el tope no sea menor que el mínimo.
+- **«Marcar en espera las N no admitidas»**: botón de lote sobre el flujo de revisión
+  en lote EXISTENTE (atribución = el admin que pulsa, push a Kobo normal, troceado de
+  1000 en 1000, sin cambios en `submission_reviews`). Excluye las que ya están «En
+  espera» y exige permiso de validación sobre un formulario no archivado.
+- El análisis vive en `lib/Quality` (solo lectura, testeado con PHPUnit); la cadena de
+  consecutividad ordena por `start` y compara contra el **máximo `end`** visto (una
+  encuesta englobada por otra no esconde el solape de la tercera).
+
+### Cambiado
+
+- `cli/migrate.php` respeta `KM_CONFIG` (como el front controller y el instalador),
+  para poder migrar también una BD alternativa (p. ej. la de tests).
+- Guía in-app: nueva entrada «Control de calidad» en la sección de revisión.
+
 ## [1.13.0] - 2026-07-06
 
 Copia de seguridad y restauración de la BD desde la app (Configuración → Base de

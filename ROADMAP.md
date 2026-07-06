@@ -12,38 +12,13 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 
 ---
 
-## PRÓXIMO HITO ACORDADO (jul-2026): Control de calidad por equipo/encuestador
+## Control de calidad por equipo/encuestador — extensiones diferidas
 
-Análisis de calidad de campo (encuestas apresuradas o fabricadas) sobre la base ya
-entregada de `forms.stats_team_field`/`stats_enumerator_field`. Diseño cerrado con el
-usuario; implementar en la próxima sesión.
-
-- [ ] **Ajustes por formulario** (FormSettingsView, junto a los campos de equipo;
-      columnas nuevas de `forms`, editables solo por admin — la BD es la fuente de
-      verdad, sin «recordatorios» en el navegador):
-      - «Duración menor admisible de encuestas (mins)» — por defecto 4.
-      - «Duración mayor admisible de encuestas (mins)» — con tope generoso o vacío =
-        sin tope.
-      - «Consecutividad menor admisible para encuestador (mins)» — por defecto 4. Nota
-        bajo el campo: *hueco mínimo entre el fin de una encuesta y el inicio de la
-        siguiente del mismo encuestador; un hueco negativo (encuestas solapadas) se
-        marca siempre, sea cual sea este valor*.
-      - Esquema según la convención de la casa: columnas plegadas al `CREATE TABLE`
-        canónico de `db/001_schema.sql` + entradas en `SchemaCheck` (+ `migrate.php`)
-        + «Nota de actualización» con los `ALTER TABLE` en el CHANGELOG. Primer cambio
-        de esquema desde 1.8.0 → la release que lo lleve (1.14.0) ya no dirá «nada que
-        migrar».
-- [ ] **Página propia «Control de calidad»** (`forms/<id>/quality`): tabla por
-      equipo/encuestador con banderas —corta, larga, hueco corto, **solapada** (hueco
-      negativo, señal de fabricación; sin configuración)— y drill-down a las encuestas
-      infractoras. Accesos: botón junto al desglose «Por equipo → encuestador» de
-      Estadísticas y en las acciones del formulario.
-- [ ] **Acción en lote con humano en el bucle**: botón «Marcar en espera las N no
-      admitidas» sobre el flujo de revisión en lote EXISTENTE (atribución = el admin
-      que pulsa; push a Kobo normal; sin cambios en `submission_reviews`). Sustituye
-      en v1 al checkbox de marcado automático (abajo).
-
-**Extensiones diferidas (para más adelante, cuando haya demanda):**
+> El hito base está **entregado en 1.14.0** (ver CHANGELOG): umbrales por formulario
+> (duración mín/máx y consecutividad mínima), página `forms/<id>/quality` con las
+> cuatro banderas (corta, larga, hueco corto, solapada) y drill-down, y el botón
+> «Marcar en espera las N no admitidas» sobre el flujo de revisión en lote existente.
+> Quedan estas extensiones, para cuando haya demanda:
 
 - [ ] **Marcado on-hold totalmente automático al sincronizar** *(el checkbox original)*:
       exige atribución nueva en `submission_reviews` (p. ej. `source='auto'`, cambio de

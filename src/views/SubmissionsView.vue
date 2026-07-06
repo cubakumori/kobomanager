@@ -397,6 +397,7 @@ onMounted(() => { loadAdvFilter(); load() })
           <RouterLink v-if="hasGeo" :to="{ name: 'form-map', params: { id: formId } }" :class="actionBtn">{{ $t('submissions.map') }}</RouterLink>
           <span v-else class="cursor-not-allowed whitespace-nowrap rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-300" :title="$t('submissions.mapDisabled')">{{ $t('submissions.map') }}</span>
           <RouterLink :to="{ name: 'stats', params: { id: formId } }" :class="actionBtn">{{ $t('submissions.stats') }}</RouterLink>
+          <RouterLink :to="{ name: 'quality', params: { id: formId } }" :class="actionBtn">{{ $t('submissions.quality') }}</RouterLink>
           <a :href="exportUrl" :class="actionBtn" :title="$t('submissions.exportHint')">{{ $t('submissions.export') }}</a>
         </div>
 
@@ -417,6 +418,7 @@ onMounted(() => { loadAdvFilter(); load() })
               <RouterLink v-if="hasGeo" :to="{ name: 'form-map', params: { id: formId } }" :class="menuItem" @click="actionsOpen = false">{{ $t('submissions.map') }}</RouterLink>
               <span v-else :class="[menuItem, 'cursor-not-allowed text-slate-300 hover:bg-transparent']">{{ $t('submissions.map') }}</span>
               <RouterLink :to="{ name: 'stats', params: { id: formId } }" :class="menuItem" @click="actionsOpen = false">{{ $t('submissions.stats') }}</RouterLink>
+              <RouterLink :to="{ name: 'quality', params: { id: formId } }" :class="menuItem" @click="actionsOpen = false">{{ $t('submissions.quality') }}</RouterLink>
               <a :href="exportUrl" :class="menuItem" :title="$t('submissions.exportHint')" @click="actionsOpen = false">{{ $t('submissions.export') }}</a>
             </div>
           </template>

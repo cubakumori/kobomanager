@@ -1,0 +1,238 @@
+<?php
+/**
+ * Control de calidad por equipo/encuestador sobre `submissions_cache`.
+ *
+ * Evalúa cada envío contra los umbrales admisibles del formulario (columnas
+ * `forms.qc_min_duration` / `qc_max_duration` / `qc_min_gap`, en minutos) y
+ * agrupa las infracciones por equipo → encuestador, con el mismo par de campos
+ * configurable del desglose de estadísticas (`stats_team_field` /
+ * `stats_enumerator_field`). Cuatro banderas:
+ *
+ *   - short     : duración < qc_min_duration (encuesta sospechosamente corta).
+ *   - long      : duración > qc_max_duration (NULL = sin tope).
+ *   - short_gap : hueco entre el FIN de una encuesta y el INICIO de la siguiente
+ *                 del mismo encuestador < qc_min_gap.
+ *   - overlap   : hueco NEGATIVO (la siguiente empezó antes de acabar la anterior;
+ *                 señal de fabricación). Se marca SIEMPRE, sin umbral configurable.
+ *
+ * La duración y el hueco salen de las claves meta `start`/`end` del esquema (las
+ * mismas del orden por duración de la tabla): epochs vía Derived::ts, así que la
+ * resta es correcta sea cual sea la zona del dispositivo. La CADENA de
+ * consecutividad se construye por (equipo, encuestador) —la misma jerarquía que
+ * se muestra—, ordenando por `start`; el hueco se mide contra el MÁXIMO `end`
+ * visto hasta entonces en la cadena (si una encuesta engloba a otra, la tercera
+ * se compara contra el fin real más tardío, no contra el de la englobada). Los
+ * envíos sin start/end válidos no son evaluables: cuentan aparte (`untimed`) y
+ * no participan en la cadena.
+ *
+ * Es un ANÁLISIS de solo lectura: no escribe banderas en ningún sitio. El marcado
+ * en lote «en espera» lo hace el flujo de revisión existente (review_batch), con
+ * el admin que pulsa como atribución. Respeta RowScope y FieldScope igual que
+ * lib/Stats (mismo gating de visibilidad del campo de equipo/encuestador).
+ */
+class Quality {
+
+    /** Las cuatro banderas, en el orden canónico de la UI. */
+    public const FLAGS = ['short', 'long', 'short_gap', 'overlap'];
+
+    /**
+     * @param int         $formId      Formulario.
+     * @param array|null  $schemaRaw   Esquema XLSForm normalizado (forms.schema_json) o null.
+     * @param array|null  $scope       Regla RowScope ya normalizada (o null = sin restricción).
+     * @param array|null  $fieldScope  Regla FieldScope ya normalizada (o null).
+     * @param string      $locale      Idioma para resolver etiquetas de equipo/encuestador.
+     * @param string|null $teamField   forms.stats_team_field (NULL = sin nivel de equipo).
+     * @param string|null $enumField   forms.stats_enumerator_field (NULL/`_submitted_by` =
+     *                                 usar el usuario Kobo que envió).
+     * @param int|null    $minDuration forms.qc_min_duration (minutos; NULL = sin comprobación).
+     * @param int|null    $maxDuration forms.qc_max_duration (minutos; NULL = sin tope).
+     * @param int|null    $minGap      forms.qc_min_gap (minutos; NULL = sin comprobación;
+     *                                 el solape se marca igualmente).
+     */
+    public static function compute(
+        int $formId,
+        ?array $schemaRaw,
+        ?array $scope,
+        ?array $fieldScope,
+        string $locale,
+        ?string $teamField,
+        ?string $enumField,
+        ?int $minDuration,
+        ?int $maxDuration,
+        ?int $minGap
+    ): array {
+        [$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'json_payload');
+
+        // Mismo gating que lib/Stats: no se agrupa por un campo oculto en este alcance.
+        $teamField = ($teamField !== null && $teamField !== '' && !FieldScope::isHidden($fieldScope, $teamField))
+            ? $teamField : null;
+        $enumIsField = $enumField !== null && $enumField !== '' && $enumField !== '_submitted_by'
+            && !FieldScope::isHidden($fieldScope, $enumField);
+        $enumPath = $enumIsField ? $enumField : '_submitted_by';
+
+        // Etiquetas legibles de equipo/encuestador (según el modo de etiquetas global).
+        $resolved   = FormSchema::resolve($schemaRaw, $locale);
+        $labelsOn   = Settings::labelMode() === 'labels';
+        $labels     = $resolved['labels'] ?? [];
+        $options    = $resolved['options'] ?? [];
+        $teamOptMap = $teamField !== null ? ($options[$teamField] ?? []) : [];
+        $enumOptMap = $enumIsField ? ($options[$enumPath] ?? []) : [];
+
+        // Claves meta start/end del esquema (con respaldo de convención), como el orden
+        // por duración de la tabla de envíos.
+        $startKey = $schemaRaw['meta']['start'] ?? 'start';
+        $endKey   = $schemaRaw['meta']['end'] ?? 'end';
+
+        $rows = DB::run(
+            "SELECT submission_uid, json_payload, submitted_at FROM submissions_cache
+             WHERE form_id = ? AND $scopeSql",
+            array_merge([$formId], $scopeP)
+        )->fetchAll();
+
+        // Estado de revisión más reciente por envío (para mostrarlo en el drill-down y
+        // que el lote «en espera» pueda excluir los ya marcados). Misma consulta que Stats.
+        $statusMap = [];
+        $reviewed  = DB::run(
+            "SELECT r.submission_uid, r.status
+             FROM submission_reviews r
+             JOIN (
+                SELECT submission_uid, MAX(id) AS max_id FROM submission_reviews GROUP BY submission_uid
+             ) latest ON latest.max_id = r.id
+             JOIN submissions_cache sc ON sc.submission_uid = r.submission_uid AND sc.form_id = ?
+                AND $scopeSql",
+            array_merge([$formId], $scopeP)
+        )->fetchAll();
+        foreach ($reviewed as $r) {
+            if (in_array($r['status'], ValidationStatus::STATUSES, true)) {
+                $statusMap[$r['submission_uid']] = $r['status'];
+            }
+        }
+
+        // --- Pasada única: derivar tiempos y agrupar por (equipo, encuestador). ---
+        $groups  = []; // tKey => eKey => [entradas]
+        $untimed = 0;
+        foreach ($rows as $r) {
+            $payload = json_decode($r['json_payload'], true) ?: [];
+            $startTs = Derived::ts($payload[$startKey] ?? null);
+            $endTs   = Derived::ts($payload[$endKey] ?? null);
+            $dur     = ($startTs !== null && $endTs !== null && $endTs >= $startTs) ? $endTs - $startTs : null;
+            if ($dur === null) $untimed++;
+
+            $tv = $teamField !== null ? ($payload[$teamField] ?? null) : null;
+            $ev = $payload[$enumPath] ?? null;
+            $tKey = ($tv === null || $tv === '' || is_array($tv)) ? '—' : (string) $tv;
+            $eKey = ($ev === null || $ev === '' || is_array($ev)) ? '—' : (string) $ev;
+
+            $groups[$tKey][$eKey][] = [
+                'uid'          => $r['submission_uid'],
+                'submitted_at' => $r['submitted_at'],
+                'start'        => $startTs,
+                'end'          => $endTs,
+                'dur'          => $dur,
+            ];
+        }
+
+        $minDurS = $minDuration !== null ? $minDuration * 60 : null;
+        $maxDurS = $maxDuration !== null ? $maxDuration * 60 : null;
+        $minGapS = $minGap !== null ? $minGap * 60 : null;
+
+        $zeroFlags  = array_fill_keys(self::FLAGS, 0);
+        $flagsTotal = $zeroFlags;
+        $flaggedTotal = 0;
+
+        $teams = [];
+        foreach ($groups as $tKey => $enums) {
+            $teamOut = [
+                'name'        => $tKey === '—' ? '—'
+                    : (($labelsOn && isset($teamOptMap[$tKey])) ? $teamOptMap[$tKey] : $tKey),
+                'count'       => 0,
+                'flagged'     => 0,
+                'flags'       => $zeroFlags,
+                'enumerators' => [],
+            ];
+
+            foreach ($enums as $eKey => $entries) {
+                // Cadena de consecutividad: solo envíos con tiempos, por `start` ascendente.
+                $timed = array_values(array_filter($entries, fn($e) => $e['dur'] !== null));
+                usort($timed, fn($a, $b) => [$a['start'], $a['end'], $a['uid']] <=> [$b['start'], $b['end'], $b['uid']]);
+                $gaps = [];          // uid => hueco (s) respecto al máximo `end` anterior
+                $prevEndMax = null;
+                foreach ($timed as $e) {
+                    if ($prevEndMax !== null) $gaps[$e['uid']] = $e['start'] - $prevEndMax;
+                    $prevEndMax = $prevEndMax === null ? $e['end'] : max($prevEndMax, $e['end']);
+                }
+
+                $enumOut = [
+                    'name'       => $eKey === '—' ? '—'
+                        : (($labelsOn && isset($enumOptMap[$eKey])) ? $enumOptMap[$eKey] : $eKey),
+                    'count'      => count($entries),
+                    'flagged'    => 0,
+                    'flags'      => $zeroFlags,
+                    'violations' => [],
+                ];
+
+                foreach ($timed as $e) {
+                    $flags = [];
+                    if ($minDurS !== null && $e['dur'] < $minDurS) $flags[] = 'short';
+                    if ($maxDurS !== null && $e['dur'] > $maxDurS) $flags[] = 'long';
+                    $gap = $gaps[$e['uid']] ?? null;
+                    if ($gap !== null) {
+                        if ($gap < 0) $flags[] = 'overlap';
+                        elseif ($minGapS !== null && $gap < $minGapS) $flags[] = 'short_gap';
+                    }
+                    if (!$flags) continue;
+
+                    $enumOut['flagged']++;
+                    foreach ($flags as $f) $enumOut['flags'][$f]++;
+                    $enumOut['violations'][] = [
+                        'uid'           => $e['uid'],
+                        'submitted_at'  => $e['submitted_at'],
+                        'start_at'      => Derived::formatLocal($e['start']),
+                        'end_at'        => Derived::formatLocal($e['end']),
+                        'duration_s'    => $e['dur'],
+                        'gap_s'         => $gap,
+                        'flags'         => $flags,
+                        'review_status' => $statusMap[$e['uid']] ?? 'pending',
+                    ];
+                }
+
+                $teamOut['count']   += $enumOut['count'];
+                $teamOut['flagged'] += $enumOut['flagged'];
+                foreach (self::FLAGS as $f) $teamOut['flags'][$f] += $enumOut['flags'][$f];
+                $teamOut['enumerators'][] = $enumOut;
+            }
+
+            // Encuestadores con más infracciones primero (a igualdad, más envíos).
+            usort($teamOut['enumerators'], fn($a, $b) => [$b['flagged'], $b['count']] <=> [$a['flagged'], $a['count']]);
+            $flaggedTotal += $teamOut['flagged'];
+            foreach (self::FLAGS as $f) $flagsTotal[$f] += $teamOut['flags'][$f];
+            $teams[] = $teamOut;
+        }
+        usort($teams, fn($a, $b) => [$b['flagged'], $b['count']] <=> [$a['flagged'], $a['count']]);
+
+        $out = [
+            'total'      => count($rows),
+            'untimed'    => $untimed,
+            'flagged'    => $flaggedTotal,
+            'flags'      => $flagsTotal,
+            'thresholds' => [
+                'min_duration' => $minDuration,
+                'max_duration' => $maxDuration,
+                'min_gap'      => $minGap,
+            ],
+            'teams'      => $teams,
+            'timezone'   => Derived::tzMeta(),
+            'label_mode' => Settings::labelMode(),
+            // NULL = sin nivel de equipo (la UI muestra solo encuestadores, en un único grupo).
+            'team_field' => $teamField !== null ? [
+                'key'   => $teamField,
+                'label' => $labelsOn ? ($labels[$teamField] ?? $teamField) : $teamField,
+            ] : null,
+            'enumerator_field' => [
+                'key'   => $enumPath,
+                'label' => $enumIsField ? ($labelsOn ? ($labels[$enumPath] ?? $enumPath) : $enumPath) : null,
+            ],
+        ];
+        return $out;
+    }
+}
