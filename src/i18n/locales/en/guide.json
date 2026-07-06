@@ -63,7 +63,7 @@
     "reviewBatch": "Batch review",
     "reviewBatchBody": "Select several submissions with the checkboxes (or all on the page) and approve, reject or put them «On hold» at once with a shared comment. Requires validate permission.",
     "reviewQuality": "Quality control",
-    "reviewQualityBody": "Each form's “Quality control” page (from the table actions or from Statistics) flags the surveys outside the form's admissible thresholds — too short, too long, with a short gap after the same enumerator's previous survey, or overlapping it — grouped by team and enumerator, with access to each offending survey. An admin sets the thresholds in the form settings, and anyone with validation permission can put all the non-admissible ones on hold at once through the normal review flow.",
+    "reviewQualityBody": "Each form's “Quality control” page (from the table actions or from Statistics) flags the surveys outside the form's admissible thresholds — too short, too long, with a short gap after the same enumerator's previous survey, or overlapping it — grouped by team and enumerator, with access to each offending survey. By default only pending or on-hold surveys are evaluated (approved/rejected ones already passed human review; an admin can switch the scope to all submissions in Settings → Tables and views). An admin sets the thresholds in the form settings, and anyone with validation permission can put all the non-admissible ones on hold at once through the normal review flow.",
     "reviewExport": "Export to CSV",
     "reviewExportBody": "Download the submissions —with the active filters— as a CSV (UTF-8, opens fine in Excel) with each question's readable labels.",
     "shareTitle": "Sharing: read-only links",

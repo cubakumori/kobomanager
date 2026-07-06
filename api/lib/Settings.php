@@ -265,6 +265,25 @@ class Settings {
         return in_array($v, self::VALID_STATS_DEFAULT_SCOPE, true) ? $v : self::DEFAULT_STATS_DEFAULT_SCOPE;
     }
 
+    /**
+     * Alcance del CONTROL DE CALIDAD (forms/{id}/quality): sobre qué subconjunto de
+     * envíos se reportan infractores.
+     *   'pending_hold' → solo pendientes o en espera (por defecto: los aprobados/
+     *                    rechazados ya pasaron revisión humana y no deben re-marcarse).
+     *   'all'          → todos los envíos.
+     * La cadena de consecutividad se calcula SIEMPRE sobre todos los envíos (la física
+     * de huecos/solapes no depende del estado de revisión); el alcance solo decide qué
+     * infractores se muestran y se cuentan.
+     */
+    public const VALID_QC_SCOPE = ['pending_hold', 'all'];
+    private const DEFAULT_QC_SCOPE = 'pending_hold';
+
+    /** Alcance del control de calidad ('pending_hold'|'all'). */
+    public static function qcScope(): string {
+        $v = self::get('qc_scope', self::DEFAULT_QC_SCOPE);
+        return in_array($v, self::VALID_QC_SCOPE, true) ? $v : self::DEFAULT_QC_SCOPE;
+    }
+
     public const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login'];
 
     /**

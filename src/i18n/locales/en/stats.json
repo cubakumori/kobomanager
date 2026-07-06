@@ -103,6 +103,10 @@
     "qualityColFlags": "Flags",
     "qualityColReview": "Review",
     "qualityView": "View",
-    "qualityTzNote": "Start and end in {label} time ({offset})."
+    "qualityTzNote": "Start and end in {label} time ({offset}).",
+    "qualityScopeLabel": "Scope",
+    "qualityScope_pending_hold": "only pending or on hold",
+    "qualityScope_all": "all submissions",
+    "qualityScopeChange": "Change"
   }
 }

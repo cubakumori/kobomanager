@@ -25,6 +25,14 @@
  * envíos sin start/end válidos no son evaluables: cuentan aparte (`untimed`) y
  * no participan en la cadena.
  *
+ * ALCANCE por estado de revisión (`$scopeStatuses`, del ajuste global `qc_scope`):
+ * decide qué envíos se REPORTAN y se cuentan (por defecto solo pendientes/en
+ * espera: los aprobados/rechazados ya pasaron revisión humana). La cadena de
+ * consecutividad se construye SIEMPRE sobre todos los envíos del encuestador —
+ * la física de huecos/solapes no depende del estado de revisión: una pendiente
+ * que solapa con una aprobada se marca igual (contra su fin real), aunque la
+ * aprobada no aparezca en la lista.
+ *
  * Es un ANÁLISIS de solo lectura: no escribe banderas en ningún sitio. El marcado
  * en lote «en espera» lo hace el flujo de revisión existente (review_batch), con
  * el admin que pulsa como atribución. Respeta RowScope y FieldScope igual que
@@ -48,6 +56,9 @@ class Quality {
      * @param int|null    $maxDuration forms.qc_max_duration (minutos; NULL = sin tope).
      * @param int|null    $minGap      forms.qc_min_gap (minutos; NULL = sin comprobación;
      *                                 el solape se marca igualmente).
+     * @param array|null  $scopeStatuses Estados de revisión cuyos envíos se REPORTAN
+     *                                 (p. ej. ['pending','on_hold']). NULL = todos.
+     *                                 No afecta a la cadena de consecutividad.
      */
     public static function compute(
         int $formId,
@@ -59,7 +70,8 @@ class Quality {
         ?string $enumField,
         ?int $minDuration,
         ?int $maxDuration,
-        ?int $minGap
+        ?int $minGap,
+        ?array $scopeStatuses = null
     ): array {
         [$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'json_payload');
 
@@ -109,14 +121,23 @@ class Quality {
         }
 
         // --- Pasada única: derivar tiempos y agrupar por (equipo, encuestador). ---
+        // Se agrupa TODO (la cadena de consecutividad necesita todos los envíos del
+        // encuestador); `in` marca si el envío está dentro del alcance por estado y
+        // por tanto se cuenta/reporta.
         $groups  = []; // tKey => eKey => [entradas]
-        $untimed = 0;
+        $total   = 0;  // envíos EN ALCANCE
+        $untimed = 0;  // envíos EN ALCANCE sin tiempos válidos
         foreach ($rows as $r) {
             $payload = json_decode($r['json_payload'], true) ?: [];
             $startTs = Derived::ts($payload[$startKey] ?? null);
             $endTs   = Derived::ts($payload[$endKey] ?? null);
             $dur     = ($startTs !== null && $endTs !== null && $endTs >= $startTs) ? $endTs - $startTs : null;
-            if ($dur === null) $untimed++;
+            $st      = $statusMap[$r['submission_uid']] ?? 'pending';
+            $in      = $scopeStatuses === null || in_array($st, $scopeStatuses, true);
+            if ($in) {
+                $total++;
+                if ($dur === null) $untimed++;
+            }
 
             $tv = $teamField !== null ? ($payload[$teamField] ?? null) : null;
             $ev = $payload[$enumPath] ?? null;
@@ -129,6 +150,8 @@ class Quality {
                 'start'        => $startTs,
                 'end'          => $endTs,
                 'dur'          => $dur,
+                'st'           => $st,
+                'in'           => $in,
             ];
         }
 
@@ -152,7 +175,13 @@ class Quality {
             ];
 
             foreach ($enums as $eKey => $entries) {
-                // Cadena de consecutividad: solo envíos con tiempos, por `start` ascendente.
+                // Sin envíos en alcance, el encuestador no aparece (sus envíos siguen
+                // participando como vecinos de cadena de los que sí están).
+                $inCount = count(array_filter($entries, fn($e) => $e['in']));
+                if ($inCount === 0) continue;
+
+                // Cadena de consecutividad: TODOS los envíos con tiempos (en alcance o
+                // no), por `start` ascendente. El alcance no altera la física del hueco.
                 $timed = array_values(array_filter($entries, fn($e) => $e['dur'] !== null));
                 usort($timed, fn($a, $b) => [$a['start'], $a['end'], $a['uid']] <=> [$b['start'], $b['end'], $b['uid']]);
                 $gaps = [];          // uid => hueco (s) respecto al máximo `end` anterior
@@ -165,13 +194,14 @@ class Quality {
                 $enumOut = [
                     'name'       => $eKey === '—' ? '—'
                         : (($labelsOn && isset($enumOptMap[$eKey])) ? $enumOptMap[$eKey] : $eKey),
-                    'count'      => count($entries),
+                    'count'      => $inCount,
                     'flagged'    => 0,
                     'flags'      => $zeroFlags,
                     'violations' => [],
                 ];
 
                 foreach ($timed as $e) {
+                    if (!$e['in']) continue; // fuera del alcance: no se reporta
                     $flags = [];
                     if ($minDurS !== null && $e['dur'] < $minDurS) $flags[] = 'short';
                     if ($maxDurS !== null && $e['dur'] > $maxDurS) $flags[] = 'long';
@@ -192,7 +222,7 @@ class Quality {
                         'duration_s'    => $e['dur'],
                         'gap_s'         => $gap,
                         'flags'         => $flags,
-                        'review_status' => $statusMap[$e['uid']] ?? 'pending',
+                        'review_status' => $e['st'],
                     ];
                 }
 
@@ -201,6 +231,9 @@ class Quality {
                 foreach (self::FLAGS as $f) $teamOut['flags'][$f] += $enumOut['flags'][$f];
                 $teamOut['enumerators'][] = $enumOut;
             }
+
+            // Equipos sin ningún envío en alcance tampoco aparecen.
+            if (!$teamOut['enumerators']) continue;
 
             // Encuestadores con más infracciones primero (a igualdad, más envíos).
             usort($teamOut['enumerators'], fn($a, $b) => [$b['flagged'], $b['count']] <=> [$a['flagged'], $a['count']]);
@@ -211,7 +244,7 @@ class Quality {
         usort($teams, fn($a, $b) => [$b['flagged'], $b['count']] <=> [$a['flagged'], $a['count']]);
 
         $out = [
-            'total'      => count($rows),
+            'total'      => $total,
             'untimed'    => $untimed,
             'flagged'    => $flaggedTotal,
             'flags'      => $flagsTotal,

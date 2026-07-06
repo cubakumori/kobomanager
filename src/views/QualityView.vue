@@ -151,7 +151,7 @@ onMounted(load)
     <Skeleton v-if="loading && !q" variant="cards" :count="4" />
 
     <template v-else-if="q">
-      <!-- Umbrales activos (con atajo del admin a los ajustes del formulario) -->
+      <!-- Umbrales y alcance activos (con atajo del admin a los ajustes del formulario) -->
       <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
         <span v-for="th in thresholds" :key="th.label">
           {{ th.label }}: <span class="font-semibold text-slate-700">{{ th.value }}</span>
@@ -163,6 +163,16 @@ onMounted(load)
         >
           {{ $t('stats.qualityAdjust') }}
         </RouterLink>
+        <!-- Alcance por estado de revisión (ajuste global; solo el admin puede cambiarlo) -->
+        <span>
+          {{ $t('stats.qualityScopeLabel') }}:
+          <span class="font-semibold text-slate-700">{{ $t('stats.qualityScope_' + q.scope) }}</span>
+          <RouterLink
+            v-if="auth.isAdmin"
+            :to="{ path: '/admin/settings', query: { tab: 'tables' } }"
+            class="ml-1 font-medium text-primary-600 hover:underline"
+          >{{ $t('stats.qualityScopeChange') }}</RouterLink>
+        </span>
       </div>
 
       <!-- Recuento general: evaluadas, no admitidas y las cuatro banderas -->

@@ -40,6 +40,8 @@ if (Request::method() === 'GET') {
         'valid_forms_order'          => Settings::VALID_FORMS_ORDER,
         'stats_default_scope'        => Settings::statsDefaultScope(),
         'valid_stats_default_scope'  => Settings::VALID_STATS_DEFAULT_SCOPE,
+        'qc_scope'                   => Settings::qcScope(),
+        'valid_qc_scope'             => Settings::VALID_QC_SCOPE,
         // Semilla de la demo (DEMO_SEED_PATH): la UI muestra la tarjeta solo si está configurada.
         'demo_seed'                  => DemoSeed::status(),
     ]);
@@ -137,6 +139,15 @@ if (Request::method() === 'PUT') {
         }
         Settings::set('stats_default_scope', $sc);
         $out['stats_default_scope'] = $sc;
+    }
+
+    if (array_key_exists('qc_scope', $body)) {
+        $sc = (string) $body['qc_scope'];
+        if (!in_array($sc, Settings::VALID_QC_SCOPE, true)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Alcance del control de calidad no válido');
+        }
+        Settings::set('qc_scope', $sc);
+        $out['qc_scope'] = $sc;
     }
 
     if (array_key_exists('label_mode', $body)) {

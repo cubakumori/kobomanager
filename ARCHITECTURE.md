@@ -364,7 +364,13 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   a survey's start and the max `end` seen so far in that enumerator's start‑ordered chain; a
   negative gap — overlapping surveys, a fabrication signal — is always flagged, regardless of
   the threshold). Submissions without valid timestamps are counted apart (`untimed`) and never
-  flagged. Start/end render in `APP_TIMEZONE` via `Derived::formatLocal`. The analysis is
+  flagged. Start/end render in `APP_TIMEZONE` via `Derived::formatLocal`. A global **scope**
+  setting (`qc_scope`: `pending_hold` default | `all`, Settings → Tables tab) decides which
+  submissions get *reported*: by default only pending/on-hold ones (approved/rejected already
+  passed human review, so QC counts never contradict the stats review cards). Consecutiveness
+  chains are always built over **all** of an enumerator's surveys regardless of scope — a
+  pending survey overlapping an approved one is still flagged (against its real end), the
+  approved one just isn't listed. The analysis is
   **read‑only**: the *"put the N non‑admissible on hold"* button rides the existing batch review
   endpoint (`forms/{id}/review`, attribution = the admin who clicks, normal Kobo push, chunks of
   1000, already‑on‑hold ones excluded), so `submission_reviews` needs no schema change. Respects

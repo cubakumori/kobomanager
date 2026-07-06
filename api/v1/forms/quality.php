@@ -33,12 +33,18 @@ $scope      = RowScope::ruleForUser($user, $formId);
 $fieldScope = FieldScope::ruleForUser($user, $formId);
 $schemaRaw  = $form['schema_json'] ? json_decode($form['schema_json'], true) : null;
 
+// Alcance por estado de revisión (ajuste global «Control de calidad: alcance»):
+// por defecto solo se reportan pendientes/en espera; 'all' evalúa todos.
+$qcScope  = Settings::qcScope();
+$statuses = $qcScope === 'all' ? null : ['pending', 'on_hold'];
+
 $quality = Quality::compute(
     $formId, $schemaRaw, $scope, $fieldScope, $user['locale'],
     $form['stats_team_field'] ?: null, $form['stats_enumerator_field'] ?: null,
     $form['qc_min_duration'] !== null ? (int) $form['qc_min_duration'] : null,
     $form['qc_max_duration'] !== null ? (int) $form['qc_max_duration'] : null,
-    $form['qc_min_gap'] !== null ? (int) $form['qc_min_gap'] : null
+    $form['qc_min_gap'] !== null ? (int) $form['qc_min_gap'] : null,
+    $statuses
 );
 
 ErrorResponse::ok(array_merge([
@@ -46,4 +52,5 @@ ErrorResponse::ok(array_merge([
     'deployment_status' => $form['deployment_status'] ?? null,
     'can_validate'      => Auth::canForm($user, $formId, 'validate'),
     'can_settings'      => Auth::canForm($user, $formId, 'settings'),
+    'scope'             => $qcScope,
 ], $quality));

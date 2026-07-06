@@ -4,6 +4,28 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.16.0] - 2026-07-06
+
+Alcance del control de calidad por estado de revisión, para que sus recuentos no
+contradigan a las estadísticas. Sin cambios de esquema (ajuste en la tabla `settings`).
+
+### Añadido
+
+- **«Control de calidad: alcance»** (Configuración → Tablas y vistas, debajo del
+  alcance por defecto de las estadísticas): decide sobre qué subconjunto de envíos se
+  reportan infractores — **«Únicamente pendientes o en espera»** (por defecto: los
+  aprobados/rechazados ya pasaron revisión humana y no deben re-marcarse) o **«Todos
+  los envíos»**. La página de Control de calidad muestra el alcance activo junto a
+  los umbrales (con enlace directo al ajuste para admins), y sus tarjetas
+  («evaluadas», «no admitidas», banderas) cuentan SOLO el subconjunto en alcance.
+
+### Cambiado
+
+- La **cadena de consecutividad se calcula siempre sobre todos los envíos** del
+  encuestador, esté cual esté el alcance: una pendiente que solapa con una aprobada
+  se marca igual (contra el fin real de la aprobada); la aprobada simplemente no se
+  lista. Encuestadores/equipos sin envíos en alcance desaparecen de la tabla.
+
 ## [1.15.0] - 2026-07-06
 
 > **Nota de actualización (esquema).** Añade una columna a `user_form_permissions`.

@@ -103,6 +103,10 @@
     "qualityColFlags": "Banderas",
     "qualityColReview": "Revisión",
     "qualityView": "Ver",
-    "qualityTzNote": "Inicio y fin en hora de {label} ({offset})."
+    "qualityTzNote": "Inicio y fin en hora de {label} ({offset}).",
+    "qualityScopeLabel": "Alcance",
+    "qualityScope_pending_hold": "únicamente pendientes o en espera",
+    "qualityScope_all": "todos los envíos",
+    "qualityScopeChange": "Cambiar"
   }
 }

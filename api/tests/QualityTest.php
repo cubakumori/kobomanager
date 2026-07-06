@@ -154,6 +154,55 @@ final class QualityTest extends DbTestCase
         $this->assertSame(1, $q['flagged']);
     }
 
+    public function testScopeReportsOnlyPendingAndOnHold(): void
+    {
+        $formId = $this->makeForm();
+        $admin  = $this->makeUser('admin');
+        $pend = $this->timed($formId, 'ana', '09:00:00', '09:01:00');   // corta, pendiente
+        $held = $this->timed($formId, 'ana', '10:00:00', '10:01:00');   // corta, en espera
+        $appr = $this->timed($formId, 'ana', '11:00:00', '11:01:00');   // corta, APROBADA
+        $rej  = $this->timed($formId, 'luis', '09:00:00', '09:01:00');  // corta, RECHAZADA (único envío de luis)
+        DB::run('INSERT INTO submission_reviews (submission_uid, user_id, status) VALUES (?, ?, ?)', [$held, $admin, 'on_hold']);
+        DB::run('INSERT INTO submission_reviews (submission_uid, user_id, status) VALUES (?, ?, ?)', [$appr, $admin, 'approved']);
+        DB::run('INSERT INTO submission_reviews (submission_uid, user_id, status) VALUES (?, ?, ?)', [$rej, $admin, 'rejected']);
+
+        $q = Quality::compute($formId, null, null, null, 'es', null, 'enum', 4, null, null, ['pending', 'on_hold']);
+        $this->assertSame(2, $q['total']);   // solo pendiente + en espera cuentan
+        $this->assertSame(2, $q['flagged']);
+        $v = $this->violationsByUid($q);
+        $this->assertArrayHasKey($pend, $v);
+        $this->assertArrayHasKey($held, $v);
+        $this->assertArrayNotHasKey($appr, $v);
+        $this->assertArrayNotHasKey($rej, $v);
+        // luis solo tiene envíos fuera de alcance → no aparece como encuestador.
+        $names = array_map(fn($e) => $e['name'], $q['teams'][0]['enumerators']);
+        $this->assertSame(['ana'], $names);
+
+        // Con alcance 'all' (null) se reportan las cuatro.
+        $all = Quality::compute($formId, null, null, null, 'es', null, 'enum', 4, null, null, null);
+        $this->assertSame(4, $all['total']);
+        $this->assertSame(4, $all['flagged']);
+    }
+
+    public function testChainUsesOutOfScopeNeighbors(): void
+    {
+        $formId = $this->makeForm();
+        $admin  = $this->makeUser('admin');
+        // A (aprobada) 09:00–09:10; B (pendiente) empieza a las 09:05 → solapa con A.
+        $a = $this->timed($formId, 'ana', '09:00:00', '09:10:00');
+        $b = $this->timed($formId, 'ana', '09:05:00', '09:15:00');
+        DB::run('INSERT INTO submission_reviews (submission_uid, user_id, status) VALUES (?, ?, ?)', [$a, $admin, 'approved']);
+
+        $q = Quality::compute($formId, null, null, null, 'es', null, 'enum', null, null, null, ['pending', 'on_hold']);
+        // La aprobada no se reporta, pero SÍ ancla la cadena: la pendiente sale solapada.
+        $this->assertSame(1, $q['total']);
+        $this->assertSame(1, $q['flags']['overlap']);
+        $v = $this->violationsByUid($q);
+        $this->assertSame(['overlap'], $v[$b]['flags']);
+        $this->assertSame(-300, $v[$b]['gap_s']);
+        $this->assertArrayNotHasKey($a, $v);
+    }
+
     public function testHiddenTeamFieldFallsBackToNoTeamLevel(): void
     {
         $formId = $this->makeForm();
