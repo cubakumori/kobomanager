@@ -4,6 +4,38 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.20.0] - 2026-07-06
+
+Escaparate y documentación del tramo 1.14–1.19. Sin cambios de esquema.
+
+> **Nota de actualización acumulada.** Si actualizas desde **1.13.0 o anterior**, este
+> tramo trae DOS cambios de esquema (los umbrales del control de calidad en `forms`,
+> 1.14.0, y `user_form_permissions.can_settings`, 1.15.0). Basta ejecutar **una vez**
+> `php api/cli/migrate.php` tras subir el código — aplica idempotentemente todo lo que
+> falte, de ambas versiones. Sin shell, aplica a mano los `ALTER` de las notas de
+> 1.14.0 y 1.15.0.
+
+### Añadido
+
+- **La portada promociona el control de calidad**: tarjeta destacada nueva en «Y mucho
+  más» («detecta encuestas apresuradas o fabricadas: cortas o largas de más, solapadas
+  o con huecos sospechosos entre consecutivas del mismo encuestador; umbrales por
+  formulario y "En espera" de un clic»), y la sección pasa a cuadrícula 2×2. La tarjeta
+  «Seguimiento por equipo» aclara que los campos de equipo/encuestador los eliges tú, y
+  un chip nuevo anuncia la copia de seguridad desde la app (de 1.13.0).
+
+### Cambiado
+
+- **Barrido de documentación del tramo 1.14–1.19**: README (control de calidad y
+  permiso «Ajustes» en *Features*, desglose por equipo, backup in-app en *Operation*),
+  ARCHITECTURE (ajustes `stats_default_scope`/`qc_scope`/`pct_format` en la lista de
+  settings, el token `success` en theming, `migrate.php` con `KM_CONFIG`, denominador
+  único del control de calidad), CONTRIBUTING (convención real del CHANGELOG — ya no
+  existe «Sin publicar» — y defaults de settings en código), DEMO.md (el control de
+  calidad queda habilitado en la demo; su lote «En espera» es local allí), ROADMAP (el
+  hito de control de calidad quedó pulido hasta 1.19.0) y la guía in-app (los umbrales
+  y el desglose también los configura quien tenga el permiso «Ajustes» del formulario).
+
 ## [1.19.0] - 2026-07-06
 
 Formato configurable de porcentajes y rediseño de la tabla del Control de calidad.

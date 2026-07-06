@@ -23,10 +23,10 @@ watch(demoMode, (v) => { if (v) showDemoModal.value = true }, { immediate: true 
 const features = [1, 2, 3, 4]
 
 // Sección «Y mucho más»: las capacidades más vendibles como tarjetas destacadas
-// (seguimiento por equipo, permisos por columna y enlaces públicos) y el resto
-// como chips, mismo lenguaje visual verde.
-const highlights = ['featStats', 'featColumns', 'feat5']
-const chips = ['chipEmail', 'chipLabels', 'chipMap', 'chipCsv', 'chipEdit']
+// (control de calidad, seguimiento por equipo, permisos por columna y enlaces
+// públicos) y el resto como chips, mismo lenguaje visual verde.
+const highlights = ['featQuality', 'featStats', 'featColumns', 'feat5']
+const chips = ['chipEmail', 'chipLabels', 'chipMap', 'chipCsv', 'chipEdit', 'chipBackup']
 
 // Enlace al repo para la CTA de cierre («monta tu propia instancia»); vacío = oculto.
 const { links } = usePublicLinks()
@@ -112,8 +112,8 @@ const showCta = computed(() => landingCtaEnabled.value && (!!links.value.repo ||
       <h2 class="text-center text-2xl font-bold tracking-tight text-slate-900">{{ $t('landing.moreTitle') }}</h2>
       <p class="mx-auto mt-2 max-w-2xl text-center text-sm text-slate-600">{{ $t('landing.moreSubtitle') }}</p>
 
-      <!-- Tarjetas destacadas: seguimiento por equipo, permisos por columna y enlaces públicos -->
-      <div class="mx-auto mt-8 grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <!-- Tarjetas destacadas: control de calidad, seguimiento por equipo, permisos por columna y enlaces públicos -->
+      <div class="mx-auto mt-8 grid max-w-5xl gap-4 sm:grid-cols-2">
         <div
           v-for="h in highlights"
           :key="h"

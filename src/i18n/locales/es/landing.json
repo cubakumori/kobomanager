@@ -29,8 +29,10 @@
     "moreSubtitle": "Pensado para equipos que necesitan compartir y analizar datos sin renunciar a su control y seguridad.",
     "feat5Title": "Enlaces públicos de solo lectura",
     "feat5Desc": "Comparte un formulario por enlace, sin dar cuenta: opcionalmente con contraseña, fecha de caducidad y el mismo alcance por filas y columnas que aplicas a tu equipo —e incluso acotado a solo lo aprobado o a ciertos equipos.",
+    "featQualityTitle": "Control de calidad de encuestas",
+    "featQualityDesc": "Detecta encuestas apresuradas o fabricadas: demasiado cortas o largas, solapadas en el tiempo con otra del mismo encuestador o con huecos sospechosamente cortos entre una y otra. Tú defines los umbrales por formulario, y las no admitidas se marcan «En espera» de un clic.",
     "featStatsTitle": "Seguimiento por equipo",
-    "featStatsDesc": "Mide el desempeño de campo por equipo y, dentro de cada uno, por encuestador: volumen, calidad (estado de revisión), duración y completitud. Respeta el alcance, así que un jefe de equipo ve solo el suyo.",
+    "featStatsDesc": "Mide el desempeño de campo por equipo y, dentro de cada uno, por encuestador —tú eliges qué campos del formulario definen el equipo y el encuestador—: volumen, calidad (estado de revisión), duración y completitud. Respeta el alcance, así que un jefe de equipo ve solo el suyo.",
     "featColumnsTitle": "Permisos por columna",
     "featColumnsDesc": "Oculta campos sensibles a cada usuario o márcalos de solo lectura, columna a columna. Lo oculto no aparece en la tabla, el detalle, las estadísticas, la búsqueda ni la exportación.",
     "chipEmail": "Notificaciones por email",
@@ -41,6 +43,7 @@
     "selfHostTitle": "Es software libre: monta tu propia instancia",
     "selfHostBody": "KoboManager es de código abierto (AGPL-3.0). Despliégalo en tu propio servidor sin coste, o apoya el proyecto para que siga creciendo.",
     "selfHostRepo": "Ver el código (GitHub)",
-    "disclaimer": "KoboManager es un proyecto independiente de código abierto; no está afiliado a, respaldado ni patrocinado por KoboToolbox ni por Rakuten Kobo."
+    "disclaimer": "KoboManager es un proyecto independiente de código abierto; no está afiliado a, respaldado ni patrocinado por KoboToolbox ni por Rakuten Kobo.",
+    "chipBackup": "Copia de seguridad desde la app"
   }
 }

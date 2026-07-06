@@ -29,8 +29,10 @@
     "moreSubtitle": "Built for teams that need to share and analyze data without giving up control and security.",
     "feat5Title": "Public read-only links",
     "feat5Desc": "Share a form by link, no account required: optionally with a password, an expiry date and the same row- and column-level scope you apply to your team —even narrowed to approved-only or to specific teams.",
+    "featQualityTitle": "Survey quality control",
+    "featQualityDesc": "Catch rushed or fabricated interviews: too short or too long, overlapping in time with another by the same enumerator, or with suspiciously short gaps between consecutive ones. You set the thresholds per form, and the non-admissible ones go on hold in one click.",
     "featStatsTitle": "Team tracking",
-    "featStatsDesc": "Measure field performance by team and, within each team, by enumerator: volume, quality (review status), duration and completeness. It respects scoping, so a team lead only sees their own team.",
+    "featStatsDesc": "Measure field performance by team and, within each team, by enumerator — you pick which form fields define the team and the enumerator: volume, quality (review status), duration and completeness. It respects scoping, so a team lead only sees their own team.",
     "featColumnsTitle": "Column-level permissions",
     "featColumnsDesc": "Hide sensitive fields per user or mark them read-only, column by column. What's hidden never appears in the table, detail, statistics, search or export.",
     "chipEmail": "Email notifications",
@@ -41,6 +43,7 @@
     "selfHostTitle": "It's free software: run your own instance",
     "selfHostBody": "KoboManager is open source (AGPL-3.0). Deploy it on your own server at no cost, or support the project to keep it growing.",
     "selfHostRepo": "View the code (GitHub)",
-    "disclaimer": "KoboManager is an independent open-source project and is not affiliated with, endorsed by, or sponsored by KoboToolbox or Rakuten Kobo."
+    "disclaimer": "KoboManager is an independent open-source project and is not affiliated with, endorsed by, or sponsored by KoboToolbox or Rakuten Kobo.",
+    "chipBackup": "In-app database backup"
   }
 }
