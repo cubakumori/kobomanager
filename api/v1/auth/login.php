@@ -23,8 +23,13 @@ $user = DB::run(
     [$in['email']]
 )->fetch();
 
-// Mensaje genérico para no revelar si el email existe.
-if (!$user || !$user['active'] || !password_verify($in['password'], $user['password_hash'])) {
+// Mensaje genérico para no revelar si el email existe — y TIEMPO también genérico:
+// con un email inexistente/inactivo se verifica contra un hash señuelo para que el
+// coste bcrypt sea el mismo y la latencia no delate si la cuenta existe.
+$decoyHash = '$2y$12$JCp9mYWrseAdiKrep2I4jOSsb8yF28gsf4DocX1D85/xTc5Wyy/aK';
+$knownUser = $user && $user['active'];
+$passOk    = password_verify($in['password'], $knownUser ? $user['password_hash'] : $decoyHash);
+if (!$knownUser || !$passOk) {
     RateLimit::hit($ip);
     ErrorResponse::send('VALIDATION_ERROR', 'Credenciales incorrectas', 401);
 }

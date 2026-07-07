@@ -21,10 +21,13 @@ require __DIR__ . '/../lib/Settings.php';
 require __DIR__ . '/../lib/Mailer.php';
 require __DIR__ . '/../lib/RowScope.php';
 
-// Día a resumir (el de ayer salvo que se pase uno por argumento).
-$day   = $argv[1] ?? date('Y-m-d', strtotime('yesterday'));
+// Día a resumir (el de ayer salvo que se pase uno por argumento). El «día» es el
+// día natural UTC: `submitted_at` está anclado en UTC (ver SubmissionSync) y el
+// gráfico «por día» de Estadísticas agrupa DATE(submitted_at) — así los conteos
+// del email coinciden con el gráfico, sea cual sea la TZ del servidor.
+$day   = $argv[1] ?? (new DateTime('now', new DateTimeZone('UTC')))->modify('-1 day')->format('Y-m-d');
 $start = $day . ' 00:00:00';
-$end   = date('Y-m-d', strtotime($day . ' +1 day')) . ' 00:00:00';
+$end   = (new DateTime($day, new DateTimeZone('UTC')))->modify('+1 day')->format('Y-m-d') . ' 00:00:00';
 
 // Candidatos (usuario × formulario con resumen activo). El conteo se calcula aparte
 // porque cada (usuario, formulario) puede tener un filtro por filas distinto.

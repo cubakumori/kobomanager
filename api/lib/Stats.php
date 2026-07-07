@@ -130,12 +130,14 @@ class Stats {
         unset($m);
 
         // Tendencia reciente: últimos 7/30 días vs el periodo ANTERIOR equivalente.
+        // UTC_TIMESTAMP(), no NOW(): `submitted_at` está anclado en UTC y NOW() usa la
+        // TZ de sesión de MySQL — con la BD en otra zona, las ventanas se desplazarían.
         $tr = DB::run(
             "SELECT
-                SUM(submitted_at >= NOW() - INTERVAL 7 DAY)                                          AS last7,
-                SUM(submitted_at <  NOW() - INTERVAL 7 DAY  AND submitted_at >= NOW() - INTERVAL 14 DAY) AS prev7,
-                SUM(submitted_at >= NOW() - INTERVAL 30 DAY)                                         AS last30,
-                SUM(submitted_at <  NOW() - INTERVAL 30 DAY AND submitted_at >= NOW() - INTERVAL 60 DAY) AS prev30
+                SUM(submitted_at >= UTC_TIMESTAMP() - INTERVAL 7 DAY)                                                   AS last7,
+                SUM(submitted_at <  UTC_TIMESTAMP() - INTERVAL 7 DAY  AND submitted_at >= UTC_TIMESTAMP() - INTERVAL 14 DAY) AS prev7,
+                SUM(submitted_at >= UTC_TIMESTAMP() - INTERVAL 30 DAY)                                                  AS last30,
+                SUM(submitted_at <  UTC_TIMESTAMP() - INTERVAL 30 DAY AND submitted_at >= UTC_TIMESTAMP() - INTERVAL 60 DAY) AS prev30
              FROM submissions_cache
              WHERE form_id = ? AND submitted_at IS NOT NULL AND $scopeSql AND $statusSql AND $teamSql",
             array_merge([$formId], $scopeP, $statusP, $teamP)

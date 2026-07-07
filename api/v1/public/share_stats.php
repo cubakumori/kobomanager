@@ -26,8 +26,13 @@ $fieldScope = FieldScope::ruleForLink($link);
 // esquema y `last_synced_at` (una sincronización invalida sola) y el TTL acota
 // la frescura de los cambios de revisión hechos en la app entre syncs. La vista
 // interna autenticada NO se cachea (sus usuarios esperan ver su revisión al momento).
+// El nombre del archivo incorpora un HMAC con JWT_SECRET: en hosting compartido el
+// temp del sistema puede ser legible/enumerable por otros tenants, y un nombre
+// predecible les dejaría localizar (y con permisos laxos, leer) agregados
+// semi-públicos. El chmod 0600 tras escribir cierra la lectura ajena.
 $locale      = Settings::defaultLocale();
-$cacheFile   = sys_get_temp_dir() . '/km_share_stats_' . (int) $link['id'] . '.json';
+$cacheName   = hash_hmac('sha256', 'share_stats|' . (int) $link['id'], JWT_SECRET);
+$cacheFile   = sys_get_temp_dir() . '/km_' . $cacheName . '.json';
 $fingerprint = md5(json_encode($link, JSON_UNESCAPED_UNICODE) . '|' . $locale);
 $cacheTtl    = 300;
 
@@ -57,5 +62,6 @@ $payload = array_merge([
     json_encode(['fp' => $fingerprint, 'payload' => $payload], JSON_UNESCAPED_UNICODE),
     LOCK_EX
 );
+@chmod($cacheFile, 0600);
 
 ErrorResponse::ok($payload);
