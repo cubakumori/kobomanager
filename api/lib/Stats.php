@@ -37,6 +37,12 @@ class Stats {
      *                                 para poder cambiar de filtro. Solo aplica con
      *                                 `$includeReview = true` (los enlaces públicos no
      *                                 distinguen estado → siempre 'all').
+     * @param string|null $dateFrom   Rango de fechas 'YYYY-MM-DD' (días naturales UTC,
+     * @param string|null $dateTo     como el gráfico «por día»), ambos inclusive y
+     *                                 opcionales por separado. Restringe las mismas
+     *                                 métricas que el filtro de estado; NO restringe el
+     *                                 encabezado (`total`/`by_status`) ni la tendencia
+     *                                 7/30 d (que tiene su propia ventana relativa a hoy).
      */
     public static function compute(
         int $formId,
@@ -49,7 +55,9 @@ class Stats {
         ?string $enumField = null,
         ?string $filterStatus = null,
         ?array $teamSel = null,
-        ?array $extraScope = null
+        ?array $extraScope = null,
+        ?string $dateFrom = null,
+        ?string $dateTo = null
     ): array {
         [$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'json_payload');
 
@@ -71,6 +79,22 @@ class Stats {
         $filter = in_array($filterStatus, ValidationStatus::STATUSES, true) ? $filterStatus : 'all';
         [$statusSql, $statusP] = ValidationStatus::statusFilterSql($filter === 'all' ? null : $filter);
 
+        // Rango de fechas (días naturales UTC sobre submitted_at, coherente con el
+        // gráfico «por día»). Formato defensivo: lo que no sea YYYY-MM-DD se ignora.
+        $dateFrom = ($dateFrom !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateFrom)) ? $dateFrom : null;
+        $dateTo   = ($dateTo   !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateTo))   ? $dateTo   : null;
+        $dateConds = [];
+        $dateP     = [];
+        if ($dateFrom !== null) {
+            $dateConds[] = 'submitted_at >= ?';
+            $dateP[]     = $dateFrom . ' 00:00:00';
+        }
+        if ($dateTo !== null) {
+            $dateConds[] = 'submitted_at < ?';
+            $dateP[]     = (new DateTime($dateTo, new DateTimeZone('UTC')))->modify('+1 day')->format('Y-m-d') . ' 00:00:00';
+        }
+        $dateSql = $dateConds ? implode(' AND ', $dateConds) : '1=1';
+
         // Campo de equipo efectivo: configurado y NO oculto por FieldScope en este alcance
         // (no se puede agrupar/filtrar por una columna que el usuario no ve).
         $teamField = ($teamField !== null && $teamField !== '' && !FieldScope::isHidden($fieldScope, $teamField))
@@ -90,14 +114,14 @@ class Stats {
             array_merge([$formId], $scopeP)
         )->fetch()['c'];
 
-        // Envíos por día (restringido al filtro de estado, si lo hay).
+        // Envíos por día (restringido al filtro de estado y al rango de fechas, si los hay).
         $byDay = DB::run(
             "SELECT DATE(submitted_at) AS day, COUNT(*) AS count
              FROM submissions_cache
-             WHERE form_id = ? AND submitted_at IS NOT NULL AND $scopeSql AND $statusSql AND $teamSql
+             WHERE form_id = ? AND submitted_at IS NOT NULL AND $scopeSql AND $statusSql AND $teamSql AND $dateSql
              GROUP BY DATE(submitted_at)
              ORDER BY day",
-            array_merge([$formId], $scopeP, $statusP, $teamP)
+            array_merge([$formId], $scopeP, $statusP, $teamP, $dateP)
         )->fetchAll();
         $byDay = array_map(fn($r) => ['date' => $r['day'], 'count' => (int) $r['count']], $byDay);
 
@@ -189,8 +213,13 @@ class Stats {
         $teamOptMap = $teamField !== null ? ($options[$teamField] ?? []) : [];
         $enumOptMap = $enumIsField ? ($options[$enumPath] ?? []) : [];
 
-        // Preguntas de opción (select_one y select_multiple).
-        $singleFields = [];
+        // Preguntas de opción (select_one y select_multiple), numéricas y el conjunto
+        // completo de preguntas contestables (para el ranking de no-respuesta; el
+        // esquema normalizado ya excluye note/calculate/metadatos — ver FormSchema).
+        $singleFields    = [];
+        $numericFields   = [];
+        $answerableCount = 0;
+        $answerablePaths = [];
         foreach (($schemaRaw['fields'] ?? []) as $path => $fd) {
             if (FieldScope::isHidden($fieldScope, (string) $path)) continue; // oculta → no se cuenta
             $type  = (string) ($fd['type'] ?? '');
@@ -198,11 +227,18 @@ class Stats {
             if (str_starts_with($type, 'select_one') || str_starts_with($type, 'select_multiple')) {
                 $singleFields[$path] = ['leaf' => $fd['leaf'] ?? $path, 'multi' => $multi];
             }
+            if (in_array($type, ['integer', 'decimal', 'range'], true)) {
+                $numericFields[$path] = ['leaf' => $fd['leaf'] ?? $path];
+            }
+            $answerablePaths[$path] = ['leaf' => $fd['leaf'] ?? $path];
+            $answerableCount++;
         }
 
         // Acumuladores.
         $qCounts    = [];                 // path => [ code => count ]
-        $qAnswered  = [];                 // path => nº de envíos con respuesta
+        $qAnswered  = [];                 // path => nº de envíos con respuesta (selects)
+        $numValues  = [];                 // path => [valores numéricos]
+        $qNonEmpty  = [];                 // path => nº de envíos con CUALQUIER respuesta (no-respuesta)
         $enumCounts = [];                 // _submitted_by => count
         $durations  = [];                 // duraciones (s) no nulas
         $byHour     = array_fill(0, 24, 0);
@@ -241,8 +277,8 @@ class Stats {
 
         foreach (DB::stream(
             "SELECT submission_uid, json_payload, submitted_at, review_status
-             FROM submissions_cache WHERE form_id = ? AND $scopeSql AND $statusSql",
-            array_merge([$formId], $scopeP, $statusP)
+             FROM submissions_cache WHERE form_id = ? AND $scopeSql AND $statusSql AND $dateSql",
+            array_merge([$formId], $scopeP, $statusP, $dateP)
         ) as $r) {
             $teamBase++;
             // Recorta los campos ocultos: adjuntos/geo de un campo oculto no cuentan.
@@ -293,6 +329,22 @@ class Stats {
                 }
             }
 
+            // Preguntas numéricas: solo valores escalares parseables.
+            foreach ($numericFields as $path => $f) {
+                $v = $payload[$path] ?? null;
+                if ($v === null || $v === '' || is_array($v) || !is_numeric($v)) continue;
+                $numValues[$path][] = (float) $v;
+            }
+
+            // No-respuesta: cuenta los envíos con CUALQUIER valor no vacío por pregunta.
+            foreach ($answerablePaths as $path => $f) {
+                $v = $payload[$path] ?? null;
+                if ($v === null) continue;
+                if (is_string($v) && trim($v) === '') continue;
+                if (is_array($v) && $v === []) continue;
+                $qNonEmpty[$path] = ($qNonEmpty[$path] ?? 0) + 1;
+            }
+
             // Por enumerador.
             $by = $payload['_submitted_by'] ?? null;
             $by = ($by === null || $by === '') ? '—' : (string) $by;
@@ -341,6 +393,69 @@ class Stats {
                 'options'  => $opts,
                 'others'   => $othersCount,
             ];
+        }
+
+        // --- Preguntas numéricas: min/max/media/mediana + histograma de 8 tramos. ---
+        $byNumeric = [];
+        foreach ($numericFields as $path => $f) {
+            $vals = $numValues[$path] ?? [];
+            if (!$vals) continue;
+            sort($vals);
+            $n      = count($vals);
+            $min    = $vals[0];
+            $max    = $vals[$n - 1];
+            $median = $n % 2 ? $vals[intdiv($n, 2)] : ($vals[$n / 2 - 1] + $vals[$n / 2]) / 2;
+
+            // Histograma: 8 tramos iguales entre min y max (1 solo si min == max).
+            $hist = [];
+            if ($min === $max) {
+                $hist[] = ['from' => $min, 'to' => $max, 'count' => $n];
+            } else {
+                $buckets = 8;
+                $step    = ($max - $min) / $buckets;
+                $counts  = array_fill(0, $buckets, 0);
+                foreach ($vals as $v) {
+                    $i = min($buckets - 1, (int) floor(($v - $min) / $step));
+                    $counts[$i]++;
+                }
+                foreach ($counts as $i => $c) {
+                    $hist[] = [
+                        'from'  => round($min + $step * $i, 2),
+                        'to'    => round($i === $buckets - 1 ? $max : $min + $step * ($i + 1), 2),
+                        'count' => $c,
+                    ];
+                }
+            }
+
+            $byNumeric[] = [
+                'field'     => $path,
+                'label'     => $labelsOn ? ($labels[$path] ?? ($labels[$f['leaf']] ?? $path)) : $path,
+                'answered'  => $n,
+                'min'       => $min,
+                'max'       => $max,
+                'mean'      => round(array_sum($vals) / $n, 2),
+                'median'    => round($median, 2),
+                'histogram' => $hist,
+            ];
+        }
+
+        // --- Ranking de no-respuesta: preguntas más saltadas (top 10, % sobre base). ---
+        $noResponse = [];
+        if ($base > 0) {
+            foreach ($answerablePaths as $path => $f) {
+                $answered = $qNonEmpty[$path] ?? 0;
+                $skipped  = $base - $answered;
+                if ($skipped <= 0) continue;
+                $noResponse[] = [
+                    'field'    => $path,
+                    'label'    => $labelsOn ? ($labels[$path] ?? ($labels[$f['leaf']] ?? $path)) : $path,
+                    'answered' => $answered,
+                    'skipped'  => $skipped,
+                    'pct'      => round($skipped * 100 / $base, 4),
+                ];
+            }
+            usort($noResponse, fn($a, $b) => [$b['pct'], $b['skipped']] <=> [$a['pct'], $a['skipped']]);
+            $noResponse = array_slice($noResponse, 0, 10);
         }
 
         // --- Por enumerador: ordenado desc, top 20 + otros. ---
@@ -453,7 +568,12 @@ class Stats {
             'by_month'        => $byMonth,
             'period_granularity' => $periodGranularity,
             'trend'           => $trend,
+            'date_from'       => $dateFrom,
+            'date_to'         => $dateTo,
             'by_question'     => $byQuestion,
+            'by_numeric'      => $byNumeric,
+            'no_response'     => $noResponse,
+            'questions_total' => $answerableCount,
             'by_enumerator'   => $byEnumerator,
             'enumerator_others' => $enumOthers,
             'duration'        => $duration,

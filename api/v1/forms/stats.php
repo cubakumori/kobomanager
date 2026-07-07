@@ -37,10 +37,15 @@ $teamSel = array_key_exists('teams', $_GET)
     ? array_values(array_filter(explode(',', (string) $_GET['teams']), fn($s) => $s !== ''))
     : null;
 
+// Rango de fechas opcional (`?from=` / `?to=`, YYYY-MM-DD inclusive, días UTC).
+// La validación fina la hace Stats::compute (formato inválido = sin filtro).
+$dateFrom = ($_GET['from'] ?? '') !== '' ? (string) $_GET['from'] : null;
+$dateTo   = ($_GET['to'] ?? '') !== '' ? (string) $_GET['to'] : null;
+
 $stats = Stats::compute(
     $formId, $schemaRaw, $scope, $fieldScope, $user['locale'], true,
     $form['stats_team_field'] ?: null, $form['stats_enumerator_field'] ?: null,
-    $filter, $teamSel
+    $filter, $teamSel, null, $dateFrom, $dateTo
 );
 
 ErrorResponse::ok(array_merge([

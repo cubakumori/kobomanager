@@ -282,4 +282,123 @@ final class StatsTest extends DbTestCase
         sort($names);
         $this->assertSame(['w1', 'w2'], $names); // agrupa por `worker`, no por `_submitted_by`
     }
+
+    // ---- Rango de fechas ----
+
+    private function addSubmissionAt(int $formId, array $payload, string $submittedAt): string
+    {
+        $uid = 'uid_' . bin2hex(random_bytes(6));
+        DB::run(
+            'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, submitted_at)
+             VALUES (?, ?, ?, ?)',
+            [$formId, $uid, json_encode($payload, JSON_UNESCAPED_UNICODE), $submittedAt]
+        );
+        return $uid;
+    }
+
+    public function testDateRangeFiltersMetricsButNotHeader(): void
+    {
+        $formId = $this->makeForm();
+        $this->addSubmissionAt($formId, ['_id' => 1, 'x' => 'a'], '2026-01-10 09:00:00');
+        $this->addSubmissionAt($formId, ['_id' => 2, 'x' => 'b'], '2026-02-10 09:00:00');
+        $this->addSubmissionAt($formId, ['_id' => 3, 'x' => 'c'], '2026-03-10 09:00:00');
+
+        $stats = Stats::compute(
+            $formId, null, null, null, 'es', true,
+            null, null, null, null, null, '2026-02-01', '2026-02-28'
+        );
+        // El encabezado sigue completo; las métricas se acotan al rango.
+        $this->assertSame(3, $stats['total']);
+        $this->assertSame(1, $stats['base']);
+        $this->assertCount(1, $stats['by_day']);
+        $this->assertSame('2026-02-10', $stats['by_day'][0]['date']);
+        $this->assertSame('2026-02-01', $stats['date_from']);
+        $this->assertSame('2026-02-28', $stats['date_to']);
+
+        // Fechas mal formadas = sin filtro (defensivo).
+        $all = Stats::compute(
+            $formId, null, null, null, 'es', true,
+            null, null, null, null, null, 'nope', '2026-13-99x'
+        );
+        $this->assertSame(3, $all['base']);
+        $this->assertNull($all['date_from']);
+    }
+
+    public function testDateRangeBoundsAreInclusive(): void
+    {
+        $formId = $this->makeForm();
+        $this->addSubmissionAt($formId, ['_id' => 1], '2026-02-01 00:00:00'); // primer instante del from
+        $this->addSubmissionAt($formId, ['_id' => 2], '2026-02-28 23:59:59'); // último instante del to
+
+        $stats = Stats::compute(
+            $formId, null, null, null, 'es', true,
+            null, null, null, null, null, '2026-02-01', '2026-02-28'
+        );
+        $this->assertSame(2, $stats['base']);
+    }
+
+    // ---- Preguntas numéricas ----
+
+    public function testByNumericStatsAndHistogram(): void
+    {
+        $schema = ['fields' => [
+            'edad'   => ['type' => 'integer', 'leaf' => 'edad'],
+            'nombre' => ['type' => 'text', 'leaf' => 'nombre'],
+        ]];
+        $formId = $this->makeForm();
+        foreach ([10, 20, 30, 40] as $i => $v) {
+            $this->addSubmission($formId, ['_id' => $i + 1, 'edad' => $v, 'nombre' => 'x']);
+        }
+        // Valores no numéricos o vacíos no cuentan.
+        $this->addSubmission($formId, ['_id' => 9, 'edad' => '', 'nombre' => 'y']);
+        $this->addSubmission($formId, ['_id' => 10, 'edad' => 'abc', 'nombre' => 'z']);
+
+        $stats = Stats::compute($formId, $schema, null, null, 'es', true);
+        $this->assertCount(1, $stats['by_numeric']);
+        $num = $stats['by_numeric'][0];
+        $this->assertSame('edad', $num['field']);
+        $this->assertSame(4, $num['answered']);
+        $this->assertSame(10.0, $num['min']);
+        $this->assertSame(40.0, $num['max']);
+        $this->assertSame(25.0, $num['mean']);
+        $this->assertSame(25.0, $num['median']);
+        $this->assertCount(8, $num['histogram']);
+        $this->assertSame(4, array_sum(array_column($num['histogram'], 'count')));
+        // Un solo valor distinto → histograma de un tramo.
+        $this->assertSame($num['histogram'][0]['from'], 10.0);
+    }
+
+    public function testByNumericExcludesHiddenFields(): void
+    {
+        $schema = ['fields' => ['salario' => ['type' => 'decimal', 'leaf' => 'salario']]];
+        $formId = $this->makeForm();
+        $this->addSubmission($formId, ['_id' => 1, 'salario' => 100]);
+
+        $fieldScope = FieldScope::normalize(['hidden' => ['salario']]);
+        $stats = Stats::compute($formId, $schema, null, $fieldScope, 'es', true);
+        $this->assertSame([], $stats['by_numeric']);
+    }
+
+    // ---- Ranking de no-respuesta ----
+
+    public function testNoResponseRankingTopSkipped(): void
+    {
+        $schema = ['fields' => [
+            'siempre' => ['type' => 'text', 'leaf' => 'siempre'],
+            'a_veces' => ['type' => 'text', 'leaf' => 'a_veces'],
+            'nunca'   => ['type' => 'text', 'leaf' => 'nunca'],
+        ]];
+        $formId = $this->makeForm();
+        $this->addSubmission($formId, ['_id' => 1, 'siempre' => 'x', 'a_veces' => 'y']);
+        $this->addSubmission($formId, ['_id' => 2, 'siempre' => 'x']);
+
+        $stats = Stats::compute($formId, $schema, null, null, 'es', true);
+        $this->assertSame(3, $stats['questions_total']);
+        // «nunca» (100 % saltada) primero; «a_veces» (50 %) después; «siempre» no aparece.
+        $this->assertSame('nunca', $stats['no_response'][0]['field']);
+        $this->assertSame(2, $stats['no_response'][0]['skipped']);
+        $this->assertEqualsWithDelta(100.0, $stats['no_response'][0]['pct'], 0.001);
+        $this->assertSame('a_veces', $stats['no_response'][1]['field']);
+        $this->assertCount(2, $stats['no_response']);
+    }
 }
