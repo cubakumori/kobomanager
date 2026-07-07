@@ -191,6 +191,8 @@
     "auditSelfViewDesc": "Lets any user review their own activity log from the “My activity” menu.",
     "auditSelfViewToggle": "Enable “My activity” for all users",
     "auditSelfViewHint": "Each user sees only their own actions (never anyone else's). Administrators also have the full viewer under “Audit log”. Off by default.",
+    "auditRetentionLabel": "Log retention (days)",
+    "auditRetentionHint": "0 = keep forever. With a value > 0, older entries are purged automatically.",
     "notificationsDefault": "Notifications by default",
     "notificationsDefaultDesc": "Subscribes users to the daily email summary for the active forms they can see, without each having to opt in manually.",
     "notificationsDefaultToggle": "Receive notifications by default",

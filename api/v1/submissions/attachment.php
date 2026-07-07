@@ -65,27 +65,33 @@ if (!$acc) {
     ErrorResponse::send('KOBO_ACCOUNT_DISABLED', 'La cuenta Kobo no existe');
 }
 
+Audit::log($user['id'], 'download_attachment', $formId, $uid, ['attachment' => $attId]);
+
+// Streamear el archivo SEGÚN LLEGA de Kobo (el cuerpo nunca se acumula en RAM:
+// un vídeo de encuesta puede pesar cientos de MB). Las cabeceras se emiten en el
+// callback, justo antes del primer byte; cualquier error de Kobo se lanza ANTES,
+// así que la respuesta de error sigue siendo un JSON limpio. Solo se muestra
+// inline el contenido multimedia (imagen/audio/vídeo); todo lo demás se fuerza
+// como descarga. Una CSP estricta + sandbox neutraliza cualquier ejecución de
+// scripts si el navegador llegara a tratar el adjunto como HTML (defensa en
+// profundidad sobre el nosniff global).
 try {
     $client = new KoboClient($acc['server_url'], TokenVault::decrypt($acc['api_token']));
-    $file   = $client->getAttachment($att['download_url']);
+    $client->getAttachment($att['download_url'], function (string $ctype, ?int $length) use ($att, $attId): void {
+        $mime = $ctype !== '' && $ctype !== 'application/octet-stream'
+            ? $ctype : (($att['mimetype'] ?? '') !== '' ? $att['mimetype'] : 'application/octet-stream');
+        $name = $att['media_file_basename'] ?? basename((string) ($att['filename'] ?? $attId));
+        $inline = in_array(Attachments::kind($mime), ['image', 'audio', 'video'], true);
+        header('Content-Type: ' . $mime);
+        if ($length !== null) {
+            header('Content-Length: ' . $length);
+        }
+        header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment')
+            . '; filename="' . str_replace('"', '', $name) . '"');
+        header("Content-Security-Policy: default-src 'none'; sandbox");
+        header('Cache-Control: private, max-age=300');
+    });
 } catch (KoboException $e) {
     ErrorResponse::send($e->errorCode, $e->getMessage());
 }
-
-Audit::log($user['id'], 'download_attachment', $formId, $uid, ['attachment' => $attId]);
-
-// Streamear el archivo. Solo se muestra inline el contenido multimedia
-// (imagen/audio/vídeo); todo lo demás se fuerza como descarga. Una CSP estricta
-// + sandbox neutraliza cualquier ejecución de scripts si el navegador llegara a
-// tratar el adjunto como HTML (defensa en profundidad sobre el nosniff global).
-$mime = $file['mimetype'] ?: ($att['mimetype'] ?? 'application/octet-stream');
-$name = $att['media_file_basename'] ?? basename((string) ($att['filename'] ?? $attId));
-$inline = in_array(Attachments::kind($mime), ['image', 'audio', 'video'], true);
-header('Content-Type: ' . $mime);
-header('Content-Length: ' . strlen($file['body']));
-header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment')
-    . '; filename="' . str_replace('"', '', $name) . '"');
-header("Content-Security-Policy: default-src 'none'; sandbox");
-header('Cache-Control: private, max-age=300');
-echo $file['body'];
 exit;

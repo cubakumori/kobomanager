@@ -268,77 +268,112 @@ class KoboClient {
     }
 
     /**
-     * Descarga un adjunto (foto, audio, archivo) de un envío y lo devuelve en
-     * memoria como ['body' => bytes, 'mimetype' => tipo]. $url es la `download_url`
-     * del adjunto (absoluta) o una ruta relativa al servidor.
+     * Descarga un adjunto (foto, audio, archivo) de un envío y lo STREAMEA a la
+     * salida (php://output) según llega, sin cargarlo entero en memoria (un vídeo
+     * de encuesta puede pesar cientos de MB). $url es la `download_url` del
+     * adjunto (absoluta) o una ruta relativa al servidor.
+     *
+     * $onHeaders(string $mimetype, ?int $length) se invoca UNA vez, justo antes
+     * del primer byte del cuerpo: ahí el llamador emite sus cabeceras HTTP. Los
+     * errores (4xx/5xx, timeout de conexión) se lanzan como KoboException ANTES
+     * de llamar a $onHeaders — nunca con la respuesta ya empezada. Un fallo de
+     * red a mitad de descarga solo puede truncar el cuerpo (inevitable).
      *
      * Seguridad: la primera petición lleva el token, pero las redirecciones a un
      * almacenamiento externo (p. ej. S3 con URL firmada) se siguen MANUALMENTE y
      * SIN el token, para no filtrar la credencial a otro dominio.
      */
-    public function getAttachment(string $url): array {
+    public function getAttachment(string $url, callable $onHeaders): void {
         if (!preg_match('#^https?://#', $url)) {
             $url = $this->serverUrl . '/' . ltrim($url, '/');
         }
 
         // 1) Petición autenticada, sin seguir redirecciones.
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => false,
-            CURLOPT_TIMEOUT        => 60,
-            CURLOPT_CONNECTTIMEOUT => self::CONNECT_TIMEOUT,
-            CURLOPT_HTTPHEADER     => ['Authorization: Token ' . $this->apiToken],
-        ]);
-        $body     = curl_exec($ch);
-        $errno    = curl_errno($ch);
-        $status   = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $ctype    = (string) curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-        $redirect = (string) curl_getinfo($ch, CURLINFO_REDIRECT_URL);
-
-        if ($errno !== 0) {
+        $r = $this->streamLeg($url, ['Authorization: Token ' . $this->apiToken], false, $onHeaders);
+        if ($r['errno'] !== 0) {
+            if ($r['started']) return; // truncado a mitad: no se puede deshacer
             throw new KoboException('KOBO_TIMEOUT', 'No se pudo descargar el adjunto');
         }
 
         // 2) Redirección a almacenamiento firmado: seguirla sin el token.
-        if (in_array($status, [301, 302, 303, 307, 308], true) && $redirect !== '') {
+        if (in_array($r['status'], [301, 302, 303, 307, 308], true) && $r['redirect'] !== '') {
             // Defensa anti-SSRF: solo seguir redirecciones a HTTP(S) (no file://,
             // gopher://, etc.) y con un tope de saltos.
-            if (!preg_match('#^https?://#i', $redirect)) {
+            if (!preg_match('#^https?://#i', $r['redirect'])) {
                 throw new KoboException('KOBO_TIMEOUT', 'No se pudo descargar el adjunto');
             }
-            $ch2 = curl_init($redirect);
-            $opts2 = [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_MAXREDIRS      => 3,
-                CURLOPT_TIMEOUT        => 60,
-                CURLOPT_CONNECTTIMEOUT => self::CONNECT_TIMEOUT,
-            ];
-            if (defined('CURLOPT_REDIR_PROTOCOLS_STR')) {
-                $opts2[CURLOPT_REDIR_PROTOCOLS_STR] = 'http,https';
-            }
-            curl_setopt_array($ch2, $opts2);
-            $body   = curl_exec($ch2);
-            $errno  = curl_errno($ch2);
-            $status = (int) curl_getinfo($ch2, CURLINFO_HTTP_CODE);
-            $ctype  = (string) curl_getinfo($ch2, CURLINFO_CONTENT_TYPE);
-            if ($errno !== 0) {
+            $r = $this->streamLeg($r['redirect'], [], true, $onHeaders);
+            if ($r['errno'] !== 0) {
+                if ($r['started']) return;
                 throw new KoboException('KOBO_TIMEOUT', 'No se pudo descargar el adjunto');
             }
         }
 
-        if ($status === 401 || $status === 403) {
+        if ($r['status'] === 401 || $r['status'] === 403) {
             throw new KoboException('KOBO_UNAUTHORIZED', 'Token de Kobo expirado o inválido');
         }
-        if ($status === 404) {
+        if ($r['status'] === 404) {
             throw new KoboException('KOBO_FORM_NOT_FOUND', 'Adjunto no encontrado en Kobo');
         }
-        if ($status >= 400) {
-            throw new KoboException('KOBO_TIMEOUT', "Kobo respondió con estado $status");
+        if ($r['status'] >= 400 || $r['status'] < 200) {
+            throw new KoboException('KOBO_TIMEOUT', "Kobo respondió con estado {$r['status']}");
         }
 
-        return ['body' => (string) $body, 'mimetype' => $ctype ?: 'application/octet-stream'];
+        // 2xx con cuerpo VACÍO: el write callback nunca corrió → emitir cabeceras aquí.
+        if (!$r['started']) {
+            $onHeaders($r['ctype'] !== '' ? $r['ctype'] : 'application/octet-stream', 0);
+        }
+    }
+
+    /**
+     * Un tramo cURL del proxy de adjuntos: streamea los cuerpos 2xx a la salida
+     * (llamando a $onHeaders antes del primer byte) y DESCARTA los cuerpos de
+     * redirecciones/errores (sus mensajes se generan aparte). Devuelve
+     * ['status', 'redirect', 'ctype', 'started', 'errno'].
+     */
+    private function streamLeg(string $url, array $headers, bool $follow, callable $onHeaders): array {
+        $started = false;
+        $ch = curl_init($url);
+        $opts = [
+            CURLOPT_FOLLOWLOCATION => $follow,
+            CURLOPT_TIMEOUT        => 300,
+            CURLOPT_CONNECTTIMEOUT => self::CONNECT_TIMEOUT,
+            CURLOPT_WRITEFUNCTION  => function ($ch, string $chunk) use (&$started, $onHeaders): int {
+                $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                if ($status < 200 || $status >= 300) {
+                    return strlen($chunk); // redirect/error: descartar el cuerpo
+                }
+                if (!$started) {
+                    $started = true;
+                    $len = (float) curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
+                    $onHeaders(
+                        (string) curl_getinfo($ch, CURLINFO_CONTENT_TYPE),
+                        $len > 0 ? (int) $len : null
+                    );
+                }
+                echo $chunk;
+                flush();
+                return strlen($chunk);
+            },
+        ];
+        if ($follow) {
+            $opts[CURLOPT_MAXREDIRS] = 3;
+            if (defined('CURLOPT_REDIR_PROTOCOLS_STR')) {
+                $opts[CURLOPT_REDIR_PROTOCOLS_STR] = 'http,https';
+            }
+        }
+        if ($headers) {
+            $opts[CURLOPT_HTTPHEADER] = $headers;
+        }
+        curl_setopt_array($ch, $opts);
+        curl_exec($ch);
+        return [
+            'status'   => (int) curl_getinfo($ch, CURLINFO_HTTP_CODE),
+            'redirect' => (string) curl_getinfo($ch, CURLINFO_REDIRECT_URL),
+            'ctype'    => (string) curl_getinfo($ch, CURLINFO_CONTENT_TYPE),
+            'started'  => $started,
+            'errno'    => curl_errno($ch),
+        ];
     }
 
     // ---------- HTTP ----------

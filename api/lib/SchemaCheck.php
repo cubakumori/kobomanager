@@ -106,6 +106,22 @@ class SchemaCheck {
          'fix' => "ALTER TABLE submissions_cache ADD COLUMN att_count SMALLINT UNSIGNED NOT NULL DEFAULT 0 AFTER duration_s"],
         ['table' => 'submissions_cache', 'column' => 'has_geo', 'since' => '1.21.0',
          'fix' => "ALTER TABLE submissions_cache ADD COLUMN has_geo TINYINT(1) NOT NULL DEFAULT 0 AFTER att_count"],
+
+        // Linaje de ediciones indexado + índices de consulta/purga del registro de
+        // auditoría (antes: full scan del log por cada eslabón del historial).
+        ['table' => 'audit_log', 'column' => 'edit_new_uid', 'since' => '1.21.0',
+         'fix' => "ALTER TABLE audit_log
+            ADD COLUMN edit_new_uid VARCHAR(100) GENERATED ALWAYS AS (JSON_UNQUOTE(JSON_EXTRACT(detail, '\$.new_uid'))) STORED,
+            ADD INDEX idx_audit_form_action (form_id, action, id),
+            ADD INDEX idx_audit_created (created_at),
+            ADD INDEX idx_audit_lineage (form_id, edit_new_uid)"],
+
+        // Nº de envíos cacheado por formulario (evita un COUNT por formulario en cada
+        // carga del listado). El backfill lo deja al día; después lo refresca cada sync.
+        ['table' => 'forms', 'column' => 'submission_count', 'since' => '1.21.0',
+         'fix' => "ALTER TABLE forms ADD COLUMN submission_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER submissions_synced_at",
+         'backfill' => "UPDATE forms f SET f.submission_count =
+            (SELECT COUNT(*) FROM submissions_cache sc WHERE sc.form_id = f.id)"],
     ];
 
     /** Columnas cuyo backfill requiere el recálculo PHP de migrate.php (no basta SQL). */

@@ -69,6 +69,9 @@ CREATE TABLE IF NOT EXISTS forms (
     -- muestra «Sin sincronizar» en vez de «0 envíos». `last_synced_at` no sirve para
     -- esto porque también lo fija el descubrimiento de formularios.
     submissions_synced_at DATETIME NULL,
+    -- Nº de envíos en caché (lo refresca SubmissionSync al final de cada sync).
+    -- Evita un COUNT por formulario en cada carga del listado; frescura = la del sync.
+    submission_count    INT UNSIGNED NOT NULL DEFAULT 0,
     -- Desglose de estadísticas «por equipo → encuestador» (opcional, por formulario).
     -- `stats_team_field`: ruta del campo del envío que identifica el EQUIPO/grupo
     --   (hoja `team` o ruta de grupo `g/team`). NULL = desglose por equipo apagado.
@@ -198,8 +201,15 @@ CREATE TABLE IF NOT EXISTS audit_log (
     submission_uid  VARCHAR(100),
     action          VARCHAR(50) NOT NULL,
     detail          JSON,
+    -- `detail.new_uid` de las acciones 'edit' (columna generada e indexada): el
+    -- historial de ediciones reconstruye el linaje de uuid con lookups por índice
+    -- en vez de escanear el log entero por cada eslabón (v1/submissions/history.php).
+    edit_new_uid    VARCHAR(100) GENERATED ALWAYS AS (JSON_UNQUOTE(JSON_EXTRACT(detail, '$.new_uid'))) STORED,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_audit_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    CONSTRAINT fk_audit_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_audit_form_action (form_id, action, id),
+    INDEX idx_audit_created (created_at),
+    INDEX idx_audit_lineage (form_id, edit_new_uid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 3.10 Rate limiting de login (por IP)

@@ -17,6 +17,8 @@ if (Request::method() === 'GET') {
         'valid_label_modes'        => Settings::VALID_LABEL_MODES,
         'password_reset_enabled'   => Settings::passwordResetEnabled(),
         'audit_self_view_enabled'  => Settings::auditSelfViewEnabled(),
+        'audit_retention_days'     => Settings::auditRetentionDays(),
+        'audit_retention_max'      => Settings::AUDIT_RETENTION_MAX,
         'mail_configured'          => Settings::mailConfigured(),
         'viewer_actions'           => Settings::viewerActions(),
         'share_password_policy'      => Settings::sharePasswordPolicy(),
@@ -180,6 +182,15 @@ if (Request::method() === 'PUT') {
         $enabled = (bool) $body['audit_self_view_enabled'];
         Settings::set('audit_self_view_enabled', $enabled);
         $out['audit_self_view_enabled'] = $enabled;
+    }
+
+    if (array_key_exists('audit_retention_days', $body)) {
+        $days = (int) $body['audit_retention_days'];
+        if ($days < 0 || $days > Settings::AUDIT_RETENTION_MAX) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Retención de auditoría fuera de rango');
+        }
+        Settings::set('audit_retention_days', $days);
+        $out['audit_retention_days'] = $days;
     }
 
     if (array_key_exists('share_password_policy', $body)) {

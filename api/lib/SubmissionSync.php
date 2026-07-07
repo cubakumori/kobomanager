@@ -139,7 +139,9 @@ class SubmissionSync {
 
             DB::run(
                 'UPDATE forms SET last_synced_at = NOW(), submissions_synced_at = NOW(),
-                                  sync_status = \'success\', last_sync_error = NULL WHERE id = ?',
+                                  sync_status = \'success\', last_sync_error = NULL,
+                                  submission_count = (SELECT COUNT(*) FROM submissions_cache sc WHERE sc.form_id = forms.id)
+                 WHERE id = ?',
                 [$formId]
             );
             return ['upserted' => $count, 'removed' => $removed];

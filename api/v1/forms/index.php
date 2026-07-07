@@ -4,7 +4,9 @@
  * Formularios visibles para el usuario autenticado.
  *  - admin: todos los formularios activos (con capacidades totales).
  *  - viewer: solo aquellos con can_view = 1.
- * Incluye el número de envíos en caché.
+ * Incluye el número de envíos en caché (forms.submission_count, refrescado por el
+ * sync: evita un COUNT por formulario en cada carga; los viewers con filtro por
+ * filas siguen contando en vivo su subconjunto).
  */
 
 $user = Auth::require();
@@ -28,7 +30,7 @@ if ($user['role'] === 'admin') {
         'SELECT f.id, f.name, a.id AS account_id, a.label AS account_label, f.last_synced_at, f.sync_status,
                 f.submissions_synced_at, f.server_url, f.kobo_asset_uid, f.deployment_status,
                 1 AS can_edit, 1 AS can_validate, 1 AS can_settings,
-                (SELECT COUNT(*) FROM submissions_cache sc WHERE sc.form_id = f.id) AS submission_count
+                f.submission_count
          FROM forms f
          JOIN kobo_accounts a ON a.id = f.kobo_account_id
          WHERE f.active = 1
@@ -39,7 +41,7 @@ if ($user['role'] === 'admin') {
         'SELECT f.id, f.name, a.id AS account_id, a.label AS account_label, f.last_synced_at, f.sync_status,
                 f.submissions_synced_at, f.server_url, f.kobo_asset_uid, f.deployment_status,
                 p.can_edit, p.can_validate, p.can_settings, p.row_filter,
-                (SELECT COUNT(*) FROM submissions_cache sc WHERE sc.form_id = f.id) AS submission_count
+                f.submission_count
          FROM forms f
          JOIN kobo_accounts a ON a.id = f.kobo_account_id
          JOIN user_form_permissions p ON p.form_id = f.id AND p.user_id = ? AND p.can_view = 1

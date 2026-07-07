@@ -102,6 +102,17 @@ class Settings {
         return (bool) self::get('audit_self_view_enabled', self::DEFAULT_AUDIT_SELF_VIEW);
     }
 
+    // Retención del registro de auditoría, en DÍAS. 0 = conservar para siempre
+    // (comportamiento histórico). La purga es oportunista en Audit::log.
+    private const DEFAULT_AUDIT_RETENTION_DAYS = 0;
+    public const AUDIT_RETENTION_MAX = 3650;
+
+    /** Días de retención del registro de auditoría (0 = sin purga). */
+    public static function auditRetentionDays(): int {
+        $v = (int) self::get('audit_retention_days', self::DEFAULT_AUDIT_RETENTION_DAYS);
+        return max(0, min(self::AUDIT_RETENTION_MAX, $v));
+    }
+
     /**
      * Ajuste de acortado de nombres de campo: { enabled: bool, chars: int }.
      * `chars` se mantiene dentro de [FIELD_TRUNCATE_MIN, FIELD_TRUNCATE_MAX].

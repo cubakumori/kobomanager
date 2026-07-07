@@ -65,11 +65,12 @@ $cur   = $uid;
 $seen  = [];
 for ($i = 0; $i < 200 && $cur !== null && !isset($seen[$cur]); $i++) {
     $seen[$cur] = true;
+    // edit_new_uid = columna generada e indexada (idx_audit_lineage): cada eslabón
+    // es un lookup por índice, no un escaneo del log con JSON_EXTRACT por fila.
     $row = DB::run(
         "SELECT a.submission_uid AS from_uid, a.created_at, a.detail, u.name AS user_name
          FROM audit_log a LEFT JOIN users u ON u.id = a.user_id
-         WHERE a.form_id = ? AND a.action = 'edit'
-           AND JSON_UNQUOTE(JSON_EXTRACT(a.detail, '$.new_uid')) = ?
+         WHERE a.form_id = ? AND a.action = 'edit' AND a.edit_new_uid = ?
          ORDER BY a.id DESC LIMIT 1",
         [$formId, $cur]
     )->fetch();

@@ -18,6 +18,17 @@ class Audit {
                 $detail !== null ? json_encode($detail, JSON_UNESCAPED_UNICODE) : null,
             ]
         );
+
+        // Retención: purga oportunista (1 % de las escrituras, mismo patrón que
+        // rate_hits) si el admin fijó una retención > 0 días. Con LIMIT para no
+        // aguantar un lock largo en la primera pasada de un log muy crecido.
+        $days = Settings::auditRetentionDays();
+        if ($days > 0 && random_int(1, 100) === 1) {
+            DB::run(
+                'DELETE FROM audit_log WHERE created_at < (NOW() - INTERVAL ? DAY) LIMIT 5000',
+                [$days]
+            );
+        }
     }
 
     /**

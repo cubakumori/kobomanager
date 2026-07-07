@@ -14,9 +14,14 @@ class RateLimit {
         return $count >= $max;
     }
 
-    /** Registra un intento fallido. */
+    /** Registra un intento fallido. Poda global oportunista (1 %): sin ella, las IPs
+     *  que solo fallan (bots contra una instancia pública) acumulan filas para
+     *  siempre — `clear()` solo actúa tras un login CORRECTO de esa IP. */
     public static function hit(string $ip): void {
         DB::run('INSERT INTO login_attempts (ip) VALUES (?)', [$ip]);
+        if (random_int(1, 100) === 1) {
+            DB::run('DELETE FROM login_attempts WHERE created_at < (NOW() - INTERVAL 1 DAY)');
+        }
     }
 
     /** Limpia los intentos de una IP (p. ej. tras un login correcto). */

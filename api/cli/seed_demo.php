@@ -302,7 +302,13 @@ if ($reviewsPct > 0 && $seededUids) {
     }
 }
 
-// Marca de frescura para que la UI no muestre «Sin sincronizar».
-DB::run('UPDATE forms SET submissions_synced_at = NOW() WHERE id = ?', [$formId]);
+// Marca de frescura para que la UI no muestre «Sin sincronizar», y contador de
+// envíos cacheado (el mismo que refresca cada sync).
+DB::run(
+    'UPDATE forms SET submissions_synced_at = NOW(),
+            submission_count = (SELECT COUNT(*) FROM submissions_cache sc WHERE sc.form_id = forms.id)
+     WHERE id = ?',
+    [$formId]
+);
 
 echo "\nListo. Revisa la app para ver los datos sembrados.\n";

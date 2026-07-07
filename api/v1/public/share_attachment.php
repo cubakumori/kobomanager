@@ -70,25 +70,29 @@ if (!$acc) {
     ErrorResponse::send('KOBO_ACCOUNT_DISABLED', 'La cuenta Kobo no existe');
 }
 
+// Streamear el archivo SEGÚN LLEGA de Kobo (nunca entero en RAM; ver el proxy
+// autenticado). Solo se muestra inline el multimedia; el resto se fuerza como
+// descarga. CSP + sandbox neutraliza cualquier ejecución de scripts (defensa en
+// profundidad sobre el nosniff global), importante en un endpoint PÚBLICO. No se
+// audita ni se incrementa access_count (acceso público sin usuario; ver
+// memoria/decisiones P4).
 try {
     $client = new KoboClient($acc['server_url'], TokenVault::decrypt($acc['api_token']));
-    $file   = $client->getAttachment($att['download_url']);
+    $client->getAttachment($att['download_url'], function (string $ctype, ?int $length) use ($att, $attId): void {
+        $mime = $ctype !== '' && $ctype !== 'application/octet-stream'
+            ? $ctype : (($att['mimetype'] ?? '') !== '' ? $att['mimetype'] : 'application/octet-stream');
+        $name = $att['media_file_basename'] ?? basename((string) ($att['filename'] ?? $attId));
+        $inline = in_array(Attachments::kind($mime), ['image', 'audio', 'video'], true);
+        header('Content-Type: ' . $mime);
+        if ($length !== null) {
+            header('Content-Length: ' . $length);
+        }
+        header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment')
+            . '; filename="' . str_replace('"', '', $name) . '"');
+        header("Content-Security-Policy: default-src 'none'; sandbox");
+        header('Cache-Control: private, max-age=300');
+    });
 } catch (KoboException $e) {
     ErrorResponse::send($e->errorCode, $e->getMessage());
 }
-
-// Solo se muestra inline el multimedia; el resto se fuerza como descarga. CSP +
-// sandbox neutraliza cualquier ejecución de scripts (defensa en profundidad sobre
-// el nosniff global), importante en un endpoint PÚBLICO. No se audita ni se
-// incrementa access_count (acceso público sin usuario; ver memoria/decisiones P4).
-$mime = $file['mimetype'] ?: ($att['mimetype'] ?? 'application/octet-stream');
-$name = $att['media_file_basename'] ?? basename((string) ($att['filename'] ?? $attId));
-$inline = in_array(Attachments::kind($mime), ['image', 'audio', 'video'], true);
-header('Content-Type: ' . $mime);
-header('Content-Length: ' . strlen($file['body']));
-header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment')
-    . '; filename="' . str_replace('"', '', $name) . '"');
-header("Content-Security-Policy: default-src 'none'; sandbox");
-header('Cache-Control: private, max-age=300');
-echo $file['body'];
 exit;

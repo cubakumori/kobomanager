@@ -23,6 +23,8 @@ const labelMode = ref('labels')
 const validLabelModes = ref(['labels', 'raw'])
 const passwordResetEnabled = ref(false)
 const auditSelfViewEnabled = ref(false)
+const auditRetentionDays = ref(0)
+const auditRetentionMax = ref(3650)
 const notificationsDefaultOn = ref(false)
 const defaultTheme = ref('auto')
 const validThemes = ref(['light', 'dark', 'auto'])
@@ -170,6 +172,8 @@ async function load() {
     validLabelModes.value = data.data.valid_label_modes
     passwordResetEnabled.value = data.data.password_reset_enabled
     auditSelfViewEnabled.value = data.data.audit_self_view_enabled
+    if (data.data.audit_retention_days != null) auditRetentionDays.value = data.data.audit_retention_days
+    if (data.data.audit_retention_max != null) auditRetentionMax.value = data.data.audit_retention_max
     if (data.data.notifications_default_on != null) notificationsDefaultOn.value = data.data.notifications_default_on
     defaultTheme.value = data.data.default_theme
     validThemes.value = data.data.valid_themes ?? validThemes.value
@@ -227,6 +231,7 @@ async function save() {
       label_mode: labelMode.value,
       password_reset_enabled: passwordResetEnabled.value,
       audit_self_view_enabled: auditSelfViewEnabled.value,
+      audit_retention_days: Math.max(0, Number(auditRetentionDays.value) || 0),
       notifications_default_on: notificationsDefaultOn.value,
       default_theme: defaultTheme.value,
       show_theme_toggle: showThemeToggle.value,
@@ -251,6 +256,7 @@ async function save() {
     labelMode.value = data.data.label_mode
     passwordResetEnabled.value = data.data.password_reset_enabled
     if (data.data.audit_self_view_enabled != null) auditSelfViewEnabled.value = data.data.audit_self_view_enabled
+    if (data.data.audit_retention_days != null) auditRetentionDays.value = data.data.audit_retention_days
     if (data.data.notifications_default_on != null) notificationsDefaultOn.value = data.data.notifications_default_on
     if (data.data.default_theme != null) defaultTheme.value = data.data.default_theme
     if (data.data.show_theme_toggle != null) showThemeToggle.value = data.data.show_theme_toggle
@@ -621,6 +627,18 @@ onMounted(load)
             <span class="block text-sm font-medium text-slate-800">{{ $t('settings.auditSelfViewToggle') }}</span>
             <span class="block text-xs text-slate-400">{{ $t('settings.auditSelfViewHint') }}</span>
           </span>
+        </label>
+        <label class="flex items-center gap-3 pl-3 text-sm">
+          <span class="text-slate-700">{{ $t('settings.auditRetentionLabel') }}</span>
+          <input
+            type="number"
+            class="w-24 rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+            :min="0"
+            :max="auditRetentionMax"
+            :value="auditRetentionDays"
+            @input="auditRetentionDays = Number($event.target.value); saved = false"
+          />
+          <span class="text-xs text-slate-400">{{ $t('settings.auditRetentionHint') }}</span>
         </label>
       </section>
 
