@@ -329,14 +329,17 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   documented on the helper.
 - **Statistics** (`v1/forms/stats.php`): besides total / per‑day / review‑status counts, a
   single in‑scope pass over the payloads computes per‑question distributions (`select_one`,
-  labelled), per‑enumerator counts, fill‑in duration (mean/median + histogram), activity by
-  hour/weekday, attachment and geo coverage, and freshness — reusing `Derived`, `FormSchema`
-  and `RowScope`. It also returns a **cumulative** running total per period point and a
-  **trend** object (last 7/30 days vs the previous equal period, with % change). The
-  submission list can be **sorted by a calculated column** (duration, attachment count,
-  has‑geo) expressed as SQL over the JSON, so the order is global rather than per‑page.
-  The whole computation lives in `lib/Stats::compute($formId, $schema, $scope, $fieldScope,
-  $locale, $includeReview, $teamField, $enumField, $filterStatus, $teamSel, $extraScope)` — a
+  labelled), **per‑question numeric summaries** (`integer`/`decimal`/`range`: min/max/mean/
+  median + an 8‑bucket histogram, in `by_numeric`), a **non‑response ranking** (`no_response`:
+  the 10 most‑skipped questions with their % over the filtered base), per‑enumerator counts,
+  fill‑in duration (mean/median + histogram), activity by hour/weekday, attachment and geo
+  coverage, and freshness — reusing `Derived`, `FormSchema` and `RowScope`. It also returns a
+  **cumulative** running total per period point and a **trend** object (last 7/30 days vs the
+  previous equal period, with % change). The submission list can be **sorted by a calculated
+  column** (duration, attachment count, has‑geo) expressed as SQL over the JSON, so the order
+  is global rather than per‑page. The whole computation lives in
+  `lib/Stats::compute($formId, $schema, $scope, $fieldScope, $locale, $includeReview, $teamField,
+  $enumField, $filterStatus, $teamSel, $extraScope, $dateFrom, $dateTo)` — a
   single source of truth reused by the authenticated endpoint and by the public share endpoint
   (`public/share/{token}/stats`), which passes the link's scope/field rules and
   `$includeReview = false` so the **internal review status (`by_status`) is never exposed
@@ -344,11 +347,17 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   `StatsView` + public `PublicShareView`), which omits the review cards/chart when `by_status`
   is absent and hides the attachments/geo cards when the shown subset has none.
 - **Filtering the stats** (authenticated view): every metric is computed over a subset, with the
-  full header counts (`total` + `by_status`) always returned so the user can switch. Two
+  full header counts (`total` + `by_status`) always returned so the user can switch. Three
   independent, composable filters:
+  - **By date range** — `?from` / `?to` (`YYYY-MM-DD`, inclusive, UTC calendar days, like the
+    per‑day chart) narrow every metric **except** the header counts and the 7/30‑day trend
+    (which keeps its own window relative to today). Malformed dates are ignored (fail‑open); the
+    applied range is echoed back in `date_from`/`date_to`. The UI offers presets
+    (All / 7 / 30 / 90 days / custom with two date inputs) and a chip to clear it.
   - **By review status** — the five header cards (Total / Pending / Approved / On hold /
     Rejected) act as a single‑choice toggle; the active one re‑scopes all charts. The filter
-    is a latest‑review SQL fragment (`ValidationStatus::latestFilterSql`); `$filterStatus` is
+    is a SQL fragment over the denormalised `submissions_cache.review_status` column
+    (`ValidationStatus::statusFilterSql`); `$filterStatus` is
     **independent of `$includeReview`** (so it works on public links too). The default scope on
     open is the global `stats_default_scope` setting (`all` | `approved`, default `approved`),
     overridable per request via `?status=`. `base` is the filtered denominator the charts use.
@@ -369,19 +378,35 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   mirroring `by_status`). The two fields are configured from a per‑form **settings screen**
   (`admin/forms/{id}` `GET`/`PATCH`, view `FormSettingsView.vue`, route `admin-form-settings`).
 - **Quality control** (`lib/Quality.php`, `v1/forms/quality.php`, view `QualityView.vue` at
-  `forms/{id}/quality`): flags submissions outside the form's admissible thresholds — three
+  `forms/{id}/quality`): flags submissions outside the form's admissible thresholds — four
   per‑form columns edited from the same settings screen (`forms.qc_min_duration` /
-  `qc_max_duration` / `qc_min_gap`, minutes, `NULL` = check off) — grouped by the same
-  team/enumerator pair as the stats breakdown, with a drill‑down to each offending submission.
-  Non‑admissible counts are always shown over a **single denominator** — the total *received*
-  (all submissions in the user's row scope, unfiltered by review status), per form, team and
-  enumerator — so the `n / total` fraction and its % always agree at a glance.
-  Four flags: **short**/**long** (duration from the schema's `start`/`end` meta keys, same as
-  the duration sort) and **short gap**/**overlap** per enumerator *consecutiveness* (gap between
-  a survey's start and the max `end` seen so far in that enumerator's start‑ordered chain; a
-  negative gap — overlapping surveys, a fabrication signal — is always flagged, regardless of
-  the threshold). Submissions without valid timestamps are counted apart (`untimed`) and never
-  flagged. Start/end render in `APP_TIMEZONE` via `Derived::formatLocal`. A global **scope**
+  `qc_max_duration` / `qc_min_gap`, minutes, `NULL` = check off; and `qc_dup_min_answers`, a
+  count, `NULL` = duplicate signal off) — grouped by the same team/enumerator pair as the stats
+  breakdown, with a drill‑down to each offending submission. Non‑admissible counts are always
+  shown over a **single denominator** — the total *received* (all submissions in the user's row
+  scope, unfiltered by review status), per form, team and enumerator — so the `n / total`
+  fraction and its % always agree at a glance.
+  Six flags (`Quality::FLAGS`): **short**/**long** (duration from the schema's `start`/`end`
+  meta keys, same as the duration sort), **short gap**/**overlap** per enumerator
+  *consecutiveness* (gap between a survey's start and the max `end` seen so far in that
+  enumerator's start‑ordered chain; a negative gap — overlapping surveys, a fabrication signal —
+  is always flagged, regardless of the threshold), **duplicate** (another submission of the form,
+  from any enumerator, with identical content — team/enumerator fields excluded; a submission
+  participates only with at least `qc_dup_min_answers` non‑empty content answers, default 2, so
+  the sensitivity is tunable per form and `NULL`/0 turns the signal off) and **gps** ("GPS
+  clavado": the exact same point repeated in ≥`GPS_MIN_REPEATS`=3 submissions of the same
+  enumerator; only submissions **with** coordinates take part, so the signal is inactive —
+  `gps_enabled=false` — on forms without geo). Duration/consecutiveness flags need timestamps;
+  a duplicate/GPS flag can apply to a submission with no valid `start`/`end` (its time columns
+  render as "—"). Submissions without valid timestamps are counted apart (`untimed`). The
+  response also carries a **weekly trend** (`by_week`: % of received submissions with any flag
+  per ISO week, over *all* received — the flag physics don't depend on the review scope, so
+  approving a submission doesn't erase it from the history) and the current thresholds
+  (including `dup_min_answers`). A companion endpoint **`GET /forms/{id}/quality/suggest`**
+  (`quality_suggest.php`, admin or `can_settings`) proposes admissible min/max duration in
+  minutes from the p5/p95 percentiles of the form's real `duration_s` (respecting row scope; no
+  suggestion under 10 timed submissions) — it only pre‑fills the settings form, never saves.
+  Start/end render in `APP_TIMEZONE` via `Derived::formatLocal`. A global **scope**
   setting (`qc_scope`: `pending_hold` default | `all`, Settings → Tables tab) decides which
   submissions get *reported*: by default only pending/on-hold ones (approved/rejected already
   passed human review, so QC counts never contradict the stats review cards). Consecutiveness
@@ -414,7 +439,9 @@ to a new one (key rotation; see `DEPLOY.md §12`).
 ### Settings & audit
 - `lib/Settings.php`: global key/value settings (JSON) — sync statuses, default locale, label
   mode, field‑name truncation (`field_truncate_enabled`/`field_truncate_chars`, display‑only),
-  password‑reset flag, self‑service audit flag (`audit_self_view_enabled`), viewer action
+  password‑reset flag, self‑service audit flag (`audit_self_view_enabled`), audit‑log
+  retention (`audit_retention_days`, 0 = keep forever; drives opportunistic pruning in
+  `Audit::log`), viewer action
   flags, share password policy, share attachments policy (`share_attachments_policy`),
   the default daily‑summary subscription (`notifications_default_on`), table display
   (`table_freeze`, `table_header_lines`), stats/QC display (`stats_default_scope` —
@@ -434,7 +461,9 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   /notifications` reads/writes those preferences: PUT stores an explicit 0/1 for every
   currently‑visible form, so an opt‑out persists even when the default is on, while a
   newly‑added form inherits the default until the user next saves.
-- `lib/Audit.php`: writes to `audit_log` (who did what) via `log()`, and reads it back via
+- `lib/Audit.php`: writes to `audit_log` (who did what) via `log()` — which also prunes
+  opportunistically (1 % of writes, `LIMIT 5000`) when `audit_retention_days` > 0, so the
+  log doesn't grow without bound (a row per attachment view) — and reads it back via
   `query()` (pagination + filters by action/user/form/date/search, JOINs to users/forms).
   Two endpoints share `query()`: `GET /admin/audit` (admin; full log, optional user filter)
   and `GET /audit/me` (any signed‑in user, gated by `audit_self_view_enabled`; forces

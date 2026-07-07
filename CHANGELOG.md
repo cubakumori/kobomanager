@@ -6,8 +6,15 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 ## [1.22.0] - 2026-07-07
 
-Añadidos de análisis en Estadísticas y Control de calidad. **Sin cambios de esquema**
-(las columnas materializadas necesarias llegaron en 1.21.0).
+Añadidos de análisis en Estadísticas y Control de calidad.
+
+> **Nota de actualización (esquema).** Tras subir el código, ejecuta **una vez**
+> `php api/cli/migrate.php`: añade `forms.qc_dup_min_answers` (sensibilidad de
+> duplicados del control de calidad). El `DEFAULT 2` deja la señal con la
+> sensibilidad de fábrica en las filas existentes. Sin shell, el `ALTER`:
+> `ALTER TABLE forms ADD COLUMN qc_dup_min_answers INT UNSIGNED NULL DEFAULT 2 AFTER qc_min_gap`.
+> (El resto de columnas que usan estas mejoras —derivados materializados, estado de
+> revisión— llegaron en 1.21.0.)
 
 ### Añadido
 
@@ -27,8 +34,12 @@ Añadidos de análisis en Estadísticas y Control de calidad. **Sin cambios de e
 - **Control de calidad: señal de duplicados.** Bandera nueva `Duplicadas`: otro envío
   del formulario —de cualquier encuestador— con exactamente las mismas respuestas.
   Compara solo CONTENIDO (excluye los campos de equipo/encuestador, que identifican
-  pero no son contenido) y exige al menos 2 respuestas no vacías, para que un envío
-  casi vacío no genere ruido. Sin umbral que configurar.
+  pero no son contenido). Su **sensibilidad es configurable por formulario**
+  (`forms.qc_dup_min_answers`): nº mínimo de respuestas de contenido para que un envío
+  participe —por defecto 2, para que un envío casi vacío no genere ruido; menor = más
+  sensible; 0/vacío = señal desactivada—, junto a los umbrales de duración/
+  consecutividad en los ajustes del formulario. La respuesta del control de calidad
+  ecoa el valor vigente en `thresholds.dup_min_answers`.
 - **Control de calidad: señal «GPS clavado».** Bandera nueva cuando el MISMO punto
   exacto se repite en ≥3 envíos del mismo encuestador (relleno desde un sitio fijo).
   Solo participa lo que tiene coordenadas: sin datos geo la señal queda inactiva (la

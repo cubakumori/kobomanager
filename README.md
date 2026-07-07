@@ -53,17 +53,22 @@ native validation status.
 **Analysis**
 
 - **Statistics**: totals, submissions per day/month, activity by hour and weekday
-  (configurable timezone), 7/30-day trends, fill-in duration, and distribution by review
-  status and by question. **Filterable** by review status (header cards) and by team
-  (toggles on the team breakdown); the default scope on open is configurable in *Settings*
-  (all submissions or approved only). A **team → enumerator breakdown** (you pick the
-  form's team and enumerator fields) adds volume, review mix, duration and completeness
-  per team and per enumerator.
+  (configurable timezone), 7/30-day trends, fill-in duration, distribution by review
+  status and by question, **numeric-question summaries** (min/max/mean/median +
+  histogram for `integer`/`decimal`/`range` questions), and a **most-skipped-questions**
+  ranking. **Filterable** by **date range** (presets or custom from/to) and by review
+  status (header cards) and by team (toggles on the team breakdown); the default review
+  scope on open is configurable in *Settings* (all submissions or approved only). A
+  **team → enumerator breakdown** (you pick the form's team and enumerator fields) adds
+  volume, review mix, duration and completeness per team and per enumerator.
 - **Quality control**: flags interviews outside the form's admissible thresholds — too
-  **short** or too **long**, and, per enumerator, **overlapping** in time (a fabrication
-  signal) or with a suspiciously **short gap** between consecutive interviews — grouped
-  by team → enumerator with a drill-down to each offending submission. Per-form
-  thresholds, a configurable review-status scope (by default only pending / on-hold
+  **short** or too **long**, per enumerator **overlapping** in time (a fabrication signal)
+  or with a suspiciously **short gap** between consecutive interviews, **duplicate** answers
+  (identical content across submissions, with per-form sensitivity) and **fixed GPS** (the
+  same exact point repeated by one enumerator) — grouped by team → enumerator with a
+  drill-down to each offending submission, plus a **weekly trend** of the non-admissible
+  rate. Per-form thresholds (with a one-click **suggestion** from the form's real p5/p95
+  durations), a configurable review-status scope (by default only pending / on-hold
   submissions are reported), and a one-click batch **"put the N non-admissible on
   hold"** over the normal review flow.
 - **Map** of submission geopoints.
