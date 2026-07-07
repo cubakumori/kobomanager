@@ -62,10 +62,11 @@ define('DONATE_PAYPAL_URL', '');  // p. ej. 'https://paypal.me/tu-usuario'
 define('DONATE_KOFI_URL', '');    // p. ej. 'https://ko-fi.com/tu-usuario'
 
 // --- Demo pública (opcional) ---
-// true → instancia de DEMOSTRACIÓN: banner global visible y acciones sensibles
-// bloqueadas (CRUD de cuentas Kobo y usuarios, contraseñas y sesiones, ajustes
-// globales, edición de envíos y sync manual). Pensado junto a un cron que
-// restaura la BD desde un dump semilla. Ver DEMO.md (runbook completo).
+// true → instancia de DEMOSTRACIÓN: diálogo de bienvenida en la portada + insignia
+// «DEMO» junto a la marca, y acciones sensibles bloqueadas (CRUD de cuentas Kobo y
+// usuarios, contraseñas y sesiones, ajustes globales, edición de envíos y sync
+// manual). Pensado junto a un cron que restaura la BD desde un dump semilla.
+// Ver DEMO.md (runbook completo).
 define('DEMO_MODE', false);
 // Minutos del ciclo de reset: gobierna el cron demo_reset.php (que se auto-regula
 // con este número) y es el que muestra el diálogo de bienvenida.

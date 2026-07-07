@@ -196,9 +196,13 @@ when `forms.deployment_status = 'archived'` — the data and prior review decisi
 visible, but no new ones are recorded (the frontend hides the selection/review controls;
 this is the server‑side backstop). Editing is unaffected (still gated by `can_edit`). `GET /forms/{id}/export` (`forms/export.php`) streams a
 UTF‑8 **CSV with BOM** of the submissions (requires `view`, honors row scope and the
-list filters); it bypasses the JSON envelope and resolves question/option labels per the
-global label mode. Note: PHP 8.4+ requires the `fputcsv` `$escape` argument explicitly
-(passed as `''` → standard CSV quoting).
+list filters — `?review` accepts all four statuses); it bypasses the JSON envelope and
+resolves question/option labels per the global label mode. Note: PHP 8.4+ requires the
+`fputcsv` `$escape` argument explicitly (passed as `''` → standard CSV quoting). The
+frontend triggers it from an **Export modal** (scope: all / approved-only; format: CSV
+for now) rather than a bare link. The list endpoint also returns **`scope_total`** (the
+in‑row‑scope total, ignoring search/filter/status) next to the filtered `total`, so the
+UI can show an «N / total» count.
 
 ### CSRF
 For mutating methods (POST/PUT/DELETE/PATCH) the front controller requires the request
@@ -336,8 +340,10 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   coverage, and freshness — reusing `Derived`, `FormSchema` and `RowScope`. It also returns a
   **cumulative** running total per period point and a **trend** object (last 7/30 days vs the
   previous equal period, with % change). The submission list can be **sorted by a calculated
-  column** (duration, attachment count, has‑geo) expressed as SQL over the JSON, so the order
-  is global rather than per‑page. The whole computation lives in
+  column** (duration, attachment count, has‑geo — over the materialised columns) or by
+  **review status** (`sort=review_asc`/`review_desc`, ordered along the flow
+  pending→on_hold→approved→rejected via `FIELD()` on the denormalised `review_status`), so the
+  order is global rather than per‑page. The whole computation lives in
   `lib/Stats::compute($formId, $schema, $scope, $fieldScope, $locale, $includeReview, $teamField,
   $enumField, $filterStatus, $teamSel, $extraScope, $dateFrom, $dateTo)` — a
   single source of truth reused by the authenticated endpoint and by the public share endpoint

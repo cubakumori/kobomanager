@@ -30,9 +30,10 @@ const VALID_PCT = ['integer', 'decimals']
 const cachedPct = localStorage.getItem(PCT_FORMAT_KEY)
 const pctFormat = ref(VALID_PCT.includes(cachedPct) ? cachedPct : 'integer')
 
-// Modo demo (instancia pública de demostración): banner global + acciones
-// sensibles deshabilitadas. Sin caché local: que un banner de demo nunca se
-// quede pegado en una instancia normal (y viceversa); un parpadeo es aceptable.
+// Modo demo (instancia pública de demostración): diálogo de bienvenida + insignia
+// «DEMO» + acciones sensibles deshabilitadas. Sin caché local: que el estado de
+// demo nunca se quede pegado en una instancia normal (y viceversa); un parpadeo
+// es aceptable.
 const demoMode = ref(false)
 const demoResetMinutes = ref(60)
 const demoLoginAdmin = ref('')
