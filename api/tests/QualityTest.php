@@ -62,7 +62,7 @@ final class QualityTest extends DbTestCase
         $q = $this->compute($formId, 4, 60, null);
         $this->assertSame(3, $q['total']);
         $this->assertSame(2, $q['flagged']);
-        $this->assertSame(['short' => 1, 'long' => 1, 'short_gap' => 0, 'overlap' => 0], $q['flags']);
+        $this->assertSame(['short' => 1, 'long' => 1, 'short_gap' => 0, 'overlap' => 0, 'duplicate' => 0, 'gps' => 0], $q['flags']);
 
         $v = $this->violationsByUid($q);
         $this->assertSame(['short'], $v[$short]['flags']);
@@ -82,7 +82,7 @@ final class QualityTest extends DbTestCase
         $e = $this->timed($formId, 'luis', '09:11:00', '09:13:00');
 
         $q = $this->compute($formId, null, null, 4);
-        $this->assertSame(['short' => 0, 'long' => 0, 'short_gap' => 1, 'overlap' => 1], $q['flags']);
+        $this->assertSame(['short' => 0, 'long' => 0, 'short_gap' => 1, 'overlap' => 1, 'duplicate' => 0, 'gps' => 0], $q['flags']);
 
         $v = $this->violationsByUid($q);
         $this->assertSame(['short_gap'], $v[$b]['flags']);
@@ -218,5 +218,94 @@ final class QualityTest extends DbTestCase
         $this->assertNull($q['team_field']); // no se agrupa por un campo oculto
         $this->assertCount(1, $q['teams']);
         $this->assertSame('—', $q['teams'][0]['name']);
+    }
+
+    // ---- Señales de fabricación: duplicados y GPS clavado ----
+
+    public function testDuplicateAnswersFlaggedAcrossEnumerators(): void
+    {
+        $formId = $this->makeForm();
+        // Mismo contenido (2 respuestas) en encuestadores DISTINTOS → ambos duplicados.
+        $this->addSubmission($formId, ['enum' => 'ana',  'p1' => 'x', 'p2' => 'y']);
+        $this->addSubmission($formId, ['enum' => 'luis', 'p1' => 'x', 'p2' => 'y']);
+        // Contenido distinto → limpio.
+        $this->addSubmission($formId, ['enum' => 'ana',  'p1' => 'x', 'p2' => 'z']);
+
+        $q = $this->compute($formId, null, null, null);
+        $this->assertSame(2, $q['flags']['duplicate']);
+        $this->assertSame(2, $q['flagged']);
+    }
+
+    public function testNearEmptySubmissionsNeverDuplicates(): void
+    {
+        $formId = $this->makeForm();
+        // 0 o 1 respuestas de contenido (el campo del encuestador se excluye):
+        // no forman grupo aunque coincidan.
+        $this->addSubmission($formId, ['enum' => 'ana', 'p1' => 'x']);
+        $this->addSubmission($formId, ['enum' => 'ana', 'p1' => 'x']);
+        $this->addSubmission($formId, ['enum' => 'ana']);
+        $this->addSubmission($formId, ['enum' => 'ana']);
+
+        $q = $this->compute($formId, null, null, null);
+        $this->assertSame(0, $q['flags']['duplicate']);
+    }
+
+    public function testRepeatedGpsFlaggedPerEnumerator(): void
+    {
+        $formId = $this->makeForm();
+        // Ana: 3 envíos con el MISMO punto exacto (≥ GPS_MIN_REPEATS) → los 3 marcados.
+        foreach ([1, 2, 3] as $i) {
+            $this->addSubmission($formId, ['enum' => 'ana', 'p' => "a$i", 'q' => $i, '_geolocation' => [23.1136, -82.3666]]);
+        }
+        // Luis: mismo punto pero solo 2 veces → limpio. Sin coordenadas → no participa.
+        $this->addSubmission($formId, ['enum' => 'luis', 'p' => 'b1', 'q' => 1, '_geolocation' => [23.1136, -82.3666]]);
+        $this->addSubmission($formId, ['enum' => 'luis', 'p' => 'b2', 'q' => 2, '_geolocation' => [23.1136, -82.3666]]);
+        $this->addSubmission($formId, ['enum' => 'luis', 'p' => 'b3', 'q' => 3, '_geolocation' => [null, null]]);
+
+        $q = $this->compute($formId, null, null, null);
+        $this->assertTrue($q['gps_enabled']);
+        $this->assertSame(3, $q['flags']['gps']);
+        $enums = $q['teams'][0]['enumerators'];
+        $ana = array_values(array_filter($enums, fn($e) => $e['name'] === 'ana'))[0];
+        $this->assertSame(3, $ana['flags']['gps']);
+    }
+
+    public function testGpsInactiveWithoutCoordinates(): void
+    {
+        $formId = $this->makeForm();
+        $this->addSubmission($formId, ['enum' => 'ana', 'p' => 'x', 'q' => 'y']);
+
+        $q = $this->compute($formId, null, null, null);
+        $this->assertFalse($q['gps_enabled']);
+        $this->assertSame(0, $q['flags']['gps']);
+    }
+
+    // ---- Tendencia semanal ----
+
+    public function testByWeekTrendCountsAllReceived(): void
+    {
+        $formId = $this->makeForm();
+        // Semana del 2026-06-29 (W27): 2 envíos, 1 corto. Semana W28: 1 envío limpio.
+        DB::run(
+            'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, submitted_at) VALUES (?, ?, ?, ?)',
+            [$formId, 'w1', json_encode(['enum' => 'ana', 'start' => '2026-06-30T10:00:00', 'end' => '2026-06-30T10:01:00']), '2026-06-30 10:01:00']
+        );
+        DB::run(
+            'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, submitted_at) VALUES (?, ?, ?, ?)',
+            [$formId, 'w2', json_encode(['enum' => 'ana', 'start' => '2026-06-30T11:00:00', 'end' => '2026-06-30T11:30:00']), '2026-06-30 11:30:00']
+        );
+        DB::run(
+            'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, submitted_at) VALUES (?, ?, ?, ?)',
+            [$formId, 'w3', json_encode(['enum' => 'ana', 'start' => '2026-07-07T09:00:00', 'end' => '2026-07-07T09:30:00']), '2026-07-07 09:30:00']
+        );
+        // La bandera del envío corto viene del umbral min=4 min; el alcance por estado
+        // NO afecta a la tendencia (se aprueba el corto y debe seguir contando).
+        ValidationStatus::recordReview('w1', $this->makeUser('admin'), 'app', 'approved');
+
+        $q = Quality::compute($formId, null, null, null, 'es', null, 'enum', 4, null, null, ['pending', 'on_hold']);
+        $this->assertSame([
+            ['week' => '2026-W27', 'total' => 2, 'flagged' => 1, 'pct' => 50.0],
+            ['week' => '2026-W28', 'total' => 1, 'flagged' => 0, 'pct' => 0.0],
+        ], $q['by_week']);
     }
 }
