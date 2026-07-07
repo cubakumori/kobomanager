@@ -1,14 +1,19 @@
 <?php
 /**
  * GET /api/v1/forms/{id}/export   (requiere can_view)
- * Exporta los envíos del formulario a CSV (UTF-8 con BOM, abre bien en Excel).
- * Respeta el scoping por filas y los mismos filtros que la lista (search, review
- * y el filtro avanzado `filter`): el CSV exporta exactamente lo que la tabla muestra.
- * No usa el envoltorio JSON: emite el CSV directamente como descarga.
+ * Exporta los envíos del formulario. Formato según `?format=` (csv por defecto o
+ * xlsx). Respeta el scoping por filas y los mismos filtros que la lista (search,
+ * review y el filtro avanzado `filter`): exporta exactamente lo que la tabla
+ * muestra. No usa el envoltorio JSON: emite el archivo directamente como descarga.
  *
- * Columnas: submitted_at + estado de revisión + un campo por pregunta. Las
- * cabeceras y los valores siguen el modo de etiquetas global (labels|raw); en
- * modo labels, las opciones (select_one/select_multiple) se muestran con su texto.
+ *   - csv  → UTF-8 con BOM. Estándar (separador «,»); en Excel con configuración
+ *            regional que espera «;» puede no separar en columnas → usar xlsx.
+ *   - xlsx → hoja de cálculo nativa (columnas reales, sin ambigüedad de separador),
+ *            vía lib/XlsxWriter (sin dependencias externas).
+ *
+ * Columnas: submitted_at + estado de revisión + un campo por pregunta + las
+ * calculadas. Cabeceras y valores siguen el modo de etiquetas global (labels|raw);
+ * en modo labels, las opciones (select_one/select_multiple) se muestran con su texto.
  */
 
 $user   = Auth::require();
@@ -33,6 +38,8 @@ $fieldScope = FieldScope::ruleForUser($user, $formId);
 
 $search = trim((string) ($_GET['search'] ?? ''));
 $review = (string) ($_GET['review'] ?? '');
+$format = strtolower((string) ($_GET['format'] ?? 'csv'));
+if (!in_array($format, ['csv', 'xlsx'], true)) $format = 'csv';
 
 // Filtro avanzado del usuario: mismas reglas que en la lista (solo restringe; campos
 // ocultos vetados).
@@ -139,23 +146,20 @@ $derivedHeaders = $user['locale'] === 'en'
     : ['Duración (s)', 'Tiene adjuntos', 'Tiene geo'];
 $yesNo = $user['locale'] === 'en' ? ['yes' => 'Yes', 'no' => 'No'] : ['yes' => 'Sí', 'no' => 'No'];
 
-// --- Emitir CSV ---
+// Fila de cabecera, común a ambos formatos.
+$headerRow = array_merge(
+    [$metaHeaders['submitted'], $metaHeaders['review']],
+    array_map($header, $columns),
+    $derivedHeaders
+);
+
 $safeName = preg_replace('/[^A-Za-z0-9_-]+/', '_', $form['name']) ?: 'export';
-$filename = $safeName . '_' . date('Ymd') . '.csv';
 
-header('Content-Type: text/csv; charset=utf-8');
-header('Content-Disposition: attachment; filename="' . $filename . '"');
-
-$out = fopen('php://output', 'w');
-fwrite($out, "\xEF\xBB\xBF"); // BOM UTF-8 para Excel
-
-// $escape = '' → CSV estándar (comillas dobladas, sin escape con barra). Además, en
-// PHP 8.4+ el parámetro $escape debe pasarse explícitamente (su omisión está obsoleta).
-fputcsv($out, array_map($csvSafe, array_merge([$metaHeaders['submitted'], $metaHeaders['review']], array_map($header, $columns), $derivedHeaders)), ',', '"', '');
-// Segunda pasada en streaming: decodificar UNA vez por fila y emitir directamente.
-foreach (DB::stream($exportSql, $params) as $r) {
-    // Recorta los campos ocultos (también afecta a las columnas calculadas: un
-    // adjunto o geo de un campo oculto no se cuenta en las derivadas del CSV).
+// Construye la fila de datos de un envío (valores mostrables). La duración se
+// devuelve como int|'' para que en xlsx sea una celda numérica de verdad; en CSV
+// da igual (todo es texto). Recorta los campos ocultos: adjuntos/geo de un campo
+// oculto no cuentan en las columnas calculadas.
+$dataRow = static function (array $r) use ($fieldScope, $schemaRaw, $columns, $cell, $reviewWords, $yesNo): array {
     $data = FieldScope::apply($fieldScope, json_decode($r['json_payload'], true) ?: [], $schemaRaw);
     $line = [$r['submitted_at'], $reviewWords[$r['review_status']] ?? $r['review_status']];
     foreach ($columns as $k) {
@@ -165,7 +169,42 @@ foreach (DB::stream($exportSql, $params) as $r) {
     $line[] = $d['duration_s'] ?? '';
     $line[] = $d['has_attachments'] ? $yesNo['yes'] : $yesNo['no'];
     $line[] = $d['has_geo'] ? $yesNo['yes'] : $yesNo['no'];
-    fputcsv($out, array_map($csvSafe, $line), ',', '"', '');
+    return $line;
+};
+
+if ($format === 'xlsx') {
+    // --- Emitir XLSX (columnas nativas; sin ambigüedad de separador) ---
+    require_once __DIR__ . '/../../lib/XlsxWriter.php';
+    try {
+        $xlsx = new XlsxWriter();
+    } catch (Throwable $e) {
+        ErrorResponse::send('INTERNAL_ERROR', 'No se pudo generar el archivo Excel');
+    }
+    $xlsx->addRow($headerRow);
+    foreach (DB::stream($exportSql, $params) as $r) {
+        $line = $dataRow($r);
+        // La penúltima-1 columna (duración) es numérica: int si tiene valor.
+        $dur = $line[count($line) - 3];
+        $line[count($line) - 3] = ($dur === '' || $dur === null) ? '' : (int) $dur;
+        $xlsx->addRow($line);
+    }
+    $xlsx->stream($safeName . '_' . date('Ymd') . '.xlsx');
+    exit;
+}
+
+// --- Emitir CSV ---
+header('Content-Type: text/csv; charset=utf-8');
+header('Content-Disposition: attachment; filename="' . $safeName . '_' . date('Ymd') . '.csv"');
+
+$out = fopen('php://output', 'w');
+fwrite($out, "\xEF\xBB\xBF"); // BOM UTF-8 para Excel
+
+// $escape = '' → CSV estándar (comillas dobladas, sin escape con barra). Además, en
+// PHP 8.4+ el parámetro $escape debe pasarse explícitamente (su omisión está obsoleta).
+fputcsv($out, array_map($csvSafe, $headerRow), ',', '"', '');
+// Segunda pasada en streaming: decodificar UNA vez por fila y emitir directamente.
+foreach (DB::stream($exportSql, $params) as $r) {
+    fputcsv($out, array_map($csvSafe, $dataRow($r)), ',', '"', '');
 }
 fclose($out);
 exit;

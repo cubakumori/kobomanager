@@ -50,7 +50,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: pdo_mysql, sodium, curl, mbstring
+          extensions: pdo_mysql, sodium, curl, mbstring, zip
           tools: composer
       - name: Setup MariaDB (sin Docker)
         uses: ankane/setup-mariadb@v1

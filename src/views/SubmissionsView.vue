@@ -138,22 +138,23 @@ async function batchReview(status) {
 // revisión lo decide el radio del modal (no el filtro de revisión de la vista).
 const exportOpen = ref(false)
 const exportScope = ref('all') // 'all' | 'approved'
-const exportFormat = ref('csv') // por ahora solo CSV
+const exportFormat = ref('xlsx') // 'xlsx' (columnas nativas) | 'csv'
 
 function openExport() {
   // Predeterminar el alcance según el filtro de revisión activo.
   exportScope.value = reviewFilter.value === 'approved' ? 'approved' : 'all'
-  exportFormat.value = 'csv'
+  exportFormat.value = 'xlsx'
   exportOpen.value = true
 }
 
-// Enlace de descarga con la búsqueda/filtro actuales y el alcance de revisión
-// elegido (la cookie de sesión viaja sola).
+// Enlace de descarga con la búsqueda/filtro actuales, el alcance de revisión y el
+// formato elegidos (la cookie de sesión viaja sola).
 function buildExportUrl() {
   const p = new URLSearchParams()
   if (search.value) p.set('search', search.value)
   if (exportScope.value === 'approved') p.set('review', 'approved')
   if (advFilter.value) p.set('filter', JSON.stringify(advFilter.value))
+  if (exportFormat.value === 'xlsx') p.set('format', 'xlsx')
   const qs = p.toString()
   return `/api/v1/forms/${formId.value}/export${qs ? '?' + qs : ''}`
 }
@@ -793,10 +794,13 @@ onMounted(() => { loadAdvFilter(); load() })
         <fieldset class="space-y-2">
           <legend class="mb-1 text-sm font-medium text-slate-700">{{ $t('submissions.exportFormat') }}</legend>
           <label class="flex items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+            <input type="radio" class="h-4 w-4" name="export_format" value="xlsx" :checked="exportFormat === 'xlsx'" @change="exportFormat = 'xlsx'" />
+            <span class="text-sm text-slate-800">{{ $t('submissions.exportFormatXlsx') }}</span>
+          </label>
+          <label class="flex items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
             <input type="radio" class="h-4 w-4" name="export_format" value="csv" :checked="exportFormat === 'csv'" @change="exportFormat = 'csv'" />
             <span class="text-sm text-slate-800">{{ $t('submissions.exportFormatCsv') }}</span>
           </label>
-          <!-- xlsx: próxima versión -->
         </fieldset>
         <p class="text-xs text-slate-400">{{ $t('submissions.exportHint') }}</p>
         <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">

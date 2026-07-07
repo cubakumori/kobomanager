@@ -304,4 +304,44 @@ final class SubmissionsHttpTest extends HttpTestCase
         $this->assertStringContainsString('Ana', $res['raw']);
         @unlink($jar);
     }
+
+    public function testExportXlsxIsAValidZipRespectingScope(): void
+    {
+        $adminId = $this->seedUser('admin', 'admin@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $formId = $this->seedForm($accId);
+        $this->seedSubmission($formId, 'a', ['_id' => 1, 'name' => 'Ana']);
+        $this->seedSubmission($formId, 'b', ['_id' => 2, 'name' => 'Beto']);
+        ValidationStatus::recordReview('a', $adminId, 'app', 'approved');
+        $jar = $this->login('admin@test.local', 'Secret123!');
+
+        $res = $this->request('GET', "forms/$formId/export?format=xlsx", null, $jar);
+        $this->assertSame(200, $res['status']);
+        // .xlsx = ZIP: empieza por la firma «PK\x03\x04».
+        $this->assertStringStartsWith("PK\x03\x04", $res['raw']);
+
+        // El ZIP es válido y la hoja contiene los dos envíos (texto inline).
+        $tmp = tempnam(sys_get_temp_dir(), 'km_xlsx_test_');
+        file_put_contents($tmp, $res['raw']);
+        $zip = new ZipArchive();
+        $this->assertTrue($zip->open($tmp) === true);
+        $sheet = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $zip->close();
+        @unlink($tmp);
+        $this->assertIsString($sheet);
+        $this->assertStringContainsString('Ana', $sheet);
+        $this->assertStringContainsString('Beto', $sheet);
+
+        // Alcance «solo aprobados»: solo Ana entra en la hoja.
+        $res = $this->request('GET', "forms/$formId/export?format=xlsx&review=approved", null, $jar);
+        file_put_contents($tmp, $res['raw']);
+        $zip = new ZipArchive();
+        $zip->open($tmp);
+        $sheet = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $zip->close();
+        @unlink($tmp);
+        $this->assertStringContainsString('Ana', $sheet);
+        $this->assertStringNotContainsString('Beto', $sheet);
+        @unlink($jar);
+    }
 }
