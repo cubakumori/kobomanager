@@ -145,6 +145,7 @@ $routes = [
     'forms/:id/submissions'     => 'forms/submissions.php',
     'forms/:id/stats'           => 'forms/stats.php',
     'forms/:id/quality'         => 'forms/quality.php',
+    'forms/:id/quality/suggest' => 'forms/quality_suggest.php',
     'forms/:id/map'             => 'forms/map.php',
     'forms/:id/review'          => 'forms/review_batch.php',
     'forms/:id/export'          => 'forms/export.php',
