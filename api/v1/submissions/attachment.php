@@ -31,8 +31,14 @@ if (!$sub) {
 $formId = (int) $sub['form_id'];
 Auth::requireForm($user, $formId, 'view');
 
-// Localizar el adjunto por su uid dentro del envío cacheado.
+// Scoping por filas: igual que en el detalle, un envío fuera de alcance se
+// comporta como inexistente (404), también para sus adjuntos.
 $payload = json_decode($sub['json_payload'], true) ?: [];
+if (!RowScope::matches(RowScope::ruleForUser($user, $formId), $payload)) {
+    ErrorResponse::send('NOT_FOUND', 'Envío no encontrado');
+}
+
+// Localizar el adjunto por su uid dentro del envío cacheado.
 $att = null;
 foreach (($payload['_attachments'] ?? []) as $a) {
     if (($a['uid'] ?? null) === $attId) {

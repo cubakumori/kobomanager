@@ -222,6 +222,24 @@ final class SubmissionsHttpTest extends HttpTestCase
         @unlink($jar);
     }
 
+    public function testAttachmentProxyRespectsRowScope(): void
+    {
+        $uid = $this->seedUser('viewer', 'v@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $formId = $this->seedForm($accId);
+        $att = [['uid' => 'a1', 'question_xpath' => 'foto', 'media_file_basename' => 'x.jpg', 'mimetype' => 'image/jpeg', 'download_url' => 'http://x/a1']];
+        $this->seedSubmission($formId, 'in',  ['_id' => 1, 'prov' => '1', '_attachments' => $att]);
+        $this->seedSubmission($formId, 'out', ['_id' => 2, 'prov' => '2', '_attachments' => $att]);
+        $this->grant($uid, $formId, view: true,
+            rowFilter: ['conditions' => [['field' => 'prov', 'values' => ['1']]]]);
+        $jar = $this->login('v@test.local', 'Secret123!');
+
+        // El adjunto de un envío fuera del alcance de filas es 404, como su detalle.
+        $res = $this->request('GET', 'submissions/out/attachments/a1', null, $jar);
+        $this->assertSame(404, $res['status']);
+        @unlink($jar);
+    }
+
     public function testExportCsvServesAttachmentWithBom(): void
     {
         $this->seedUser('admin', 'admin@test.local', 'Secret123!');
