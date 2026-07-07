@@ -57,8 +57,6 @@ class SubmissionSync {
                 )->fetch()['m'];
                 $since = $latest ? date('c', strtotime($latest)) : null;
             }
-            $subs = $client->getSubmissionsSince($assetUid, $since);
-
             // Mapa de etiquetas de opción (todas las traducciones) para enriquecer el
             // texto buscable: se calcula UNA vez por formulario desde el esquema recién
             // refrescado y se reutiliza en cada fila.
@@ -67,39 +65,60 @@ class SubmissionSync {
                 ($schemaRow && $schemaRow['schema_json']) ? json_decode($schemaRow['schema_json'], true) : null
             );
 
+            // Upsert por PÁGINAS: el generador entrega cada página según llega (el
+            // histórico completo nunca vive entero en memoria) y cada página se
+            // escribe con UN prepared statement reutilizado dentro de una transacción
+            // (un commit por página, no uno por fila: en InnoDB es 10-50× más rápido
+            // para el primer sync de un formulario grande).
+            $pdo  = DB::conn();
+            $stmt = $pdo->prepare(
+                'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, search_text, submitted_at, last_synced_at)
+                 VALUES (?, ?, ?, ?, ?, NOW())
+                 ON DUPLICATE KEY UPDATE
+                    json_payload   = VALUES(json_payload),
+                    search_text    = VALUES(search_text),
+                    submitted_at   = VALUES(submitted_at),
+                    last_synced_at = NOW()'
+            );
+
             $count    = 0;
             $seenUids = [];
-            foreach ($subs as $sub) {
-                $uid = $sub['_uuid'] ?? (isset($sub['_id']) ? (string) $sub['_id'] : null);
-                if (!$uid) continue;
-                $seenUids[$uid] = true;
+            foreach ($client->getSubmissionsSince($assetUid, $since) as $pageRows) {
+                $pdo->beginTransaction();
+                try {
+                    foreach ($pageRows as $sub) {
+                        $uid = $sub['_uuid'] ?? (isset($sub['_id']) ? (string) $sub['_id'] : null);
+                        if (!$uid) continue;
+                        $seenUids[$uid] = true;
 
-                // `_submission_time` viene de Kobo en UTC; lo proyectamos a la columna
-                // DATETIME anclado en UTC (no en la zona del servidor PHP), para que las
-                // agregaciones por día/mes/tendencia sean consistentes con la hora/día
-                // derivados y robustas en servidores con TZ ≠ UTC (ver Derived::ts).
-                $submittedAt = null;
-                if (is_string($submittedRaw = $sub['_submission_time'] ?? null) && trim($submittedRaw) !== '') {
-                    try {
-                        $submittedAt = (new DateTime($submittedRaw, new DateTimeZone('UTC')))
-                            ->setTimezone(new DateTimeZone('UTC'))
-                            ->format('Y-m-d H:i:s');
-                    } catch (Exception $e) {
+                        // `_submission_time` viene de Kobo en UTC; lo proyectamos a la columna
+                        // DATETIME anclado en UTC (no en la zona del servidor PHP), para que las
+                        // agregaciones por día/mes/tendencia sean consistentes con la hora/día
+                        // derivados y robustas en servidores con TZ ≠ UTC (ver Derived::ts).
                         $submittedAt = null;
-                    }
-                }
+                        if (is_string($submittedRaw = $sub['_submission_time'] ?? null) && trim($submittedRaw) !== '') {
+                            try {
+                                $submittedAt = (new DateTime($submittedRaw, new DateTimeZone('UTC')))
+                                    ->setTimezone(new DateTimeZone('UTC'))
+                                    ->format('Y-m-d H:i:s');
+                            } catch (Exception $e) {
+                                $submittedAt = null;
+                            }
+                        }
 
-                DB::run(
-                    'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, search_text, submitted_at, last_synced_at)
-                     VALUES (?, ?, ?, ?, ?, NOW())
-                     ON DUPLICATE KEY UPDATE
-                        json_payload   = VALUES(json_payload),
-                        search_text    = VALUES(search_text),
-                        submitted_at   = VALUES(submitted_at),
-                        last_synced_at = NOW()',
-                    [$formId, $uid, json_encode($sub, JSON_UNESCAPED_UNICODE), SubmissionSearch::textFor($sub, $optionLabels), $submittedAt]
-                );
-                $count++;
+                        $stmt->execute([
+                            $formId, $uid,
+                            json_encode($sub, JSON_UNESCAPED_UNICODE),
+                            SubmissionSearch::textFor($sub, $optionLabels),
+                            $submittedAt,
+                        ]);
+                        $count++;
+                    }
+                    $pdo->commit();
+                } catch (Throwable $e) {
+                    if ($pdo->inTransaction()) $pdo->rollBack();
+                    throw $e;
+                }
             }
 
             // Pull del estado de validación nativo de Kobo (siempre, en ambos modos):
@@ -194,6 +213,12 @@ class SubmissionSync {
     private static function reconcileFull(int $formId, array $keepUids): int {
         $rows = DB::run('SELECT id, submission_uid FROM submissions_cache WHERE form_id = ?', [$formId])->fetchAll();
         if (!$rows) return 0;
+        // Guardia anti-vaciado: una lista viva VACÍA con caché poblada es mucho más
+        // probablemente un fallo aguas arriba (respuesta anómala no detectada, bug)
+        // que un borrado real del 100 % de los envíos en Kobo. No se borra nada; si
+        // el formulario de verdad quedó vacío, la caché se limpia al desactivar/
+        // eliminar el formulario o cuando Kobo devuelva al menos un envío vivo.
+        if (!$keepUids) return 0;
         $keep   = array_flip($keepUids);
         $toDrop = [];
         foreach ($rows as $r) {
@@ -214,6 +239,10 @@ class SubmissionSync {
              FROM submissions_cache WHERE form_id = ?",
             [$formId]
         )->fetchAll();
+
+        // Guardia anti-vaciado (espejo de reconcileFull): sin ningún _id vivo pero
+        // con caché poblada, no borrar nada en un cron rutinario.
+        if (!$liveIds && $rows) return 0;
 
         $toDrop = [];
         foreach ($rows as $r) {

@@ -74,31 +74,44 @@ class KoboClient {
     /**
      * Todos los envíos de un formulario, paginando. Si $sinceIso no es null,
      * pide solo los enviados después de esa fecha (filtro Mongo sobre _submission_time).
+     *
+     * Devuelve un GENERADOR que entrega los envíos página a página (array de filas),
+     * para que el llamador procese/persista cada página sin acumular todo el
+     * histórico en memoria (el primer sync de un formulario grande es justo el
+     * caso con más filas). Si se alcanza el tope de páginas sin agotar los
+     * resultados se lanza KoboException: un histórico truncado NO es un éxito
+     * (el barrido de bajas interpretaría lo no traído como envíos borrados).
+     *
+     * @return \Generator<array[]>
      */
     public function getSubmissionsSince(
         string $assetUid,
         ?string $sinceIso = null,
         int $pageSize = 2000,
         int $maxPages = 100
-    ): array {
+    ): \Generator {
         $base = ['format' => 'json', 'limit' => $pageSize, 'sort' => '{"_submission_time":1}'];
         if ($sinceIso !== null) {
             $base['query'] = json_encode(['_submission_time' => ['$gt' => $sinceIso]]);
         }
 
-        $all   = [];
         $start = 0;
         for ($page = 0; $page < $maxPages; $page++) {
             $data    = $this->httpGet("/api/v2/assets/$assetUid/data/", $base + ['start' => $start]);
             $results = $data['results'] ?? [];
-            $all     = array_merge($all, $results);
+            if ($results) {
+                yield $results;
+            }
 
             $count = (int) ($data['count'] ?? 0);
-            if (count($results) < $pageSize) break;
+            if (count($results) < $pageSize) return;
             $start += $pageSize;
-            if ($start >= $count) break;
+            if ($start >= $count) return;
         }
-        return $all;
+        throw new KoboException(
+            'KOBO_BAD_RESPONSE',
+            "El formulario excede el tope de paginación ($maxPages páginas × $pageSize envíos); sincronización incompleta abortada"
+        );
     }
 
     /**
@@ -118,11 +131,15 @@ class KoboClient {
                 if (isset($r['_id'])) $ids[] = (int) $r['_id'];
             }
             $count = (int) ($data['count'] ?? 0);
-            if (count($results) < $pageSize) break;
+            if (count($results) < $pageSize) return $ids;
             $start += $pageSize;
-            if ($start >= $count) break;
+            if ($start >= $count) return $ids;
         }
-        return $ids;
+        // Lista truncada = referencia inválida para el barrido de bajas: abortar.
+        throw new KoboException(
+            'KOBO_BAD_RESPONSE',
+            "El formulario excede el tope de paginación del barrido de bajas ($maxPages páginas × $pageSize)"
+        );
     }
 
     /**
@@ -238,11 +255,16 @@ class KoboClient {
                 $map[$uid] = ValidationStatus::uidFromPayload($r);
             }
             $count = (int) ($data['count'] ?? 0);
-            if (count($results) < $pageSize) break;
+            if (count($results) < $pageSize) return $map;
             $start += $pageSize;
-            if ($start >= $count) break;
+            if ($start >= $count) return $map;
         }
-        return $map;
+        // Mapa truncado: reconciliar validación con una foto parcial insertaría
+        // revisiones sintéticas erróneas para lo no traído en syncs futuros.
+        throw new KoboException(
+            'KOBO_BAD_RESPONSE',
+            "El formulario excede el tope de paginación del pull de validación ($maxPages páginas × $pageSize)"
+        );
     }
 
     /**
@@ -377,10 +399,16 @@ class KoboClient {
             throw new KoboException('KOBO_TIMEOUT', "Kobo respondió con estado $status");
         }
 
+        // Cuerpo vacío = respuesta válida sin contenido (ej. 204 de un DELETE).
+        if (trim((string) $body) === '') {
+            return [];
+        }
         $json = json_decode((string) $body, true);
         if (!is_array($json)) {
-            // Algunas respuestas válidas (ej. 204) pueden venir vacías.
-            return [];
+            // Un 2xx con cuerpo no-JSON (página HTML de un proxy intermedio, portal
+            // cautivo…) NO puede tratarse como «cero resultados»: el barrido de bajas
+            // interpretaría la lista vacía como un borrado masivo en Kobo.
+            throw new KoboException('KOBO_BAD_RESPONSE', 'Kobo devolvió una respuesta que no es JSON', $status);
         }
         return $json;
     }

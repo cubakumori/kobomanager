@@ -37,7 +37,16 @@ $totalSubs  = 0;
 $errors     = 0;
 
 foreach ($accounts as $acc) {
-    $token  = TokenVault::decrypt($acc['api_token']);
+    // Aislar cada cuenta: un token ilegible (clave rotada a medias, backup con otra
+    // CONFIG_TOKEN_KEY) no debe tumbar el cron entero — las demás cuentas se
+    // sincronizan igual y la corrida queda registrada para /health.
+    try {
+        $token = TokenVault::decrypt($acc['api_token']);
+    } catch (Throwable $e) {
+        $errors++;
+        fwrite(STDERR, sprintf("[ERR] %s: token ilegible (%s)\n", $acc['label'], $e->getMessage()));
+        continue;
+    }
     $client = new KoboClient($acc['server_url'], $token);
 
     $forms = DB::run(
@@ -65,6 +74,12 @@ foreach ($accounts as $acc) {
             }
             $errors++;
             fwrite(STDERR, sprintf("[ERR] %s / form %d: %s (%s)\n", $acc['label'], $formId, $e->getMessage(), $e->errorCode));
+        } catch (Throwable $e) {
+            // Errores no-Kobo (PDO transitorio, bug): se aísla el formulario y se
+            // continúa, para que un fallo puntual no impida el resto de la corrida
+            // ni deje /health sin registro.
+            $errors++;
+            fwrite(STDERR, sprintf("[ERR] %s / form %d: %s\n", $acc['label'], $formId, $e->getMessage()));
         }
     }
 }

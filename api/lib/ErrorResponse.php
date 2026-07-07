@@ -13,6 +13,7 @@ class ErrorResponse {
         'KOBO_EDIT_FAILED'              => [502, 'Kobo rechazó la edición del envío'],
         'KOBO_VALIDATE_FORBIDDEN'       => [403, 'La cuenta de Kobo no tiene permiso para validar envíos en este formulario'],
         'KOBO_RATE_LIMIT'               => [429, 'Se alcanzó el límite de peticiones de la API de Kobo'],
+        'KOBO_BAD_RESPONSE'             => [502, 'El servidor de Kobo devolvió una respuesta no válida'],
         'SYNC_IN_PROGRESS'              => [409, 'Ya hay una sincronización de este formulario en curso; inténtalo en un momento'],
         'AUTH_INVALID_TOKEN'            => [401, 'Sesión inválida o expirada'],
         'AUTH_INSUFFICIENT_PERMISSIONS' => [403, 'No tienes permisos suficientes'],
