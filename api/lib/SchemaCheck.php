@@ -8,16 +8,40 @@
  * (esquema)» de cada versión en CHANGELOG.md). Si se despliega código nuevo sobre una
  * BD vieja, las consultas fallan con «Unknown column …» (un 500 opaco).
  *
- * Esta clase es la FUENTE ÚNICA de «qué columnas espera el código»: la usan el
- * comando `cli/doctor.php` (informe), `cli/migrate.php` (aplica lo que falte) y el
- * aviso de admin (banner en la app). Cada vez que una versión añade una columna, se
- * añade aquí una entrada (convención documentada en CONTRIBUTING.md).
+ * Esta clase es la FUENTE ÚNICA de «qué columnas Y TABLAS espera el código»: la usan
+ * el comando `cli/doctor.php` (informe), `cli/migrate.php` (aplica lo que falte) y el
+ * aviso de admin (banner en la app). Cada vez que una versión añade una columna o una
+ * tabla, se añade aquí una entrada (convención documentada en CONTRIBUTING.md).
  *
  * Solo cubre lo AÑADIDO tras la primera versión pública (1.0.0): el resto del esquema
  * vive siempre en una instalación nueva, así que solo puede faltar en una BD que se
  * actualiza. No parsea SQL (frágil); compara contra `information_schema`.
  */
 class SchemaCheck {
+
+    /**
+     * Tablas COMPLETAS que el código requiere y que se añadieron tras 1.0.0. El `fix`
+     * es el CREATE TABLE canónico ÍNTEGRO (copia de db/001_schema.sql; si aquel
+     * cambia, esta copia debe cambiar con él — lo vigila SchemaCheckTest contra la BD
+     * de test). `column` va a null para que los consumidores distingan tabla de columna.
+     */
+    public const TABLE_CHECKS = [
+        ['table' => 'contact_messages', 'column' => null, 'since' => '1.3.0',
+         'fix' => "CREATE TABLE IF NOT EXISTS contact_messages (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name        VARCHAR(120) NOT NULL,
+    email       VARCHAR(255) NOT NULL,
+    org         VARCHAR(160) NULL,
+    topic       VARCHAR(32)  NOT NULL DEFAULT 'general',
+    message     TEXT NOT NULL,
+    ip          VARCHAR(45)  NULL,
+    emailed     TINYINT(1)   NOT NULL DEFAULT 0,
+    status      VARCHAR(16)  NOT NULL DEFAULT 'new',
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_created (created_at),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"],
+    ];
 
     /**
      * Columnas que el código requiere y que se añadieron tras 1.0.0. Cada entrada:
@@ -92,7 +116,20 @@ class SchemaCheck {
      * @return array<int,array>
      */
     public static function missingAgainst(array $have): array {
+        // Tablas presentes = prefijos "tabla" de las claves "tabla.columna" (toda
+        // tabla tiene al menos una columna en information_schema.COLUMNS).
+        $tables = [];
+        foreach ($have as $key => $unused) {
+            $tables[strstr($key, '.', true)] = true;
+        }
+
         $missing = [];
+        // Tablas ausentes primero: su fix crea la tabla entera de una vez.
+        foreach (self::TABLE_CHECKS as $chk) {
+            if (!isset($tables[$chk['table']])) {
+                $missing[] = $chk;
+            }
+        }
         foreach (self::CHECKS as $chk) {
             $key = $chk['table'] . '.' . $chk['column'];
             if (!array_key_exists($key, $have)) {

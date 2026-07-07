@@ -842,8 +842,9 @@ Lote de robustez y pulido de la revisión general de julio (sin cambios de esque
   panel, no solo por email. Lista paginada con filtros por estado y motivo; clic en una fila →
   modal con el mensaje completo (al abrirlo se marca **leído** automáticamente), botón
   **Responder** (mailto con asunto prellenado), **archivar/desarchivar** y **eliminar** con
-  confirmación. La tabla gana la columna `status` (`new`/`read`/`archived`, DDL canónico en
-  `db/009_contact_messages.sql`). Nueva card «Mensajes» en el Dashboard admin con contador de
+  confirmación. La tabla gana la columna `status` (`new`/`read`/`archived`; el DDL canónico
+  vive hoy en `db/001_schema.sql` tras la consolidación, y `php api/cli/migrate.php` crea la
+  tabla si falta). Nueva card «Mensajes» en el Dashboard admin con contador de
   no leídos. La bandeja abre filtrada en **«Nuevo»** por defecto. Archivar y eliminar quedan
   auditados (`contact_message_archive`/`_delete`); el paso a leído no se audita para no
   generar ruido. Endpoints admin `GET /admin/messages` (filtros + `new_count`) y

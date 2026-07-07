@@ -50,6 +50,11 @@ overview read [`ARCHITECTURE.md`](./ARCHITECTURE.md); for setup read [`README.md
     DB get a clear signal instead of a cryptic 500), and (2) add the `ALTER` to the
     version's **«Nota de actualización (esquema)»** in `CHANGELOG.md`. The
     `SchemaCheckTest` asserts every `CHECKS` entry exists in the canonical schema.
+  - **When you add a whole table, also**: add a `SchemaCheck::TABLE_CHECKS` entry whose
+    `fix` is a verbatim copy of the canonical `CREATE TABLE IF NOT EXISTS` from `001`
+    (plus the CHANGELOG note). `migrate.php` creates missing tables the same way it adds
+    missing columns; `SchemaCheckTest` asserts the copy stays in sync with the canonical
+    schema, column by column.
 
 ### Backend
 - One class per file in `lib/`, no namespaces (autoloaded by classmap for tests).

@@ -30,16 +30,17 @@ try {
 }
 
 if (!$missing) {
-    fwrite(STDOUT, "✓ Esquema al día: la base de datos tiene todas las columnas que el código espera.\n");
+    fwrite(STDOUT, "✓ Esquema al día: la base de datos tiene todas las columnas y tablas que el código espera.\n");
     exit(0);
 }
 
-fwrite(STDOUT, "✗ La base de datos está DESACTUALIZADA. Faltan " . count($missing) . " columna(s):\n\n");
+fwrite(STDOUT, "✗ La base de datos está DESACTUALIZADA. Faltan " . count($missing) . " elemento(s):\n\n");
 foreach ($missing as $m) {
-    $why = !empty($m['nullable']) ? ' (debe admitir NULL)' : '';
-    fwrite(STDOUT, "  - {$m['table']}.{$m['column']}{$why}  [desde v{$m['since']}]\n");
+    $why  = !empty($m['nullable']) ? ' (debe admitir NULL)' : '';
+    $what = $m['column'] === null ? "tabla {$m['table']}" : "{$m['table']}.{$m['column']}";
+    fwrite(STDOUT, "  - {$what}{$why}  [desde v{$m['since']}]\n");
 }
-fwrite(STDOUT, "\nAplica estos ALTER (o ejecuta: php api/cli/migrate.php):\n\n");
+fwrite(STDOUT, "\nAplica estas sentencias (o ejecuta: php api/cli/migrate.php):\n\n");
 foreach ($missing as $m) {
     fwrite(STDOUT, "  {$m['fix']};\n");
 }

@@ -21,7 +21,22 @@ final class SchemaCheckTest extends DbTestCase
             // 'YES' satisface tanto las que exigen NULL como las demás.
             $have[$c['table'] . '.' . $c['column']] = 'YES';
         }
+        foreach (SchemaCheck::TABLE_CHECKS as $c) {
+            // Basta una columna cualquiera para que la tabla cuente como presente.
+            $have[$c['table'] . '.id'] = 'NO';
+        }
         return $have;
+    }
+
+    public function testDetectsAbsentTable(): void
+    {
+        $have = $this->fullHave();
+        unset($have['contact_messages.id']); // sin columnas = tabla inexistente
+        $missing = SchemaCheck::missingAgainst($have);
+        $this->assertCount(1, $missing);
+        $this->assertSame('contact_messages', $missing[0]['table']);
+        $this->assertNull($missing[0]['column']);
+        $this->assertStringContainsString('CREATE TABLE', $missing[0]['fix']);
     }
 
     public function testNoneMissingWhenAllPresent(): void
@@ -46,6 +61,29 @@ final class SchemaCheckTest extends DbTestCase
         $have['submission_reviews.user_id'] = 'NO';
         $cols = array_map(fn($m) => $m['table'] . '.' . $m['column'], SchemaCheck::missingAgainst($have));
         $this->assertContains('submission_reviews.user_id', $cols);
+    }
+
+    public function testTableFixesMirrorCanonicalColumns(): void
+    {
+        // El `fix` de una tabla es una COPIA del CREATE canónico de db/001_schema.sql;
+        // si el canónico gana/pierde columnas, esta copia debe seguirle. Se comprueba
+        // contra la BD de test (construida desde db/*.sql): cada columna real debe
+        // aparecer como definición de columna en el fix.
+        foreach (SchemaCheck::TABLE_CHECKS as $chk) {
+            $cols = array_column(DB::run(
+                'SELECT COLUMN_NAME c FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION',
+                [$chk['table']]
+            )->fetchAll(), 'c');
+            $this->assertNotSame([], $cols, "la tabla {$chk['table']} no existe en la BD de test");
+            foreach ($cols as $col) {
+                $this->assertMatchesRegularExpression(
+                    '/^\s*' . preg_quote($col, '/') . '\s/mi',
+                    $chk['fix'],
+                    "columna {$chk['table']}.$col ausente en el fix de TABLE_CHECKS"
+                );
+            }
+        }
     }
 
     public function testCanonicalSchemaSatisfiesAllChecks(): void

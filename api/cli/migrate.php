@@ -38,10 +38,11 @@ if (!$missing) {
     exit(0);
 }
 
-fwrite(STDOUT, ($dryRun ? "[dry-run] " : "") . "Columnas a aplicar: " . count($missing) . "\n");
+fwrite(STDOUT, ($dryRun ? "[dry-run] " : "") . "Cambios a aplicar: " . count($missing) . "\n");
 $applied = 0;
 foreach ($missing as $m) {
-    fwrite(STDOUT, "  {$m['table']}.{$m['column']} … ");
+    $what = $m['column'] === null ? "tabla {$m['table']}" : "{$m['table']}.{$m['column']}";
+    fwrite(STDOUT, "  $what … ");
     if ($dryRun) {
         fwrite(STDOUT, "(dry-run)\n");
         continue;
@@ -63,8 +64,8 @@ if ($dryRun) {
 
 $pending = SchemaCheck::missing();
 if ($pending) {
-    fwrite(STDERR, "\n✗ Aún faltan " . count($pending) . " columna(s); revisa los errores de arriba.\n");
+    fwrite(STDERR, "\n✗ Aún faltan " . count($pending) . " cambio(s); revisa los errores de arriba.\n");
     exit(1);
 }
-fwrite(STDOUT, "\n✓ Listo: se aplicaron $applied columna(s); la base de datos está al día.\n");
+fwrite(STDOUT, "\n✓ Listo: se aplicaron $applied cambio(s); la base de datos está al día.\n");
 exit(0);
