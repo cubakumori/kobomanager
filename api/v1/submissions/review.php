@@ -43,6 +43,15 @@ if (!in_array($status, ['approved', 'rejected', 'on_hold', 'pending'], true)) {
     ErrorResponse::send('VALIDATION_ERROR', 'Estado de revisión no válido');
 }
 
+// Carrera revisión↔sync: el pull de validación del sync hace un merge a 3 vías
+// (baseline + última revisión); si se cuela entre el push a Kobo y la actualización
+// de la línea base, insertaría una revisión sintética duplicada en el historial.
+// Mismo lock por formulario que el sync, con espera acotada; si expira se continúa
+// (el riesgo residual es solo cosmético, nunca bloquea al usuario). En las salidas
+// por error el lock se libera con la conexión al terminar la petición.
+$lockName = 'km.sync.form.' . $formId;
+$gotLock  = ((int) DB::run('SELECT GET_LOCK(?, 5) AS l', [$lockName])->fetch()['l']) === 1;
+
 // Push a Kobo (estado de validación nativo): bloqueante, como la edición. Si Kobo lo
 // rechaza, NO se guarda la revisión local (ambos lados quedan idénticos). En modo demo
 // se omite el push (no se escribe en la cuenta Kobo real); la revisión queda solo local.
@@ -83,6 +92,10 @@ if ($pushed) {
         'UPDATE submissions_cache SET kobo_validation_seen = ? WHERE submission_uid = ?',
         [$statusUid, $uid]
     );
+}
+
+if ($gotLock) {
+    DB::run('SELECT RELEASE_LOCK(?)', [$lockName]);
 }
 
 Audit::log($user['id'], $status, $formId, $uid, ['comment' => $comment]);

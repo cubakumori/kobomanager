@@ -74,6 +74,12 @@ foreach ($rows as $r) {
     $targets[$r['submission_uid']] = (int) $koboId;
 }
 
+// Carrera revisión↔sync: mismo lock por formulario que el sync mientras dura el
+// push + escritura local, para que el pull de validación no inserte revisiones
+// sintéticas duplicadas (ver review.php). Espera acotada; si expira se continúa.
+$lockName = 'km.sync.form.' . $formId;
+$gotLock  = ((int) DB::run('SELECT GET_LOCK(?, 5) AS l', [$lockName])->fetch()['l']) === 1;
+
 // Push a Kobo (estado de validación nativo): bloqueante. Un solo PATCH para todos los
 // envíos del lote (mismo estado). Si Kobo lo rechaza, NO se aplica nada localmente.
 // En modo demo se omite el push (la revisión queda solo local).
@@ -111,6 +117,10 @@ foreach ($targets as $sUid => $koboId) {
     $applied[] = $sUid;
 }
 $pdo->commit();
+
+if ($gotLock) {
+    DB::run('SELECT RELEASE_LOCK(?)', [$lockName]);
+}
 
 $skipped = count($uids) - count($applied);
 
