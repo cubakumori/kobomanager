@@ -4,6 +4,58 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.22.0] - 2026-07-07
+
+Añadidos de análisis en Estadísticas y Control de calidad. **Sin cambios de esquema**
+(las columnas materializadas necesarias llegaron en 1.21.0).
+
+### Añadido
+
+- **Estadísticas: filtro por rango de fechas.** Selector de periodo (Todo / 7 / 30 /
+  90 días / personalizado con fechas «desde–hasta», inclusive, en días naturales UTC)
+  que acota todas las métricas —series, por pregunta, equipos, duración, hora/día,
+  adjuntos, geo—. El encabezado (total y desglose por estado) y la tendencia 7/30 d
+  (que tiene su propia ventana relativa a hoy) siguen siendo globales, igual que con
+  el filtro de estado. Un chip muestra el rango aplicado y permite limpiarlo.
+- **Estadísticas: preguntas numéricas.** Sección nueva para las preguntas
+  `integer`/`decimal`/`range` visibles: media, mediana, mínimo, máximo, nº de
+  respuestas e histograma de 8 tramos por pregunta. Los valores no numéricos o
+  vacíos no cuentan; respeta permisos por columna.
+- **Estadísticas: ranking de no-respuesta.** «Preguntas más saltadas»: top 10 de
+  preguntas con más envíos sin respuesta, con barra y % sobre la base filtrada
+  (el esquema normalizado ya excluye notas y `calculate`).
+- **Control de calidad: señal de duplicados.** Bandera nueva `Duplicadas`: otro envío
+  del formulario —de cualquier encuestador— con exactamente las mismas respuestas.
+  Compara solo CONTENIDO (excluye los campos de equipo/encuestador, que identifican
+  pero no son contenido) y exige al menos 2 respuestas no vacías, para que un envío
+  casi vacío no genere ruido. Sin umbral que configurar.
+- **Control de calidad: señal «GPS clavado».** Bandera nueva cuando el MISMO punto
+  exacto se repite en ≥3 envíos del mismo encuestador (relleno desde un sitio fijo).
+  Solo participa lo que tiene coordenadas: sin datos geo la señal queda inactiva (la
+  tarjeta ni aparece) y los envíos sin punto nunca forman grupo.
+- **Control de calidad: tendencia.** Gráfico «% de encuestas no admitidas por semana»
+  (semanas ISO, días UTC) sobre TODO lo recibido: la física de las banderas no depende
+  del alcance por estado, así que aprobar un envío no lo borra de la historia — el
+  gráfico responde si la calidad mejora tras hablar con el equipo.
+- **Control de calidad: sugerencia automática de umbrales.** Botón «Sugerir» en los
+  ajustes del formulario que propone la duración mínima/máxima admisible desde los
+  percentiles p5/p95 de las duraciones reales (endpoint `GET /forms/{id}/quality/suggest`,
+  admin o permiso «Ajustes»; respeta el alcance por filas; con menos de 10 encuestas
+  con tiempos no sugiere nada). Solo rellena el formulario: guardar sigue siendo
+  decisión del usuario.
+
+### Notas
+
+- El drill-down de infracciones ahora puede listar envíos sin tiempos (duplicados o
+  GPS clavado sin `start`/`end`); sus columnas de tiempo muestran «—».
+- Las secciones nuevas de Estadísticas llegan también a los enlaces públicos con
+  estadísticas expuestas (mismo alcance por filas/columnas del enlace, como
+  «Por pregunta»).
+- ROADMAP: queda anotado como extensión diferida el export CSV del drill-down de
+  infracciones; «straight-lining» y «velocidad imposible entre puntos» permanecen
+  como ideas (las variantes fuertes —duplicados exactos y GPS clavado— son las
+  entregadas aquí).
+
 ## [1.21.0] - 2026-07-07
 
 Barrido integral de código previo a los añadidos: seguridad, robustez del sync,
