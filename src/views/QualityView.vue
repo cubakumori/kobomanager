@@ -15,6 +15,7 @@ import { fmtDuration } from '../composables/derived'
 import { usePctFormat } from '../composables/appConfig'
 import Skeleton from '../components/Skeleton.vue'
 import ReviewBadge from '../components/ReviewBadge.vue'
+import StatsChart from '../components/StatsChart.vue'
 
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -60,7 +61,7 @@ const heldCount = computed(() => (q.value?.flagged ?? 0) - pendingHold.value.len
 // TOTAL de encuestas recibidas (del formulario, del equipo o del encuestador),
 // para que el «x / y» y el % compartan siempre el mismo denominador. El formato
 // (entero o dos decimales) es el ajuste global «Valores porcentuales».
-const { formatRatio } = usePctFormat()
+const { formatRatio, formatPctNumber } = usePctFormat()
 const fmtRate = (n, d) => formatRatio(n, d, locale.value)
 
 async function holdAll() {
@@ -95,20 +96,51 @@ async function holdAll() {
   }
 }
 
-// Las cuatro banderas, en el orden canónico del backend.
-const FLAGS = ['short', 'long', 'short_gap', 'overlap']
+// Las banderas, en el orden canónico del backend.
+const FLAGS = ['short', 'long', 'short_gap', 'overlap', 'duplicate', 'gps']
 const FLAG_KEY = {
   short: 'qualityFlagShort',
   long: 'qualityFlagLong',
   short_gap: 'qualityFlagShortGap',
   overlap: 'qualityFlagOverlap',
+  duplicate: 'qualityFlagDuplicate',
+  gps: 'qualityFlagGps',
 }
 const FLAG_CLS = {
   short: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
   long: 'bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300',
   short_gap: 'bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300',
   overlap: 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300',
+  duplicate: 'bg-pink-100 text-pink-700 dark:bg-pink-950/50 dark:text-pink-300',
+  gps: 'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300',
 }
+
+// Sin datos geo la señal «GPS clavado» está inactiva: su tarjeta/columna se oculta.
+const visibleFlags = computed(() => FLAGS.filter((f) => f !== 'gps' || q.value?.gps_enabled))
+
+// ---- Tendencia semanal: % de encuestas no admitidas sobre TODO lo recibido ----
+const byWeek = computed(() => q.value?.by_week ?? [])
+const showTrend = computed(() => byWeek.value.length >= 2)
+const trendData = computed(() => ({
+  labels: byWeek.value.map((w) => w.week),
+  datasets: [{ data: byWeek.value.map((w) => w.pct), backgroundColor: '#dc2626', borderRadius: 4 }],
+}))
+const trendOptions = computed(() => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      callbacks: {
+        label: (ctx) => {
+          const w = byWeek.value[ctx.dataIndex]
+          return `${t('stats.qualityTeamFlagged', { flagged: w.flagged, total: w.total })} · ${formatPctNumber(w.pct, locale.value)} %`
+        },
+      },
+    },
+  },
+  scales: { y: { beginAtZero: true, ticks: { callback: (v) => v + ' %' } } },
+}))
 
 // Hueco con signo: negativo = solape (se muestra con «−»).
 const fmtGap = (s) => (s == null ? '—' : s < 0 ? '−' + fmtDuration(-s) : fmtDuration(s))
@@ -194,8 +226,8 @@ onMounted(load)
         </span>
       </div>
 
-      <!-- Recuento general: evaluadas, no admitidas y las cuatro banderas -->
-      <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <!-- Recuento general: evaluadas, no admitidas y las banderas activas -->
+      <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
           <p class="text-xs text-slate-400">{{ $t('stats.qualityCardTotal') }}</p>
           <p class="mt-1 text-2xl font-semibold text-slate-900">{{ q.total - q.untimed }}</p>
@@ -207,12 +239,22 @@ onMounted(load)
             <span v-if="q.flagged" class="text-sm font-medium text-slate-400" :title="$t('stats.qualityRateTitle')">· {{ fmtRate(q.flagged, q.received) }}</span>
           </p>
         </div>
-        <div v-for="f in FLAGS" :key="f" class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+        <div v-for="f in visibleFlags" :key="f" class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
           <p class="text-xs text-slate-400">{{ $t('stats.' + FLAG_KEY[f], 2) }}</p>
           <p class="mt-1 text-2xl font-semibold text-slate-900">{{ q.flags[f] }}</p>
         </div>
       </div>
       <p v-if="q.untimed" class="text-xs text-slate-400">{{ $t('stats.qualityUntimed', { n: q.untimed }) }}</p>
+      <p v-if="q.gps_enabled" class="text-xs text-slate-400">
+        {{ $t('stats.qualityGpsHint', { n: q.gps_min_repeats }) }}
+      </p>
+
+      <!-- Tendencia semanal (solo con 2+ semanas: con una sola no hay tendencia) -->
+      <div v-if="showTrend" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+        <h2 class="font-semibold text-slate-900">{{ $t('stats.qualityTrend') }}</h2>
+        <p class="mb-3 text-xs text-slate-400">{{ $t('stats.qualityTrendDesc') }}</p>
+        <div class="h-56"><StatsChart type="bar" :data="trendData" :options="trendOptions" /></div>
+      </div>
 
       <!-- Marcado en lote sobre el flujo de revisión existente -->
       <div
@@ -268,7 +310,7 @@ onMounted(load)
             >{{ fmtRate(team.flagged, team.total) }}</span>
             <span class="ml-auto flex gap-1.5 text-xs font-medium">
               <span
-                v-for="f in FLAGS"
+                v-for="f in visibleFlags"
                 :key="f"
                 v-show="team.flags[f]"
                 class="rounded-full px-2 py-0.5"
@@ -290,7 +332,7 @@ onMounted(load)
                     <tr>
                       <th class="py-1 pr-4">{{ $t('stats.colEnumerator') }}</th>
                       <th class="py-1 pr-4">{{ $t('stats.colVolume') }}</th>
-                      <th v-for="f in FLAGS" :key="f" class="py-1 pr-4">{{ $t('stats.' + FLAG_KEY[f], 2) }}</th>
+                      <th v-for="f in visibleFlags" :key="f" class="py-1 pr-4">{{ $t('stats.' + FLAG_KEY[f], 2) }}</th>
                       <th class="py-1">{{ $t('stats.qualityCardFlagged') }}</th>
                     </tr>
                   </thead>
@@ -298,7 +340,7 @@ onMounted(load)
                     <tr>
                       <td class="py-1.5 pr-4 font-medium text-slate-700">{{ e.name }}</td>
                       <td class="py-1.5 pr-4 text-slate-600">{{ e.total }}</td>
-                      <td v-for="f in FLAGS" :key="f" class="py-1.5 pr-4" :class="e.flags[f] ? 'font-semibold text-slate-700' : 'text-slate-300'">
+                      <td v-for="f in visibleFlags" :key="f" class="py-1.5 pr-4" :class="e.flags[f] ? 'font-semibold text-slate-700' : 'text-slate-300'">
                         {{ e.flags[f] || '—' }}
                       </td>
                       <td class="py-1.5 font-semibold" :class="e.flagged ? 'text-red-600 dark:text-red-400' : 'text-slate-300'">

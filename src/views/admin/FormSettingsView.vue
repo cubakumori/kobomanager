@@ -12,7 +12,7 @@ import { useAuthStore, apiError } from '../../stores/auth'
 import Skeleton from '../../components/Skeleton.vue'
 import { useDemoMode } from '../../composables/appConfig'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 const auth = useAuthStore()
 const { demoMode } = useDemoMode()
@@ -62,6 +62,38 @@ async function load() {
 
 // Umbral de la UI ('' | número) → minutos (entero) o null.
 const minutes = (v) => (v === '' || v === null ? null : Number(v))
+
+// ---- Sugerencia de umbrales a partir de las duraciones reales (p5/p95) ----
+// Solo RELLENA los inputs de duración mín/máx: el usuario revisa y guarda.
+const suggesting = ref(false)
+const suggestHint = ref('')
+
+async function suggest() {
+  suggesting.value = true
+  suggestHint.value = ''
+  error.value = ''
+  try {
+    const { data } = await api.get(`/forms/${formId.value}/quality/suggest`)
+    const d = data.data
+    if (!d.suggested) {
+      suggestHint.value = t('formSettings.qcSuggestNotEnough', { n: d.min_needed })
+      return
+    }
+    qcMinDuration.value = d.suggested.min_duration
+    qcMaxDuration.value = d.suggested.max_duration
+    // Segundos → minutos con 1 decimal, en el formato del idioma.
+    const min1 = (s) => (s / 60).toLocaleString(locale.value, { maximumFractionDigits: 1 })
+    suggestHint.value = t('formSettings.qcSuggestHint', {
+      p5: min1(d.p5_s),
+      p95: min1(d.p95_s),
+      n: d.count,
+    })
+  } catch (e) {
+    error.value = apiError(e, t('formSettings.qcSuggestError'))
+  } finally {
+    suggesting.value = false
+  }
+}
 
 async function save() {
   saving.value = true
@@ -148,8 +180,23 @@ onMounted(load)
 
     <!-- Umbrales del control de calidad (página «Control de calidad» del formulario) -->
     <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-      <h2 class="font-semibold text-slate-900">{{ $t('formSettings.qcSection') }}</h2>
-      <p class="mt-1 text-sm text-slate-500">{{ $t('formSettings.qcSectionDesc') }}</p>
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('formSettings.qcSection') }}</h2>
+          <p class="mt-1 text-sm text-slate-500">{{ $t('formSettings.qcSectionDesc') }}</p>
+        </div>
+        <!-- Propone mín/máx a partir de los p5/p95 de las duraciones reales; solo
+             rellena los inputs (guardar sigue siendo decisión del usuario). -->
+        <button
+          type="button"
+          :disabled="suggesting"
+          class="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-300 hover:bg-slate-50 disabled:opacity-60"
+          @click="suggest"
+        >
+          {{ suggesting ? $t('formSettings.qcSuggestBusy') : $t('formSettings.qcSuggest') }}
+        </button>
+      </div>
+      <p v-if="suggestHint" class="mt-2 text-xs text-slate-500">{{ suggestHint }}</p>
 
       <div class="mt-4 grid gap-4 sm:grid-cols-3">
         <label class="block">

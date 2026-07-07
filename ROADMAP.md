@@ -30,9 +30,16 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 - [ ] **Horario admisible de trabajo** (franja horaria por formulario, evaluada en
       `APP_TIMEZONE`): encuestas iniciadas de madrugada como bandera propia.
 - [ ] **Velocidad imposible entre puntos geo consecutivos** del mismo encuestador
-      (distancia/tiempo entre encuestas seguidas) — diseño pesado.
-- [ ] **Patrones de respuestas idénticas** entre envíos del mismo encuestador
-      (straight-lining / duplicados) — diseño pesado.
+      (distancia/tiempo entre encuestas seguidas) — diseño pesado y delicado (GPS
+      ruidoso → falsos positivos). La variante simple, «GPS clavado» (mismo punto
+      exacto en ≥3 envíos del mismo encuestador), quedó **entregada en 1.22.0**.
+- [ ] **Straight-lining** (misma opción elegida en todas las select_one de un envío):
+      señal dudosa con cuestionarios cortos y umbral difícil. La variante fuerte,
+      **duplicados exactos de respuestas** (a nivel de formulario, solo contenido),
+      quedó **entregada en 1.22.0**.
+- [ ] **Export CSV del drill-down de infracciones**: descargar la lista de envíos
+      marcados (uid, encuestador, tiempos, banderas, estado) para llevarla a la
+      reunión con el equipo de campo — mismo patrón del export existente.
 
 ---
 

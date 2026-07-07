@@ -171,6 +171,28 @@ function questionData(q) {
   return hBar(q.options.map((o) => o.label), q.options.map((o) => o.count))
 }
 
+// ---- Preguntas numéricas (integer/decimal/range): resumen + histograma ----
+const byNumeric = computed(() => stats.value?.by_numeric ?? [])
+const fmtNum = (v) => Number(v).toLocaleString(locale.value, { maximumFractionDigits: 2 })
+// Etiqueta de tramo «10–20» (o el valor suelto si min == max → 1 solo tramo).
+const bucketLabel = (b) => (b.from === b.to ? fmtNum(b.from) : `${fmtNum(b.from)}–${fmtNum(b.to)}`)
+function numericHistData(nq) {
+  return {
+    labels: nq.histogram.map(bucketLabel),
+    datasets: [{ data: nq.histogram.map((b) => b.count), backgroundColor: PRIMARY, borderRadius: 4 }],
+  }
+}
+// Chips de resumen (reutilizan las etiquetas media/mediana/mín/máx de duración).
+const numericSummary = (nq) => [
+  { key: 'durMean', value: nq.mean },
+  { key: 'durMedian', value: nq.median },
+  { key: 'durMin', value: nq.min },
+  { key: 'durMax', value: nq.max },
+]
+
+// ---- Ranking de no-respuesta (top 10 de preguntas más saltadas) ----
+const noResponse = computed(() => stats.value?.no_response ?? [])
+
 // ---- Opciones de gráficos ----
 const barOptions = {
   responsive: true,
@@ -524,6 +546,50 @@ const reviewPills = (st) =>
           <p v-if="q.others" class="mt-2 text-xs text-slate-400">{{ $t('stats.others', { n: q.others }) }}</p>
         </div>
       </div>
+    </section>
+
+    <!-- Preguntas numéricas (integer/decimal/range): resumen + histograma de 8 tramos -->
+    <section v-if="byNumeric.length" class="space-y-4">
+      <h2 class="font-semibold text-slate-900">{{ $t('stats.byNumeric') }}</h2>
+      <div class="grid gap-4 lg:grid-cols-2">
+        <div
+          v-for="nq in byNumeric"
+          :key="nq.field"
+          class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200"
+        >
+          <h3 class="text-sm font-semibold text-slate-800">{{ nq.label }}</h3>
+          <p class="mb-2 text-xs text-slate-400">{{ $t('stats.answered', { n: nq.answered }) }}</p>
+          <div class="mb-3 flex flex-wrap gap-1.5 text-xs">
+            <span
+              v-for="s in numericSummary(nq)"
+              :key="s.key"
+              class="rounded-full bg-slate-100 px-2.5 py-0.5 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+            >
+              {{ $t('stats.' + s.key) }} <span class="font-semibold text-slate-800 dark:text-slate-100">{{ fmtNum(s.value) }}</span>
+            </span>
+          </div>
+          <div class="h-48"><StatsChart type="bar" :data="numericHistData(nq)" :options="barValueOptions" /></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Preguntas más saltadas (top 10 de no-respuesta, % sobre la base mostrada) -->
+    <section v-if="noResponse.length" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <h2 class="font-semibold text-slate-900">{{ $t('stats.noResponseTitle') }}</h2>
+      <p class="mb-4 text-xs text-slate-400">{{ $t('stats.noResponseDesc', { n: stats.questions_total }) }}</p>
+      <ul class="space-y-3">
+        <li v-for="r in noResponse" :key="r.field">
+          <div class="flex items-baseline justify-between gap-3 text-sm">
+            <span class="min-w-0 truncate font-medium text-slate-700" :title="r.label">{{ r.label }}</span>
+            <span class="shrink-0 text-xs text-slate-500">
+              {{ $t('stats.noResponseSkipped', { n: r.skipped }) }} · {{ fmtPct(r.pct) }}
+            </span>
+          </div>
+          <div class="mt-1 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+            <div class="h-full rounded-full bg-amber-500" :style="{ width: Math.min(100, r.pct) + '%' }"></div>
+          </div>
+        </li>
+      </ul>
     </section>
   </div>
 </template>
