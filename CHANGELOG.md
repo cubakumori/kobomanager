@@ -54,6 +54,22 @@ Añadidos de análisis en Estadísticas y Control de calidad.
   admin o permiso «Ajustes»; respeta el alcance por filas; con menos de 10 encuestas
   con tiempos no sugiere nada). Solo rellena el formulario: guardar sigue siendo
   decisión del usuario.
+- **Estadísticas: tope del desglose por equipo configurable.** Ajuste global
+  «Desglose de equipos en estadísticas» (`stats_team_cap`): los 20 primeros, los 50
+  primeros (por defecto) o todos los equipos —y encuestadores dentro de cada uno—; el
+  resto se agrupa en «otros». Un tope evita un gráfico ilegible con cientos de barras.
+  No afecta al Control de calidad, que ya los lista todos.
+- **Tabla de envíos: exportar con modal.** El botón «Exportar CSV» pasa a «Exportar»
+  y abre un modal para elegir el **alcance** (todos los envíos / solo aprobados) y el
+  **formato** (por ahora CSV; el modal deja sitio para más). El contador bajo el título
+  muestra **«N / total»** cuando hay filtro, búsqueda o estado activos, para dimensionar
+  el subconjunto sobre el total en alcance.
+- **Tabla de envíos: orden por estado de revisión.** Nuevas opciones de orden por
+  REVISIÓN (pendientes primero / rechazados primero), posibles ahora que el estado
+  está desnormalizado e indexado.
+- **Enlace «Ver envíos» configurable.** Ajuste global (`show_view_submissions_link`,
+  activado por defecto) para ocultar el enlace «Ver envíos» de las tarjetas de «Mis
+  formularios» (la tarjeta entera ya abre los envíos al pulsarla).
 
 ### Notas
 

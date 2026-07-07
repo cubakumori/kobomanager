@@ -446,10 +446,11 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   the default daily‑summary subscription (`notifications_default_on`), table display
   (`table_freeze`, `table_header_lines`), stats/QC display (`stats_default_scope` —
   default review‑status scope on opening stats; `qc_scope` — which submissions quality
-  control reports on; `pct_format` — app‑wide percent rendering, integer or two decimals,
-  served by the public `GET /config` so public share views honor it too),
-  public-surface toggles (`support_page_enabled` / `landing_cta_enabled`, served by the
-  public `GET /config`), and `cron_runs`
+  control reports on; `stats_team_cap` — team‑breakdown cap, `20`|`50`|`all`; `pct_format`
+  — app‑wide percent rendering, integer or two decimals, served by the public `GET /config`
+  so public share views honor it too), the `show_view_submissions_link` toggle (also on
+  `GET /config`), public-surface toggles (`support_page_enabled` / `landing_cta_enabled`,
+  served by the public `GET /config`), and `cron_runs`
   (last run per cron, written by `recordCronRun()` at the end of each cron job).
 - **Email notifications**: `cron/daily_summary.php` (e.g. `0 7 * * *`) sends each user one
   digest of the previous day's new submissions per form, over `submissions_cache` (not
