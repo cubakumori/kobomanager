@@ -530,10 +530,13 @@ class Stats {
                 return $out;
             };
 
+            // Tope del desglose (ajuste global «stats_team_cap»): N equipos + N
+            // encuestadores por equipo, o todos si es 'all' (PHP_INT_MAX).
+            $teamCap = Settings::statsTeamCapN();
             uasort($teamAcc, fn($a, $b) => $b['leaf']['count'] <=> $a['leaf']['count']);
             $rank = 0;
             foreach ($teamAcc as $tKey => $t) {
-                if ($rank++ >= 20) { $teamOthers += $t['leaf']['count']; continue; }
+                if ($rank++ >= $teamCap) { $teamOthers += $t['leaf']['count']; continue; }
                 $teamCount = $t['leaf']['count'];
 
                 $enums = $t['enums'];
@@ -542,7 +545,7 @@ class Stats {
                 $eOthers = 0;
                 $erank = 0;
                 foreach ($enums as $eKey => $leaf) {
-                    if ($erank++ >= 20) { $eOthers += $leaf['count']; continue; }
+                    if ($erank++ >= $teamCap) { $eOthers += $leaf['count']; continue; }
                     $eName = $eKey === '—' ? '—' : (($labelsOn && isset($enumOptMap[$eKey])) ? $enumOptMap[$eKey] : $eKey);
                     $eList[] = ['name' => $eName] + $finalize($leaf, $teamCount);
                 }

@@ -46,6 +46,9 @@ if (Request::method() === 'GET') {
         'valid_qc_scope'             => Settings::VALID_QC_SCOPE,
         'pct_format'                 => Settings::pctFormat(),
         'valid_pct_format'           => Settings::VALID_PCT_FORMAT,
+        'stats_team_cap'             => Settings::statsTeamCap(),
+        'valid_stats_team_cap'       => Settings::VALID_STATS_TEAM_CAP,
+        'show_view_submissions_link' => Settings::showViewSubmissionsLink(),
         // Semilla de la demo (DEMO_SEED_PATH): la UI muestra la tarjeta solo si está configurada.
         'demo_seed'                  => DemoSeed::status(),
     ]);
@@ -161,6 +164,20 @@ if (Request::method() === 'PUT') {
         }
         Settings::set('pct_format', $pf);
         $out['pct_format'] = $pf;
+    }
+
+    if (array_key_exists('stats_team_cap', $body)) {
+        $tc = (string) $body['stats_team_cap'];
+        if (!in_array($tc, Settings::VALID_STATS_TEAM_CAP, true)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Tope de equipos no válido');
+        }
+        Settings::set('stats_team_cap', $tc);
+        $out['stats_team_cap'] = $tc;
+    }
+
+    if (array_key_exists('show_view_submissions_link', $body)) {
+        Settings::set('show_view_submissions_link', (bool) $body['show_view_submissions_link']);
+        $out['show_view_submissions_link'] = (bool) $body['show_view_submissions_link'];
     }
 
     if (array_key_exists('label_mode', $body)) {

@@ -98,6 +98,27 @@ final class StatsTest extends DbTestCase
         $this->assertSame('beto', $enumsA[1]['name']);
     }
 
+    public function testTeamCapSettingLimitsBreakdown(): void
+    {
+        $formId = $this->makeForm();
+        // 21 equipos de un envío cada uno (uno por encima del tope de 20).
+        for ($i = 1; $i <= 21; $i++) {
+            $this->addSubmission($formId, ['_id' => $i, 'team' => 'T' . $i, '_submitted_by' => 'e' . $i]);
+        }
+
+        // Tope 20: veinte equipos listados + el 21.º en «otros».
+        Settings::set('stats_team_cap', '20');
+        $capped = Stats::compute($formId, null, null, null, 'es', true, 'team', null);
+        $this->assertCount(20, $capped['by_team']);
+        $this->assertSame(1, $capped['team_others']);
+
+        // «all»: los 21, sin bucket «otros».
+        Settings::set('stats_team_cap', 'all');
+        $all = Stats::compute($formId, null, null, null, 'es', true, 'team', null);
+        $this->assertCount(21, $all['by_team']);
+        $this->assertSame(0, $all['team_others']);
+    }
+
     public function testByTeamReviewMixInternalOnly(): void
     {
         $formId = $this->makeForm();

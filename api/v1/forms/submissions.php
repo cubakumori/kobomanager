@@ -106,6 +106,12 @@ if (str_starts_with($sortKey, 'field:')) {
             $orderParams = $geoExprParams;
         }
         break;
+    case 'review':
+        // Estado de revisión vigente (columna desnormalizada e indexada). El orden
+        // por el CÓDIGO del estado es arbitrario; se ordena por su posición en el
+        // flujo (pending → on_hold → approved → rejected) con FIELD(), estable.
+        $orderBy = "FIELD(sc.review_status, 'pending','on_hold','approved','rejected') $dir, sc.submitted_at DESC, sc.id DESC";
+        break;
     default: // 'date'
         $orderBy = "sc.submitted_at $dir, sc.id $dir";
         break;
@@ -146,6 +152,14 @@ if (in_array($review, ['pending', 'approved', 'on_hold', 'rejected'], true)) {
 
 $total = (int) DB::run("SELECT COUNT(*) AS c FROM submissions_cache sc $where", $params)
     ->fetch()['c'];
+
+// Total EN ALCANCE (solo RowScope, sin búsqueda / filtro avanzado / estado): el
+// denominador del «N / total» de la UI, para dimensionar cualquier filtro activo.
+// Un COUNT indexado por (form_id, …); barato.
+$scopeTotal = (int) DB::run(
+    "SELECT COUNT(*) AS c FROM submissions_cache sc WHERE sc.form_id = ? AND $scopeSql",
+    array_merge([$formId], $scopeP)
+)->fetch()['c'];
 
 $rows = DB::run(
     "SELECT sc.id, sc.submission_uid, sc.json_payload, sc.submitted_at, sc.review_status
@@ -193,6 +207,7 @@ ErrorResponse::ok([
     'page'       => $page,
     'per_page'   => $perPage,
     'total'      => $total,
+    'scope_total' => $scopeTotal,
     'label_mode' => Settings::labelMode(),
     'field_truncate' => Settings::fieldTruncate(),
     'schema'     => FieldScope::applySchema($fieldScope, FormSchema::resolve($schema, $user['locale'])),

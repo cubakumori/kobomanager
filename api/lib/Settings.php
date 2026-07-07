@@ -310,6 +310,37 @@ class Settings {
         return in_array($v, self::VALID_PCT_FORMAT, true) ? $v : self::DEFAULT_PCT_FORMAT;
     }
 
+    /**
+     * Tope del DESGLOSE POR EQUIPO de Estadísticas (cuántos equipos —y encuestadores
+     * dentro de cada uno— se listan; el resto se agrupa en «otros»):
+     *   '20' | '50' → los N primeros por volumen + bucket «otros».
+     *   'all'       → todos los equipos y encuestadores, sin agrupar.
+     * Un tope evita un gráfico ilegible con cientos de barras; 'all' es para quien
+     * de verdad quiere verlos todos. No afecta al Control de calidad (que ya los
+     * lista todos).
+     */
+    public const VALID_STATS_TEAM_CAP = ['20', '50', 'all'];
+    private const DEFAULT_STATS_TEAM_CAP = '50';
+
+    /** Tope del desglose por equipo de Estadísticas ('20'|'50'|'all'). */
+    public static function statsTeamCap(): string {
+        $v = (string) self::get('stats_team_cap', self::DEFAULT_STATS_TEAM_CAP);
+        return in_array($v, self::VALID_STATS_TEAM_CAP, true) ? $v : self::DEFAULT_STATS_TEAM_CAP;
+    }
+
+    /** Tope como entero para el corte en PHP (PHP_INT_MAX = «todos»). */
+    public static function statsTeamCapN(): int {
+        return self::statsTeamCap() === 'all' ? PHP_INT_MAX : (int) self::statsTeamCap();
+    }
+
+    /** ¿Se muestra el enlace «Ver envíos» en las tarjetas de «Mis formularios»?
+     *  La tarjeta entera ya enlaza a los envíos, así que el enlace es redundante;
+     *  activado por defecto para no cambiar la interfaz de quien lo prefiera. */
+    private const DEFAULT_SHOW_VIEW_SUBMISSIONS_LINK = true;
+    public static function showViewSubmissionsLink(): bool {
+        return (bool) self::get('show_view_submissions_link', self::DEFAULT_SHOW_VIEW_SUBMISSIONS_LINK);
+    }
+
     public const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login'];
 
     /**

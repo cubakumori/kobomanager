@@ -222,6 +222,56 @@ final class SubmissionsHttpTest extends HttpTestCase
         @unlink($jar);
     }
 
+    public function testSortByReviewStatusFollowsFlowOrder(): void
+    {
+        $adminId = $this->seedUser('admin', 'admin@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $formId = $this->seedForm($accId);
+        $this->seedSubmission($formId, 'ap', ['_id' => 1]);
+        $this->seedSubmission($formId, 'pe', ['_id' => 2]); // se queda pending
+        $this->seedSubmission($formId, 're', ['_id' => 3]);
+        ValidationStatus::recordReview('ap', $adminId, 'app', 'approved');
+        ValidationStatus::recordReview('re', $adminId, 'app', 'rejected');
+        $jar = $this->login('admin@test.local', 'Secret123!');
+
+        // ASC = orden del flujo: pending → on_hold → approved → rejected.
+        $asc = $this->request('GET', "forms/$formId/submissions?sort=review_asc", null, $jar);
+        $this->assertSame(200, $asc['status']);
+        $this->assertSame(['pe', 'ap', 're'], array_map(fn($i) => $i['submission_uid'], $asc['json']['data']['items']));
+
+        $desc = $this->request('GET', "forms/$formId/submissions?sort=review_desc", null, $jar);
+        $this->assertSame(['re', 'ap', 'pe'], array_map(fn($i) => $i['submission_uid'], $desc['json']['data']['items']));
+        @unlink($jar);
+    }
+
+    public function testScopeTotalIsUnfilteredWhileTotalIsFiltered(): void
+    {
+        $adminId = $this->seedUser('admin', 'admin@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $formId = $this->seedForm($accId);
+        $this->seedSubmission($formId, 'a', ['_id' => 1, 'name' => 'Ana']);
+        $this->seedSubmission($formId, 'b', ['_id' => 2, 'name' => 'Beto']);
+        $this->seedSubmission($formId, 'c', ['_id' => 3, 'name' => 'Ana']);
+        ValidationStatus::recordReview('a', $adminId, 'app', 'approved');
+        $jar = $this->login('admin@test.local', 'Secret123!');
+
+        // Sin filtro: total == scope_total.
+        $all = $this->request('GET', "forms/$formId/submissions", null, $jar);
+        $this->assertSame(3, $all['json']['data']['total']);
+        $this->assertSame(3, $all['json']['data']['scope_total']);
+
+        // Con filtro de estado: total baja, scope_total se mantiene (el denominador).
+        $appr = $this->request('GET', "forms/$formId/submissions?review=approved", null, $jar);
+        $this->assertSame(1, $appr['json']['data']['total']);
+        $this->assertSame(3, $appr['json']['data']['scope_total']);
+
+        // Con búsqueda: idem.
+        $search = $this->request('GET', "forms/$formId/submissions?search=Ana", null, $jar);
+        $this->assertSame(2, $search['json']['data']['total']);
+        $this->assertSame(3, $search['json']['data']['scope_total']);
+        @unlink($jar);
+    }
+
     public function testAttachmentProxyRespectsRowScope(): void
     {
         $uid = $this->seedUser('viewer', 'v@test.local', 'Secret123!');
