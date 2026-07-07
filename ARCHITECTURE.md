@@ -168,8 +168,8 @@ stats): `stats_status` (`all` | `approved`) restricts by latest review status, a
 filter is expressed as a `RowScope` rule (`RowScope::teamRule`) **combined in AND** with
 `row_filter` — `ShareLink::rule()` / `rowSql()` / `matchesScope()` are the single sources the
 endpoints consume, so teams ride the existing row‑scope path for free. The status filter is a
-separate SQL fragment by `submission_uid` (`ValidationStatus::latestFilterSql`, shared with
-`lib/Stats`); it is **decoupled from review exposure** — an `approved`‑only link narrows the set
+separate SQL fragment over the denormalised `submissions_cache.review_status` column
+(`ValidationStatus::statusFilterSql`, shared with `lib/Stats`); it is **decoupled from review exposure** — an `approved`‑only link narrows the set
 without ever revealing the `by_status` breakdown.
 
 **Attachments (P4).** A link may also expose submission attachments through a dedicated public
@@ -296,6 +296,11 @@ to a new one (key rotation; see `DEPLOY.md §12`).
     also differs from local) a synthetic review row is inserted with `source='kobo'`, `user_id=NULL`,
     which becomes the latest by `MAX(id)` ⇒ **Kobo wins** on conflict. The incremental cursor
     doesn't re‑fetch old submissions, so this sweep is what makes external validation changes land.
+  - The **current** status is denormalised into `submissions_cache.review_status` (indexed by
+    form, `'pending'` by default). `ValidationStatus::recordReview` is the **single write path**
+    (review endpoints, the pull sweep, demo seed, tests): it inserts the log row and updates the
+    column atomically enough that filtered reads (list, export, stats, quality, public links)
+    never have to materialise the whole review log again.
   - `submission_reviews.source` (`'app'`/`'kobo'`) records the origin; `user_id` is `NULL` for
     Kobo‑sourced rows (shown as “Kobo” in the history).
 - **Readable labels** (`lib/FormSchema.php`): caches a normalized XLSForm schema per form
@@ -313,6 +318,15 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   submission **hour/weekday** are then converted to the display zone `APP_TIMEZONE` (IANA, default
   `UTC`) — per‑instant, so DST is respected. `Derived::tzMeta()` exposes the zone (id, human label
   from `APP_TIMEZONE_LABEL`, and a `UTC±N` offset) to the stats UI.
+- **Materialised cache columns** (`Derived::cacheColumns`, written by every sync/edit/seed):
+  `submissions_cache` carries `kobo_id`, `duration_s`, `att_count` and `has_geo`, so sorting by
+  calculated columns, the "has map?" check and the deletion sweep never parse the whole form's
+  JSON. They are **global** (FieldScope‑independent) — views that must respect per‑user hidden
+  fields still compute over the trimmed payload. Backfill on upgrade: `migrate.php`.
+- **Streaming reads** (`DB::stream`): stats, quality, both maps and the CSV export iterate an
+  unbuffered cursor (one row in memory at a time) instead of `fetchAll`, so per‑request memory
+  no longer grows with form size. The consuming loop must be pure PHP (no nested queries) —
+  documented on the helper.
 - **Statistics** (`v1/forms/stats.php`): besides total / per‑day / review‑status counts, a
   single in‑scope pass over the payloads computes per‑question distributions (`select_one`,
   labelled), per‑enumerator counts, fill‑in duration (mean/median + histogram), activity by
@@ -504,8 +518,12 @@ behavior lives in the `settings` table, not in schema changes.
 
 **Schema‑drift safety net.** Because upgrades are hand‑applied, deploying new code over a
 DB that wasn't migrated would otherwise fail with a cryptic `Unknown column` 500.
-`lib/SchemaCheck` is the single declarative list of post‑1.0 columns the code expects (with
-each idempotent `ALTER`); it powers three things: `php api/cli/doctor.php` (reports drift +
+`lib/SchemaCheck` is the single declarative list of post‑1.0 columns **and whole tables**
+the code expects (columns in `CHECKS` with their idempotent `ALTER`, tables in `TABLE_CHECKS`
+with a verbatim copy of the canonical `CREATE TABLE` — kept in sync with `001` by test); an
+entry may declare a `backfill` statement that populates the new column from existing data,
+and `migrate.php` additionally recomputes the payload‑derived cache columns in PHP
+(`SubmissionSync::recomputeCacheColumns`). It powers three things: `php api/cli/doctor.php` (reports drift +
 the exact `ALTER`s, exit 1), `php api/cli/migrate.php` (idempotently applies only the missing
 ones — run it on every deploy; honours `KM_CONFIG` like the front controller and the
 installer, so an alternate DB — e.g. the test one — can be migrated too), and an

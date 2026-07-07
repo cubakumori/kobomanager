@@ -4,6 +4,108 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.21.0] - 2026-07-07
+
+Barrido integral de código previo a los añadidos: seguridad, robustez del sync,
+rendimiento a escala (columnas materializadas + lecturas en streaming) y pulido
+del frontend. **Trae cambios de esquema** (ver nota).
+
+> **Nota de actualización (esquema).** Tras subir el código, ejecuta **una vez**
+> `php api/cli/migrate.php`: añade las columnas nuevas de `submissions_cache`
+> (`review_status`, `kobo_id`, `duration_s`, `att_count`, `has_geo`, con sus índices),
+> `audit_log.edit_new_uid` (generada, con índices) y `forms.submission_count`, **y las
+> rellena** desde los datos existentes (backfill SQL + recálculo PHP). Sin shell no
+> basta con los `ALTER`: usa `php api/cli/doctor.php` para ver las sentencias y ejecuta
+> también los backfills que imprime; las columnas derivadas del payload requieren
+> `migrate.php` (o un resync completo de cada formulario).
+
+### Seguridad
+
+- **El proxy autenticado de adjuntos aplica el scoping por filas**: comprobaba
+  `can_view` y los campos ocultos, pero no `RowScope` — un viewer con filtro de filas
+  podía descargar adjuntos de envíos fuera de su alcance conociendo los uids (de alta
+  entropía, no enumerables). Misma guarda 404 que el detalle, con test de regresión.
+- **Login sin oráculo de tiempo**: con un email inexistente o inactivo se verifica
+  contra un hash bcrypt señuelo, para que la latencia no delate si la cuenta existe.
+- **Caché de share_stats no localizable**: el archivo temporal usaba un nombre
+  predecible; ahora va con HMAC de `JWT_SECRET` y permisos 0600 (hosting compartido).
+
+### Corregido
+
+- **El barrido de bajas del sync ya no puede vaciar la caché**: un 2xx de Kobo con
+  cuerpo no-JSON (proxy caído, portal cautivo) se trataba como «cero resultados» y el
+  reconcile borraba todos los envíos cacheados; ahora es error (`KOBO_BAD_RESPONSE`),
+  los barridos se niegan a borrar con lista viva vacía y caché poblada, y alcanzar el
+  tope de paginación aborta la corrida en vez de truncar en silencio.
+- **`migrate.php`/`doctor.php` saben de TABLAS**: `contact_messages` (1.3.0) no la
+  creaba nadie al actualizar desde ≤1.2.x (500 en el formulario de contacto y
+  `/admin/messages`). `SchemaCheck` gana `TABLE_CHECKS` con el CREATE canónico
+  vigilado por test, y la nota de 1.3.0 ya no apunta a un SQL borrado.
+- **El cron de sync aísla cada cuenta y formulario**: un token ilegible (rotación a
+  medias) o un error no-Kobo ya no tumban la corrida entera ni dejan `/health` sin
+  registro.
+- **Revisión sin duplicados en el historial**: la revisión (individual y en lote) toma
+  el mismo lock por formulario que el sync mientras dura el push + escritura local; el
+  pull de validación ya no puede colarse en medio e insertar una revisión sintética
+  duplicada.
+- **Ediciones sin guardar protegidas**: navegar a otro envío (Anterior/Siguiente,
+  Volver, atrás del navegador) con una edición a medias pide confirmación antes de
+  descartar los cambios.
+- **Cambiar de formulario por historial recarga la tabla** (antes podían quedar las
+  filas del formulario anterior bajo la URL nueva).
+- **El filtro «En espera» funciona en la exportación CSV** (se ignoraba en silencio:
+  faltaba `on_hold` en la lista y en las etiquetas del CSV).
+- **Zonas horarias residuales**: el resumen diario calcula el día natural en UTC
+  (coincide con el gráfico «por día», sea cual sea la TZ del servidor) y la tendencia
+  7/30 d compara contra `UTC_TIMESTAMP()` en vez del `NOW()` de la sesión de MySQL.
+
+### Rendimiento
+
+- **Estado de revisión desnormalizado** (`submissions_cache.review_status`, indexado):
+  el JOIN «última revisión» —que materializaba todo el log de revisiones en cada
+  lectura filtrada, sin acotar por formulario— desaparece de la lista, el export, las
+  estadísticas, el control de calidad, los enlaces públicos y el propio sync. Única
+  vía de escritura: `ValidationStatus::recordReview` (log + columna, siempre de
+  acuerdo).
+- **Columnas materializadas del payload** (`kobo_id`, `duration_s`, `att_count`,
+  `has_geo`, calculadas por el sync): ordenar por duración/adjuntos/geo y el chequeo
+  «¿hay mapa?» dejan de parsear el JSON de todo el formulario en cada vista; el
+  barrido de bajas del cron lee la columna indexada.
+- **Stats, control de calidad, mapas (interno y público) y export en streaming**
+  (`DB::stream`, consulta sin búfer): la memoria por petición deja de crecer con el
+  tamaño del formulario (antes, OOM hacia los 20-50k envíos, también en los endpoints
+  públicos de enlaces). El export además decodifica cada fila una sola vez, y los
+  mapas prefiltran `has_geo = 1` en SQL.
+- **Primer sync de un formulario grande**: los envíos se traen y persisten página a
+  página (generador) con un prepared statement reutilizado y una transacción por
+  página — ni todo el histórico en RAM ni un commit por fila.
+- **Proxy de adjuntos en streaming**: el archivo se reenvía según llega de Kobo (un
+  vídeo de cientos de MB ya no se carga entero —dos veces— en memoria); los errores se
+  siguen resolviendo antes de emitir cabeceras.
+- **Historial de edición por índice**: `audit_log.edit_new_uid` (columna generada
+  desde `detail.new_uid`, indexada por formulario) — cada eslabón del linaje era un
+  escaneo completo del log con `JSON_EXTRACT` por fila.
+- **Contador de envíos cacheado** (`forms.submission_count`, refrescado por cada
+  sync): el listado de formularios ya no hace un COUNT por formulario en cada carga.
+- **Retención y podas**: retención configurable del registro de auditoría (Ajustes →
+  Seguridad; 0 = conservar para siempre) con purga oportunista, y poda global de
+  `login_attempts` (las IPs que solo fallaban nunca se limpiaban). Índices nuevos de
+  `audit_log` para sus filtros reales.
+
+### Frontend
+
+- **Leaflet y Chart.js bajo demanda** (`defineAsyncComponent`): el detalle de envío ya
+  no descarga el mapa sin geodatos y un enlace público de solo lista no baja
+  mapa+gráficos (~114 KB gz menos). El catálogo EN sale del bundle principal y se
+  carga al cambiar de idioma, sin flash de claves.
+- **Scroll lock** del documento mientras haya modales o drawers abiertos (contador en
+  `dialogA11y`, cubre diálogos anidados).
+- **Vista pública alineada con la interna**: celdas con recorte + título, búsqueda con
+  debounce (Enter inmediato) y `Skeleton` en vez de «Cargando…».
+- **Accesibilidad/i18n**: los `aria-label` de abrir/cerrar menú (públicos y del panel)
+  pasan al catálogo (`nav.openMenu`/`nav.closeMenu`); el hero de la landing declara
+  `width`/`height` (sin salto de layout) y `fetchpriority="high"`.
+
 ## [1.20.0] - 2026-07-06
 
 Escaparate y documentación del tramo 1.14–1.19. Sin cambios de esquema.
