@@ -250,6 +250,36 @@ final class QualityTest extends DbTestCase
         $this->assertSame(0, $q['flags']['duplicate']);
     }
 
+    public function testDuplicateSensitivityDial(): void
+    {
+        $formId = $this->makeForm();
+        // Dos envíos con UNA sola respuesta de contenido, idéntica.
+        $this->addSubmission($formId, ['enum' => 'ana',  'p1' => 'x']);
+        $this->addSubmission($formId, ['enum' => 'luis', 'p1' => 'x']);
+
+        // Default (2): una respuesta no basta → limpio.
+        $def = Quality::compute($formId, null, null, null, 'es', null, 'enum', null, null, null);
+        $this->assertSame(0, $def['flags']['duplicate']);
+        $this->assertSame(2, $def['thresholds']['dup_min_answers']);
+
+        // Dial a 1: ahora sí se marcan ambos.
+        $sensitive = Quality::compute($formId, null, null, null, 'es', null, 'enum', null, null, null, null, 1);
+        $this->assertSame(2, $sensitive['flags']['duplicate']);
+        $this->assertSame(1, $sensitive['thresholds']['dup_min_answers']);
+    }
+
+    public function testDuplicateSignalDisabledWhenNull(): void
+    {
+        $formId = $this->makeForm();
+        // Copia exacta con 2 respuestas: se marcaría con el default.
+        $this->addSubmission($formId, ['enum' => 'ana',  'p1' => 'x', 'p2' => 'y']);
+        $this->addSubmission($formId, ['enum' => 'luis', 'p1' => 'x', 'p2' => 'y']);
+
+        $off = Quality::compute($formId, null, null, null, 'es', null, 'enum', null, null, null, null, null);
+        $this->assertSame(0, $off['flags']['duplicate']);
+        $this->assertNull($off['thresholds']['dup_min_answers']);
+    }
+
     public function testRepeatedGpsFlaggedPerEnumerator(): void
     {
         $formId = $this->makeForm();

@@ -88,6 +88,8 @@
     "qualityThrMin": "Duración menor admisible",
     "qualityThrMax": "Duración mayor admisible",
     "qualityThrGap": "Consecutividad menor admisible",
+    "qualityThrDup": "Sensibilidad de duplicados",
+    "qualityThrDupOff": "desactivada",
     "qualityMinutes": "{n} min",
     "qualityCardTotal": "Encuestas evaluadas",
     "qualityCardFlagged": "No admitidas",

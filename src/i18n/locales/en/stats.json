@@ -88,6 +88,8 @@
     "qualityThrMin": "Minimum admissible duration",
     "qualityThrMax": "Maximum admissible duration",
     "qualityThrGap": "Minimum admissible gap",
+    "qualityThrDup": "Duplicate sensitivity",
+    "qualityThrDupOff": "off",
     "qualityMinutes": "{n} min",
     "qualityCardTotal": "Surveys evaluated",
     "qualityCardFlagged": "Not admissible",

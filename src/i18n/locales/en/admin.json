@@ -148,6 +148,8 @@
     "qcMaxDurationHint": "Empty or 0 = no cap.",
     "qcMinGap": "Minimum admissible consecutiveness per enumerator (mins)",
     "qcMinGapHint": "Minimum gap between the end of one survey and the start of the same enumerator's next one; a negative gap (overlapping surveys) is always flagged, whatever this value. Empty or 0 = no gap check (overlaps are still flagged).",
+    "qcDupMinAnswers": "Duplicate sensitivity (number of answers)",
+    "qcDupMinAnswersHint": "Minimum content answers for a submission to be flagged as a duplicate of another with identical answers. Lower = more sensitive (catches copies of surveys with few answers, but more false positives). Empty or 0 = duplicate signal off.",
     "qcEmptyHint": "Empty or 0 = no check.",
     "qcSuggest": "Suggest",
     "qcSuggestBusy": "Computing…",

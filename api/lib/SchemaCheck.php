@@ -122,6 +122,12 @@ class SchemaCheck {
          'fix' => "ALTER TABLE forms ADD COLUMN submission_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER submissions_synced_at",
          'backfill' => "UPDATE forms f SET f.submission_count =
             (SELECT COUNT(*) FROM submissions_cache sc WHERE sc.form_id = f.id)"],
+
+        // Sensibilidad de la señal de duplicados del control de calidad (respuestas
+        // mínimas de contenido; NULL = señal desactivada). El DEFAULT 2 activa la
+        // señal con la sensibilidad de fábrica en las filas existentes.
+        ['table' => 'forms', 'column' => 'qc_dup_min_answers', 'since' => '1.22.0',
+         'fix' => "ALTER TABLE forms ADD COLUMN qc_dup_min_answers INT UNSIGNED NULL DEFAULT 2 AFTER qc_min_gap"],
     ];
 
     /** Columnas cuyo backfill requiere el recálculo PHP de migrate.php (no basta SQL). */

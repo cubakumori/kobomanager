@@ -71,6 +71,11 @@ class Quality {
      * @param array|null  $scopeStatuses Estados de revisión cuyos envíos se REPORTAN
      *                                 (p. ej. ['pending','on_hold']). NULL = todos.
      *                                 No afecta a la cadena de consecutividad.
+     * @param int|null    $dupMinAnswers forms.qc_dup_min_answers: nº mínimo de respuestas
+     *                                 de CONTENIDO para participar en la señal de
+     *                                 duplicados (NULL = señal desactivada). Dial de
+     *                                 sensibilidad: bajarlo a 1 detecta copias de envíos
+     *                                 con una sola respuesta (más sensible, más ruido).
      */
     public static function compute(
         int $formId,
@@ -83,7 +88,8 @@ class Quality {
         ?int $minDuration,
         ?int $maxDuration,
         ?int $minGap,
-        ?array $scopeStatuses = null
+        ?array $scopeStatuses = null,
+        ?int $dupMinAnswers = 2
     ): array {
         [$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'json_payload');
 
@@ -112,11 +118,15 @@ class Quality {
         // (claves `_*`, `meta/…`, `formhub/…`, start/end/today). Los campos de
         // equipo/encuestador se excluyen (identifican, no son contenido: así una
         // copia entre encuestadores distintos también se detecta). Devuelve null
-        // con MENOS de 2 respuestas no vacías: un envío casi vacío no es evidencia
-        // (en un formulario de una sola pregunta, coincidir no significa nada).
+        // con menos de $dupMinAnswers respuestas no vacías — el dial de
+        // sensibilidad del formulario (default 2: un envío casi vacío no es
+        // evidencia; en un formulario de una sola pregunta, coincidir no
+        // significa nada). $dupMinAnswers NULL = señal desactivada.
         $schemaPaths  = array_keys($schemaRaw['fields'] ?? []);
         $sigExclude   = array_fill_keys(array_filter([$teamField, $enumIsField ? $enumPath : null]), true);
-        $signature = function (array $payload) use ($schemaPaths, $sigExclude, $startKey, $endKey): ?string {
+        $dupMin    = $dupMinAnswers !== null ? max(1, $dupMinAnswers) : null;
+        $signature = function (array $payload) use ($schemaPaths, $sigExclude, $startKey, $endKey, $dupMin): ?string {
+            if ($dupMin === null) return null; // señal desactivada
             $answers = [];
             if ($schemaPaths) {
                 foreach ($schemaPaths as $p) {
@@ -135,7 +145,7 @@ class Quality {
                     $answers[$k] = $v;
                 }
             }
-            if (count($answers) < 2) return null;
+            if (count($answers) < $dupMin) return null;
             ksort($answers);
             return md5(json_encode($answers, JSON_UNESCAPED_UNICODE));
         };
@@ -344,9 +354,10 @@ class Quality {
             'gps_enabled'     => $gpsSeen,
             'gps_min_repeats' => self::GPS_MIN_REPEATS,
             'thresholds' => [
-                'min_duration' => $minDuration,
-                'max_duration' => $maxDuration,
-                'min_gap'      => $minGap,
+                'min_duration'    => $minDuration,
+                'max_duration'    => $maxDuration,
+                'min_gap'         => $minGap,
+                'dup_min_answers' => $dupMinAnswers, // null = señal de duplicados desactivada
             ],
             'teams'      => $teams,
             'timezone'   => Derived::tzMeta(),

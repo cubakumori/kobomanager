@@ -89,9 +89,13 @@ CREATE TABLE IF NOT EXISTS forms (
     -- `qc_min_gap`: hueco mínimo admisible entre el FIN de una encuesta y el INICIO de la
     --   siguiente del mismo encuestador (menor → bandera). Un hueco NEGATIVO (encuestas
     --   solapadas) se marca SIEMPRE, tenga el valor que tenga este umbral.
+    -- `qc_dup_min_answers`: nº mínimo de respuestas de CONTENIDO para que un envío
+    --   participe en la señal de duplicados (en RESPUESTAS, no minutos; NULL = señal
+    --   desactivada). El default 2 evita que envíos casi vacíos generen ruido.
     qc_min_duration     INT UNSIGNED NULL DEFAULT 4,
     qc_max_duration     INT UNSIGNED NULL DEFAULT NULL,
     qc_min_gap          INT UNSIGNED NULL DEFAULT 4,
+    qc_dup_min_answers  INT UNSIGNED NULL DEFAULT 2,
     sync_status         ENUM('pending', 'success', 'error') DEFAULT 'pending',
     last_sync_error     TEXT,
     active              TINYINT(1) DEFAULT 1,

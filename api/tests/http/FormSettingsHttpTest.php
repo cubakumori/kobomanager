@@ -54,6 +54,17 @@ final class FormSettingsHttpTest extends HttpTestCase
         $row = DB::run('SELECT qc_min_duration FROM forms WHERE id = ?', [$formId])->fetch();
         $this->assertNull($row['qc_min_duration']);
 
+        // Sensibilidad de duplicados: default 2 al leer, editable, 0 = desactivada.
+        $this->assertSame(2, $res['json']['data']['qc_dup_min_answers']);
+        $res = $this->request('PATCH', "admin/forms/$formId", ['qc_dup_min_answers' => 3], $jar);
+        $this->assertSame(200, $res['status'], $res['raw']);
+        $this->assertSame(3, $res['json']['data']['qc_dup_min_answers']);
+        $res = $this->request('PATCH', "admin/forms/$formId", ['qc_dup_min_answers' => 0], $jar);
+        $this->assertNull($res['json']['data']['qc_dup_min_answers']);
+        // Fuera de rango → 422.
+        $res = $this->request('PATCH', "admin/forms/$formId", ['qc_dup_min_answers' => 99], $jar);
+        $this->assertSame(422, $res['status']);
+
         // Ni borrar el suyo, ni leer el de otro formulario.
         $res = $this->request('DELETE', "admin/forms/$formId", null, $jar);
         $this->assertSame(403, $res['status']);

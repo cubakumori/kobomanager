@@ -148,6 +148,8 @@
     "qcMaxDurationHint": "Vacío o 0 = sin tope.",
     "qcMinGap": "Consecutividad menor admisible para encuestador (mins)",
     "qcMinGapHint": "Hueco mínimo entre el fin de una encuesta y el inicio de la siguiente del mismo encuestador; un hueco negativo (encuestas solapadas) se marca siempre, sea cual sea este valor. Vacío o 0 = sin comprobación del hueco (la solapada se marca igual).",
+    "qcDupMinAnswers": "Sensibilidad de duplicados (nº de respuestas)",
+    "qcDupMinAnswersHint": "Respuestas de contenido mínimas para que un envío pueda marcarse como duplicado de otro con respuestas idénticas. Menor = más sensible (detecta copias de encuestas con pocas respuestas, pero con más falsos positivos). Vacío o 0 = señal de duplicados desactivada.",
     "qcEmptyHint": "Vacío o 0 = sin comprobación.",
     "qcSuggest": "Sugerir",
     "qcSuggestBusy": "Calculando…",

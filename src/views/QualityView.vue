@@ -154,6 +154,10 @@ const thresholds = computed(() => {
     { label: t('stats.qualityThrMin'), value: fmtMin(th.min_duration) },
     { label: t('stats.qualityThrMax'), value: fmtMin(th.max_duration) },
     { label: t('stats.qualityThrGap'), value: fmtMin(th.min_gap) },
+    {
+      label: t('stats.qualityThrDup'),
+      value: th.dup_min_answers == null ? t('stats.qualityThrDupOff') : String(th.dup_min_answers),
+    },
   ]
 })
 

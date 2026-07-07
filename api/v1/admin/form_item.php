@@ -5,12 +5,14 @@
  *   GET    → datos editables del formulario: la config del desglose de
  *            estadísticas por equipo → encuestador y los umbrales del control
  *            de calidad.
- *   PATCH  { stats_team_field?, stats_enumerator_field?,
- *            qc_min_duration?, qc_max_duration?, qc_min_gap? } → guarda esa
+ *   PATCH  { stats_team_field?, stats_enumerator_field?, qc_min_duration?,
+ *            qc_max_duration?, qc_min_gap?, qc_dup_min_answers? } → guarda esa
  *            config. Clave AUSENTE = no tocar; presente (aunque sea null) = fijar.
  *            Los campos de equipo son rutas del esquema o null
  *            (`stats_enumerator_field` null = usar `_submitted_by`). Los umbrales
  *            son minutos (entero ≥ 1) o null = comprobación desactivada.
+ *            `qc_dup_min_answers` es nº de respuestas (1–50) o null = señal de
+ *            duplicados desactivada.
  *   DELETE → SOLO admin: elimina el formulario de KoboManager y su caché (no toca
  *            Kobo). Si sigue cumpliendo el filtro de sincronización, una nueva
  *            sincronización de la cuenta volverá a traerlo.
@@ -33,7 +35,7 @@ if ($method === 'DELETE') {
 
 $form = DB::run(
     'SELECT id, name, schema_json, stats_team_field, stats_enumerator_field,
-            qc_min_duration, qc_max_duration, qc_min_gap
+            qc_min_duration, qc_max_duration, qc_min_gap, qc_dup_min_answers
      FROM forms WHERE id = ?',
     [$formId]
 )->fetch();
@@ -48,12 +50,16 @@ $qcOut = fn(array $f): array => [
     'qc_min_gap'      => $f['qc_min_gap'] !== null ? (int) $f['qc_min_gap'] : null,
 ];
 
+// Sensibilidad de duplicados: nº de respuestas (no minutos) o null = desactivada.
+$dupOut = fn(array $f): ?int => $f['qc_dup_min_answers'] !== null ? (int) $f['qc_dup_min_answers'] : null;
+
 if ($method === 'GET') {
     ErrorResponse::ok([
         'id'                     => (int) $form['id'],
         'name'                   => $form['name'],
         'stats_team_field'       => $form['stats_team_field'],
         'stats_enumerator_field' => $form['stats_enumerator_field'],
+        'qc_dup_min_answers'     => $dupOut($form),
     ] + $qcOut($form));
 }
 
@@ -98,15 +104,30 @@ if ($method === 'PATCH') {
         ErrorResponse::send('VALIDATION_ERROR', 'La duración mayor admisible no puede ser menor que la menor');
     }
 
+    // Sensibilidad de duplicados: nº de respuestas de contenido (1–50, tope holgado),
+    // 0 o vacío = señal desactivada. No es un umbral en minutos, así que se valida aparte.
+    $dup = $dupOut($form);
+    if (array_key_exists('qc_dup_min_answers', $body)) {
+        $v = $body['qc_dup_min_answers'];
+        if ($v === null || $v === '') {
+            $dup = null;
+        } elseif (!is_numeric($v) || (int) $v != $v || (int) $v < 0 || (int) $v > 50) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Sensibilidad de duplicados no válida: nº de respuestas entre 1 y 50, 0 o vacío');
+        } else {
+            $dup = (int) $v === 0 ? null : (int) $v;
+        }
+    }
+
     DB::run(
         'UPDATE forms SET stats_team_field = ?, stats_enumerator_field = ?,
-                qc_min_duration = ?, qc_max_duration = ?, qc_min_gap = ?
+                qc_min_duration = ?, qc_max_duration = ?, qc_min_gap = ?, qc_dup_min_answers = ?
          WHERE id = ?',
-        [$team, $enum, $qc['qc_min_duration'], $qc['qc_max_duration'], $qc['qc_min_gap'], $formId]
+        [$team, $enum, $qc['qc_min_duration'], $qc['qc_max_duration'], $qc['qc_min_gap'], $dup, $formId]
     );
     $out = [
         'stats_team_field'       => $team,
         'stats_enumerator_field' => $enum,
+        'qc_dup_min_answers'     => $dup,
     ] + $qc;
     Audit::log($user['id'], 'update_form_stats', $formId, null, $out);
     ErrorResponse::ok($out);

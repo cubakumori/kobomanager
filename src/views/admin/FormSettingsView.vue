@@ -31,6 +31,8 @@ const enumField = ref('')        // '' = _submitted_by
 const qcMinDuration = ref('')
 const qcMaxDuration = ref('')
 const qcMinGap = ref('')
+// Sensibilidad de la señal de duplicados (nº de respuestas de contenido; '' = desactivada).
+const qcDupMinAnswers = ref('')
 
 async function load() {
   loading.value = true
@@ -52,6 +54,7 @@ async function load() {
     qcMinDuration.value = cfg.data.data.qc_min_duration ?? ''
     qcMaxDuration.value = cfg.data.data.qc_max_duration ?? ''
     qcMinGap.value = cfg.data.data.qc_min_gap ?? ''
+    qcDupMinAnswers.value = cfg.data.data.qc_dup_min_answers ?? ''
     fields.value = sf.data.data.fields || []
   } catch (e) {
     error.value = apiError(e, t('formSettings.loadError'))
@@ -106,6 +109,7 @@ async function save() {
       qc_min_duration: minutes(qcMinDuration.value),
       qc_max_duration: minutes(qcMaxDuration.value),
       qc_min_gap: minutes(qcMinGap.value),
+      qc_dup_min_answers: minutes(qcDupMinAnswers.value),
     })
     flash.value = t('formSettings.saved')
   } catch (e) {
@@ -233,6 +237,18 @@ onMounted(load)
             class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
           />
           <span class="mt-1 block text-xs text-slate-400">{{ $t('formSettings.qcMinGapHint') }}</span>
+        </label>
+
+        <label class="block">
+          <span class="text-sm font-medium text-slate-700">{{ $t('formSettings.qcDupMinAnswers') }}</span>
+          <input
+            v-model="qcDupMinAnswers"
+            type="number"
+            min="0"
+            max="50"
+            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          />
+          <span class="mt-1 block text-xs text-slate-400">{{ $t('formSettings.qcDupMinAnswersHint') }}</span>
         </label>
       </div>
     </section>

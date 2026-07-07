@@ -20,7 +20,7 @@ if (Request::method() !== 'GET') {
 
 $form = DB::run(
     'SELECT id, name, schema_json, deployment_status, stats_team_field, stats_enumerator_field,
-            qc_min_duration, qc_max_duration, qc_min_gap
+            qc_min_duration, qc_max_duration, qc_min_gap, qc_dup_min_answers
      FROM forms WHERE id = ? AND active = 1',
     [$formId]
 )->fetch();
@@ -44,7 +44,8 @@ $quality = Quality::compute(
     $form['qc_min_duration'] !== null ? (int) $form['qc_min_duration'] : null,
     $form['qc_max_duration'] !== null ? (int) $form['qc_max_duration'] : null,
     $form['qc_min_gap'] !== null ? (int) $form['qc_min_gap'] : null,
-    $statuses
+    $statuses,
+    $form['qc_dup_min_answers'] !== null ? (int) $form['qc_dup_min_answers'] : null
 );
 
 ErrorResponse::ok(array_merge([
