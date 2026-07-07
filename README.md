@@ -78,7 +78,9 @@ native validation status.
 - **Human-readable labels** from the XLSForm (codes → text, multilingual).
 - **Attachments** (photo / audio / video / file) served through an authenticated proxy.
 - **Search** and persistent **advanced filters**.
-- **CSV export** that honors each user's row/column scoping.
+- **Export to Excel (.xlsx) or CSV** — pick scope (all / approved only) and format in a
+  dialog; honors each user's row/column scoping. The native `.xlsx` (no dependencies)
+  gives real columns, sidestepping the CSV delimiter issue in European-locale Excel.
 - **Submission editing** that writes back to Kobo.
 
 **Operation**

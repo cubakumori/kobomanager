@@ -59,9 +59,13 @@ Añadidos de análisis en Estadísticas y Control de calidad.
   primeros (por defecto) o todos los equipos —y encuestadores dentro de cada uno—; el
   resto se agrupa en «otros». Un tope evita un gráfico ilegible con cientos de barras.
   No afecta al Control de calidad, que ya los lista todos.
-- **Tabla de envíos: exportar con modal.** El botón «Exportar CSV» pasa a «Exportar»
-  y abre un modal para elegir el **alcance** (todos los envíos / solo aprobados) y el
-  **formato** (por ahora CSV; el modal deja sitio para más). El contador bajo el título
+- **Tabla de envíos: exportar con modal, y a Excel (.xlsx).** El botón «Exportar CSV»
+  pasa a «Exportar» y abre un modal para elegir el **alcance** (todos los envíos / solo
+  aprobados) y el **formato**: **Excel (.xlsx)** —predeterminado— o CSV. El `.xlsx` se
+  genera con un escritor propio y **sin dependencias** (streaming, memoria O(1 fila)) y
+  resuelve el clásico «el CSV no separa en columnas»: son columnas reales, sin
+  ambigüedad de separador (el CSV es estándar con «,», que Excel en configuración
+  regional europea —que espera «;»— puede no separar). El contador bajo el título
   muestra **«N / total»** cuando hay filtro, búsqueda o estado activos, para dimensionar
   el subconjunto sobre el total en alcance.
 - **Tabla de envíos: orden por estado de revisión.** Nuevas opciones de orden por

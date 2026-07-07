@@ -194,13 +194,21 @@ returning `{applied, skipped}`. **Archived forms are read‑only for review**: b
 endpoint and the single `POST /submissions/{id}/review` reject with `FORM_ARCHIVED` (409)
 when `forms.deployment_status = 'archived'` — the data and prior review decisions stay
 visible, but no new ones are recorded (the frontend hides the selection/review controls;
-this is the server‑side backstop). Editing is unaffected (still gated by `can_edit`). `GET /forms/{id}/export` (`forms/export.php`) streams a
-UTF‑8 **CSV with BOM** of the submissions (requires `view`, honors row scope and the
-list filters — `?review` accepts all four statuses); it bypasses the JSON envelope and
-resolves question/option labels per the global label mode. Note: PHP 8.4+ requires the
-`fputcsv` `$escape` argument explicitly (passed as `''` → standard CSV quoting). The
-frontend triggers it from an **Export modal** (scope: all / approved-only; format: CSV
-for now) rather than a bare link. The list endpoint also returns **`scope_total`** (the
+this is the server‑side backstop). Editing is unaffected (still gated by `can_edit`). `GET /forms/{id}/export` (`forms/export.php`) streams the submissions in the format
+chosen by `?format=` — **`xlsx`** (native spreadsheet, default in the UI) or **`csv`**
+(UTF‑8 with BOM, default at the endpoint) — requiring `view` and honoring row scope and
+the list filters (`?review` accepts all four statuses); it bypasses the JSON envelope and
+resolves question/option labels per the global label mode. Column discovery and cell
+rendering are shared; only the emitter branches. The `.xlsx` path uses
+**`lib/XlsxWriter`** — a minimal, dependency‑free writer (an `.xlsx` is a ZIP of XML
+parts via `ZipArchive`) that streams the sheet row‑by‑row to a temp file (O(1‑row memory,
+like the CSV) and packs the ZIP on close; text cells are inline strings — so a leading
+`=` is not a formula, no CSV‑injection surface — and duration is a real numeric cell. It
+solves the recurring «CSV doesn't split into columns»: real columns, no delimiter
+ambiguity (standard comma CSV can fail to split in European‑locale Excel, which expects
+`;`). CSV note: PHP 8.4+ requires the `fputcsv` `$escape` argument explicitly (passed as
+`''` → standard quoting). The frontend triggers export from a modal (scope: all /
+approved‑only; format: Excel/CSV). The list endpoint also returns **`scope_total`** (the
 in‑row‑scope total, ignoring search/filter/status) next to the filtered `total`, so the
 UI can show an «N / total» count.
 

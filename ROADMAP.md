@@ -51,16 +51,11 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       **ofusque/omita** los identificadores según su config) + vista pública + i18n.
       **Diferido a demanda real** una vez el repo sea público; si alguien lo pide, se
       implementa.
-- [ ] **Exportación a Excel (`.xlsx`) nativa**: hoy se exporta CSV (con BOM UTF-8, pensado
-      para Excel). El motivo real del «no separa en columnas» que reportan algunos
-      usuarios es el **delimitador**: Excel en configuración regional europea/española
-      espera `;` y no `,`, y mete todo en una columna. Un `.xlsx` real lo resuelve de
-      raíz (sin ambigüedad de separador), pero necesita o una dependencia pesada
-      (PhpSpreadsheet, choca con la filosofía vendor-mínimo y no se puede *stremear*) o
-      un **escritor `.xlsx` propio mínimo** (un ZIP de XML) — trabajo acotado, su propio
-      hito. El botón «Exportar» ya es un modal con selector de formato, así que añadir
-      `.xlsx` es una opción más. Mitigación interina posible sin xlsx: ofrecer variante
-      CSV con `;` o la línea `sep=,`.
+- [x] **Exportación a Excel (`.xlsx`) nativa** — **entregada en 1.22.0**. Escritor propio
+      `lib/XlsxWriter` (sin dependencias; un ZIP de XML vía `ZipArchive`, en streaming),
+      formato predeterminado del modal de exportación. Resuelve de raíz el «no separa en
+      columnas» (columnas reales, sin delimitador; el CSV estándar con «,» que Excel
+      europeo —que espera «;»— puede no separar).
 
 ---
 
