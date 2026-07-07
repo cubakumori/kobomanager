@@ -42,6 +42,9 @@ const formsOrder = ref('account_name')
 const validFormsOrder = ref(['account_name', 'name', 'recent_sync', 'recent_created'])
 const statsDefaultScope = ref('approved')
 const validStatsDefaultScope = ref(['all', 'approved'])
+const statsTeamCap = ref('20')
+const validStatsTeamCap = ref(['20', '50', 'all'])
+const showViewSubmissionsLink = ref(true)
 const qcScope = ref('pending_hold')
 const validQcScope = ref(['pending_hold', 'all'])
 const pctFormat = ref('integer')
@@ -188,6 +191,9 @@ async function load() {
     validFormsOrder.value = data.data.valid_forms_order ?? validFormsOrder.value
     if (data.data.stats_default_scope != null) statsDefaultScope.value = data.data.stats_default_scope
     validStatsDefaultScope.value = data.data.valid_stats_default_scope ?? validStatsDefaultScope.value
+    if (data.data.stats_team_cap != null) statsTeamCap.value = String(data.data.stats_team_cap)
+    validStatsTeamCap.value = data.data.valid_stats_team_cap ?? validStatsTeamCap.value
+    if (data.data.show_view_submissions_link != null) showViewSubmissionsLink.value = data.data.show_view_submissions_link
     if (data.data.qc_scope != null) qcScope.value = data.data.qc_scope
     validQcScope.value = data.data.valid_qc_scope ?? validQcScope.value
     if (data.data.pct_format != null) pctFormat.value = data.data.pct_format
@@ -241,6 +247,8 @@ async function save() {
       table_header_lines: tableHeaderLines.value,
       forms_order: formsOrder.value,
       stats_default_scope: statsDefaultScope.value,
+      stats_team_cap: statsTeamCap.value,
+      show_view_submissions_link: showViewSubmissionsLink.value,
       qc_scope: qcScope.value,
       pct_format: pctFormat.value,
       viewer_actions: viewerActions.value,
@@ -275,6 +283,8 @@ async function save() {
     }
     if (data.data.forms_order != null) formsOrder.value = data.data.forms_order
     if (data.data.stats_default_scope != null) statsDefaultScope.value = data.data.stats_default_scope
+    if (data.data.stats_team_cap != null) statsTeamCap.value = String(data.data.stats_team_cap)
+    if (data.data.show_view_submissions_link != null) showViewSubmissionsLink.value = data.data.show_view_submissions_link
     if (data.data.qc_scope != null) qcScope.value = data.data.qc_scope
     if (data.data.pct_format != null) {
       pctFormat.value = data.data.pct_format
@@ -463,6 +473,18 @@ onMounted(load)
         >
           <option v-for="fo in validFormsOrder" :key="fo" :value="fo">{{ $t('settings.formsOrder_' + fo) }}</option>
         </select>
+        <label class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+          <input
+            type="checkbox"
+            class="mt-0.5 h-4 w-4"
+            :checked="showViewSubmissionsLink"
+            @change="showViewSubmissionsLink = !showViewSubmissionsLink; saved = false"
+          />
+          <span>
+            <span class="block text-sm font-medium text-slate-800">{{ $t('settings.showViewSubmissionsLink') }}</span>
+            <span class="block text-xs text-slate-400">{{ $t('settings.showViewSubmissionsLinkHint') }}</span>
+          </span>
+        </label>
       </section>
 
       <!-- Alcance por defecto de las estadísticas -->
@@ -477,6 +499,23 @@ onMounted(load)
           @change="saved = false"
         >
           <option v-for="sc in validStatsDefaultScope" :key="sc" :value="sc">{{ $t('settings.statsScope_' + sc) }}</option>
+        </select>
+      </section>
+
+      <!-- Tope del desglose por equipo en estadísticas -->
+      <section v-show="tab === 'tables'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.statsTeamCap') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.statsTeamCapDesc') }}</p>
+        </div>
+        <select
+          v-model="statsTeamCap"
+          class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          @change="saved = false"
+        >
+          <option value="20">{{ $t('settings.statsTeamCap20') }}</option>
+          <option value="50">{{ $t('settings.statsTeamCap50') }}</option>
+          <option value="all">{{ $t('settings.statsTeamCapAll') }}</option>
         </select>
       </section>
 

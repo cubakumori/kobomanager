@@ -46,6 +46,11 @@ const links = ref({ repo: '', paypal: '', kofi: '' })
 const supportPageEnabled = ref(true)
 const landingCtaEnabled = ref(true)
 
+// Enlace explícito «Ver envíos» en las tarjetas de «Mis formularios» (ajuste
+// global del admin). Sin caché local (como supportPageEnabled): un parpadeo del
+// enlace extra es irrelevante.
+const showViewSubmissionsLink = ref(true)
+
 // Promesa de «config lista»: la usa el guard del router para decidir rutas
 // públicas (p. ej. /apoyar) sin depender del orden de carga.
 const configReady = publicApi
@@ -78,6 +83,7 @@ const configReady = publicApi
     }
     if (data.data.support_page_enabled != null) supportPageEnabled.value = !!data.data.support_page_enabled
     if (data.data.landing_cta_enabled != null) landingCtaEnabled.value = !!data.data.landing_cta_enabled
+    if (data.data.show_view_submissions_link != null) showViewSubmissionsLink.value = !!data.data.show_view_submissions_link
   })
   .catch(() => { /* sin red: vale el valor cacheado o el default */ })
 
@@ -136,6 +142,11 @@ export function usePublicLinks() {
 /** Visibilidad de la parte pública de escaparate (página Apoyar + CTA de portada). */
 export function usePublicSurface() {
   return { supportPageEnabled, landingCtaEnabled }
+}
+
+/** Interruptores de UI interna (reactivo): enlace «Ver envíos» en Mis formularios. */
+export function useUiToggles() {
+  return { showViewSubmissionsLink }
 }
 
 /** Promesa que resuelve cuando /config se ha cargado (para el guard del router). */

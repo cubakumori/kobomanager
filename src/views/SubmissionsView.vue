@@ -25,7 +25,8 @@ const formId = computed(() => Number(route.params.id))
 
 const formName = ref('')
 const items = ref([])
-const total = ref(0)
+const total = ref(0) // total con búsqueda/filtro/estado aplicados
+const scopeTotal = ref(0) // total en alcance (sin búsqueda/filtro/estado)
 const page = ref(1)
 const perPage = ref(25)
 const perPageOptions = [10, 25, 50, 100]
@@ -38,7 +39,7 @@ const sort = ref('date_desc')
 // el filtro avanzado (km.filter.*) y las columnas (km.cols.*), sobreviven a navegar
 // a un detalle y volver. Se restauran AHORA, antes de registrar los watchers, para
 // no disparar una recarga extra al montar.
-const SORTS = ['date_desc', 'date_asc', 'duration_desc', 'duration_asc', 'attachments_desc', 'geo_desc']
+const SORTS = ['date_desc', 'date_asc', 'duration_desc', 'duration_asc', 'attachments_desc', 'geo_desc', 'review_asc', 'review_desc']
 // Además del catálogo fijo, es válido el orden por columna de datos («field:<clave>»,
 // cabeceras clicables). Si la clave guardada ya no existe o se ocultó, el backend cae
 // al orden por fecha sin romper la tabla.
@@ -132,15 +133,35 @@ async function batchReview(status) {
   }
 }
 
-// Enlace de descarga CSV con los filtros activos (la cookie de sesión viaja sola).
-const exportUrl = computed(() => {
+// --- Exportar (modal) ---
+// Se exporta «lo que ves» en cuanto a búsqueda + filtro avanzado; el estado de
+// revisión lo decide el radio del modal (no el filtro de revisión de la vista).
+const exportOpen = ref(false)
+const exportScope = ref('all') // 'all' | 'approved'
+const exportFormat = ref('csv') // por ahora solo CSV
+
+function openExport() {
+  // Predeterminar el alcance según el filtro de revisión activo.
+  exportScope.value = reviewFilter.value === 'approved' ? 'approved' : 'all'
+  exportFormat.value = 'csv'
+  exportOpen.value = true
+}
+
+// Enlace de descarga con la búsqueda/filtro actuales y el alcance de revisión
+// elegido (la cookie de sesión viaja sola).
+function buildExportUrl() {
   const p = new URLSearchParams()
   if (search.value) p.set('search', search.value)
-  if (reviewFilter.value) p.set('review', reviewFilter.value)
+  if (exportScope.value === 'approved') p.set('review', 'approved')
   if (advFilter.value) p.set('filter', JSON.stringify(advFilter.value))
   const qs = p.toString()
   return `/api/v1/forms/${formId.value}/export${qs ? '?' + qs : ''}`
-})
+}
+
+function doExport() {
+  window.location.href = buildExportUrl()
+  exportOpen.value = false
+}
 
 // --- Filtro avanzado (mismo formato y motor que el scoping por filas; solo restringe) ---
 const advFilter = ref(null)
@@ -318,6 +339,14 @@ const menuItem =
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / perPage.value)))
 
+// Línea bajo el título: sin filtro (total == alcance) el recuento simple;
+// con filtro/búsqueda/estado, «N / total».
+const totalLabel = computed(() =>
+  total.value === scopeTotal.value
+    ? t('submissions.total', { n: total.value })
+    : t('submissions.totalFiltered', { n: total.value, total: scopeTotal.value }),
+)
+
 async function load() {
   loading.value = true
   error.value = ''
@@ -337,6 +366,7 @@ async function load() {
     items.value = data.data.items
     loaded.value = true
     total.value = data.data.total
+    scopeTotal.value = data.data.scope_total ?? data.data.total
     schema.value = data.data.schema ?? null
     labelMode.value = data.data.label_mode ?? 'raw'
     fieldTruncate.value = data.data.field_truncate ?? null
@@ -418,7 +448,7 @@ onMounted(() => { loadAdvFilter(); load() })
           <span v-else class="cursor-not-allowed whitespace-nowrap rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-300" :title="$t('submissions.mapDisabled')">{{ $t('submissions.map') }}</span>
           <RouterLink :to="{ name: 'stats', params: { id: formId } }" :class="actionBtn">{{ $t('submissions.stats') }}</RouterLink>
           <RouterLink :to="{ name: 'quality', params: { id: formId } }" :class="actionBtn">{{ $t('submissions.quality') }}</RouterLink>
-          <a :href="exportUrl" :class="actionBtn" :title="$t('submissions.exportHint')">{{ $t('submissions.export') }}</a>
+          <button type="button" :class="actionBtn" @click="openExport">{{ $t('submissions.export') }}</button>
         </div>
 
         <!-- Acciones en móvil/tablet: un único menú «Acciones» (los botones nunca parten en varias filas) -->
@@ -439,12 +469,12 @@ onMounted(() => { loadAdvFilter(); load() })
               <span v-else :class="[menuItem, 'cursor-not-allowed text-slate-300 hover:bg-transparent']">{{ $t('submissions.map') }}</span>
               <RouterLink :to="{ name: 'stats', params: { id: formId } }" :class="menuItem" @click="actionsOpen = false">{{ $t('submissions.stats') }}</RouterLink>
               <RouterLink :to="{ name: 'quality', params: { id: formId } }" :class="menuItem" @click="actionsOpen = false">{{ $t('submissions.quality') }}</RouterLink>
-              <a :href="exportUrl" :class="menuItem" :title="$t('submissions.exportHint')" @click="actionsOpen = false">{{ $t('submissions.export') }}</a>
+              <button type="button" :class="menuItem" @click="actionsOpen = false; openExport()">{{ $t('submissions.export') }}</button>
             </div>
           </template>
         </div>
       </div>
-      <p class="mt-1 text-sm text-slate-500">{{ $t('submissions.total', { n: total }) }}</p>
+      <p class="mt-1 text-sm text-slate-500">{{ totalLabel }}</p>
 
       <!-- Panel selector de columnas (compartido escritorio/móvil): hoja centrada en móvil,
            anclado a la derecha de la cabecera en escritorio. -->
@@ -700,11 +730,11 @@ onMounted(() => { loadAdvFilter(); load() })
             v-model="reviewFilter"
             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
           >
-            <option value="">{{ $t('submissions.reviewAll') }}</option>
-            <option value="pending">{{ $t('review.pending') }}</option>
-            <option value="approved">{{ $t('review.approved') }}</option>
-            <option value="on_hold">{{ $t('review.on_hold') }}</option>
-            <option value="rejected">{{ $t('review.rejected') }}</option>
+            <option value="">{{ $t('submissions.reviewFilterAll') }}</option>
+            <option value="pending">{{ $t('submissions.reviewFilterPending') }}</option>
+            <option value="approved">{{ $t('submissions.reviewFilterApproved') }}</option>
+            <option value="on_hold">{{ $t('submissions.reviewFilterOnHold') }}</option>
+            <option value="rejected">{{ $t('submissions.reviewFilterRejected') }}</option>
           </select>
         </label>
         <label class="block">
@@ -715,6 +745,8 @@ onMounted(() => { loadAdvFilter(); load() })
           >
             <option value="date_desc">{{ $t('submissions.sortNewest') }}</option>
             <option value="date_asc">{{ $t('submissions.sortOldest') }}</option>
+            <option value="review_asc">{{ $t('submissions.sortReviewAsc') }}</option>
+            <option value="review_desc">{{ $t('submissions.sortReviewDesc') }}</option>
             <!-- Orden activo por columna de datos (se fija clicando la cabecera) -->
             <option v-if="fieldSortLabel" :value="sort">
               {{ $t('submissions.sortColumn', { label: fieldSortLabel }) }}
@@ -739,6 +771,40 @@ onMounted(() => { loadAdvFilter(); load() })
         <div class="flex justify-end border-t border-slate-100 pt-4">
           <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700" @click="viewOpen = false">
             {{ $t('common.confirm') }}
+          </button>
+        </div>
+      </div>
+    </Modal>
+
+    <!-- Modal: exportar (alcance de revisión + formato) -->
+    <Modal v-if="exportOpen" :title="$t('submissions.exportTitle')" @close="exportOpen = false">
+      <div class="space-y-4">
+        <fieldset class="space-y-2">
+          <legend class="mb-1 text-sm font-medium text-slate-700">{{ $t('submissions.exportScope') }}</legend>
+          <label class="flex items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+            <input type="radio" class="h-4 w-4" name="export_scope" value="all" :checked="exportScope === 'all'" @change="exportScope = 'all'" />
+            <span class="text-sm text-slate-800">{{ $t('submissions.exportScopeAll') }}</span>
+          </label>
+          <label class="flex items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+            <input type="radio" class="h-4 w-4" name="export_scope" value="approved" :checked="exportScope === 'approved'" @change="exportScope = 'approved'" />
+            <span class="text-sm text-slate-800">{{ $t('submissions.exportScopeApproved') }}</span>
+          </label>
+        </fieldset>
+        <fieldset class="space-y-2">
+          <legend class="mb-1 text-sm font-medium text-slate-700">{{ $t('submissions.exportFormat') }}</legend>
+          <label class="flex items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+            <input type="radio" class="h-4 w-4" name="export_format" value="csv" :checked="exportFormat === 'csv'" @change="exportFormat = 'csv'" />
+            <span class="text-sm text-slate-800">{{ $t('submissions.exportFormatCsv') }}</span>
+          </label>
+          <!-- xlsx: próxima versión -->
+        </fieldset>
+        <p class="text-xs text-slate-400">{{ $t('submissions.exportHint') }}</p>
+        <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
+          <button type="button" class="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100" @click="exportOpen = false">
+            {{ $t('common.cancel') }}
+          </button>
+          <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700" @click="doExport">
+            {{ $t('submissions.export') }}
           </button>
         </div>
       </div>

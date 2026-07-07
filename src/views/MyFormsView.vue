@@ -5,7 +5,7 @@ import { RouterLink } from 'vue-router'
 import api from '../services/api'
 import { useAuthStore, apiError } from '../stores/auth'
 import { confirmDialog } from '../composables/confirm'
-import { useDemoMode } from '../composables/appConfig'
+import { useDemoMode, useUiToggles } from '../composables/appConfig'
 import Skeleton from '../components/Skeleton.vue'
 import EmptyState from '../components/EmptyState.vue'
 
@@ -13,6 +13,8 @@ const { t } = useI18n()
 const auth = useAuthStore()
 // En demo la sync manual contra Kobo está bloqueada (cuota de la cuenta demo).
 const { demoMode } = useDemoMode()
+// El enlace explícito «Ver envíos» de cada tarjeta es opcional (ajuste global).
+const { showViewSubmissionsLink } = useUiToggles()
 
 const forms = ref([])
 const loading = ref(true)
@@ -237,6 +239,7 @@ onMounted(load)
 
         <div v-if="anyAction || canSettings(f)" class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-3 text-sm" :class="tone(f).divider">
           <RouterLink
+            v-if="showViewSubmissionsLink"
             :to="{ name: 'submissions', params: { id: f.id } }"
             class="font-medium hover:underline"
             :class="tone(f).link"

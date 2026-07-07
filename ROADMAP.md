@@ -40,6 +40,27 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 - [ ] **Export CSV del drill-down de infracciones**: descargar la lista de envíos
       marcados (uid, encuestador, tiempos, banderas, estado) para llevarla a la
       reunión con el equipo de campo — mismo patrón del export existente.
+- [ ] **Control de calidad en enlaces compartibles** (`expose_quality`): que un
+      enlace de solo lectura pueda exponer la página de QC, para que un **líder de
+      equipo de encuestación** verifique los errores de su gente sin cuenta en la app.
+      Decisión de diseño: es información sensible (señales de fabricación, nombres de
+      encuestadores), pero el admin ya tiene mitigaciones —ponerlo o no, con
+      contraseña/caducidad, y ofuscar el valor de los campos que identifican personas—,
+      así que la responsabilidad es suya. Exige columna `expose_quality` + endpoint
+      público (variante de `quality.php` que herede el fila/columna del enlace y
+      **ofusque/omita** los identificadores según su config) + vista pública + i18n.
+      **Diferido a demanda real** una vez el repo sea público; si alguien lo pide, se
+      implementa.
+- [ ] **Exportación a Excel (`.xlsx`) nativa**: hoy se exporta CSV (con BOM UTF-8, pensado
+      para Excel). El motivo real del «no separa en columnas» que reportan algunos
+      usuarios es el **delimitador**: Excel en configuración regional europea/española
+      espera `;` y no `,`, y mete todo en una columna. Un `.xlsx` real lo resuelve de
+      raíz (sin ambigüedad de separador), pero necesita o una dependencia pesada
+      (PhpSpreadsheet, choca con la filosofía vendor-mínimo y no se puede *stremear*) o
+      un **escritor `.xlsx` propio mínimo** (un ZIP de XML) — trabajo acotado, su propio
+      hito. El botón «Exportar» ya es un modal con selector de formato, así que añadir
+      `.xlsx` es una opción más. Mitigación interina posible sin xlsx: ofrecer variante
+      CSV con `;` o la línea `sep=,`.
 
 ---
 
