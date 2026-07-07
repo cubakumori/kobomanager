@@ -107,6 +107,18 @@ CREATE TABLE IF NOT EXISTS submissions_cache (
     -- merge a 3 vías del estado de validación (ver lib/SubmissionSync::reconcileValidation
     -- y lib/ValidationStatus). NULL = nunca visto / sin estado.
     kobo_validation_seen VARCHAR(40) NULL,
+    -- Estado de revisión VIGENTE (desnormalizado de la última fila de
+    -- submission_reviews; 'pending' = sin revisión). Lo mantienen los endpoints de
+    -- revisión y el pull de validación del sync (lib/ValidationStatus::recordReview);
+    -- evita materializar todo el log de revisiones en cada lectura filtrada.
+    review_status   VARCHAR(16) NOT NULL DEFAULT 'pending',
+    -- Columnas materializadas desde json_payload por el sync (lib/Derived::cacheColumns):
+    -- permiten ordenar/filtrar/agregar sin parsear el JSON de todo el formulario.
+    -- Backfill en actualizaciones: php api/cli/migrate.php.
+    kobo_id         BIGINT UNSIGNED NULL,                  -- `_id` numérico de Kobo (barrido de bajas)
+    duration_s      INT UNSIGNED NULL,                     -- end − start (claves meta del esquema)
+    att_count       SMALLINT UNSIGNED NOT NULL DEFAULT 0,  -- nº de adjuntos
+    has_geo         TINYINT(1) NOT NULL DEFAULT 0,         -- ¿tiene coordenadas?
     -- Proyección en texto plano de los VALORES de respuesta (sin claves ni
     -- metadatos `_*`), poblada por la app (lib/SubmissionSearch::textFor) en cada
     -- sync. Indexada con FULLTEXT para la búsqueda de la tabla de envíos; evita el
@@ -116,6 +128,8 @@ CREATE TABLE IF NOT EXISTS submissions_cache (
     last_synced_at  DATETIME,
     CONSTRAINT fk_submissions_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
     INDEX idx_form_submitted (form_id, submitted_at),
+    INDEX idx_form_review (form_id, review_status),
+    INDEX idx_form_kobo (form_id, kobo_id),
     FULLTEXT INDEX idx_search_text (search_text)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

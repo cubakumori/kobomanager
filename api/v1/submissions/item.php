@@ -183,12 +183,18 @@ if ($method === 'PUT') {
     $conn = DB::conn();
     $conn->beginTransaction();
     try {
+        // La edición puede cambiar campos que alimentan las columnas materializadas
+        // (p. ej. un geopoint) → se recalculan junto con el payload.
+        $cc = Derived::cacheColumns($payload, $schemaRaw);
         DB::run(
-            'UPDATE submissions_cache SET submission_uid = ?, json_payload = ?, search_text = ? WHERE id = ?',
+            'UPDATE submissions_cache SET submission_uid = ?, json_payload = ?, search_text = ?,
+                    kobo_id = ?, duration_s = ?, att_count = ?, has_geo = ?
+             WHERE id = ?',
             [
                 $changedUuid ? $newUuid : $uid,
                 json_encode($payload, JSON_UNESCAPED_UNICODE),
                 SubmissionSearch::textFor($payload, FormSchema::searchOptionLabels($schemaRaw)),
+                $cc['kobo_id'], $cc['duration_s'], $cc['att_count'], $cc['has_geo'],
                 $sub['id'],
             ]
         );

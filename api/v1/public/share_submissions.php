@@ -17,7 +17,7 @@ $formId              = (int) $link['form_id'];
 // Alcance por filas del enlace = row_filter + equipos.
 [$scopeSql, $scopeP] = ShareLink::rowSql($link, 'sc.json_payload');
 // Alcance por estado de revisión (p. ej. solo aprobados), por submission_uid.
-[$stSql, $stP]       = ValidationStatus::latestFilterSql(ShareLink::statusScope($link), 'sc.submission_uid');
+[$stSql, $stP]       = ValidationStatus::statusFilterSql(ShareLink::statusScope($link), 'sc.review_status');
 
 // Ocultado de columnas del enlace.
 $schema     = $link['schema_json'] ? json_decode($link['schema_json'], true) : null;

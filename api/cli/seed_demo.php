@@ -42,6 +42,9 @@ require __DIR__ . '/../config.php';
 require __DIR__ . '/../lib/DB.php';
 require __DIR__ . '/../lib/FormSchema.php';
 require __DIR__ . '/../lib/SubmissionSearch.php';
+require __DIR__ . '/../lib/Geo.php';
+require __DIR__ . '/../lib/Derived.php';
+require __DIR__ . '/../lib/ValidationStatus.php';
 
 function ok(string $msg): void   { echo "  ✓ $msg\n"; }
 function fail(string $msg): never { fwrite(STDERR, "  ✗ $msg\n"); exit(1); }
@@ -257,14 +260,19 @@ for ($n = 0; $n < $count; $n++) {
     $payload['_submitted_by']    = null;
     $payload['_km_seed']         = true;   // marca de sembrado (para --clear)
 
+    $cc = Derived::cacheColumns($payload, $schema); // columnas materializadas, como el sync
     DB::run(
-        'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, search_text, submitted_at, last_synced_at)
-         VALUES (?, ?, ?, ?, ?, NOW())
+        'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, search_text, submitted_at,
+                                        kobo_id, duration_s, att_count, has_geo, last_synced_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
          ON DUPLICATE KEY UPDATE
             json_payload = VALUES(json_payload), search_text = VALUES(search_text),
-            submitted_at = VALUES(submitted_at), last_synced_at = NOW()',
+            submitted_at = VALUES(submitted_at), kobo_id = VALUES(kobo_id),
+            duration_s = VALUES(duration_s), att_count = VALUES(att_count),
+            has_geo = VALUES(has_geo), last_synced_at = NOW()',
         [$formId, $uuid, json_encode($payload, JSON_UNESCAPED_UNICODE),
-         SubmissionSearch::textFor($payload, $optionLabels), $submittedAt]
+         SubmissionSearch::textFor($payload, $optionLabels), $submittedAt,
+         $cc['kobo_id'], $cc['duration_s'], $cc['att_count'], $cc['has_geo']]
     );
     $inserted++;
     $seededUids[] = $uuid;
@@ -286,10 +294,8 @@ if ($reviewsPct > 0 && $seededUids) {
         shuffle($pool);
         $made = 0;
         foreach (array_slice($pool, 0, $howMany) as $uid) {
-            DB::run(
-                'INSERT INTO submission_reviews (submission_uid, user_id, status, comment, created_at) VALUES (?, ?, ?, ?, NOW())',
-                [$uid, $adminId, $statuses[array_rand($statuses)], null]
-            );
+            // recordReview mantiene también la columna desnormalizada review_status.
+            ValidationStatus::recordReview($uid, $adminId, 'app', $statuses[array_rand($statuses)]);
             $made++;
         }
         ok("Creadas $made revisiones de ejemplo (≈{$reviewsPct}%).");

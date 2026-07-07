@@ -126,10 +126,7 @@ final class QualityTest extends DbTestCase
         $flagged = $this->timed($formId, 'ana', '09:00:00', '09:01:00', ['team' => 'norte']);
         $this->timed($formId, 'ana', '10:00:00', '10:30:00', ['team' => 'norte']);
         $this->timed($formId, 'luis', '09:00:00', '09:30:00', ['team' => 'sur']);
-        DB::run(
-            'INSERT INTO submission_reviews (submission_uid, user_id, status) VALUES (?, ?, ?)',
-            [$flagged, $this->makeUser('admin'), 'on_hold']
-        );
+        ValidationStatus::recordReview($flagged, $this->makeUser('admin'), 'app', 'on_hold');
 
         $q = Quality::compute($formId, null, null, null, 'es', 'team', 'enum', 4, null, null);
         $this->assertSame('team', $q['team_field']['key']);
@@ -162,9 +159,9 @@ final class QualityTest extends DbTestCase
         $held = $this->timed($formId, 'ana', '10:00:00', '10:01:00');   // corta, en espera
         $appr = $this->timed($formId, 'ana', '11:00:00', '11:01:00');   // corta, APROBADA
         $rej  = $this->timed($formId, 'luis', '09:00:00', '09:01:00');  // corta, RECHAZADA (único envío de luis)
-        DB::run('INSERT INTO submission_reviews (submission_uid, user_id, status) VALUES (?, ?, ?)', [$held, $admin, 'on_hold']);
-        DB::run('INSERT INTO submission_reviews (submission_uid, user_id, status) VALUES (?, ?, ?)', [$appr, $admin, 'approved']);
-        DB::run('INSERT INTO submission_reviews (submission_uid, user_id, status) VALUES (?, ?, ?)', [$rej, $admin, 'rejected']);
+        ValidationStatus::recordReview($held, $admin, 'app', 'on_hold');
+        ValidationStatus::recordReview($appr, $admin, 'app', 'approved');
+        ValidationStatus::recordReview($rej, $admin, 'app', 'rejected');
 
         $q = Quality::compute($formId, null, null, null, 'es', null, 'enum', 4, null, null, ['pending', 'on_hold']);
         $this->assertSame(2, $q['total']);    // solo pendiente + en espera cuentan
@@ -199,7 +196,7 @@ final class QualityTest extends DbTestCase
         // A (aprobada) 09:00–09:10; B (pendiente) empieza a las 09:05 → solapa con A.
         $a = $this->timed($formId, 'ana', '09:00:00', '09:10:00');
         $b = $this->timed($formId, 'ana', '09:05:00', '09:15:00');
-        DB::run('INSERT INTO submission_reviews (submission_uid, user_id, status) VALUES (?, ?, ?)', [$a, $admin, 'approved']);
+        ValidationStatus::recordReview($a, $admin, 'app', 'approved');
 
         $q = Quality::compute($formId, null, null, null, 'es', null, 'enum', null, null, null, ['pending', 'on_hold']);
         // La aprobada no se reporta, pero SÍ ancla la cadena: la pendiente sale solapada.

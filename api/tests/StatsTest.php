@@ -23,10 +23,8 @@ final class StatsTest extends DbTestCase
 
     private function review(string $uid, string $status): void
     {
-        DB::run(
-            'INSERT INTO submission_reviews (submission_uid, user_id, status) VALUES (?, ?, ?)',
-            [$uid, $this->makeUser('admin'), $status]
-        );
+        // recordReview mantiene también la columna desnormalizada review_status.
+        ValidationStatus::recordReview($uid, $this->makeUser('admin'), 'app', $status);
     }
 
     public function testByStatusOnlyIncludedWhenReviewRequested(): void

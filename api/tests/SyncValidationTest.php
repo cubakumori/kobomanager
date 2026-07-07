@@ -50,10 +50,9 @@ final class SyncValidationTest extends DbTestCase
     private function review(string $uid, string $status, string $source = 'app'): void
     {
         $userId = $source === 'app' ? $this->makeUser() : null;
-        DB::run(
-            'INSERT INTO submission_reviews (submission_uid, user_id, source, status) VALUES (?, ?, ?, ?)',
-            [$uid, $userId, $source, $status]
-        );
+        // recordReview mantiene también la columna desnormalizada review_status,
+        // que es de donde reconcileValidation lee ahora el estado local vigente.
+        ValidationStatus::recordReview($uid, $userId, $source, $status);
     }
 
     private function reconcile(array $koboMap): int

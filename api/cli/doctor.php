@@ -40,9 +40,12 @@ foreach ($missing as $m) {
     $what = $m['column'] === null ? "tabla {$m['table']}" : "{$m['table']}.{$m['column']}";
     fwrite(STDOUT, "  - {$what}{$why}  [desde v{$m['since']}]\n");
 }
-fwrite(STDOUT, "\nAplica estas sentencias (o ejecuta: php api/cli/migrate.php):\n\n");
+fwrite(STDOUT, "\nAplica estas sentencias (o ejecuta: php api/cli/migrate.php, que además\nrellena las columnas nuevas desde los datos existentes):\n\n");
 foreach ($missing as $m) {
     fwrite(STDOUT, "  {$m['fix']};\n");
+    if (!empty($m['backfill'])) {
+        fwrite(STDOUT, "  {$m['backfill']};\n");
+    }
 }
 fwrite(STDOUT, "\n");
 exit(1);

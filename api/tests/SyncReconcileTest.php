@@ -39,10 +39,11 @@ final class SyncReconcileTest extends DbTestCase
 
     private function seedCache(string $uid, int $koboId): void
     {
+        // kobo_id materializado, como lo escribe el sync (el barrido de bajas lee la columna).
         DB::run(
-            'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, submitted_at, last_synced_at)
-             VALUES (?, ?, ?, ?, NOW())',
-            [$this->formId, $uid, json_encode(['_id' => $koboId, '_uuid' => $uid]), '2024-01-01 10:00:00']
+            'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, kobo_id, submitted_at, last_synced_at)
+             VALUES (?, ?, ?, ?, ?, NOW())',
+            [$this->formId, $uid, json_encode(['_id' => $koboId, '_uuid' => $uid]), $koboId, '2024-01-01 10:00:00']
         );
     }
 

@@ -248,10 +248,15 @@ abstract class HttpTestCase extends TestCase
     protected function seedSubmission(int $formId, string $uid, array $payload, ?string $submittedAt = '2024-01-01 10:00:00'): void
     {
         $payload['_uuid'] ??= $uid;
+        // Columnas materializadas como las escribe el sync (Derived::cacheColumns);
+        // esquema null = claves de convención start/end, igual que el sync sin esquema.
+        $cc = Derived::cacheColumns($payload, null);
         DB::run(
-            'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, search_text, submitted_at, last_synced_at)
-             VALUES (?, ?, ?, ?, ?, NOW())',
-            [$formId, $uid, json_encode($payload, JSON_UNESCAPED_UNICODE), SubmissionSearch::textFor($payload), $submittedAt]
+            'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, search_text, submitted_at,
+                                            kobo_id, duration_s, att_count, has_geo, last_synced_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())',
+            [$formId, $uid, json_encode($payload, JSON_UNESCAPED_UNICODE), SubmissionSearch::textFor($payload), $submittedAt,
+             $cc['kobo_id'], $cc['duration_s'], $cc['att_count'], $cc['has_geo']]
         );
     }
 

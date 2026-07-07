@@ -18,7 +18,7 @@ $formId = (int) $link['form_id'];
 
 // Alcance por estado de revisión del enlace: un envío fuera de ese estado responde 404
 // (se aplica en la propia consulta, por submission_uid).
-[$stSql, $stP] = ValidationStatus::latestFilterSql(ShareLink::statusScope($link), 'submission_uid');
+[$stSql, $stP] = ValidationStatus::statusFilterSql(ShareLink::statusScope($link), 'review_status');
 
 $sub = DB::run(
     "SELECT id, submission_uid, json_payload, submitted_at

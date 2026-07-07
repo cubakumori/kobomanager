@@ -19,8 +19,7 @@ final class EditHttpTest extends HttpTestCase
         $formId  = $this->seedForm($accId);
         $this->seedSubmission($formId, 'e1', ['_id' => 5001, 'name' => 'Ana']);
         // Una revisión previa que debe seguir al envío tras la edición.
-        DB::run('INSERT INTO submission_reviews (submission_uid, user_id, status, comment) VALUES (?, ?, ?, ?)',
-            ['e1', $adminId, 'on_hold', 'antes de editar']);
+        ValidationStatus::recordReview('e1', $adminId, 'app', 'on_hold', 'antes de editar');
 
         $jar = $this->login('admin@test.local', 'Secret123!');
         $res = $this->request('PUT', 'submissions/e1', ['data' => ['name' => 'Bea']], $jar);

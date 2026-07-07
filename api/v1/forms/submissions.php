@@ -89,34 +89,27 @@ if (str_starts_with($sortKey, 'field:')) {
     }
 } else switch ($sortKey) {
     case 'duration':
-        // Duración = end − start (claves meta del esquema, con respaldo de convención).
-        // STR_TO_DATE sobre los primeros 19 chars del ISO («YYYY-MM-DDTHH:MM:SS», sin ms
-        // ni zona): start y end comparten zona, así que la diferencia es correcta.
-        $startKey = $schema['meta']['start'] ?? 'start';
-        $endKey   = $schema['meta']['end'] ?? 'end';
-        $dt = fn() => "STR_TO_DATE(REPLACE(SUBSTRING(JSON_UNQUOTE(JSON_EXTRACT(sc.json_payload, ?)),1,19),'T',' '),'%Y-%m-%d %H:%i:%s')";
-        $orderBy     = "TIMESTAMPDIFF(SECOND, {$dt()}, {$dt()}) $dir, sc.submitted_at DESC, sc.id DESC";
-        $orderParams = [RowScope::jsonPath($startKey), RowScope::jsonPath($endKey)];
+        // Columna materializada por el sync (end − start con las claves meta del
+        // esquema, ver Derived::cacheColumns): sin parsear JSON por fila.
+        $orderBy = "sc.duration_s $dir, sc.submitted_at DESC, sc.id DESC";
         break;
     case 'attachments':
-        $orderBy = "COALESCE(JSON_LENGTH(JSON_EXTRACT(sc.json_payload, '$._attachments')), 0) $dir, sc.submitted_at DESC, sc.id DESC";
+        $orderBy = "sc.att_count $dir, sc.submitted_at DESC, sc.id DESC";
         break;
     case 'geo':
-        $orderBy     = "$geoExpr $dir, sc.submitted_at DESC, sc.id DESC";
-        $orderParams = $geoExprParams;
+        // Sin campos geo ocultos, la columna materializada equivale al geoExpr;
+        // con alguno oculto se conserva la expresión JSON (respeta el FieldScope).
+        if (!$anyGeoHidden) {
+            $orderBy = "sc.has_geo $dir, sc.submitted_at DESC, sc.id DESC";
+        } else {
+            $orderBy     = "$geoExpr $dir, sc.submitted_at DESC, sc.id DESC";
+            $orderParams = $geoExprParams;
+        }
         break;
     default: // 'date'
         $orderBy = "sc.submitted_at $dir, sc.id $dir";
         break;
 }
-
-// Estado de revisión más reciente por envío, para mostrar y para poder filtrar.
-$join = 'LEFT JOIN (
-        SELECT r.submission_uid, r.status
-        FROM submission_reviews r
-        JOIN (SELECT submission_uid, MAX(id) AS max_id FROM submission_reviews GROUP BY submission_uid) m
-          ON m.max_id = r.id
-    ) lr ON lr.submission_uid = sc.submission_uid';
 
 // Filtro avanzado del usuario (mismo formato y motor que row_filter). Solo puede
 // RESTRINGIR: se combina en AND con el scoping obligatorio. Si referencia un campo
@@ -145,18 +138,18 @@ if ($search !== '') {
     $params  = array_merge($params, $searchParams);
 }
 if (in_array($review, ['pending', 'approved', 'on_hold', 'rejected'], true)) {
-    $where    .= ' AND COALESCE(lr.status, \'pending\') = ?';
+    // Estado vigente desnormalizado (submissions_cache.review_status, indexado por
+    // formulario): sin materializar el log de revisiones en cada petición.
+    $where    .= ' AND sc.review_status = ?';
     $params[]  = $review;
 }
 
-$total = (int) DB::run("SELECT COUNT(*) AS c FROM submissions_cache sc $join $where", $params)
+$total = (int) DB::run("SELECT COUNT(*) AS c FROM submissions_cache sc $where", $params)
     ->fetch()['c'];
 
 $rows = DB::run(
-    "SELECT sc.id, sc.submission_uid, sc.json_payload, sc.submitted_at,
-            COALESCE(lr.status, 'pending') AS review_status
+    "SELECT sc.id, sc.submission_uid, sc.json_payload, sc.submitted_at, sc.review_status
      FROM submissions_cache sc
-     $join
      $where
      ORDER BY $orderBy
      LIMIT $perPage OFFSET $offset",
@@ -178,10 +171,16 @@ $items = array_map(function ($r) use ($schema, $fieldScope) {
 }, $rows);
 
 // ¿Algún envío tiene coordenadas? (para habilitar/deshabilitar la vista de mapa).
-// Reutiliza $geoExpr (misma alias `sc`, ya respeta los campos geo ocultos) calculado
-// arriba para no duplicar la lógica.
+// Sin campos geo ocultos usa la columna materializada (sin parsear JSON: antes, un
+// formulario SIN geo escaneaba el payload de todas sus filas en cada carga); con
+// alguno oculto, la expresión JSON que respeta el FieldScope.
 $hasGeo = false;
-if ($geoExpr !== '0') {
+if (!$anyGeoHidden) {
+    $hasGeo = (bool) DB::run(
+        "SELECT 1 FROM submissions_cache sc WHERE sc.form_id = ? AND sc.has_geo = 1 AND $scopeSql LIMIT 1",
+        array_merge([$formId], $scopeP)
+    )->fetch();
+} elseif ($geoExpr !== '0') {
     $hasGeo = (bool) DB::run(
         "SELECT 1 FROM submissions_cache sc WHERE sc.form_id = ? AND $geoExpr AND $scopeSql LIMIT 1",
         array_merge([$formId], $geoExprParams, $scopeP)

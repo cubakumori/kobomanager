@@ -95,44 +95,28 @@ class Quality {
         $startKey = $schemaRaw['meta']['start'] ?? 'start';
         $endKey   = $schemaRaw['meta']['end'] ?? 'end';
 
-        $rows = DB::run(
-            "SELECT submission_uid, json_payload, submitted_at FROM submissions_cache
+        // --- Pasada única en STREAMING: derivar tiempos y agrupar por (equipo,
+        // encuestador). El estado de revisión sale de la columna desnormalizada
+        // review_status (sin materializar el log de revisiones), y las filas se
+        // recorren sin búfer (DB::stream) para que la memoria no dependa del tamaño
+        // del formulario. Se agrupa TODO (la cadena de consecutividad necesita todos
+        // los envíos del encuestador); `in` marca si el envío está dentro del alcance
+        // por estado y por tanto se cuenta/reporta.
+        $groups   = []; // tKey => eKey => [entradas]
+        $total    = 0;  // envíos EN ALCANCE
+        $untimed  = 0;  // envíos EN ALCANCE sin tiempos válidos
+        $received = 0;  // TODOS los envíos recibidos (en el RowScope del usuario)
+        foreach (DB::stream(
+            "SELECT submission_uid, json_payload, submitted_at, review_status FROM submissions_cache
              WHERE form_id = ? AND $scopeSql",
             array_merge([$formId], $scopeP)
-        )->fetchAll();
-
-        // Estado de revisión más reciente por envío (para mostrarlo en el drill-down y
-        // que el lote «en espera» pueda excluir los ya marcados). Misma consulta que Stats.
-        $statusMap = [];
-        $reviewed  = DB::run(
-            "SELECT r.submission_uid, r.status
-             FROM submission_reviews r
-             JOIN (
-                SELECT submission_uid, MAX(id) AS max_id FROM submission_reviews GROUP BY submission_uid
-             ) latest ON latest.max_id = r.id
-             JOIN submissions_cache sc ON sc.submission_uid = r.submission_uid AND sc.form_id = ?
-                AND $scopeSql",
-            array_merge([$formId], $scopeP)
-        )->fetchAll();
-        foreach ($reviewed as $r) {
-            if (in_array($r['status'], ValidationStatus::STATUSES, true)) {
-                $statusMap[$r['submission_uid']] = $r['status'];
-            }
-        }
-
-        // --- Pasada única: derivar tiempos y agrupar por (equipo, encuestador). ---
-        // Se agrupa TODO (la cadena de consecutividad necesita todos los envíos del
-        // encuestador); `in` marca si el envío está dentro del alcance por estado y
-        // por tanto se cuenta/reporta.
-        $groups  = []; // tKey => eKey => [entradas]
-        $total   = 0;  // envíos EN ALCANCE
-        $untimed = 0;  // envíos EN ALCANCE sin tiempos válidos
-        foreach ($rows as $r) {
+        ) as $r) {
+            $received++;
             $payload = json_decode($r['json_payload'], true) ?: [];
             $startTs = Derived::ts($payload[$startKey] ?? null);
             $endTs   = Derived::ts($payload[$endKey] ?? null);
             $dur     = ($startTs !== null && $endTs !== null && $endTs >= $startTs) ? $endTs - $startTs : null;
-            $st      = $statusMap[$r['submission_uid']] ?? 'pending';
+            $st      = in_array($r['review_status'], ValidationStatus::STATUSES, true) ? $r['review_status'] : 'pending';
             $in      = $scopeStatuses === null || in_array($st, $scopeStatuses, true);
             if ($in) {
                 $total++;
@@ -253,7 +237,7 @@ class Quality {
             'total'      => $total,
             // TODOS los envíos recibidos (en el RowScope del usuario, sin filtrar por
             // estado de revisión): denominador del «{flagged} / {received}» de la UI.
-            'received'   => count($rows),
+            'received'   => $received,
             'untimed'    => $untimed,
             'flagged'    => $flaggedTotal,
             'flags'      => $flagsTotal,

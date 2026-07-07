@@ -85,7 +85,31 @@ class SchemaCheck {
         // Permiso «Ajustes» por formulario (editar desglose por equipo + umbrales QC sin ser admin).
         ['table' => 'user_form_permissions', 'column' => 'can_settings', 'since' => '1.15.0',
          'fix' => "ALTER TABLE user_form_permissions ADD COLUMN can_settings TINYINT(1) DEFAULT 0 AFTER can_validate"],
+
+        // Estado de revisión vigente desnormalizado + columnas materializadas del
+        // payload (ver los comentarios del CREATE canónico). `backfill` = sentencia
+        // que puebla la columna en una BD que se actualiza (migrate.php la ejecuta
+        // tras el ALTER); las materializadas del payload se rellenan además con el
+        // recálculo PHP de migrate.php (SubmissionSync::recomputeCacheColumns).
+        ['table' => 'submissions_cache', 'column' => 'review_status', 'since' => '1.21.0',
+         'fix' => "ALTER TABLE submissions_cache ADD COLUMN review_status VARCHAR(16) NOT NULL DEFAULT 'pending' AFTER kobo_validation_seen, ADD INDEX idx_form_review (form_id, review_status)",
+         'backfill' => "UPDATE submissions_cache sc
+            JOIN (SELECT r.submission_uid, r.status FROM submission_reviews r
+                  JOIN (SELECT submission_uid, MAX(id) AS mid FROM submission_reviews GROUP BY submission_uid) m
+                    ON m.mid = r.id) lr ON lr.submission_uid = sc.submission_uid
+            SET sc.review_status = lr.status"],
+        ['table' => 'submissions_cache', 'column' => 'kobo_id', 'since' => '1.21.0',
+         'fix' => "ALTER TABLE submissions_cache ADD COLUMN kobo_id BIGINT UNSIGNED NULL AFTER review_status, ADD INDEX idx_form_kobo (form_id, kobo_id)"],
+        ['table' => 'submissions_cache', 'column' => 'duration_s', 'since' => '1.21.0',
+         'fix' => "ALTER TABLE submissions_cache ADD COLUMN duration_s INT UNSIGNED NULL AFTER kobo_id"],
+        ['table' => 'submissions_cache', 'column' => 'att_count', 'since' => '1.21.0',
+         'fix' => "ALTER TABLE submissions_cache ADD COLUMN att_count SMALLINT UNSIGNED NOT NULL DEFAULT 0 AFTER duration_s"],
+        ['table' => 'submissions_cache', 'column' => 'has_geo', 'since' => '1.21.0',
+         'fix' => "ALTER TABLE submissions_cache ADD COLUMN has_geo TINYINT(1) NOT NULL DEFAULT 0 AFTER att_count"],
     ];
+
+    /** Columnas cuyo backfill requiere el recálculo PHP de migrate.php (no basta SQL). */
+    public const RECOMPUTE_COLUMNS = ['kobo_id', 'duration_s', 'att_count', 'has_geo'];
 
     /**
      * Devuelve las entradas de CHECKS que la BD actual NO satisface (columna ausente o,

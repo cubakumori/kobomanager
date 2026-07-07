@@ -25,7 +25,7 @@ $link   = ShareLink::requireAccess($token, 'attachments');
 $formId = (int) $link['form_id'];
 
 // Alcance por estado de revisión del enlace (p. ej. solo aprobados): fuera de estado → 404.
-[$stSql, $stP] = ValidationStatus::latestFilterSql(ShareLink::statusScope($link), 'sc.submission_uid');
+[$stSql, $stP] = ValidationStatus::statusFilterSql(ShareLink::statusScope($link), 'sc.review_status');
 
 $sub = DB::run(
     "SELECT sc.json_payload, f.kobo_account_id

@@ -69,7 +69,7 @@ class Stats {
         // desglose `by_status` (interno), no si se filtra el conjunto. Así un enlace
         // público puede acotarse a «solo aprobados» sin revelar el flujo de revisión.
         $filter = in_array($filterStatus, ValidationStatus::STATUSES, true) ? $filterStatus : 'all';
-        [$statusSql, $statusP] = ValidationStatus::latestFilterSql($filter === 'all' ? null : $filter);
+        [$statusSql, $statusP] = ValidationStatus::statusFilterSql($filter === 'all' ? null : $filter);
 
         // Campo de equipo efectivo: configurado y NO oculto por FieldScope en este alcance
         // (no se puede agrupar/filtrar por una columna que el usuario no ve).
@@ -151,33 +151,23 @@ class Stats {
             'last_30' => $last30, 'prev_30' => $prev30, 'pct_30' => $pct($last30, $prev30),
         ];
 
-        // Distribución por estado de revisión (solo si se pide; interna). De la misma
-        // consulta sale el mapa uid → última revisión, que reutiliza el desglose por
-        // equipo para la mezcla de calidad (evita una segunda consulta).
-        $byStatus  = ['pending' => 0, 'approved' => 0, 'on_hold' => 0, 'rejected' => 0];
-        $statusMap = []; // submission_uid => estado de la última revisión
+        // Distribución por estado de revisión (solo si se pide; interna): agregación
+        // directa sobre la columna desnormalizada (un envío sin revisión ya vale
+        // 'pending' por DEFAULT — sin materializar el log de revisiones).
+        $byStatus = ['pending' => 0, 'approved' => 0, 'on_hold' => 0, 'rejected' => 0];
         if ($includeReview) {
-            $reviewed = DB::run(
-                "SELECT r.submission_uid, r.status
-                 FROM submission_reviews r
-                 JOIN (
-                    SELECT submission_uid, MAX(id) AS max_id FROM submission_reviews GROUP BY submission_uid
-                 ) latest ON latest.max_id = r.id
-                 JOIN submissions_cache sc ON sc.submission_uid = r.submission_uid AND sc.form_id = ?
-                    AND $scopeSql",
+            $stRows = DB::run(
+                "SELECT review_status, COUNT(*) AS c
+                 FROM submissions_cache
+                 WHERE form_id = ? AND $scopeSql
+                 GROUP BY review_status",
                 array_merge([$formId], $scopeP)
             )->fetchAll();
-
-            $reviewedTotal = 0;
-            foreach ($reviewed as $r) {
-                if (isset($byStatus[$r['status']])) {
-                    $byStatus[$r['status']]++;
-                    $statusMap[$r['submission_uid']] = $r['status'];
-                    $reviewedTotal++;
+            foreach ($stRows as $r) {
+                if (isset($byStatus[$r['review_status']])) {
+                    $byStatus[$r['review_status']] = (int) $r['c'];
                 }
             }
-            // Los envíos sin revisión cuentan como 'pending'.
-            $byStatus['pending'] += $total - $reviewedTotal;
         }
 
         // -----------------------------------------------------------------------
@@ -236,19 +226,23 @@ class Stats {
             $leaf['status'][$st]++;
         };
 
-        $rows = DB::run(
-            "SELECT submission_uid, json_payload, submitted_at FROM submissions_cache WHERE form_id = ? AND $scopeSql AND $statusSql",
-            array_merge([$formId], $scopeP, $statusP)
-        )->fetchAll();
-
-        // Denominador del DESGLOSE POR EQUIPO: todos los envíos en alcance + estado (NO el
-        // filtro por equipos), para que la cuota de cada equipo sea estable al marcar/desmarcar.
-        $teamBase = count($rows);
-        // Denominador de las DEMÁS métricas: el subconjunto que además pasa el filtro por
-        // equipos. Coincide con `$teamBase` cuando no hay equipos desmarcados.
+        // Pasada única en STREAMING (DB::stream, sin búfer): la memoria queda en O(1
+        // fila) aunque el formulario tenga cientos de miles de envíos. El cuerpo del
+        // bucle es PHP puro (requisito del cursor sin búfer).
+        //
+        // Denominador del DESGLOSE POR EQUIPO ($teamBase): todos los envíos en alcance +
+        // estado (NO el filtro por equipos), para que la cuota de cada equipo sea estable
+        // al marcar/desmarcar. Denominador de las DEMÁS métricas ($base): el subconjunto
+        // que además pasa el filtro por equipos.
+        $teamBase = 0;
         $base = 0;
 
-        foreach ($rows as $r) {
+        foreach (DB::stream(
+            "SELECT submission_uid, json_payload, submitted_at, review_status
+             FROM submissions_cache WHERE form_id = ? AND $scopeSql AND $statusSql",
+            array_merge([$formId], $scopeP, $statusP)
+        ) as $r) {
+            $teamBase++;
             // Recorta los campos ocultos: adjuntos/geo de un campo oculto no cuentan.
             $payload = FieldScope::apply($fieldScope, json_decode($r['json_payload'], true) ?: [], $schemaRaw);
 
@@ -263,7 +257,7 @@ class Stats {
                 $ev = $payload[$enumPath] ?? null;
                 $tKey = ($tv === null || $tv === '' || is_array($tv)) ? '—' : (string) $tv;
                 $eKey = ($ev === null || $ev === '' || is_array($ev)) ? '—' : (string) $ev;
-                $st = $statusMap[$r['submission_uid']] ?? 'pending'; // sin revisión → pendiente
+                $st = in_array($r['review_status'], ValidationStatus::STATUSES, true) ? $r['review_status'] : 'pending';
                 if (!isset($teamAcc[$tKey])) $teamAcc[$tKey] = ['leaf' => $newLeaf(), 'enums' => []];
                 if (!isset($teamAcc[$tKey]['enums'][$eKey])) $teamAcc[$tKey]['enums'][$eKey] = $newLeaf();
                 $bump($teamAcc[$tKey]['leaf'], $dd, $r['submitted_at'], $st);

@@ -27,16 +27,24 @@ $scope               = RowScope::ruleForUser($user, $formId);
 // Permisos por columna: si el campo geo está oculto, su punto no debe aparecer.
 $fieldScope = FieldScope::ruleForUser($user, $formId);
 
-$rows = DB::run(
+// Total en alcance (denominador informativo), sin traer las filas.
+$total = (int) DB::run(
+    "SELECT COUNT(*) AS c FROM submissions_cache WHERE form_id = ? AND $scopeSql",
+    array_merge([$formId], $scopeP)
+)->fetch()['c'];
+
+// Solo las filas CON coordenadas (columna materializada has_geo: en un formulario
+// sin geo no se lee ni parsea nada), en streaming. Es un superconjunto seguro:
+// FieldScope::apply recorta después los campos geo ocultos a este usuario y
+// primaryPoint descarta la fila si no queda punto visible.
+$points = [];
+foreach (DB::stream(
     "SELECT submission_uid, json_payload, submitted_at
      FROM submissions_cache
-     WHERE form_id = ? AND $scopeSql
+     WHERE form_id = ? AND has_geo = 1 AND $scopeSql
      ORDER BY submitted_at DESC, id DESC",
     array_merge([$formId], $scopeP)
-)->fetchAll();
-
-$points = [];
-foreach ($rows as $r) {
+) as $r) {
     $payload = FieldScope::apply($fieldScope, json_decode($r['json_payload'], true) ?: [], $schema);
     $pt = Geo::primaryPoint($payload, $schema);
     if (!$pt) continue;
@@ -51,5 +59,5 @@ foreach ($rows as $r) {
 ErrorResponse::ok([
     'form'   => ['id' => (int) $form['id'], 'name' => $form['name']],
     'points' => $points,
-    'total'  => count($rows),
+    'total'  => $total,
 ]);

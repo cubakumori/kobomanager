@@ -72,10 +72,7 @@ final class DemoSeedTest extends TestCase
              VALUES (?, ?, ?, ?, ?, NOW())',
             [$formId, 'sub-1', json_encode($payload, JSON_UNESCAPED_UNICODE), 'ana', '2026-01-15 10:00:00']
         );
-        DB::run(
-            'INSERT INTO submission_reviews (submission_uid, user_id, source, status, comment) VALUES (?, ?, ?, ?, ?)',
-            ['sub-1', $adminId, 'app', 'approved', "ok; revisado -- sin dudas"]
-        );
+        ValidationStatus::recordReview('sub-1', $adminId, 'app', 'approved', 'ok; revisado -- sin dudas');
         DB::run(
             'INSERT INTO user_form_permissions (user_id, form_id, can_view, row_filter) VALUES (?, ?, 1, ?)',
             [$viewerId, $formId, json_encode(['match' => 'all', 'groups' => [['match' => 'any', 'conditions' => [['field' => 'nombre', 'op' => 'in', 'values' => ['Ana']]]]]])]

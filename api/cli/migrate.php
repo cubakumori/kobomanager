@@ -39,7 +39,8 @@ if (!$missing) {
 }
 
 fwrite(STDOUT, ($dryRun ? "[dry-run] " : "") . "Cambios a aplicar: " . count($missing) . "\n");
-$applied = 0;
+$applied      = 0;
+$appliedCols  = [];
 foreach ($missing as $m) {
     $what = $m['column'] === null ? "tabla {$m['table']}" : "{$m['table']}.{$m['column']}";
     fwrite(STDOUT, "  $what … ");
@@ -49,10 +50,38 @@ foreach ($missing as $m) {
     }
     try {
         DB::run($m['fix']);
+        // Backfill declarado (puebla la columna recién añadida desde datos existentes).
+        if (!empty($m['backfill'])) {
+            DB::run($m['backfill']);
+        }
         $applied++;
+        $appliedCols[] = $m['table'] . '.' . ($m['column'] ?? '');
         fwrite(STDOUT, "OK\n");
     } catch (Throwable $e) {
         // p. ej. carrera o estado parcial: se informa y se sigue con el resto.
+        fwrite(STDERR, "ERROR: " . $e->getMessage() . "\n");
+    }
+}
+
+// Columnas materializadas del payload: su backfill exige PHP (duración con las
+// claves meta del esquema, geo con Geo::features). Solo si acaban de añadirse.
+$needsRecompute = !$dryRun && array_intersect(
+    array_map(fn($c) => "submissions_cache.$c", SchemaCheck::RECOMPUTE_COLUMNS),
+    $appliedCols
+) !== [];
+if ($needsRecompute) {
+    require_once __DIR__ . '/../lib/Geo.php';
+    require_once __DIR__ . '/../lib/Derived.php';
+    require_once __DIR__ . '/../lib/FormSchema.php';
+    require_once __DIR__ . '/../lib/SubmissionSearch.php';
+    require_once __DIR__ . '/../lib/KoboClient.php';
+    require_once __DIR__ . '/../lib/ValidationStatus.php';
+    require_once __DIR__ . '/../lib/SubmissionSync.php';
+    fwrite(STDOUT, "  Recalculando columnas materializadas de submissions_cache … ");
+    try {
+        $n = SubmissionSync::recomputeCacheColumns();
+        fwrite(STDOUT, "OK ($n filas)\n");
+    } catch (Throwable $e) {
         fwrite(STDERR, "ERROR: " . $e->getMessage() . "\n");
     }
 }

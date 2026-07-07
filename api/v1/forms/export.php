@@ -34,13 +34,6 @@ $fieldScope = FieldScope::ruleForUser($user, $formId);
 $search = trim((string) ($_GET['search'] ?? ''));
 $review = (string) ($_GET['review'] ?? '');
 
-$join = 'LEFT JOIN (
-        SELECT r.submission_uid, r.status
-        FROM submission_reviews r
-        JOIN (SELECT submission_uid, MAX(id) AS max_id FROM submission_reviews GROUP BY submission_uid) m
-          ON m.max_id = r.id
-    ) lr ON lr.submission_uid = sc.submission_uid';
-
 // Filtro avanzado del usuario: mismas reglas que en la lista (solo restringe; campos
 // ocultos vetados).
 $advFilter = null;
@@ -64,19 +57,20 @@ if ($search !== '') {
     $where  .= ' AND ' . $searchSql;
     $params  = array_merge($params, $searchParams);
 }
-if (in_array($review, ['pending', 'approved', 'rejected'], true)) {
-    $where    .= ' AND COALESCE(lr.status, \'pending\') = ?';
+if (in_array($review, ValidationStatus::STATUSES, true)) {
+    // Estado vigente desnormalizado; mismos cuatro estados que la lista (antes
+    // faltaba on_hold y el filtro se ignoraba en silencio al exportar).
+    $where    .= ' AND sc.review_status = ?';
     $params[]  = $review;
 }
 
-$rows = DB::run(
-    "SELECT sc.json_payload, sc.submitted_at, COALESCE(lr.status, 'pending') AS review_status
+// Consulta del export, en DOS pasadas SIN búfer (DB::stream): descubrimiento de
+// columnas extra y emisión. La memoria queda en O(1 fila) aunque el formulario
+// tenga cientos de miles de envíos (antes: fetchAll + doble json_decode en RAM).
+$exportSql = "SELECT sc.json_payload, sc.submitted_at, sc.review_status
      FROM submissions_cache sc
-     $join
      $where
-     ORDER BY sc.submitted_at DESC, sc.id DESC",
-    $params
-)->fetchAll();
+     ORDER BY sc.submitted_at DESC, sc.id DESC";
 
 // Esquema resuelto al idioma del usuario (etiquetas y opciones legibles).
 $resolved  = FormSchema::resolve($schemaRaw, $user['locale']);
@@ -88,12 +82,13 @@ $multi     = array_flip($resolved['multi'] ?? []);
 $leaf = static fn(string $k): string => (($p = strrpos($k, '/')) === false) ? $k : substr($k, $p + 1);
 
 // Columnas de datos: orden del esquema primero, luego cualquier clave extra vista
-// en los envíos (sin metadatos de Kobo, que empiezan por «_»).
+// en los envíos (sin metadatos de Kobo, que empiezan por «_»). Primera pasada en
+// streaming: solo acumula NOMBRES de columna, nunca las filas.
 $columns = [];
 foreach (array_keys($schemaRaw['fields'] ?? []) as $k) {
     if (!str_starts_with($k, '_') && !FieldScope::isHidden($fieldScope, (string) $k)) $columns[$k] = true;
 }
-foreach ($rows as $r) {
+foreach (DB::stream($exportSql, $params) as $r) {
     foreach (json_decode($r['json_payload'], true) ?: [] as $k => $_v) {
         if (!str_starts_with((string) $k, '_') && !FieldScope::isHidden($fieldScope, (string) $k)) $columns[$k] = true;
     }
@@ -134,8 +129,8 @@ $metaHeaders = $user['locale'] === 'en'
     ? ['submitted' => 'Submitted', 'review' => 'Review']
     : ['submitted' => 'Enviado', 'review' => 'Revisión'];
 $reviewWords = $user['locale'] === 'en'
-    ? ['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected']
-    : ['pending' => 'Pendiente', 'approved' => 'Aprobado', 'rejected' => 'Rechazado'];
+    ? ['pending' => 'Pending', 'approved' => 'Approved', 'on_hold' => 'On hold', 'rejected' => 'Rejected']
+    : ['pending' => 'Pendiente', 'approved' => 'Aprobado', 'on_hold' => 'En espera', 'rejected' => 'Rechazado'];
 
 // Columnas calculadas (las mismas que la tabla): se computan con lib/Derived,
 // idéntico al detalle y la lista. Van al final, tras las columnas de datos.
@@ -157,7 +152,8 @@ fwrite($out, "\xEF\xBB\xBF"); // BOM UTF-8 para Excel
 // $escape = '' → CSV estándar (comillas dobladas, sin escape con barra). Además, en
 // PHP 8.4+ el parámetro $escape debe pasarse explícitamente (su omisión está obsoleta).
 fputcsv($out, array_map($csvSafe, array_merge([$metaHeaders['submitted'], $metaHeaders['review']], array_map($header, $columns), $derivedHeaders)), ',', '"', '');
-foreach ($rows as $r) {
+// Segunda pasada en streaming: decodificar UNA vez por fila y emitir directamente.
+foreach (DB::stream($exportSql, $params) as $r) {
     // Recorta los campos ocultos (también afecta a las columnas calculadas: un
     // adjunto o geo de un campo oculto no se cuenta en las derivadas del CSV).
     $data = FieldScope::apply($fieldScope, json_decode($r['json_payload'], true) ?: [], $schemaRaw);

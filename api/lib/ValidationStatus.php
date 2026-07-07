@@ -66,26 +66,39 @@ class ValidationStatus {
     public const STATUSES = ['pending', 'approved', 'on_hold', 'rejected'];
 
     /**
-     * Fragmento SQL (+ params) que restringe envíos por el estado de su revisión MÁS
-     * RECIENTE, equivalente a `COALESCE(latest.status,'pending') = $status` (un envío
-     * sin revisión cuenta como 'pending'). `$uidExpr` = expresión del `submission_uid`
-     * en la consulta que lo usa (p. ej. 'sc.submission_uid' o 'submission_uid').
-     * Estado null o no reconocido → ['1=1', []] (sin restricción). Fuente única usada
-     * por lib/Stats y por los endpoints públicos de enlaces.
+     * Registra una revisión: inserta la fila en `submission_reviews` (el log) Y
+     * actualiza el estado vigente desnormalizado `submissions_cache.review_status`.
+     * ÚNICA vía de escritura de revisiones (endpoints de revisión, pull de
+     * validación del sync y tests): mantiene el log y la columna siempre de acuerdo.
+     * Devuelve el id de la revisión insertada.
+     */
+    public static function recordReview(string $submissionUid, ?int $userId, string $source, string $status, ?string $comment = null): int {
+        DB::run(
+            'INSERT INTO submission_reviews (submission_uid, user_id, source, status, comment) VALUES (?, ?, ?, ?, ?)',
+            [$submissionUid, $userId, $source, $status, $comment]
+        );
+        $id = (int) DB::conn()->lastInsertId();
+        DB::run(
+            'UPDATE submissions_cache SET review_status = ? WHERE submission_uid = ?',
+            [$status, $submissionUid]
+        );
+        return $id;
+    }
+
+    /**
+     * Fragmento SQL (+ params) que restringe envíos por su estado de revisión
+     * VIGENTE, sobre la columna desnormalizada `submissions_cache.review_status`
+     * (un envío sin revisión vale 'pending' por DEFAULT). `$colExpr` = expresión
+     * de la columna en la consulta que lo usa (p. ej. 'sc.review_status').
+     * Estado null o no reconocido → ['1=1', []] (sin restricción). Fuente única
+     * usada por lib/Stats y por los endpoints públicos de enlaces.
      *
      * @return array{0:string,1:array}
      */
-    public static function latestFilterSql(?string $status, string $uidExpr = 'submission_uid'): array {
+    public static function statusFilterSql(?string $status, string $colExpr = 'review_status'): array {
         if (!in_array($status, self::STATUSES, true)) {
             return ['1=1', []];
         }
-        $latest = "submission_reviews r
-                   JOIN (SELECT submission_uid, MAX(id) AS max_id FROM submission_reviews GROUP BY submission_uid) m
-                     ON m.max_id = r.id";
-        if ($status === 'pending') {
-            // pendiente = sin revisión O última revisión 'pending'.
-            return ["$uidExpr NOT IN (SELECT r.submission_uid FROM $latest WHERE r.status IN ('approved','on_hold','rejected'))", []];
-        }
-        return ["$uidExpr IN (SELECT r.submission_uid FROM $latest WHERE r.status = ?)", [$status]];
+        return ["$colExpr = ?", [$status]];
     }
 }

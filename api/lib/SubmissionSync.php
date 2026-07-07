@@ -59,11 +59,11 @@ class SubmissionSync {
             }
             // Mapa de etiquetas de opción (todas las traducciones) para enriquecer el
             // texto buscable: se calcula UNA vez por formulario desde el esquema recién
-            // refrescado y se reutiliza en cada fila.
-            $schemaRow   = DB::run('SELECT schema_json FROM forms WHERE id = ?', [$formId])->fetch();
-            $optionLabels = FormSchema::searchOptionLabels(
-                ($schemaRow && $schemaRow['schema_json']) ? json_decode($schemaRow['schema_json'], true) : null
-            );
+            // refrescado y se reutiliza en cada fila. El esquema decodificado alimenta
+            // también las columnas materializadas (duración, geo).
+            $schemaRow    = DB::run('SELECT schema_json FROM forms WHERE id = ?', [$formId])->fetch();
+            $schemaRaw    = ($schemaRow && $schemaRow['schema_json']) ? json_decode($schemaRow['schema_json'], true) : null;
+            $optionLabels = FormSchema::searchOptionLabels($schemaRaw);
 
             // Upsert por PÁGINAS: el generador entrega cada página según llega (el
             // histórico completo nunca vive entero en memoria) y cada página se
@@ -72,12 +72,17 @@ class SubmissionSync {
             // para el primer sync de un formulario grande).
             $pdo  = DB::conn();
             $stmt = $pdo->prepare(
-                'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, search_text, submitted_at, last_synced_at)
-                 VALUES (?, ?, ?, ?, ?, NOW())
+                'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, search_text, submitted_at,
+                                                kobo_id, duration_s, att_count, has_geo, last_synced_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
                  ON DUPLICATE KEY UPDATE
                     json_payload   = VALUES(json_payload),
                     search_text    = VALUES(search_text),
                     submitted_at   = VALUES(submitted_at),
+                    kobo_id        = VALUES(kobo_id),
+                    duration_s     = VALUES(duration_s),
+                    att_count      = VALUES(att_count),
+                    has_geo        = VALUES(has_geo),
                     last_synced_at = NOW()'
             );
 
@@ -106,11 +111,13 @@ class SubmissionSync {
                             }
                         }
 
+                        $cc = Derived::cacheColumns($sub, $schemaRaw);
                         $stmt->execute([
                             $formId, $uid,
                             json_encode($sub, JSON_UNESCAPED_UNICODE),
                             SubmissionSearch::textFor($sub, $optionLabels),
                             $submittedAt,
+                            $cc['kobo_id'], $cc['duration_s'], $cc['att_count'], $cc['has_geo'],
                         ]);
                         $count++;
                     }
@@ -159,27 +166,19 @@ class SubmissionSync {
     private static function reconcileValidation(int $formId, KoboClient $client, string $assetUid): int {
         $koboMap = $client->getValidationStatuses($assetUid);
 
-        // Estado local: línea base por envío + última revisión (la de mayor id).
+        // Estado local: línea base por envío + estado vigente (columna desnormalizada
+        // review_status, mantenida por ValidationStatus::recordReview — ya no hace
+        // falta materializar el log de revisiones entero).
         $rows = DB::run(
-            'SELECT sc.submission_uid, sc.kobo_validation_seen, lr.status AS local_status
-             FROM submissions_cache sc
-             LEFT JOIN (
-                SELECT r.submission_uid, r.status
-                FROM submission_reviews r
-                JOIN (SELECT submission_uid, MAX(id) AS mid FROM submission_reviews GROUP BY submission_uid) m
-                  ON m.mid = r.id
-             ) lr ON lr.submission_uid = sc.submission_uid
-             WHERE sc.form_id = ?',
+            'SELECT submission_uid, kobo_validation_seen, review_status AS local_status
+             FROM submissions_cache
+             WHERE form_id = ?',
             [$formId]
         )->fetchAll();
 
-        $pdo      = DB::conn();
-        $created  = 0;
-        $upd      = $pdo->prepare('UPDATE submissions_cache SET kobo_validation_seen = ? WHERE submission_uid = ?');
-        $ins      = $pdo->prepare(
-            "INSERT INTO submission_reviews (submission_uid, user_id, source, status, comment)
-             VALUES (?, NULL, 'kobo', ?, NULL)"
-        );
+        $pdo     = DB::conn();
+        $created = 0;
+        $upd     = $pdo->prepare('UPDATE submissions_cache SET kobo_validation_seen = ? WHERE submission_uid = ?');
 
         foreach ($rows as $r) {
             $sUid = $r['submission_uid'];
@@ -198,7 +197,7 @@ class SubmissionSync {
             $upd->execute([$koboUid, $sUid]);
             $localNow = $r['local_status'] ?? 'pending';
             if ($koboNow !== $localNow) {
-                $ins->execute([$sUid, $koboNow]);
+                ValidationStatus::recordReview($sUid, null, 'kobo', $koboNow);
                 $created++;
             }
         }
@@ -234,9 +233,10 @@ class SubmissionSync {
     private static function reconcileDeletions(int $formId, KoboClient $client, string $assetUid): int {
         $liveIds = array_flip($client->getAllSubmissionIds($assetUid));
 
+        // kobo_id es la columna materializada por el sync; NULL (fila anterior al
+        // backfill, o envío sin _id) se conserva por prudencia, como siempre.
         $rows = DB::run(
-            "SELECT id, CAST(JSON_EXTRACT(json_payload, '$._id') AS UNSIGNED) AS kobo_id
-             FROM submissions_cache WHERE form_id = ?",
+            'SELECT id, kobo_id FROM submissions_cache WHERE form_id = ?',
             [$formId]
         )->fetchAll();
 
@@ -251,6 +251,52 @@ class SubmissionSync {
             if ($kid !== 0 && !isset($liveIds[$kid])) $toDrop[] = (int) $r['id'];
         }
         return self::deleteByIds($toDrop);
+    }
+
+    /**
+     * BACKFILL de las columnas materializadas (kobo_id, duration_s, att_count,
+     * has_geo) para filas creadas antes de que existieran. Lo usa cli/migrate.php
+     * al actualizar una instalación; es idempotente y procesa por lotes keyset
+     * (memoria acotada). Devuelve cuántas filas recalculó.
+     */
+    public static function recomputeCacheColumns(): int {
+        // Esquema por formulario (una vez), para duración (claves meta) y geo.
+        $schemas = [];
+        foreach (DB::run('SELECT id, schema_json FROM forms')->fetchAll() as $f) {
+            $schemas[(int) $f['id']] = $f['schema_json'] ? json_decode($f['schema_json'], true) : null;
+        }
+
+        $pdo = DB::conn();
+        $upd = $pdo->prepare(
+            'UPDATE submissions_cache SET kobo_id = ?, duration_s = ?, att_count = ?, has_geo = ? WHERE id = ?'
+        );
+
+        $done   = 0;
+        $lastId = 0;
+        do {
+            $rows = DB::run(
+                'SELECT id, form_id, json_payload FROM submissions_cache WHERE id > ? ORDER BY id LIMIT 500',
+                [$lastId]
+            )->fetchAll();
+            if (!$rows) break;
+            $pdo->beginTransaction();
+            try {
+                foreach ($rows as $r) {
+                    $cc = Derived::cacheColumns(
+                        json_decode($r['json_payload'], true) ?: [],
+                        $schemas[(int) $r['form_id']] ?? null
+                    );
+                    $upd->execute([$cc['kobo_id'], $cc['duration_s'], $cc['att_count'], $cc['has_geo'], (int) $r['id']]);
+                    $done++;
+                }
+                $pdo->commit();
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                throw $e;
+            }
+            $lastId = (int) end($rows)['id'];
+        } while (count($rows) === 500);
+        return $done;
     }
 
     /** Borra filas de submissions_cache por su PK, en lotes. */

@@ -96,6 +96,44 @@ class Derived {
         ];
     }
 
+    /**
+     * Valores para las columnas MATERIALIZADAS de `submissions_cache` (kobo_id,
+     * duration_s, att_count, has_geo), calculados en el sync (y en el backfill de
+     * migrate.php) para que ordenar/filtrar/agregar no parsee el JSON de todo el
+     * formulario. Son valores GLOBALES del envío (independientes de FieldScope):
+     * las vistas que respetan campos ocultos por usuario siguen computando sobre
+     * el payload recortado.
+     *
+     * `has_geo` replica la semántica del `geoExpr` SQL de la tabla de envíos:
+     * `_geolocation[0]` numérico (número JSON real, no cadena) O cualquier campo
+     * geo del esquema con valor no vacío.
+     */
+    public static function cacheColumns(array $payload, ?array $schema): array {
+        $metaF   = $schema['meta'] ?? [];
+        $startTs = self::ts($payload[$metaF['start'] ?? 'start'] ?? ($payload['start'] ?? null));
+        $endTs   = self::ts($payload[$metaF['end'] ?? 'end'] ?? ($payload['end'] ?? null));
+
+        $geo = false;
+        $loc = $payload['_geolocation'][0] ?? null;
+        if (is_int($loc) || is_float($loc)) {
+            $geo = true;
+        } else {
+            foreach (Geo::geoFieldPaths($schema) as $gp) {
+                $v = $payload[$gp] ?? null;
+                if (is_scalar($v) && trim((string) $v) !== '') { $geo = true; break; }
+            }
+        }
+
+        $koboId = isset($payload['_id']) && (int) $payload['_id'] > 0 ? (int) $payload['_id'] : null;
+
+        return [
+            'kobo_id'    => $koboId,
+            'duration_s' => ($startTs !== null && $endTs !== null && $endTs >= $startTs) ? $endTs - $startTs : null,
+            'att_count'  => is_array($payload['_attachments'] ?? null) ? count($payload['_attachments']) : 0,
+            'has_geo'    => $geo ? 1 : 0,
+        ];
+    }
+
     // ---------- internos ----------
 
     /**
