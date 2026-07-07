@@ -49,7 +49,9 @@
     "notifications": "Notifications",
     "myActivity": "My activity",
     "logout": "Log out",
-    "goToProfile": "Go to my profile"
+    "goToProfile": "Go to my profile",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
   },
   "lang": {
     "es": "Spanish",

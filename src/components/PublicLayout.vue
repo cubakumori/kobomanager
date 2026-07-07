@@ -109,7 +109,7 @@ const drawerLink =
         <ThemeToggle />
         <button
           class="km-hamburger"
-          aria-label="Menu"
+          :aria-label="$t('nav.openMenu')"
           @click="showMenu = true"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
@@ -149,7 +149,7 @@ const drawerLink =
       >
         <div class="flex items-center justify-between px-2 py-2">
           <span class="inline-flex items-center gap-2 text-lg font-semibold tracking-tight">KoboManager <DemoBadge variant="dark" /></span>
-          <button class="rounded-lg p-1 text-slate-300 hover:bg-slate-700/60 hover:text-white" aria-label="Cerrar" @click="showMenu = false">
+          <button class="rounded-lg p-1 text-slate-300 hover:bg-slate-700/60 hover:text-white" :aria-label="$t('nav.closeMenu')" @click="showMenu = false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
               <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
             </svg>

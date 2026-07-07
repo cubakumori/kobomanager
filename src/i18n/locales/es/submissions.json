@@ -86,7 +86,10 @@
     "readonlyField": "Campo de solo lectura: puedes verlo pero no editarlo.",
     "backShort": "← Envíos",
     "backQuality": "← Volver a control de calidad",
-    "backQualityShort": "← Control de calidad"
+    "backQualityShort": "← Control de calidad",
+    "unsavedTitle": "Cambios sin guardar",
+    "unsavedBody": "Estás editando este envío y hay cambios sin guardar. Si sales ahora, se perderán.",
+    "unsavedDiscard": "Descartar cambios"
   },
   "review": {
     "pending": "Pendiente",

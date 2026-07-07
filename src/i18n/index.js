@@ -7,28 +7,51 @@ export const DEFAULT_LOCALE = 'es'
 // namespaces completos de primer nivel (p. ej. common.json → common, nav, lang,
 // errors), así que las claves $t('ns.clave') no llevan prefijo de fichero.
 // Añadir un fichero nuevo no requiere tocar este cargador.
-const modules = import.meta.glob('./locales/*/*.json', { eager: true })
-
-const messages = {}
-for (const [path, mod] of Object.entries(modules)) {
-  const locale = path.split('/')[2]
-  messages[locale] ??= {}
-  for (const [ns, entries] of Object.entries(mod.default)) {
-    messages[locale][ns] = { ...messages[locale][ns], ...entries }
-  }
+//
+// Solo el locale por defecto (es) va en el bundle principal; el resto se carga
+// bajo demanda en setLocale() (chunks aparte, ~15-20 KB gz menos al arrancar).
+// El cambio de idioma solo se aplica DESPUÉS de registrar los mensajes, así que
+// nunca se ven claves sin traducir.
+const eagerModules = import.meta.glob('./locales/es/*.json', { eager: true })
+const lazyModules = {
+  en: import.meta.glob('./locales/en/*.json'),
 }
+
+// Une los ficheros de un locale en un único árbol { namespace: {...} }.
+function buildMessages(mods) {
+  const messages = {}
+  for (const mod of mods) {
+    for (const [ns, entries] of Object.entries(mod.default ?? mod)) {
+      messages[ns] = { ...messages[ns], ...entries }
+    }
+  }
+  return messages
+}
+
+const loadedLocales = new Set([DEFAULT_LOCALE])
 
 export const i18n = createI18n({
   legacy: false,
   globalInjection: true,
   locale: DEFAULT_LOCALE,
   fallbackLocale: 'es',
-  messages,
+  messages: { [DEFAULT_LOCALE]: buildMessages(Object.values(eagerModules)) },
 })
 
-/** Cambia el idioma activo de la interfaz (y el atributo lang del documento). */
-export function setLocale(locale) {
+/** Cambia el idioma activo de la interfaz (y el atributo lang del documento).
+ *  Si el locale aún no está cargado, lo descarga antes de aplicarlo; si la
+ *  descarga falla (sin red y sin caché), conserva el idioma actual. */
+export async function setLocale(locale) {
   const l = SUPPORTED_LOCALES.includes(locale) ? locale : DEFAULT_LOCALE
+  if (!loadedLocales.has(l)) {
+    try {
+      const mods = await Promise.all(Object.values(lazyModules[l] ?? {}).map((load) => load()))
+      i18n.global.setLocaleMessage(l, buildMessages(mods))
+      loadedLocales.add(l)
+    } catch {
+      return
+    }
+  }
   i18n.global.locale.value = l
   document.documentElement.setAttribute('lang', l)
 }

@@ -88,7 +88,10 @@ const showCta = computed(() => landingCtaEnabled.value && (!!links.value.repo ||
 
       <div class="relative flex-1">
         <div class="absolute inset-0 -z-10 mx-auto h-72 w-72 self-center rounded-full bg-gradient-to-tr from-primary-400/30 to-accent-400/30 blur-3xl"></div>
-        <img :src="isDark ? bannerNight : bannerDay" alt="KoboManager" class="mx-auto w-full max-w-md drop-shadow-2xl" />
+        <!-- width/height intrínsecos del asset (1000×686 en ambas variantes): reservan
+             el hueco antes de descargar la imagen (sin CLS); el CSS sigue mandando en
+             el tamaño renderizado. fetchpriority: es la imagen LCP del hero. -->
+        <img :src="isDark ? bannerNight : bannerDay" alt="KoboManager" width="1000" height="686" fetchpriority="high" class="mx-auto w-full max-w-md drop-shadow-2xl" />
       </div>
     </main>
 

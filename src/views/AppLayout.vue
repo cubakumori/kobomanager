@@ -77,7 +77,7 @@ const schemaMissing = computed(() =>
           </button>
           <button
             class="km-hamburger"
-            aria-label="Menu"
+            :aria-label="$t('nav.openMenu')"
             @click="open = true"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">

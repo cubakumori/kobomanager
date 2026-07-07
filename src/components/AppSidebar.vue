@@ -54,7 +54,7 @@ const linkActive = 'bg-primary-600 text-white'
         </button>
         <button
           class="rounded-lg p-1 text-slate-300 hover:bg-slate-700/60 hover:text-white lg:hidden"
-          aria-label="Cerrar menú"
+          :aria-label="$t('nav.closeMenu')"
           @click="emit('navigate')"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">

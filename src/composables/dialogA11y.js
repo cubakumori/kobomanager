@@ -10,9 +10,31 @@ const FOCUSABLE = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',')
 
+// Bloqueo del scroll del documento mientras haya diálogos abiertos. Contador a
+// nivel de módulo porque pueden solaparse (p. ej. ConfirmDialog sobre otro modal):
+// al pasar de 0→1 se guarda el overflow previo y se pone 'hidden'; al volver a 0
+// se restaura. activate/deactivate ya van emparejados (flag `active`).
+let openDialogs = 0
+let prevOverflow = ''
+
+function lockScroll() {
+  if (openDialogs++ === 0) {
+    prevOverflow = document.documentElement.style.overflow
+    document.documentElement.style.overflow = 'hidden'
+  }
+}
+
+function unlockScroll() {
+  if (openDialogs > 0 && --openDialogs === 0) {
+    document.documentElement.style.overflow = prevOverflow
+    prevOverflow = ''
+  }
+}
+
 /**
  * Accesibilidad para diálogos y drawers:
  *   - Cerrar con la tecla Escape.
+ *   - Bloquear el scroll del documento mientras el diálogo esté abierto.
  *   - Focus trap: Tab/Shift+Tab circulan dentro del contenedor.
  *   - Al abrir, el foco entra en el contenedor (o su primer elemento enfocable);
  *     al cerrar, se devuelve al elemento que tenía el foco antes (p. ej. el botón
@@ -64,6 +86,7 @@ export function useDialogA11y(containerRef, onClose, openRef = null) {
   const activate = async () => {
     if (active) return
     active = true
+    lockScroll()
     prevFocused = document.activeElement
     document.addEventListener('keydown', onKeydown, true)
     await nextTick()
@@ -78,6 +101,7 @@ export function useDialogA11y(containerRef, onClose, openRef = null) {
   const deactivate = () => {
     if (!active) return
     active = false
+    unlockScroll()
     document.removeEventListener('keydown', onKeydown, true)
     if (prevFocused && typeof prevFocused.focus === 'function') prevFocused.focus()
     prevFocused = null

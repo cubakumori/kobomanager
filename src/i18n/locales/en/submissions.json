@@ -86,7 +86,10 @@
     "readonlyField": "Read-only field: you can see it but not edit it.",
     "backShort": "← Submissions",
     "backQuality": "← Back to quality control",
-    "backQualityShort": "← Quality control"
+    "backQualityShort": "← Quality control",
+    "unsavedTitle": "Unsaved changes",
+    "unsavedBody": "You are editing this submission and there are unsaved changes. If you leave now, they will be lost.",
+    "unsavedDiscard": "Discard changes"
   },
   "review": {
     "pending": "Pending",

@@ -1,16 +1,19 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, defineAsyncComponent, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter, RouterLink } from 'vue-router'
+import { useRoute, useRouter, onBeforeRouteLeave, onBeforeRouteUpdate, RouterLink } from 'vue-router'
 import api from '../services/api'
 import { apiError } from '../stores/auth'
+import { confirmDialog } from '../composables/confirm'
 import { makeLabeler } from '../composables/labels'
 import { useDemoMode } from '../composables/appConfig'
 import { useDerivedFormat } from '../composables/derived'
 import ReviewBadge from '../components/ReviewBadge.vue'
-import LeafletMap from '../components/LeafletMap.vue'
 import AttachmentsGallery from '../components/AttachmentsGallery.vue'
 import Skeleton from '../components/Skeleton.vue'
+
+// Leaflet solo se descarga si el envío tiene ubicación (chunk aparte).
+const LeafletMap = defineAsyncComponent(() => import('../components/LeafletMap.vue'))
 
 const { t } = useI18n()
 const { summaryRows } = useDerivedFormat()
@@ -173,6 +176,29 @@ async function submitReview(status) {
     reviewing.value = false
   }
 }
+
+// --- Confirmación al abandonar una edición con cambios ---
+// Anterior/Siguiente y Volver navegan (el watch de subId descarta la edición);
+// si hay diferencias respecto al original (misma comparación que saveEdit), se
+// pide confirmación antes de dejar la página o cambiar de envío.
+function hasUnsavedChanges() {
+  if (!editing.value) return false
+  const original = Object.fromEntries(editableFields.value.map(([k, v]) => [k, fmt(v)]))
+  return Object.entries(editForm.value).some(([k, v]) => v !== original[k])
+}
+
+async function confirmLeaveEdit() {
+  if (!hasUnsavedChanges()) return true
+  return confirmDialog({
+    title: t('detail.unsavedTitle'),
+    message: t('detail.unsavedBody'),
+    confirmText: t('detail.unsavedDiscard'),
+    danger: true,
+  })
+}
+
+onBeforeRouteUpdate(() => confirmLeaveEdit())
+onBeforeRouteLeave(() => confirmLeaveEdit())
 
 // Al cambiar de envío (prev/siguiente) recargar y volver arriba; salir de edición.
 watch(() => route.params.subId, () => {

@@ -1,14 +1,18 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, defineAsyncComponent, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { publicApi } from '../services/api'
 import { i18n, setLocale } from '../i18n'
 import { makeLabeler } from '../composables/labels'
-import LeafletMap from '../components/LeafletMap.vue'
 import AttachmentsGallery from '../components/AttachmentsGallery.vue'
-import StatsPanels from '../components/StatsPanels.vue'
+import Skeleton from '../components/Skeleton.vue'
 import { useTableFreeze, useTableHeaderLines } from '../composables/appConfig'
+
+// Leaflet y Chart.js solo se descargan si el enlace expone mapa/estadísticas
+// (chunks aparte; ambos componentes se renderizan bajo v-if).
+const LeafletMap = defineAsyncComponent(() => import('../components/LeafletMap.vue'))
+const StatsPanels = defineAsyncComponent(() => import('../components/StatsPanels.vue'))
 
 const { t } = useI18n()
 const { freezeFirst } = useTableFreeze()
@@ -127,6 +131,17 @@ async function loadList(page = 1) {
   }
 }
 
+// Búsqueda con debounce (como la tabla interna); Enter sigue disparando al momento.
+let searchTimer
+watch(search, () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => loadList(1), 300)
+})
+function searchNow() {
+  clearTimeout(searchTimer)
+  loadList(1)
+}
+
 // ---------- detalle ----------
 const detail = ref(null)
 const detailLoading = ref(false)
@@ -239,7 +254,7 @@ onMounted(loadMeta)
     </header>
 
     <main class="mx-auto w-full max-w-5xl flex-1 px-5 py-6">
-      <div v-if="loading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
+      <Skeleton v-if="loading" variant="lines" :lines="6" />
 
       <!-- Enlace inválido / caducado -->
       <div v-else-if="fatal" class="rounded-xl bg-white px-6 py-12 text-center shadow-sm ring-1 ring-slate-200">
@@ -280,7 +295,7 @@ onMounted(loadMeta)
         <!-- Detalle de un envío -->
         <section v-if="currentSub && meta.expose_detail" class="space-y-5">
           <button class="text-sm text-primary-600 hover:underline" @click="go({ sub: undefined })">{{ $t('share.back') }}</button>
-          <div v-if="detailLoading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
+          <Skeleton v-if="detailLoading" variant="lines" :lines="8" />
           <template v-else-if="detail">
             <header>
               <h1 class="text-xl font-semibold tracking-tight text-slate-900">{{ $t('share.detailTitle') }}</h1>
@@ -341,7 +356,7 @@ onMounted(loadMeta)
 
           <!-- Estadísticas -->
           <template v-if="view === 'stats'">
-            <div v-if="statsLoading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
+            <Skeleton v-if="statsLoading" variant="cards" :count="4" />
             <StatsPanels v-else-if="stats" :stats="stats" />
             <p v-else class="rounded-xl bg-white px-5 py-8 text-center text-sm text-slate-400 ring-1 ring-slate-200">
               {{ $t('stats.noData') }}
@@ -350,7 +365,7 @@ onMounted(loadMeta)
 
           <!-- Mapa -->
           <template v-else-if="view === 'map'">
-            <div v-if="mapLoading" class="text-sm text-slate-500">{{ $t('common.loading') }}</div>
+            <Skeleton v-if="mapLoading" variant="lines" :lines="4" />
             <LeafletMap
               v-else-if="points.length"
               :features="features"
@@ -370,7 +385,7 @@ onMounted(loadMeta)
                 v-model="search"
                 :placeholder="$t('share.search')"
                 class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
-                @keyup.enter="loadList(1)"
+                @keyup.enter="searchNow"
               />
             </div>
 
@@ -388,7 +403,7 @@ onMounted(loadMeta)
                 <tbody class="divide-y divide-slate-100">
                   <tr v-for="it in list.items" :key="it.submission_uid" class="group hover:bg-slate-50">
                     <td class="whitespace-nowrap px-4 py-3 text-slate-500" :class="freezeFirst() ? 'sticky left-0 z-10 bg-white group-hover:bg-slate-50' : ''">{{ it.submitted_at }}</td>
-                    <td v-for="c in columns" :key="c" class="px-4 py-3 text-slate-800">{{ labeler.value(c, it.data[c]) }}</td>
+                    <td v-for="c in columns" :key="c" class="max-w-xs truncate whitespace-nowrap px-4 py-3 text-slate-800" :title="labeler.value(c, it.data[c])">{{ labeler.value(c, it.data[c]) }}</td>
                     <td v-if="meta.expose_detail" class="px-4 py-3 text-right">
                       <button class="text-sm font-medium text-primary-600 hover:underline" @click="go({ sub: it.submission_uid })">
                         {{ $t('share.viewDetail') }}

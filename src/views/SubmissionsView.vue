@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, RouterLink } from 'vue-router'
 import api from '../services/api'
@@ -360,16 +360,36 @@ watch(search, () => {
   }, 300)
 })
 
+// Mientras el watcher de formId restaura preferencias, el de abajo no debe
+// recargar (esa carga ya la hace el propio watcher de formId).
+let suppressPrefsReload = false
+
 // Filtro de revisión, orden y tamaño de página: recargar desde la primera página
 // (y recordar la elección para la próxima visita).
 watch([reviewFilter, sort, perPage], () => {
+  if (suppressPrefsReload) return // el watcher de formId ya recarga (una sola vez)
   saveViewPrefs()
   page.value = 1
   load()
 })
 
-// Al cambiar de formulario, re-inicializar las preferencias de columnas.
-watch(formId, () => { prefsForm = null; orderedCols.value = []; visibleCols.value = []; loadAdvFilter(); loadViewPrefs() })
+// Al cambiar de formulario (atrás/adelante del navegador entre formularios),
+// re-inicializar preferencias y recargar la tabla. Si loadViewPrefs() cambia
+// orden/filtro/página, el watcher de arriba se dispararía además de esta carga:
+// el flag lo silencia durante este flush (nextTick corre después de los watchers
+// encolados) y así solo hay UNA petición.
+watch(formId, async () => {
+  suppressPrefsReload = true
+  prefsForm = null
+  orderedCols.value = []
+  visibleCols.value = []
+  loadAdvFilter()
+  loadViewPrefs()
+  page.value = 1
+  load()
+  await nextTick()
+  suppressPrefsReload = false
+})
 
 function go(p) {
   if (p < 1 || p > totalPages.value) return
