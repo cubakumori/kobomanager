@@ -40,6 +40,40 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 - [ ] **Export CSV del drill-down de infracciones**: descargar la lista de envíos
       marcados (uid, encuestador, tiempos, banderas, estado) para llevarla a la
       reunión con el equipo de campo — mismo patrón del export existente.
+- [ ] **Índice de riesgo por encuestador y equipo** *(detección heurística/probabilística
+      de fabricación — «curbstoning»; su propio hito, candidato a 1.23.0)*. Va más allá de
+      las banderas por-envío actuales: agrega señales **relativas a los pares** en un índice
+      que **prioriza a quién hacer *back-check*** (re-entrevista de verificación).
+      Decisiones de diseño acordadas (jul-2026):
+      - **Por encuestador Y por equipo.** El de equipo NO es la media de sus miembros (eso
+        diluye al tramposo): es «¿cuántos miembros superan el umbral de sospecha / cuál es
+        el peor?» + señales genuinamente de equipo (distribución del equipo vs el *pool* de
+        todos los equipos).
+      - **Siempre desglosado y explicado, nunca un score opaco.** Al expandir un
+        encuestador se ven sus componentes con su **valor real, la mediana del equipo y una
+        frase en lenguaje llano** de qué significa y su posible explicación inocente. Aviso
+        metodológico destacado en la propia UI: **señal para priorizar verificaciones, no
+        prueba**; necesita volumen para tener sentido.
+      - **Config por formulario, opt-in, VACÍO por defecto = sin índice** (a diferencia de
+        los umbrales de duración, que arrancan en 4/NULL/4: las banderas de tiempo son
+        inocuas de fábrica, pero una «puntuación de sospecha» por persona exige opt-in
+        deliberado). Incluye un **N mínimo** de encuestas por encuestador/equipo; por
+        debajo, «datos insuficientes» (no se puntúa). La página de control **invita a
+        definirlo** cuando está vacío. Columna(s) nuevas en `forms` → SchemaCheck + nota de
+        upgrade. Sin default global (heredar «vacío» ya es el comportamiento deseado).
+      - **Fase 1 (sobre la caché actual, sin datos extra):** *percentmatch* (similitud de
+        respuestas entre envíos del mismo encuestador — la señal principal del curbstoning;
+        O(n²) por encuestador → acotar con muestreo/tope y mostrarlo bien); outliers
+        relativos a los pares (tasa de «no sabe»/saltos por debajo del equipo,
+        straight-lining / baja varianza, distribución de respuestas vs el *pool* por
+        chi²/KS); preferencia de dígitos / Benford en campos numéricos; productividad
+        (entrevistas/día); y clustering GPS si hay geo. Cada métrica z-scoreada vs los pares
+        y combinada en el índice.
+      - **Fase 2 (opcional, lift mayor):** sincronizar el **`audit` de Kobo** (tiempo por
+        pregunta) — pero NO viene en el JSON del envío: es un `audit.csv` **adjunto por
+        envío**, y solo existe si el formulario añadió la pregunta de tipo `audit` en su
+        XLSForm. Requiere descargar y parsear ese attachment por envío (sync más pesado +
+        almacenamiento); condicionado a que el formulario lo recoja.
 - [ ] **Control de calidad en enlaces compartibles** (`expose_quality`): que un
       enlace de solo lectura pueda exponer la página de QC, para que un **líder de
       equipo de encuestación** verifique los errores de su gente sin cuenta en la app.
