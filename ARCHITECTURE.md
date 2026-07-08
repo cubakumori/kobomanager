@@ -433,7 +433,30 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   `RowScope`/`FieldScope` like `lib/Stats` (a hidden team field drops the team level); the page
   requires `can_view`, the batch button `can_validate` on a non‑archived form. Entry points: a
   button next to the stats team breakdown (internal view only — share links never expose it) and
-  the submission table's actions.
+  the submission table's actions. `lib/Quality` also returns a **`review_summary`**: submission
+  counts per review status (pending/on-hold/approved/rejected) by team → enumerator over **all**
+  received submissions (scope‑independent), so an already‑reviewed enumerator still shows up
+  (`QualityView` renders it with counts and %).
+- **Risk index** (`lib/Risk.php`, `v1/forms/risk.php`, view `RiskView.vue` at `forms/{id}/risk`,
+  `can_view`): heuristic fabrication ("curbstoning") detection that aggregates **peer‑relative**
+  signals into an index prioritising who to back‑check. **Opt‑in** per form via `forms.risk_min_n`
+  (the minimum submissions per enumerator/team to be scored; `NULL` = index off — the endpoint
+  returns `enabled: false` and the view shows an empty state inviting configuration). One
+  streaming pass over `submissions_cache` (`FieldScope::apply` per row like `lib/Stats`), grouped
+  by team → enumerator via `stats_team_field`/`stats_enumerator_field`; the review‑status scope
+  reuses `qc_scope`. Signals: **percentmatch** (per‑enumerator answer similarity — mean of each
+  submission's best pairwise match; O(n²) bounded by a `PM_SAMPLE=200` sample, reported), skips /
+  "don't know" rate, straight‑lining, answer‑distribution TVD vs. peers and (team level) vs. the
+  pool of teams, Benford first‑digit TVD, productivity (interviews/day) and GPS clustering. Each
+  metric is z‑scored **robustly** (median/MAD, so the cheater can't inflate their own baseline)
+  against the enumerator's **team peers**; only positive z contributes to the weighted index
+  (percentmatch dominant). Team index is not the members' mean but "how many are over the suspicion
+  threshold + the worst" plus the team's distributional outlier. Never opaque: the response carries,
+  per component, the value, the peer median and the z/level for a plain‑language UI, plus a
+  methodological warning (signal to prioritise, not proof; needs volume). Metrics self‑gate on data
+  availability (Benford needs numeric volume, GPS needs geo, percentmatch ≥2 content submissions).
+  Read‑only; respects `RowScope`/`FieldScope`. **Phase 2** (Kobo `audit.csv` per‑submission timing)
+  and a persisted weekly history are deferred (see ROADMAP).
 - **Search** (`lib/SubmissionSearch.php`, M4a): submission‑table search no longer does a `LIKE`
   over the whole JSON. `textFor()` builds a plain‑text projection of the answer **values**
   (skipping `_*` metadata keys) into the indexed `submissions_cache.search_text` column,

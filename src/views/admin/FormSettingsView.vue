@@ -33,6 +33,8 @@ const qcMaxDuration = ref('')
 const qcMinGap = ref('')
 // Sensibilidad de la señal de duplicados (nº de respuestas de contenido; '' = desactivada).
 const qcDupMinAnswers = ref('')
+// Índice de riesgo: N mínimo de encuestas por encuestador/equipo ('' = índice desactivado, opt-in).
+const riskMinN = ref('')
 
 async function load() {
   loading.value = true
@@ -55,6 +57,7 @@ async function load() {
     qcMaxDuration.value = cfg.data.data.qc_max_duration ?? ''
     qcMinGap.value = cfg.data.data.qc_min_gap ?? ''
     qcDupMinAnswers.value = cfg.data.data.qc_dup_min_answers ?? ''
+    riskMinN.value = cfg.data.data.risk_min_n ?? ''
     fields.value = sf.data.data.fields || []
   } catch (e) {
     error.value = apiError(e, t('formSettings.loadError'))
@@ -110,6 +113,7 @@ async function save() {
       qc_max_duration: minutes(qcMaxDuration.value),
       qc_min_gap: minutes(qcMinGap.value),
       qc_dup_min_answers: minutes(qcDupMinAnswers.value),
+      risk_min_n: minutes(riskMinN.value),
     })
     flash.value = t('formSettings.saved')
   } catch (e) {
@@ -249,6 +253,25 @@ onMounted(load)
             class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
           />
           <span class="mt-1 block text-xs text-slate-400">{{ $t('formSettings.qcDupMinAnswersHint') }}</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Índice de riesgo (opt-in): N mínimo por encuestador/equipo para puntuar -->
+    <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <h2 class="font-semibold text-slate-900">{{ $t('formSettings.riskSection') }}</h2>
+      <p class="mt-1 text-sm text-slate-500">{{ $t('formSettings.riskSectionDesc') }}</p>
+      <div class="mt-4 max-w-xs">
+        <label class="block">
+          <span class="text-sm font-medium text-slate-700">{{ $t('formSettings.riskMinN') }}</span>
+          <input
+            v-model="riskMinN"
+            type="number"
+            min="0"
+            max="100000"
+            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          />
+          <span class="mt-1 block text-xs text-slate-400">{{ $t('formSettings.riskMinNHint') }}</span>
         </label>
       </div>
     </section>

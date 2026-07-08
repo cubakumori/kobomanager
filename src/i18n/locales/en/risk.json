@@ -1,0 +1,61 @@
+{
+  "risk": {
+    "link": "Risk index",
+    "qualityLink": "Quality control",
+    "title": "Risk index",
+    "subtitle": "Prioritises which enumerators and teams to back-check (verification re-interview).",
+    "loadError": "Could not load the risk index.",
+    "warningTitle": "A signal to prioritise, not proof",
+    "warningBody": "The index combines statistical signals relative to peers to PRIORITISE who to re-interview. It does not prove fabrication and needs enough volume of submissions per person and per team to be meaningful.",
+    "disabled": "The risk index is not enabled for this form. Turn it on by setting a minimum number of submissions per enumerator/team.",
+    "configure": "Configure the index",
+    "minN": "Minimum N",
+    "scored": "Scored",
+    "insufficient": "{n} with insufficient data",
+    "insufficientChip": "Insufficient data",
+    "noData": "No enumerators with enough submissions to score yet.",
+    "noComponents": "No computable signals for this enumerator.",
+    "harbors": "{n} over threshold",
+    "index": "Index",
+    "peerMedian": "Team median",
+    "colComponent": "Signal",
+    "colValue": "Value",
+    "colLevel": "Level",
+    "meters": "{n} m",
+    "perDay": "{n}/day",
+    "level": {
+      "low": "Low",
+      "elevated": "Elevated",
+      "high": "High"
+    },
+    "metric": {
+      "percentmatch": "Answer similarity",
+      "straightlining": "Straight-lining",
+      "distribution": "Distribution vs. peers",
+      "skip_rate": "Skips / «don't know»",
+      "benford": "Digit preference (Benford)",
+      "productivity": "Productivity",
+      "gps_cluster": "GPS clustering",
+      "team_distribution": "Team distribution"
+    },
+    "explain": {
+      "percentmatch": "Their submissions look very much alike. May indicate copied answers, or a short questionnaire where matching is normal.",
+      "straightlining": "Tends to pick the same option across many questions. May be fast filling, or questions that genuinely share an answer.",
+      "distribution": "Their answers are distributed differently from the rest. May indicate bias or fabrication, or a genuinely different population.",
+      "skip_rate": "Leaves blanks or answers «don't know» at a different rate than peers. Very high can be laziness; very low, filling everything without asking.",
+      "benford": "The leading digit of their numbers departs from what's expected in natural data. May indicate made-up figures, or magnitudes that don't follow the pattern.",
+      "productivity": "Completes many more interviews per day than peers. May indicate fabricated records, or simply longer working hours.",
+      "gps_cluster": "Their GPS points are very close together. May indicate surveys filled from one spot, or a small work area.",
+      "team_distribution": "The team's answer distribution departs from that of the other teams. May indicate a team problem, or a different area."
+    },
+    "reason": {
+      "no_repeated_content": "Not enough submissions with answers to compare.",
+      "no_select_one": "The form has no single-choice questions.",
+      "no_schema": "The form schema is missing.",
+      "no_numeric": "The form has no numeric questions.",
+      "no_numeric_volume": "Not enough numeric values.",
+      "no_geo": "Submissions carry no coordinates.",
+      "insufficient_data": "Insufficient data for this signal."
+    }
+  }
+}

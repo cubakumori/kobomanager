@@ -70,7 +70,15 @@ native validation status.
   rate. Per-form thresholds (with a one-click **suggestion** from the form's real p5/p95
   durations), a configurable review-status scope (by default only pending / on-hold
   submissions are reported), and a one-click batch **"put the N non-admissible on
-  hold"** over the normal review flow.
+  hold"** over the normal review flow. A companion **review-status summary** breaks down
+  approved / pending / on-hold / rejected counts (and %) by team and enumerator.
+- **Risk index** (fabrication / "curbstoning" detection, opt-in per form): a heuristic
+  index that aggregates **peer-relative** signals — answer similarity (*percentmatch*),
+  skips/"don't know", straight-lining, answer distribution vs. peers and vs. the team
+  pool, digit preference (Benford), productivity and GPS clustering — to **prioritise who
+  to back-check**. Never an opaque score: every enumerator expands into its components
+  with the real value, the team median and a plain-language explanation. It is a signal
+  to prioritise verifications, **not proof**, and needs volume.
 - **Map** of submission geopoints.
 
 **Data**

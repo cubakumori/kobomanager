@@ -341,6 +341,38 @@ class Quality {
             ];
         }
 
+        // Resumen de estado de revisión por equipo→encuestador (pendiente/aprobado/en
+        // espera/rechazado). A diferencia de las banderas, cuenta TODOS los envíos
+        // recibidos y NO depende del alcance por estado: así un encuestador cuyos envíos
+        // ya se aprobaron/rechazaron SIGUE apareciendo (resuelve el «al revisar desaparece
+        // todo» de la lista de infracciones). Los porcentajes los formatea el frontend.
+        $reviewSummary = [];
+        foreach ($groups as $tKey => $enums) {
+            $teamRow = [
+                'name'        => $tKey === '—' ? '—'
+                    : (($labelsOn && isset($teamOptMap[$tKey])) ? $teamOptMap[$tKey] : $tKey),
+                'total'       => 0,
+                'status'      => $zeroStatus = array_fill_keys(ValidationStatus::STATUSES, 0),
+                'enumerators' => [],
+            ];
+            foreach ($enums as $eKey => $entries) {
+                $st = array_fill_keys(ValidationStatus::STATUSES, 0);
+                foreach ($entries as $e) $st[$e['st']]++;
+                $n = count($entries);
+                $teamRow['total'] += $n;
+                foreach (ValidationStatus::STATUSES as $s) $teamRow['status'][$s] += $st[$s];
+                $teamRow['enumerators'][] = [
+                    'name'   => $eKey === '—' ? '—'
+                        : (($labelsOn && isset($enumOptMap[$eKey])) ? $enumOptMap[$eKey] : $eKey),
+                    'total'  => $n,
+                    'status' => $st,
+                ];
+            }
+            usort($teamRow['enumerators'], fn($a, $b) => $b['total'] <=> $a['total']);
+            $reviewSummary[] = $teamRow;
+        }
+        usort($reviewSummary, fn($a, $b) => $b['total'] <=> $a['total']);
+
         $out = [
             'total'      => $total,
             // TODOS los envíos recibidos (en el RowScope del usuario, sin filtrar por
@@ -350,6 +382,8 @@ class Quality {
             'flagged'    => $flaggedTotal,
             'flags'      => $flagsTotal,
             'by_week'    => $byWeek,
+            // Resumen de estado de revisión por equipo/encuestador (todos los envíos).
+            'review_summary' => $reviewSummary,
             // Señal «GPS clavado»: activa solo si algún envío trae coordenadas.
             'gps_enabled'     => $gpsSeen,
             'gps_min_repeats' => self::GPS_MIN_REPEATS,

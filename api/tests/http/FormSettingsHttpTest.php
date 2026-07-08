@@ -65,6 +65,17 @@ final class FormSettingsHttpTest extends HttpTestCase
         $res = $this->request('PATCH', "admin/forms/$formId", ['qc_dup_min_answers' => 99], $jar);
         $this->assertSame(422, $res['status']);
 
+        // Índice de riesgo: null por defecto (opt-in), editable, 0 = desactivado, rango.
+        $res = $this->request('GET', "admin/forms/$formId", null, $jar);
+        $this->assertNull($res['json']['data']['risk_min_n']);
+        $res = $this->request('PATCH', "admin/forms/$formId", ['risk_min_n' => 30], $jar);
+        $this->assertSame(200, $res['status'], $res['raw']);
+        $this->assertSame(30, $res['json']['data']['risk_min_n']);
+        $res = $this->request('PATCH', "admin/forms/$formId", ['risk_min_n' => 0], $jar);
+        $this->assertNull($res['json']['data']['risk_min_n']);
+        $res = $this->request('PATCH', "admin/forms/$formId", ['risk_min_n' => 999999], $jar);
+        $this->assertSame(422, $res['status']);
+
         // Ni borrar el suyo, ni leer el de otro formulario.
         $res = $this->request('DELETE', "admin/forms/$formId", null, $jar);
         $this->assertSame(403, $res['status']);

@@ -40,8 +40,8 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 - [ ] **Export CSV del drill-down de infracciones**: descargar la lista de envíos
       marcados (uid, encuestador, tiempos, banderas, estado) para llevarla a la
       reunión con el equipo de campo — mismo patrón del export existente.
-- [ ] **Índice de riesgo por encuestador y equipo** *(detección heurística/probabilística
-      de fabricación — «curbstoning»; su propio hito, candidato a 1.23.0)*. Va más allá de
+- [x] **Índice de riesgo por encuestador y equipo — Fase 1 entregada en 1.23.0**
+      *(detección heurística/probabilística de fabricación — «curbstoning»)*. Va más allá de
       las banderas por-envío actuales: agrega señales **relativas a los pares** en un índice
       que **prioriza a quién hacer *back-check*** (re-entrevista de verificación).
       Decisiones de diseño acordadas (jul-2026):
@@ -74,6 +74,39 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
         envío**, y solo existe si el formulario añadió la pregunta de tipo `audit` en su
         XLSForm. Requiere descargar y parsear ese attachment por envío (sync más pesado +
         almacenamiento); condicionado a que el formulario lo recoja.
+      - **Fase 1 ENTREGADA en 1.23.0** (lib/Risk, endpoint `forms/{id}/risk`, RiskView,
+        config `risk_min_n`, compañero de resumen de estado en QC). **Pendiente:** la
+        Fase 2 (audit.csv de Kobo, arriba) y el **histórico semanal persistido** (abajo).
+        Detalle de lo entregado:
+        - Config = una sola columna `forms.risk_min_n` (`INT UNSIGNED NULL DEFAULT NULL`):
+          NULL = índice desactivado (opt-in); un valor = activado + N mínimo. Las métricas
+          se auto-activan según los datos (Benford solo con numéricos, GPS solo con geo,
+          percentmatch con ≥2 envíos). Umbral de sospecha z = constante del código.
+        - Cómputo en `lib/Risk.php` (gemela de `lib/Quality`): pasada única `DB::stream` +
+          `FieldScope::apply` **por fila** (patrón de Stats, no gating crudo) para que los
+          campos ocultos no entren en firmas ni señales. Desglose equipo→encuestador con
+          `stats_team_field`/`stats_enumerator_field`.
+        - **percentmatch** (señal principal): media-de-máximos por encuestador (+ p90 y nº
+          de pares > umbral en el drill-down), denominador = campos donde **ambos**
+          respondieron, muestreo/tope de **200** envíos por encuestador (recorte reportado,
+          nunca silencioso).
+        - Resto de señales agregables online; **z robusto (mediana/MAD)** vs pares =
+          compañeros de **equipo**; índice combinado con percentmatch dominante, acotado,
+          **siempre junto a los componentes**. Índice de equipo = «alberga sospechosos»
+          (nº sobre umbral + peor miembro) + distribución del equipo vs *pool* de equipos.
+        - Endpoint `GET forms/{id}/risk` (wiring de `quality.php`: Auth, RowScope/FieldScope,
+          alcance por estado vía `qc_scope`) + ruta en `index.php` + `RiskView.vue`.
+        - **Compañero del mismo hito (no opt-in): resumen de estado de revisión por
+          equipo→encuestador (nº y %)** — cubre el hueco de que al aprobar/rechazar «desaparece
+          todo» de QC (es filtro de `qc_scope`, no pérdida: las banderas son física y siguen
+          ahí; un resumen que cuenta TODOS los estados persiste por definición). El dato ya lo
+          computa `Stats` (`by_team[].enumerators[].status`); falta **presentarlo + %**. Va en
+          la página de QC; la vista de Riesgo muestra además una columna de % rechazado/en espera.
+        - **Diferido — histórico semanal persistido:** solo aportaría para lo *mutable* (estado
+          de revisión y z relativos a pares); lo *físico* (banderas QC, percentmatch, Benford,
+          GPS) ya da un histórico fiel calculado en vivo (la tendencia `by_week[]` de QC ya lo
+          es). Un subsistema de snapshots (tabla + cron + retención + UI de series) es un frente
+          propio; se difiere y encaja con la Fase 2.
 - [ ] **Control de calidad en enlaces compartibles** (`expose_quality`): que un
       enlace de solo lectura pueda exponer la página de QC, para que un **líder de
       equipo de encuestación** verifique los errores de su gente sin cuenta en la app.

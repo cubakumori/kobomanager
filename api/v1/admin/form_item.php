@@ -6,13 +6,14 @@
  *            estadísticas por equipo → encuestador y los umbrales del control
  *            de calidad.
  *   PATCH  { stats_team_field?, stats_enumerator_field?, qc_min_duration?,
- *            qc_max_duration?, qc_min_gap?, qc_dup_min_answers? } → guarda esa
- *            config. Clave AUSENTE = no tocar; presente (aunque sea null) = fijar.
- *            Los campos de equipo son rutas del esquema o null
+ *            qc_max_duration?, qc_min_gap?, qc_dup_min_answers?, risk_min_n? } →
+ *            guarda esa config. Clave AUSENTE = no tocar; presente (aunque sea null) =
+ *            fijar. Los campos de equipo son rutas del esquema o null
  *            (`stats_enumerator_field` null = usar `_submitted_by`). Los umbrales
  *            son minutos (entero ≥ 1) o null = comprobación desactivada.
  *            `qc_dup_min_answers` es nº de respuestas (1–50) o null = señal de
- *            duplicados desactivada.
+ *            duplicados desactivada. `risk_min_n` es el N mínimo del índice de riesgo
+ *            (1–100000) o null = índice desactivado (opt-in).
  *   DELETE → SOLO admin: elimina el formulario de KoboManager y su caché (no toca
  *            Kobo). Si sigue cumpliendo el filtro de sincronización, una nueva
  *            sincronización de la cuenta volverá a traerlo.
@@ -35,7 +36,7 @@ if ($method === 'DELETE') {
 
 $form = DB::run(
     'SELECT id, name, schema_json, stats_team_field, stats_enumerator_field,
-            qc_min_duration, qc_max_duration, qc_min_gap, qc_dup_min_answers
+            qc_min_duration, qc_max_duration, qc_min_gap, qc_dup_min_answers, risk_min_n
      FROM forms WHERE id = ?',
     [$formId]
 )->fetch();
@@ -53,6 +54,9 @@ $qcOut = fn(array $f): array => [
 // Sensibilidad de duplicados: nº de respuestas (no minutos) o null = desactivada.
 $dupOut = fn(array $f): ?int => $f['qc_dup_min_answers'] !== null ? (int) $f['qc_dup_min_answers'] : null;
 
+// N mínimo del índice de riesgo (opt-in): nº de encuestas o null = desactivado.
+$riskOut = fn(array $f): ?int => $f['risk_min_n'] !== null ? (int) $f['risk_min_n'] : null;
+
 if ($method === 'GET') {
     ErrorResponse::ok([
         'id'                     => (int) $form['id'],
@@ -60,6 +64,7 @@ if ($method === 'GET') {
         'stats_team_field'       => $form['stats_team_field'],
         'stats_enumerator_field' => $form['stats_enumerator_field'],
         'qc_dup_min_answers'     => $dupOut($form),
+        'risk_min_n'             => $riskOut($form),
     ] + $qcOut($form));
 }
 
@@ -118,16 +123,32 @@ if ($method === 'PATCH') {
         }
     }
 
+    // Índice de riesgo: N mínimo de encuestas por encuestador/equipo (1–100000),
+    // 0 o vacío = índice desactivado (opt-in).
+    $risk = $riskOut($form);
+    if (array_key_exists('risk_min_n', $body)) {
+        $v = $body['risk_min_n'];
+        if ($v === null || $v === '') {
+            $risk = null;
+        } elseif (!is_numeric($v) || (int) $v != $v || (int) $v < 0 || (int) $v > 100000) {
+            ErrorResponse::send('VALIDATION_ERROR', 'N mínimo del índice de riesgo no válido: entero entre 1 y 100000, 0 o vacío');
+        } else {
+            $risk = (int) $v === 0 ? null : (int) $v;
+        }
+    }
+
     DB::run(
         'UPDATE forms SET stats_team_field = ?, stats_enumerator_field = ?,
-                qc_min_duration = ?, qc_max_duration = ?, qc_min_gap = ?, qc_dup_min_answers = ?
+                qc_min_duration = ?, qc_max_duration = ?, qc_min_gap = ?, qc_dup_min_answers = ?,
+                risk_min_n = ?
          WHERE id = ?',
-        [$team, $enum, $qc['qc_min_duration'], $qc['qc_max_duration'], $qc['qc_min_gap'], $dup, $formId]
+        [$team, $enum, $qc['qc_min_duration'], $qc['qc_max_duration'], $qc['qc_min_gap'], $dup, $risk, $formId]
     );
     $out = [
         'stats_team_field'       => $team,
         'stats_enumerator_field' => $enum,
         'qc_dup_min_answers'     => $dup,
+        'risk_min_n'             => $risk,
     ] + $qc;
     Audit::log($user['id'], 'update_form_stats', $formId, null, $out);
     ErrorResponse::ok($out);

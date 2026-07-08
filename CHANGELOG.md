@@ -4,6 +4,43 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.23.0] - 2026-07-08
+
+Índice de riesgo por encuestador y equipo (detección heurística de fabricación,
+«curbstoning») y resumen de estado de revisión por equipo/encuestador.
+
+> **Nota de actualización (esquema).** Tras subir el código, ejecuta **una vez**
+> `php api/cli/migrate.php`: añade `forms.risk_min_n` (interruptor opt-in del índice
+> de riesgo; `NULL` = índice desactivado, que es el comportamiento por defecto para
+> los formularios existentes). Sin shell, el `ALTER`:
+> `ALTER TABLE forms ADD COLUMN risk_min_n INT UNSIGNED NULL DEFAULT NULL AFTER qc_dup_min_answers`.
+
+### Añadido
+
+- **Índice de riesgo por encuestador y equipo** (`forms/<id>/risk`). Detección
+  **heurística** de fabricación de encuestas que agrega señales **relativas a los
+  pares** en un índice que **prioriza a quién hacer back-check** (re-entrevista de
+  verificación). Es **opt-in por formulario** (`forms.risk_min_n`, el N mínimo de
+  encuestas por encuestador/equipo para puntuar; vacío = desactivado) y **nunca un
+  score opaco**: cada encuestador se despliega en sus componentes con el **valor real,
+  la mediana del equipo y una frase en lenguaje llano** de qué significa y su posible
+  explicación inocente. Aviso metodológico destacado: **es una señal para priorizar
+  verificaciones, no una prueba**, y necesita volumen. Señales de la Fase 1 (sobre la
+  caché actual, sin datos extra): **percentmatch** (similitud de respuestas entre los
+  envíos del mismo encuestador — la señal principal; muestreada y acotada), tasa de
+  **saltos/«no sabe»**, **straight-lining** (baja varianza), **distribución vs. los
+  pares** y **vs. el pool de equipos**, **Benford**/preferencia de dígitos en
+  numéricos, **productividad** (entrevistas/día) y **agrupación GPS** si hay geo. Cada
+  métrica se z-scorea de forma **robusta** (mediana/MAD) frente a los compañeros de
+  equipo; el índice de equipo NO es la media de sus miembros, sino «cuántos superan el
+  umbral de sospecha + el peor» más su distribución frente al resto de equipos. Las
+  métricas se auto-activan según los datos disponibles.
+- **Control de calidad: resumen de estado de revisión por equipo → encuestador**
+  (nº y %). Cuenta **todos** los envíos por estado (pendiente/en espera/aprobado/
+  rechazado) y **no depende del alcance**: un encuestador cuyos envíos ya se aprobaron
+  o rechazaron **sigue apareciendo** (a diferencia de la lista de infracciones, que
+  solo muestra el alcance por estado configurado).
+
 ## [1.22.0] - 2026-07-07
 
 Añadidos de análisis en Estadísticas y Control de calidad.

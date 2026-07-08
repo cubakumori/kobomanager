@@ -312,6 +312,34 @@ final class QualityTest extends DbTestCase
 
     // ---- Tendencia semanal ----
 
+    public function testReviewSummaryCountsAllStatusesRegardlessOfScope(): void
+    {
+        $formId = $this->makeForm();
+        $admin  = $this->makeUser('admin');
+        $this->timed($formId, 'ana', '09:00:00', '09:30:00', ['team' => 'norte']); // pendiente
+        $held = $this->timed($formId, 'ana', '10:00:00', '10:30:00', ['team' => 'norte']);
+        $appr = $this->timed($formId, 'ana', '11:00:00', '11:30:00', ['team' => 'norte']);
+        // luis: único envío, RECHAZADO → fuera del alcance por estado, pero debe seguir
+        // apareciendo en el resumen de estado.
+        $rej = $this->timed($formId, 'luis', '09:00:00', '09:30:00', ['team' => 'sur']);
+        ValidationStatus::recordReview($held, $admin, 'app', 'on_hold');
+        ValidationStatus::recordReview($appr, $admin, 'app', 'approved');
+        ValidationStatus::recordReview($rej, $admin, 'app', 'rejected');
+
+        // Alcance de reporte = solo pendientes/en espera (luis no se lista en infracciones).
+        $q = Quality::compute($formId, null, null, null, 'es', 'team', 'enum', null, null, null, ['pending', 'on_hold']);
+
+        $rs = [];
+        foreach ($q['review_summary'] as $t) $rs[$t['name']] = $t;
+        // norte: ana con las 3 (1 pendiente, 1 en espera, 1 aprobada).
+        $this->assertSame(['pending' => 1, 'approved' => 1, 'on_hold' => 1, 'rejected' => 0], $rs['norte']['status']);
+        $this->assertSame(3, $rs['norte']['total']);
+        $this->assertSame('ana', $rs['norte']['enumerators'][0]['name']);
+        // sur: luis sigue presente pese a estar rechazado (y fuera del alcance de infracciones).
+        $this->assertSame(['pending' => 0, 'approved' => 0, 'on_hold' => 0, 'rejected' => 1], $rs['sur']['status']);
+        $this->assertSame('luis', $rs['sur']['enumerators'][0]['name']);
+    }
+
     public function testByWeekTrendCountsAllReceived(): void
     {
         $formId = $this->makeForm();

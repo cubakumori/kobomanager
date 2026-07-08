@@ -1,0 +1,61 @@
+{
+  "risk": {
+    "link": "Índice de riesgo",
+    "qualityLink": "Control de calidad",
+    "title": "Índice de riesgo",
+    "subtitle": "Prioriza a qué encuestadores y equipos conviene hacer verificación (back-check).",
+    "loadError": "No se pudo cargar el índice de riesgo.",
+    "warningTitle": "Señal para priorizar, no una prueba",
+    "warningBody": "El índice combina señales estadísticas relativas a los compañeros para PRIORIZAR a quién re-entrevistar. No demuestra fraude y necesita suficiente volumen de encuestas por persona y por equipo para tener sentido.",
+    "disabled": "El índice de riesgo no está activado para este formulario. Actívalo definiendo un número mínimo de encuestas por encuestador/equipo.",
+    "configure": "Configurar el índice",
+    "minN": "N mínimo",
+    "scored": "Puntuados",
+    "insufficient": "{n} con datos insuficientes",
+    "insufficientChip": "Datos insuficientes",
+    "noData": "Aún no hay encuestadores con suficientes envíos para puntuar.",
+    "noComponents": "Sin señales calculables para este encuestador.",
+    "harbors": "{n} sobre el umbral",
+    "index": "Índice",
+    "peerMedian": "Mediana del equipo",
+    "colComponent": "Señal",
+    "colValue": "Valor",
+    "colLevel": "Nivel",
+    "meters": "{n} m",
+    "perDay": "{n}/día",
+    "level": {
+      "low": "Bajo",
+      "elevated": "Elevado",
+      "high": "Alto"
+    },
+    "metric": {
+      "percentmatch": "Similitud de respuestas",
+      "straightlining": "Respuestas en línea recta",
+      "distribution": "Distribución vs. pares",
+      "skip_rate": "Saltos / «no sabe»",
+      "benford": "Preferencia de dígitos (Benford)",
+      "productivity": "Productividad",
+      "gps_cluster": "Agrupación GPS",
+      "team_distribution": "Distribución del equipo"
+    },
+    "explain": {
+      "percentmatch": "Sus encuestas se parecen mucho entre sí. Puede indicar copiar respuestas, o un cuestionario corto donde coincidir es normal.",
+      "straightlining": "Tiende a marcar la misma opción en muchas preguntas. Puede ser relleno rápido, o preguntas que de verdad comparten respuesta.",
+      "distribution": "Sus respuestas se reparten de forma distinta al resto. Puede indicar sesgo o fabricación, o una población realmente diferente.",
+      "skip_rate": "Deja en blanco o responde «no sabe» a un ritmo distinto al de sus pares. Muy alto puede ser desgana; muy bajo, rellenar todo sin preguntar.",
+      "benford": "La primera cifra de sus números se aleja de lo esperado en datos naturales. Puede indicar cifras inventadas, o magnitudes que no siguen ese patrón.",
+      "productivity": "Completa muchas más entrevistas por día que sus pares. Puede indicar registros fabricados, o simplemente más horas de trabajo.",
+      "gps_cluster": "Sus puntos GPS están muy juntos. Puede indicar encuestas rellenadas desde un mismo sitio, o un área de trabajo pequeña.",
+      "team_distribution": "La distribución de respuestas del equipo se aleja de la del resto de equipos. Puede indicar un problema de equipo, o una zona distinta."
+    },
+    "reason": {
+      "no_repeated_content": "No hay suficientes envíos con respuestas para comparar.",
+      "no_select_one": "El formulario no tiene preguntas de opción única.",
+      "no_schema": "Falta el esquema del formulario.",
+      "no_numeric": "El formulario no tiene preguntas numéricas.",
+      "no_numeric_volume": "No hay suficientes valores numéricos.",
+      "no_geo": "Los envíos no traen coordenadas.",
+      "insufficient_data": "Datos insuficientes para esta señal."
+    }
+  }
+}

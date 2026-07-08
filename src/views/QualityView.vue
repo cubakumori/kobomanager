@@ -164,6 +164,19 @@ const thresholds = computed(() => {
 // Solo hay nivel de equipo si el formulario lo tiene configurado (y es visible).
 const hasTeams = computed(() => !!q.value?.team_field)
 
+// ---- Resumen de estado de revisión por equipo/encuestador (todos los envíos) ----
+// Cuenta TODOS los estados y NO depende del alcance: un encuestador ya revisado sigue
+// apareciendo (a diferencia de la lista de infracciones, que solo muestra el alcance).
+const REVIEW_STATUSES = ['pending', 'on_hold', 'approved', 'rejected']
+const REVIEW_CLS = {
+  pending: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
+  on_hold: 'bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300',
+  approved: 'bg-success-100 text-success-700 dark:bg-success-900/40 dark:text-success-300',
+  rejected: 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300',
+}
+const reviewSummary = computed(() => q.value?.review_summary ?? [])
+const pctOf = (n, total) => (total > 0 ? formatPctNumber((n * 100) / total, locale.value) + ' %' : '—')
+
 // Zona horaria de inicio/fin (misma nota que «Actividad por hora» en Estadísticas).
 const tzNote = computed(() => {
   const tz = q.value?.timezone
@@ -183,12 +196,20 @@ onMounted(load)
         >
           {{ $t('stats.back') }}
         </RouterLink>
-        <RouterLink
-          :to="{ name: 'stats', params: { id: formId } }"
-          class="text-sm font-medium text-primary-600 hover:underline"
-        >
-          {{ $t('stats.qualityStatsLink') }}
-        </RouterLink>
+        <div class="flex items-center gap-3">
+          <RouterLink
+            :to="{ name: 'risk', params: { id: formId } }"
+            class="text-sm font-medium text-primary-600 hover:underline"
+          >
+            {{ $t('risk.link') }}
+          </RouterLink>
+          <RouterLink
+            :to="{ name: 'stats', params: { id: formId } }"
+            class="text-sm font-medium text-primary-600 hover:underline"
+          >
+            {{ $t('stats.qualityStatsLink') }}
+          </RouterLink>
+        </div>
       </div>
       <h1 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
         {{ $t('stats.qualityTitle') }}{{ q ? ' · ' + q.form.name : '' }}
@@ -259,6 +280,57 @@ onMounted(load)
         <p class="mb-3 text-xs text-slate-400">{{ $t('stats.qualityTrendDesc') }}</p>
         <div class="h-56"><StatsChart type="bar" :data="trendData" :options="trendOptions" /></div>
       </div>
+
+      <!-- Resumen de estado de revisión por equipo → encuestador (todos los envíos) -->
+      <section v-if="reviewSummary.length" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+        <h2 class="font-semibold text-slate-900">{{ $t('stats.qualityReviewSummary') }}</h2>
+        <p class="mb-3 text-xs text-slate-400">{{ $t('stats.qualityReviewSummaryDesc') }}</p>
+        <div class="space-y-3">
+          <details
+            v-for="(team, i) in reviewSummary"
+            :key="i"
+            class="overflow-hidden rounded-lg ring-1 ring-slate-200 dark:ring-slate-700"
+            :open="!hasTeams || reviewSummary.length <= 3"
+          >
+            <summary
+              class="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 bg-slate-50 px-4 py-2 hover:bg-slate-100 dark:bg-slate-800/40"
+              :class="{ 'pointer-events-none': !hasTeams }"
+            >
+              <span class="font-medium text-slate-800">{{ hasTeams ? team.name : $t('stats.qualityAllEnumerators') }}</span>
+              <span class="text-xs text-slate-500">{{ $t('stats.colVolume') }}: {{ team.total }}</span>
+              <span class="ml-auto flex flex-wrap gap-1.5 text-xs">
+                <span v-for="s in REVIEW_STATUSES" :key="s" v-show="team.status[s]" class="rounded-full px-2 py-0.5" :class="REVIEW_CLS[s]">
+                  {{ $t('review.' + s) }}: <span class="font-semibold">{{ team.status[s] }}</span>
+                </span>
+              </span>
+            </summary>
+            <div class="overflow-x-auto border-t border-slate-100 dark:border-slate-700">
+              <table class="w-full whitespace-nowrap text-left text-sm">
+                <thead class="text-xs uppercase tracking-wider text-slate-400">
+                  <tr>
+                    <th class="px-4 py-1.5">{{ $t('stats.colEnumerator') }}</th>
+                    <th class="px-4 py-1.5">{{ $t('stats.colVolume') }}</th>
+                    <th v-for="s in REVIEW_STATUSES" :key="s" class="px-4 py-1.5">{{ $t('review.' + s) }}</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                  <tr v-for="(e, j) in team.enumerators" :key="j">
+                    <td class="px-4 py-1.5 font-medium text-slate-700">{{ e.name }}</td>
+                    <td class="px-4 py-1.5 text-slate-600">{{ e.total }}</td>
+                    <td v-for="s in REVIEW_STATUSES" :key="s" class="px-4 py-1.5" :class="e.status[s] ? 'text-slate-700' : 'text-slate-300'">
+                      <template v-if="e.status[s]">
+                        {{ e.status[s] }}
+                        <span class="text-xs text-slate-400">· {{ pctOf(e.status[s], e.total) }}</span>
+                      </template>
+                      <template v-else>—</template>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+      </section>
 
       <!-- Marcado en lote sobre el flujo de revisión existente -->
       <div

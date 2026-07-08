@@ -102,6 +102,8 @@
     "qualityGpsHint": "GPS clavado: mismo punto exacto en ≥{n} envíos del mismo encuestador.",
     "qualityTrend": "Tendencia",
     "qualityTrendDesc": "% de encuestas no admitidas por semana, sobre todo lo recibido.",
+    "qualityReviewSummary": "Estado de revisión por equipo/encuestador",
+    "qualityReviewSummaryDesc": "Cuenta TODOS los envíos por estado (también los ya aprobados o rechazados): un encuestador ya revisado sigue apareciendo aquí.",
     "qualityUntimed": "{n} encuesta(s) sin marcas de inicio/fin válidas: no se pueden evaluar.",
     "qualityBatchTitle": "Marcar en espera",
     "qualityBatchHint": "Puedes marcar «En espera» las encuestas no admitidas para revisarlas con calma.",

@@ -128,6 +128,12 @@ class SchemaCheck {
         // señal con la sensibilidad de fábrica en las filas existentes.
         ['table' => 'forms', 'column' => 'qc_dup_min_answers', 'since' => '1.22.0',
          'fix' => "ALTER TABLE forms ADD COLUMN qc_dup_min_answers INT UNSIGNED NULL DEFAULT 2 AFTER qc_min_gap"],
+
+        // Interruptor opt-in del índice de riesgo (N mínimo por encuestador/equipo;
+        // NULL = índice desactivado). Sin DEFAULT distinto de NULL: heredar «vacío» ya es
+        // el comportamiento deseado en las filas existentes (el índice no se activa solo).
+        ['table' => 'forms', 'column' => 'risk_min_n', 'since' => '1.23.0',
+         'fix' => "ALTER TABLE forms ADD COLUMN risk_min_n INT UNSIGNED NULL DEFAULT NULL AFTER qc_dup_min_answers"],
     ];
 
     /** Columnas cuyo backfill requiere el recálculo PHP de migrate.php (no basta SQL). */

@@ -96,6 +96,15 @@ CREATE TABLE IF NOT EXISTS forms (
     qc_max_duration     INT UNSIGNED NULL DEFAULT NULL,
     qc_min_gap          INT UNSIGNED NULL DEFAULT 4,
     qc_dup_min_answers  INT UNSIGNED NULL DEFAULT 2,
+    -- ÍNDICE DE RIESGO por encuestador/equipo (detección heurística de fabricación,
+    -- página forms/<id>/risk). Interruptor OPT-IN único: N mínimo de encuestas por
+    -- encuestador/equipo para puntuar. NULL = índice DESACTIVADO (a diferencia de los
+    -- umbrales de QC, que son inocuos de fábrica, una «puntuación de sospecha» por
+    -- persona exige opt-in deliberado). Por debajo del N: «datos insuficientes» (no se
+    -- puntúa). Las métricas se auto-activan según los datos disponibles (Benford solo con
+    -- numéricos, GPS solo con geo, percentmatch con ≥2 envíos). Lo pone un admin desde
+    -- los ajustes del formulario; la sincronización no lo toca.
+    risk_min_n          INT UNSIGNED NULL DEFAULT NULL,
     sync_status         ENUM('pending', 'success', 'error') DEFAULT 'pending',
     last_sync_error     TEXT,
     active              TINYINT(1) DEFAULT 1,

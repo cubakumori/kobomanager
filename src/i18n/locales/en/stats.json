@@ -102,6 +102,8 @@
     "qualityGpsHint": "Pinned GPS: exact same point in ≥{n} submissions from the same enumerator.",
     "qualityTrend": "Trend",
     "qualityTrendDesc": "% of non-admissible surveys per week, out of everything received.",
+    "qualityReviewSummary": "Review status by team/enumerator",
+    "qualityReviewSummaryDesc": "Counts ALL submissions by status (including already approved or rejected): an already-reviewed enumerator still appears here.",
     "qualityUntimed": "{n} survey(s) without valid start/end marks: they cannot be evaluated.",
     "qualityBatchTitle": "Put on hold",
     "qualityBatchHint": "You can put the non-admissible surveys on hold to review them calmly.",
