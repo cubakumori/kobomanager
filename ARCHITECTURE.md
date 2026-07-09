@@ -419,7 +419,9 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   (including `dup_min_answers`). A companion endpoint **`GET /forms/{id}/quality/suggest`**
   (`quality_suggest.php`, admin or `can_settings`) proposes admissible min/max duration in
   minutes from the p5/p95 percentiles of the form's real `duration_s` (respecting row scope; no
-  suggestion under 10 timed submissions) — it only pre‑fills the settings form, never saves.
+  suggestion under 10 timed submissions) — it only pre‑fills the settings form, never saves. It
+  also returns `enumerator_median` / `enumerators` (median submissions per enumerator), which the
+  settings page surfaces as an informative hint for the risk index's minimum-N (never auto‑filled).
   Start/end render in `APP_TIMEZONE` via `Derived::formatLocal`. A global **scope**
   setting (`qc_scope`: `pending_hold` default | `all`, Settings → Tables tab) decides which
   submissions get *reported*: by default only pending/on-hold ones (approved/rejected already
