@@ -71,7 +71,8 @@ native validation status.
   durations), a configurable review-status scope (by default only pending / on-hold
   submissions are reported), and a one-click batch **"put the N non-admissible on
   hold"** over the normal review flow. A companion **review-status summary** breaks down
-  approved / pending / on-hold / rejected counts (and %) by team and enumerator.
+  approved / pending / on-hold / rejected counts (and %) by team and enumerator. The
+  flagged drill-down is **downloadable** (CSV or `.xlsx`) to take to the field-team meeting.
 - **Risk index** (fabrication / "curbstoning" detection, opt-in per form): a heuristic
   index that aggregates **peer-relative** signals — answer similarity (*percentmatch*),
   skips/"don't know", straight-lining, answer distribution vs. peers and vs. the team
@@ -79,6 +80,10 @@ native validation status.
   to back-check**. Never an opaque score: every enumerator expands into its components
   with the real value, the team median and a plain-language explanation. It is a signal
   to prioritise verifications, **not proof**, and needs volume.
+- **Review comments panel**: all of a form's review comments (made in the app or imported
+  from Kobo) on one page, grouped by team → enumerator, with date, status, author, text and
+  a direct link to each submission — so you can see what's been commented without opening
+  submissions one by one. Filter by status or comment text.
 - **Map** of submission geopoints.
 
 **Data**

@@ -37,85 +37,27 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       señal dudosa con cuestionarios cortos y umbral difícil. La variante fuerte,
       **duplicados exactos de respuestas** (a nivel de formulario, solo contenido),
       quedó **entregada en 1.22.0**.
-- [x] **Export del drill-down de infracciones — entregado en 1.24.0**: descarga la
-      lista de envíos marcados (equipo, encuestador, uid, tiempos, banderas, estado)
-      para llevarla a la reunión con el equipo de campo, en CSV y .xlsx, con el mismo
-      alcance que la página (`GET forms/<id>/quality/export`).
-- [x] **Panel de comentarios de revisión — entregado en 1.25.0**: página por formulario
-      (`forms/<id>/comments`) que reúne los comentarios de `submission_reviews` (app o
-      Kobo) agrupados por equipo → encuestador, con fecha/estado/autor/texto y enlace al
-      envío; filtros por estado y texto; respeta RowScope/FieldScope; interno (no en
-      enlaces públicos). Resuelve el no poder ver qué envíos tienen comentario sin abrirlos.
-      **Fase 2 (idea, sin construir)**: comentarios *generales / por grupo / por miembro*
-      desligados de un envío (requiere tabla nueva `form_comments`, UI de escritura,
-      permisos y decisiones de edición/borrado); hito propio cuando haya demanda.
-- [x] **Índice de riesgo por encuestador y equipo — Fase 1 entregada en 1.23.0**
-      *(detección heurística/probabilística de fabricación — «curbstoning»)*. Va más allá de
-      las banderas por-envío actuales: agrega señales **relativas a los pares** en un índice
-      que **prioriza a quién hacer *back-check*** (re-entrevista de verificación).
-      Decisiones de diseño acordadas (jul-2026):
-      - **Por encuestador Y por equipo.** El de equipo NO es la media de sus miembros (eso
-        diluye al tramposo): es «¿cuántos miembros superan el umbral de sospecha / cuál es
-        el peor?» + señales genuinamente de equipo (distribución del equipo vs el *pool* de
-        todos los equipos).
-      - **Siempre desglosado y explicado, nunca un score opaco.** Al expandir un
-        encuestador se ven sus componentes con su **valor real, la mediana del equipo y una
-        frase en lenguaje llano** de qué significa y su posible explicación inocente. Aviso
-        metodológico destacado en la propia UI: **señal para priorizar verificaciones, no
-        prueba**; necesita volumen para tener sentido.
-      - **Config por formulario, opt-in, VACÍO por defecto = sin índice** (a diferencia de
-        los umbrales de duración, que arrancan en 4/NULL/4: las banderas de tiempo son
-        inocuas de fábrica, pero una «puntuación de sospecha» por persona exige opt-in
-        deliberado). Incluye un **N mínimo** de encuestas por encuestador/equipo; por
-        debajo, «datos insuficientes» (no se puntúa). La página de control **invita a
-        definirlo** cuando está vacío. Columna(s) nuevas en `forms` → SchemaCheck + nota de
-        upgrade. Sin default global (heredar «vacío» ya es el comportamiento deseado).
-      - **Fase 1 (sobre la caché actual, sin datos extra):** *percentmatch* (similitud de
-        respuestas entre envíos del mismo encuestador — la señal principal del curbstoning;
-        O(n²) por encuestador → acotar con muestreo/tope y mostrarlo bien); outliers
-        relativos a los pares (tasa de «no sabe»/saltos por debajo del equipo,
-        straight-lining / baja varianza, distribución de respuestas vs el *pool* por
-        chi²/KS); preferencia de dígitos / Benford en campos numéricos; productividad
-        (entrevistas/día); y clustering GPS si hay geo. Cada métrica z-scoreada vs los pares
-        y combinada en el índice.
-      - **Fase 2 (opcional, lift mayor):** sincronizar el **`audit` de Kobo** (tiempo por
-        pregunta) — pero NO viene en el JSON del envío: es un `audit.csv` **adjunto por
-        envío**, y solo existe si el formulario añadió la pregunta de tipo `audit` en su
-        XLSForm. Requiere descargar y parsear ese attachment por envío (sync más pesado +
-        almacenamiento); condicionado a que el formulario lo recoja.
-      - **Fase 1 ENTREGADA en 1.23.0** (lib/Risk, endpoint `forms/{id}/risk`, RiskView,
-        config `risk_min_n`, compañero de resumen de estado en QC). **Pendiente:** la
-        Fase 2 (audit.csv de Kobo, arriba) y el **histórico semanal persistido** (abajo).
-        Detalle de lo entregado:
-        - Config = una sola columna `forms.risk_min_n` (`INT UNSIGNED NULL DEFAULT NULL`):
-          NULL = índice desactivado (opt-in); un valor = activado + N mínimo. Las métricas
-          se auto-activan según los datos (Benford solo con numéricos, GPS solo con geo,
-          percentmatch con ≥2 envíos). Umbral de sospecha z = constante del código.
-        - Cómputo en `lib/Risk.php` (gemela de `lib/Quality`): pasada única `DB::stream` +
-          `FieldScope::apply` **por fila** (patrón de Stats, no gating crudo) para que los
-          campos ocultos no entren en firmas ni señales. Desglose equipo→encuestador con
-          `stats_team_field`/`stats_enumerator_field`.
-        - **percentmatch** (señal principal): media-de-máximos por encuestador (+ p90 y nº
-          de pares > umbral en el drill-down), denominador = campos donde **ambos**
-          respondieron, muestreo/tope de **200** envíos por encuestador (recorte reportado,
-          nunca silencioso).
-        - Resto de señales agregables online; **z robusto (mediana/MAD)** vs pares =
-          compañeros de **equipo**; índice combinado con percentmatch dominante, acotado,
-          **siempre junto a los componentes**. Índice de equipo = «alberga sospechosos»
-          (nº sobre umbral + peor miembro) + distribución del equipo vs *pool* de equipos.
-        - Endpoint `GET forms/{id}/risk` (wiring de `quality.php`: Auth, RowScope/FieldScope,
-          alcance por estado vía `qc_scope`) + ruta en `index.php` + `RiskView.vue`.
-        - **Compañero del mismo hito (no opt-in): resumen de estado de revisión por
-          equipo→encuestador (nº y %)** — cubre el hueco de que al aprobar/rechazar «desaparece
-          todo» de QC (es filtro de `qc_scope`, no pérdida: las banderas son física y siguen
-          ahí; un resumen que cuenta TODOS los estados persiste por definición). El dato ya lo
-          computa `Stats` (`by_team[].enumerators[].status`); falta **presentarlo + %**. Va en
-          la página de QC; la vista de Riesgo muestra además una columna de % rechazado/en espera.
-        - **Diferido — histórico semanal persistido:** solo aportaría para lo *mutable* (estado
-          de revisión y z relativos a pares); lo *físico* (banderas QC, percentmatch, Benford,
-          GPS) ya da un histórico fiel calculado en vivo (la tendencia `by_week[]` de QC ya lo
-          es). Un subsistema de snapshots (tabla + cron + retención + UI de series) es un frente
-          propio; se difiere y encaja con la Fase 2.
+- [ ] **Comentarios generales / por grupo / por miembro** *(Fase 2 del panel de
+      comentarios; la Fase 1 —panel de los comentarios de revisión existentes por
+      envío— se entregó en 1.25.0)*: comentarios **desligados de un envío** (una nota
+      para todo un equipo o un encuestador). Es un tipo de dato nuevo: tabla
+      `form_comments` (`scope_type: general|team|enumerator`, `scope_value`, autor,
+      cuerpo, fecha) → SchemaCheck + nota de upgrade, UI de escritura, permisos de
+      escritura (¿`can_validate`?) y decisiones de edición/borrado. Hito propio cuando
+      haya demanda.
+- [ ] **Índice de riesgo — Fase 2 e histórico** *(la Fase 1 —percentmatch, señales
+      relativas a pares, índice explicado por encuestador y equipo, opt-in
+      `forms.risk_min_n`— se entregó en 1.23.0)*:
+      - **Fase 2 (lift mayor):** sincronizar el **`audit` de Kobo** (tiempo por pregunta).
+        NO viene en el JSON del envío: es un `audit.csv` **adjunto por envío**, y solo
+        existe si el formulario añadió la pregunta tipo `audit` en su XLSForm. Requiere
+        descargar y parsear ese attachment por envío (sync más pesado + almacenamiento);
+        condicionado a que el formulario lo recoja.
+      - **Histórico semanal persistido:** solo aportaría para lo *mutable* (estado de
+        revisión y z relativos a pares); lo *físico* (banderas QC, percentmatch, Benford,
+        GPS) ya da un histórico fiel calculado en vivo (`by_week[]` de QC). Un subsistema de
+        snapshots (tabla + cron + retención + UI de series) es un frente propio; encaja con
+        la Fase 2.
 - [ ] **Control de calidad en enlaces compartibles** (`expose_quality`): que un
       enlace de solo lectura pueda exponer la página de QC, para que un **líder de
       equipo de encuestación** verifique los errores de su gente sin cuenta en la app.
@@ -127,11 +69,6 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       **ofusque/omita** los identificadores según su config) + vista pública + i18n.
       **Diferido a demanda real** una vez el repo sea público; si alguien lo pide, se
       implementa.
-- [x] **Exportación a Excel (`.xlsx`) nativa** — **entregada en 1.22.0**. Escritor propio
-      `lib/XlsxWriter` (sin dependencias; un ZIP de XML vía `ZipArchive`, en streaming),
-      formato predeterminado del modal de exportación. Resuelve de raíz el «no separa en
-      columnas» (columnas reales, sin delimitador; el CSV estándar con «,» que Excel
-      europeo —que espera «;»— puede no separar).
 
 ---
 
@@ -200,13 +137,7 @@ Quedan como ideas reabribles si aparece una necesidad real.
 > afiliación, el dominio propio, `SECURITY.md`, el release «deploy-ready» y el instalador
 > CLI también están entregados (ver `CHANGELOG.md`). Lo que queda abajo es pulido posterior.
 
-- [x] **Semilla y reset de la demo gestionados por la app** *(idea del usuario en el QA,
-      jun-2026; entregado en 1.10.0)*: botón admin «Generar semilla de la demo»
-      (Ajustes; export solo-datos a `DEMO_SEED_PATH`, bloqueado con la demo encendida)
-      + cron `api/cron/demo_reset.php` auto-regulado por `DEMO_RESET_MINUTES` que
-      restaura en UNA transacción (conserva sesiones vivas y mensajes de contacto;
-      se niega con `DEMO_MODE` apagado). Todo el SQL manual desapareció de DEMO.md
-      (mysqldump, TRUNCATEs de privacidad y cron SQL).
+Sin pendientes en esta sección.
 
 ---
 
@@ -214,13 +145,9 @@ Quedan como ideas reabribles si aparece una necesidad real.
 
 - [ ] **«Organizaciones que usan KoboManager»** — acápite/escaparate en la landing o en
       `/apoyar` con las organizaciones que lo usan (con su permiso). Para cuando haya varias.
-- [x] **Export/import de la BD desde Configuración → Base de datos** *(idea del usuario,
-      jul-2026; entregado en 1.13.0)*: copia de seguridad descargable (completa o solo
-      configuración) + restauración por subida de archivo, sobre el motor común
-      `lib/DbSnapshot` compartido con la semilla de la demo; la pestaña «Base de datos»
-      pasó a ser fija. Extensión futura anotada abajo (usuarios/permisos portables).
 - [ ] **Export/import PARTICULAR de usuarios y permisos entre instancias** *(extensión
-      de 1.13.0)*: clonar el equipo (usuarios + permisos por formulario) a otra
+      del export/import de la BD entregado en 1.13.0)*: clonar el equipo (usuarios +
+      permisos por formulario) a otra
       instancia exige re-mapear ids por claves naturales (usuario→email,
       formulario→`kobo_asset_uid`) — diseño propio, no un recorte del backup general.
       Para cuando haya demanda real.
@@ -322,7 +249,6 @@ Quedan como ideas reabribles si aparece una necesidad real.
 - [ ] **Permiso `can_delete`** cuando exista la funcionalidad de borrado de envíos.
 - [ ] **Permisos por período de tiempo** (acceso a envíos de un rango de fechas).
 - [ ] **2FA** — la tabla `user_sessions` ya está preparada para soportarlo.
-- [ ] **Exportación XLSX nativa** (diferida por la filosofía «sin dependencias»; hoy hay CSV).
 
 ---
 
