@@ -102,14 +102,19 @@ That choice is deliberate:
   the real sync produces, so the app cannot tell the difference.
 
 ```bash
-# php api/cli/seed_demo.php <form_id> <count> [--days N] [--reviews PCT] [--clear]
-php api/cli/seed_demo.php 1 40 --days 90 --reviews 40
-php api/cli/seed_demo.php 2 30 --days 60            # a second form
+# php api/cli/seed_demo.php <form_id> <count> [--days N] [--reviews PCT] [--comments PCT] [--risk N] [--clear]
+php api/cli/seed_demo.php 1 40 --days 90 --reviews 40 --comments 50 --risk 5
+php api/cli/seed_demo.php 2 30 --days 60                        # a second form
 ```
 
 - `--days N` spreads submissions across the last N days (default 60).
 - `--reviews PCT` marks that percentage as reviewed (approved/on-hold/rejected) so the
   review badges and the "review status" chart are not empty (default 35; `0` = none).
+- `--comments PCT` gives that percentage of the reviews a status-appropriate example
+  comment (default 50; `0` = none), so the **review-comments panel** is not empty.
+- `--risk N` turns on the **risk index** for the form by setting `forms.risk_min_n = N`
+  (omit = leave as is). For a meaningful per-enumerator breakdown the form also needs
+  `stats_enumerator_field` set (form settings) to a question with a handful of values.
 - `--clear` removes previously seeded rows for that form before inserting. Seeded rows
   carry a `_km_seed: true` marker in their payload, so `--clear` never touches genuine
   submissions you may have entered through Enketo.
@@ -129,14 +134,13 @@ numbers/text, a fraction left blank so the "empty / not empty" filters have data
   inconsistent. Irrelevant for synthetic demo data.
 - **These rows do not exist in Kobo.** This is why a seeded demo must **not** run a sync
   cron — see the warning under *Periodic reset*.
-- **No review comments, risk index off.** Seeded reviews carry a status but **no comment
-  text**, and the **risk index is opt-in** (`forms.risk_min_n` starts empty). So a freshly
-  seeded demo shows an **empty Comments panel** and the risk page in its "set a minimum"
-  state — the two features the landing advertises. To showcase them, before generating the
-  seed (flag off): add a few **review comments** (approve/reject/on-hold with text on some
-  submissions) and set **`risk_min_n`** on a well-populated form (Settings → *Risk index*;
-  the *Suggest* button reports the median submissions per enumerator to pick it). The QC
-  thresholds (`qc_*`) similarly need setting so the quality-control page flags anything.
+- **Showcasing risk and comments.** Use `--comments PCT` (populates the review-comments
+  panel) and `--risk N` (turns on the risk index) so those two landing-advertised pages
+  aren't empty. Two things the seeder can't infer, so set them in **form settings** before
+  generating the seed: `stats_enumerator_field` (so risk / QC / comments group by a real
+  enumerator instead of a single "—" bucket — seeded rows have no `_submitted_by`) and the
+  **`qc_*` thresholds** (so the quality-control page flags something). The *Suggest* button
+  there reports the median submissions per enumerator to pick `risk_min_n`.
 
 ---
 

@@ -27,10 +27,17 @@
  *   --days N       Repartir los envíos en los últimos N días (defecto 60).
  *   --reviews PCT  Marcar como revisado (approved/on_hold/rejected) el PCT % de los
  *                  envíos (defecto 35; 0 = ninguno).
+ *   --comments PCT El PCT % de esas revisiones lleva un comentario de ejemplo acorde al
+ *                  estado (defecto 50; 0 = ninguno). Así el panel de Comentarios no sale
+ *                  vacío en la demo (el sembrado no tiene equivalente en Kobo).
+ *   --risk N       Activar el Índice de riesgo del formulario fijando `forms.risk_min_n`
+ *                  = N (mínimo de encuestas por encuestador para puntuar). Omitido = no se
+ *                  toca. Nota: el desglose por encuestador necesita además que el
+ *                  formulario tenga configurado `stats_enumerator_field` (ajustes del form).
  *   --clear        Borrar primero los envíos sembrados (con `_km_seed`) de ese form.
  *
  * Ejemplo:
- *   php api/cli/seed_demo.php 1 40 --days 90 --reviews 40
+ *   php api/cli/seed_demo.php 1 40 --days 90 --reviews 40 --comments 50 --risk 5
  */
 
 if (PHP_SAPI !== 'cli') {
@@ -54,25 +61,30 @@ $formId = null;
 $count  = null;
 $days   = 60;
 $reviewsPct = 35;
+$commentsPct = 50;
+$riskMinN = null;
 $clear  = false;
 
 $positional = [];
 for ($i = 0; $i < count($args); $i++) {
     $a = $args[$i];
     if ($a === '--clear') { $clear = true; }
-    elseif ($a === '--days')    { $days = (int) ($args[++$i] ?? 0); }
-    elseif ($a === '--reviews') { $reviewsPct = (int) ($args[++$i] ?? 0); }
+    elseif ($a === '--days')     { $days = (int) ($args[++$i] ?? 0); }
+    elseif ($a === '--reviews')  { $reviewsPct = (int) ($args[++$i] ?? 0); }
+    elseif ($a === '--comments') { $commentsPct = (int) ($args[++$i] ?? 0); }
+    elseif ($a === '--risk')     { $riskMinN = (int) ($args[++$i] ?? 0); }
     else { $positional[] = $a; }
 }
 $formId = isset($positional[0]) ? (int) $positional[0] : 0;
 $count  = isset($positional[1]) ? (int) $positional[1] : 0;
 
 if ($formId <= 0 || $count <= 0) {
-    fwrite(STDERR, "Uso: php api/cli/seed_demo.php <form_id> <count> [--days N] [--reviews PCT] [--clear]\n");
+    fwrite(STDERR, "Uso: php api/cli/seed_demo.php <form_id> <count> [--days N] [--reviews PCT] [--comments PCT] [--risk N] [--clear]\n");
     exit(1);
 }
 if ($days < 1)  $days = 1;
-$reviewsPct = max(0, min(100, $reviewsPct));
+$reviewsPct  = max(0, min(100, $reviewsPct));
+$commentsPct = max(0, min(100, $commentsPct));
 
 echo "KoboManager — sembrado de demo\n\n";
 
@@ -289,17 +301,38 @@ if ($reviewsPct > 0 && $seededUids) {
     } else {
         $adminId = (int) $admin['id'];
         $statuses = ['approved', 'approved', 'on_hold', 'rejected']; // sesgo a aprobado
+        // Comentarios de ejemplo acordes al estado (para poblar el panel de Comentarios).
+        $commentsByStatus = [
+            'approved' => ['Correcto, verificado en campo.', 'Sin observaciones.', 'Datos consistentes.', 'OK tras revisión.'],
+            'on_hold'  => ['Pendiente de aclarar con el encuestador.', 'Revisar la duración de la entrevista.', 'A la espera de confirmar el punto GPS.', 'Dudas en una respuesta; en espera.'],
+            'rejected' => ['Faltan fotos del acta.', 'Duración demasiado corta; reasignar.', 'Respuestas incoherentes.', 'GPS fuera de la zona asignada.'],
+        ];
         $howMany  = (int) floor(count($seededUids) * $reviewsPct / 100);
         $pool     = $seededUids;
         shuffle($pool);
         $made = 0;
+        $withComment = 0;
         foreach (array_slice($pool, 0, $howMany) as $uid) {
+            $status  = $statuses[array_rand($statuses)];
+            // El PCT % de las revisiones lleva comentario (texto acorde al estado).
+            $comment = null;
+            if ($commentsPct > 0 && random_int(1, 100) <= $commentsPct) {
+                $pool2   = $commentsByStatus[$status];
+                $comment = $pool2[array_rand($pool2)];
+                $withComment++;
+            }
             // recordReview mantiene también la columna desnormalizada review_status.
-            ValidationStatus::recordReview($uid, $adminId, 'app', $statuses[array_rand($statuses)]);
+            ValidationStatus::recordReview($uid, $adminId, 'app', $status, $comment);
             $made++;
         }
-        ok("Creadas $made revisiones de ejemplo (≈{$reviewsPct}%).");
+        ok("Creadas $made revisiones de ejemplo (≈{$reviewsPct}%), $withComment con comentario.");
     }
+}
+
+// ---------- Índice de riesgo (opt-in) ----------
+if ($riskMinN !== null && $riskMinN >= 1) {
+    DB::run('UPDATE forms SET risk_min_n = ? WHERE id = ?', [$riskMinN, $formId]);
+    ok("Índice de riesgo activado: risk_min_n = $riskMinN.");
 }
 
 // Marca de frescura para que la UI no muestre «Sin sincronizar», y contador de

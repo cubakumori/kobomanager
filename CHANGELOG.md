@@ -16,6 +16,10 @@ Retoques de UX tras la revisión previa al release.
   mínimo con criterio. No rellena ningún campo (es un umbral de juicio, no una magnitud
   física). `GET forms/<id>/quality/suggest` devuelve además `enumerator_median` y
   `enumerators`.
+- **Sembrador de demo** (`api/cli/seed_demo.php`): nuevas opciones `--comments PCT` (da a
+  ese % de las revisiones un comentario de ejemplo acorde al estado, para poblar el panel
+  de Comentarios) y `--risk N` (activa el Índice de riesgo fijando `forms.risk_min_n`). Así
+  una demo recién sembrada muestra las features que la landing anuncia sin retoques a mano.
 
 ### Cambiado
 
