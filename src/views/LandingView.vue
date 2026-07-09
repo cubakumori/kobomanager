@@ -23,9 +23,10 @@ watch(demoMode, (v) => { if (v) showDemoModal.value = true }, { immediate: true 
 const features = [1, 2, 3, 4]
 
 // Sección «Y mucho más»: las capacidades más vendibles como tarjetas destacadas
-// (control de calidad, seguimiento por equipo, permisos por columna y enlaces
-// públicos) y el resto como chips, mismo lenguaje visual verde.
-const highlights = ['featQuality', 'featStats', 'featColumns', 'feat5']
+// (el trío de calidad —control de calidad, índice de riesgo, comentarios— y luego
+// seguimiento por equipo, permisos por columna y enlaces públicos) y el resto como
+// chips, mismo lenguaje visual verde. Seis destacadas = rejilla 3×2 limpia.
+const highlights = ['featQuality', 'featRisk', 'featComments', 'featStats', 'featColumns', 'feat5']
 const chips = ['chipEmail', 'chipLabels', 'chipMap', 'chipCsv', 'chipEdit', 'chipBackup']
 
 // Enlace al repo para la CTA de cierre («monta tu propia instancia»); vacío = oculto.
