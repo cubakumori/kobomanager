@@ -16,6 +16,7 @@ import { usePctFormat } from '../composables/appConfig'
 import Skeleton from '../components/Skeleton.vue'
 import ReviewBadge from '../components/ReviewBadge.vue'
 import StatsChart from '../components/StatsChart.vue'
+import Modal from '../components/Modal.vue'
 
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -27,6 +28,18 @@ const loading = ref(true)
 const error = ref('')
 const flash = ref('')
 const batchBusy = ref(false)
+
+// --- Export del drill-down de infracciones (mismo alcance que la página: el
+// backend reutiliza lib/Quality con el RowScope/FieldScope y el qc_scope global).
+// La única elección por-petición es el formato; la cookie de sesión viaja sola.
+const exportOpen = ref(false)
+const exportFormat = ref('xlsx') // 'xlsx' (columnas nativas) | 'csv'
+
+function doExport() {
+  const fmt = exportFormat.value === 'xlsx' ? '?format=xlsx' : ''
+  window.location.href = `/api/v1/forms/${formId.value}/quality/export${fmt}`
+  exportOpen.value = false
+}
 
 async function load() {
   loading.value = true
@@ -209,6 +222,14 @@ onMounted(load)
           >
             {{ $t('stats.qualityStatsLink') }}
           </RouterLink>
+          <button
+            v-if="q && q.flagged"
+            type="button"
+            class="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50 dark:text-slate-300 dark:ring-slate-600 dark:hover:bg-slate-800"
+            @click="exportOpen = true"
+          >
+            {{ $t('stats.qualityExport') }}
+          </button>
         </div>
       </div>
       <h1 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
@@ -481,5 +502,31 @@ onMounted(load)
         <p v-if="tzNote" class="text-xs text-slate-400">{{ tzNote }}</p>
       </section>
     </template>
+
+    <!-- Modal: exportar el drill-down de infracciones (solo elección de formato) -->
+    <Modal v-if="exportOpen" :title="$t('stats.qualityExportTitle')" @close="exportOpen = false">
+      <div class="space-y-4">
+        <fieldset class="space-y-2">
+          <legend class="mb-1 text-sm font-medium text-slate-700">{{ $t('submissions.exportFormat') }}</legend>
+          <label class="flex items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+            <input type="radio" class="h-4 w-4" name="qc_export_format" value="xlsx" :checked="exportFormat === 'xlsx'" @change="exportFormat = 'xlsx'" />
+            <span class="text-sm text-slate-800">{{ $t('submissions.exportFormatXlsx') }}</span>
+          </label>
+          <label class="flex items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+            <input type="radio" class="h-4 w-4" name="qc_export_format" value="csv" :checked="exportFormat === 'csv'" @change="exportFormat = 'csv'" />
+            <span class="text-sm text-slate-800">{{ $t('submissions.exportFormatCsv') }}</span>
+          </label>
+        </fieldset>
+        <p class="text-xs text-slate-400">{{ $t('stats.qualityExportHint') }}</p>
+        <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
+          <button type="button" class="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100" @click="exportOpen = false">
+            {{ $t('common.cancel') }}
+          </button>
+          <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700" @click="doExport">
+            {{ $t('stats.qualityExport') }}
+          </button>
+        </div>
+      </div>
+    </Modal>
   </div>
 </template>

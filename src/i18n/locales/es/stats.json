@@ -132,6 +132,9 @@
     "qualityScopeLabel": "Alcance",
     "qualityScope_pending_hold": "únicamente pendientes o en espera",
     "qualityScope_all": "todos los envíos",
-    "qualityScopeChange": "Cambiar"
+    "qualityScopeChange": "Cambiar",
+    "qualityExport": "Exportar",
+    "qualityExportTitle": "Exportar infracciones",
+    "qualityExportHint": "Se exporta una fila por envío marcado (equipo, encuestador, tiempos, banderas y estado), respetando el alcance activo."
   }
 }

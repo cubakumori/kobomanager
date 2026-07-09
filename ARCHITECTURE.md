@@ -436,7 +436,13 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   the submission table's actions. `lib/Quality` also returns a **`review_summary`**: submission
   counts per review status (pending/on-hold/approved/rejected) by team → enumerator over **all**
   received submissions (scope‑independent), so an already‑reviewed enumerator still shows up
-  (`QualityView` renders it with counts and %).
+  (`QualityView` renders it with counts and %). The drill‑down is downloadable via
+  **`GET /forms/{id}/quality/export`** (`quality_export.php`, `can_view`): one row per flagged
+  submission (team, enumerator, uid, submitted, start, end, duration s, gap s, flags, review
+  status), in CSV or native `.xlsx` (`?format=csv|xlsx`, same writer as the submissions export —
+  BOM + formula‑injection neutralization for CSV, numeric duration/gap cells for xlsx). It reuses
+  `lib/Quality` verbatim, so it honors the same row/field scope, `qc_scope` and team/enumerator
+  gating as the page; headers and flag/status values follow the user's locale.
 - **Risk index** (`lib/Risk.php`, `v1/forms/risk.php`, view `RiskView.vue` at `forms/{id}/risk`,
   `can_view`): heuristic fabrication ("curbstoning") detection that aggregates **peer‑relative**
   signals into an index prioritising who to back‑check. **Opt‑in** per form via `forms.risk_min_n`

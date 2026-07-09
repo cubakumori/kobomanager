@@ -37,9 +37,10 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       señal dudosa con cuestionarios cortos y umbral difícil. La variante fuerte,
       **duplicados exactos de respuestas** (a nivel de formulario, solo contenido),
       quedó **entregada en 1.22.0**.
-- [ ] **Export CSV del drill-down de infracciones**: descargar la lista de envíos
-      marcados (uid, encuestador, tiempos, banderas, estado) para llevarla a la
-      reunión con el equipo de campo — mismo patrón del export existente.
+- [x] **Export del drill-down de infracciones — entregado en 1.24.0**: descarga la
+      lista de envíos marcados (equipo, encuestador, uid, tiempos, banderas, estado)
+      para llevarla a la reunión con el equipo de campo, en CSV y .xlsx, con el mismo
+      alcance que la página (`GET forms/<id>/quality/export`).
 - [x] **Índice de riesgo por encuestador y equipo — Fase 1 entregada en 1.23.0**
       *(detección heurística/probabilística de fabricación — «curbstoning»)*. Va más allá de
       las banderas por-envío actuales: agrega señales **relativas a los pares** en un índice

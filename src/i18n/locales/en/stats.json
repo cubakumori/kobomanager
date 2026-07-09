@@ -132,6 +132,9 @@
     "qualityScopeLabel": "Scope",
     "qualityScope_pending_hold": "only pending or on hold",
     "qualityScope_all": "all submissions",
-    "qualityScopeChange": "Change"
+    "qualityScopeChange": "Change",
+    "qualityExport": "Export",
+    "qualityExportTitle": "Export flagged submissions",
+    "qualityExportHint": "Exports one row per flagged submission (team, enumerator, times, flags and status), respecting the active scope."
   }
 }

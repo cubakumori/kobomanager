@@ -4,6 +4,25 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.24.0] - 2026-07-09
+
+Export del drill-down de infracciones del Control de calidad para llevar a la
+reunión con el equipo de campo.
+
+### Añadido
+
+- **Export del drill-down de infracciones** (`GET forms/<id>/quality/export`).
+  Descarga la lista de envíos marcados por el Control de calidad —una **fila por
+  infracción**— con **equipo, encuestador, UID, enviado, inicio, fin, duración (s),
+  hueco (s), banderas y estado de revisión**. Ofrece **CSV** (UTF-8 con BOM,
+  neutraliza la inyección de fórmulas) y **.xlsx** nativo (duración y hueco como
+  celdas numéricas), igual que el export de envíos. Reutiliza `lib/Quality` tal
+  cual, así que respeta el **scoping por filas/columnas**, el **alcance por estado**
+  (`qc_scope`) y el **gating del campo de equipo/encuestador** exactamente como la
+  página; requiere `can_view`. Botón «Exportar» en la cabecera de Control de calidad
+  (solo cuando hay infracciones) con un modal de elección de formato. Cabeceras y
+  valores (banderas, estado) en el idioma del usuario.
+
 ## [1.23.0] - 2026-07-08
 
 Índice de riesgo por encuestador y equipo (detección heurística de fabricación,
