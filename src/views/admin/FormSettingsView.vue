@@ -73,14 +73,21 @@ const minutes = (v) => (v === '' || v === null ? null : Number(v))
 // Solo RELLENA los inputs de duración mín/máx: el usuario revisa y guarda.
 const suggesting = ref(false)
 const suggestHint = ref('')
+// Pista para el «Índice de riesgo»: mediana de encuestas por encuestador (la calcula
+// el mismo endpoint de sugerencia). No rellena nada; solo informa el mínimo a fijar.
+const riskHint = ref('')
 
 async function suggest() {
   suggesting.value = true
   suggestHint.value = ''
+  riskHint.value = ''
   error.value = ''
   try {
     const { data } = await api.get(`/forms/${formId.value}/quality/suggest`)
     const d = data.data
+    if (d.enumerator_median != null) {
+      riskHint.value = t('formSettings.riskSuggestHint', { n: d.enumerator_median, e: d.enumerators })
+    }
     if (!d.suggested) {
       suggestHint.value = t('formSettings.qcSuggestNotEnough', { n: d.min_needed })
       return
@@ -273,6 +280,7 @@ onMounted(load)
           />
           <span class="mt-1 block text-xs text-slate-400">{{ $t('formSettings.riskMinNHint') }}</span>
         </label>
+        <p v-if="riskHint" class="mt-2 text-xs text-slate-500">{{ riskHint }}</p>
       </div>
     </section>
 

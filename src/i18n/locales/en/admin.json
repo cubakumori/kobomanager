@@ -154,6 +154,7 @@
     "riskSectionDesc": "Heuristic index per enumerator/team to prioritise verifications (back-check). Opt-in: empty = disabled. It's a signal, not proof.",
     "riskMinN": "Minimum N per enumerator/team",
     "riskMinNHint": "Minimum submissions to score an enumerator or team; below it, «insufficient data». Empty or 0 = index disabled.",
+    "riskSuggestHint": "From the data: median of {n} submissions per enumerator ({e} enumerators). Set the minimum below that figure so most get scored.",
     "qcSuggest": "Suggest",
     "qcSuggestBusy": "Computing…",
     "qcSuggestHint": "p5 {p5} min · p95 {p95} min, across {n} surveys. Review the values and save.",

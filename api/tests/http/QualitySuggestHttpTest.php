@@ -73,4 +73,27 @@ final class QualitySuggestHttpTest extends HttpTestCase
         $this->assertSame(403, $res['status']);
         @unlink($jar);
     }
+
+    public function testEnumeratorMedianReported(): void
+    {
+        $this->seedUser('admin', 'admin@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $formId = $this->seedForm($accId);
+        DB::run('UPDATE forms SET stats_enumerator_field = ? WHERE id = ?', ['enum', $formId]);
+        // ana×3, luis×2, marta×1 → conteos [3,2,1] → mediana 2, 3 encuestadores.
+        $i = 0;
+        foreach (['ana' => 3, 'luis' => 2, 'marta' => 1] as $enum => $n) {
+            for ($k = 0; $k < $n; $k++) {
+                $this->seedSubmission($formId, "s$i", ['_id' => $i, 'enum' => $enum]);
+                $i++;
+            }
+        }
+        $jar = $this->login('admin@test.local', 'Secret123!');
+
+        $res = $this->request('GET', "forms/$formId/quality/suggest", null, $jar);
+        $this->assertSame(200, $res['status']);
+        $this->assertSame(2, $res['json']['data']['enumerator_median']);
+        $this->assertSame(3, $res['json']['data']['enumerators']);
+        @unlink($jar);
+    }
 }

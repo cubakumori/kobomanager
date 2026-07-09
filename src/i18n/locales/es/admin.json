@@ -154,6 +154,7 @@
     "riskSectionDesc": "Índice heurístico por encuestador/equipo para priorizar verificaciones (back-check). Opt-in: vacío = desactivado. Es una señal, no una prueba.",
     "riskMinN": "N mínimo por encuestador/equipo",
     "riskMinNHint": "Encuestas mínimas para puntuar a un encuestador o equipo; por debajo, «datos insuficientes». Vacío o 0 = índice desactivado.",
+    "riskSuggestHint": "Según los datos: mediana de {n} encuestas por encuestador ({e} encuestadores). Fija el mínimo por debajo de esa cifra para que se puntúe a la mayoría.",
     "qcSuggest": "Sugerir",
     "qcSuggestBusy": "Calculando…",
     "qcSuggestHint": "p5 {p5} min · p95 {p95} min, sobre {n} encuestas. Revisa los valores y guarda.",

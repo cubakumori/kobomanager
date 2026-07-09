@@ -8,6 +8,15 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 Retoques de UX tras la revisión previa al release.
 
+### Añadido
+
+- **Índice de riesgo — pista de datos en los ajustes**: al pulsar «Sugerir» (que
+  analiza los datos reales del formulario), la sección *Índice de riesgo* muestra la
+  **mediana de encuestas por encuestador** y cuántos encuestadores hay, para fijar el
+  mínimo con criterio. No rellena ningún campo (es un umbral de juicio, no una magnitud
+  física). `GET forms/<id>/quality/suggest` devuelve además `enumerator_median` y
+  `enumerators`.
+
 ### Cambiado
 
 - **Control de calidad**: la **tendencia semanal** de no admitidas se muestra ahora
