@@ -53,7 +53,8 @@ disabled with a tooltip, and the API enforces the same list centrally (403
 
 Everything else stays enabled on purpose — it is what the demo is for: browsing, search
 and filters, single and batch review, the quality-control page (including its batch
-"put on hold" button — the review it rides is local in demo, Kobo is never touched),
+"put on hold" button — the review it rides is local in demo, Kobo is never touched) and
+its **drill-down export** (CSV/xlsx), the **risk index**, the **review-comments panel**,
 CSV export, statistics, the map, creating and revoking share links, language and theme…
 All of it is local and restored by the reset.
 
@@ -128,6 +129,14 @@ numbers/text, a fraction left blank so the "empty / not empty" filters have data
   inconsistent. Irrelevant for synthetic demo data.
 - **These rows do not exist in Kobo.** This is why a seeded demo must **not** run a sync
   cron — see the warning under *Periodic reset*.
+- **No review comments, risk index off.** Seeded reviews carry a status but **no comment
+  text**, and the **risk index is opt-in** (`forms.risk_min_n` starts empty). So a freshly
+  seeded demo shows an **empty Comments panel** and the risk page in its "set a minimum"
+  state — the two features the landing advertises. To showcase them, before generating the
+  seed (flag off): add a few **review comments** (approve/reject/on-hold with text on some
+  submissions) and set **`risk_min_n`** on a well-populated form (Settings → *Risk index*;
+  the *Suggest* button reports the median submissions per enumerator to pick it). The QC
+  thresholds (`qc_*`) similarly need setting so the quality-control page flags anything.
 
 ---
 
