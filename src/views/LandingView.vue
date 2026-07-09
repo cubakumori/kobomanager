@@ -29,6 +29,11 @@ const features = [1, 2, 3, 4]
 const highlights = ['featQuality', 'featRisk', 'featComments', 'featStats', 'featColumns', 'feat5']
 const chips = ['chipEmail', 'chipLabels', 'chipMap', 'chipCsv', 'chipEdit', 'chipBackup']
 
+// Tarjetas destacadas con explicación ampliada en la Guía pública: se enlaza al
+// ancla correspondiente (`/guide#<ancla>`). El índice de riesgo introduce un término
+// que conviene poder ampliar de un clic; se puede extender a más tarjetas.
+const guideHash = { featRisk: 'risk' }
+
 // Enlace al repo para la CTA de cierre («monta tu propia instancia»); vacío = oculto.
 const { links } = usePublicLinks()
 
@@ -128,6 +133,13 @@ const showCta = computed(() => landingCtaEnabled.value && (!!links.value.repo ||
             {{ $t('landing.' + h + 'Title') }}
           </h3>
           <p class="mt-2 text-sm text-accent-900/70 dark:text-accent-200/70">{{ $t('landing.' + h + 'Desc') }}</p>
+          <RouterLink
+            v-if="guideHash[h]"
+            :to="{ name: 'guide', hash: '#' + guideHash[h] }"
+            class="mt-2 inline-flex items-center gap-1 text-sm font-medium text-accent-700 hover:underline dark:text-accent-300"
+          >
+            {{ $t('landing.moreInGuide') }} <span aria-hidden="true">→</span>
+          </RouterLink>
         </div>
       </div>
 
