@@ -41,6 +41,14 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       lista de envíos marcados (equipo, encuestador, uid, tiempos, banderas, estado)
       para llevarla a la reunión con el equipo de campo, en CSV y .xlsx, con el mismo
       alcance que la página (`GET forms/<id>/quality/export`).
+- [x] **Panel de comentarios de revisión — entregado en 1.25.0**: página por formulario
+      (`forms/<id>/comments`) que reúne los comentarios de `submission_reviews` (app o
+      Kobo) agrupados por equipo → encuestador, con fecha/estado/autor/texto y enlace al
+      envío; filtros por estado y texto; respeta RowScope/FieldScope; interno (no en
+      enlaces públicos). Resuelve el no poder ver qué envíos tienen comentario sin abrirlos.
+      **Fase 2 (idea, sin construir)**: comentarios *generales / por grupo / por miembro*
+      desligados de un envío (requiere tabla nueva `form_comments`, UI de escritura,
+      permisos y decisiones de edición/borrado); hito propio cuando haya demanda.
 - [x] **Índice de riesgo por encuestador y equipo — Fase 1 entregada en 1.23.0**
       *(detección heurística/probabilística de fabricación — «curbstoning»)*. Va más allá de
       las banderas por-envío actuales: agrega señales **relativas a los pares** en un índice

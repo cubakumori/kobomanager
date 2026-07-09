@@ -33,6 +33,7 @@ require __DIR__ . '/lib/SubmissionSearch.php';
 require __DIR__ . '/lib/Stats.php';
 require __DIR__ . '/lib/Quality.php';
 require __DIR__ . '/lib/Risk.php';
+require __DIR__ . '/lib/Comments.php';
 require __DIR__ . '/lib/ShareLink.php';
 require __DIR__ . '/lib/SubmissionSync.php';
 require __DIR__ . '/lib/SqlScript.php';
@@ -149,6 +150,7 @@ $routes = [
     'forms/:id/quality/suggest' => 'forms/quality_suggest.php',
     'forms/:id/quality/export'  => 'forms/quality_export.php',
     'forms/:id/risk'            => 'forms/risk.php',
+    'forms/:id/comments'        => 'forms/comments.php',
     'forms/:id/map'             => 'forms/map.php',
     'forms/:id/review'          => 'forms/review_batch.php',
     'forms/:id/export'          => 'forms/export.php',

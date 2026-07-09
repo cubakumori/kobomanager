@@ -4,6 +4,24 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.25.0] - 2026-07-09
+
+Panel de comentarios de revisión por formulario.
+
+### Añadido
+
+- **Panel de comentarios de revisión** (`forms/<id>/comments`, `GET
+  forms/<id>/comments`, `can_view`). Reúne en una sola página los comentarios que ya
+  viven en `submission_reviews` —hechos en la app o importados de Kobo— **agrupados
+  por equipo → encuestador** (los mismos campos del desglose de estadísticas), con
+  **fecha, estado de revisión, autor, texto y enlace directo al envío**. Resuelve el
+  no poder saber qué envíos tienen comentario sin abrirlos uno a uno. Filtros por
+  **estado** y por **texto** del comentario. Reutiliza `lib/Comments` (gemelo de
+  `lib/Quality`): respeta el **scoping por filas/columnas** igual que el resto y solo
+  muestra comentarios de envíos visibles del formulario; los enlaces públicos nunca
+  lo exponen (vista interna). Sin cambios de esquema. Entrada desde la cabecera de
+  Control de calidad.
+
 ## [1.24.0] - 2026-07-09
 
 Export del drill-down de infracciones del Control de calidad para llevar a la

@@ -443,6 +443,19 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   BOM + formula‑injection neutralization for CSV, numeric duration/gap cells for xlsx). It reuses
   `lib/Quality` verbatim, so it honors the same row/field scope, `qc_scope` and team/enumerator
   gating as the page; headers and flag/status values follow the user's locale.
+- **Review comments panel** (`lib/Comments.php`, `v1/forms/comments.php`, view
+  `CommentsView.vue` at `forms/{id}/comments`, `can_view`): gathers the comments that
+  already live in `submission_reviews` (`source='app'` with an author, or `source='kobo'`
+  imported by the sync, author `null`) — only reviews with a non-empty `comment` — and groups
+  them by team → enumerator (same `stats_*_field` pair and FieldScope team-gating as Quality),
+  so you can read what's been commented without opening submissions one by one. One row per
+  comment (a submission with several commented reviews shows several), each with date, review
+  status, author, source and text, plus a deep-link to the submission. Optional `?status=` and
+  `?search=` (comment substring) filters. Joins `submission_reviews` ↔ `submissions_cache` on
+  `submission_uid` + `form_id` with RowScope in the join, so only comments of the user's visible
+  submissions of this form appear (orphans of deleted submissions drop out); the comment text
+  isn't a form field, so FieldScope doesn't censor it. Read-only, internal (share links never
+  expose it), no schema change. Entry point: a link in the Quality-control header.
 - **Risk index** (`lib/Risk.php`, `v1/forms/risk.php`, view `RiskView.vue` at `forms/{id}/risk`,
   `can_view`): heuristic fabrication ("curbstoning") detection that aggregates **peer‑relative**
   signals into an index prioritising who to back‑check. **Opt‑in** per form via `forms.risk_min_n`

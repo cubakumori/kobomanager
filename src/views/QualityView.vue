@@ -222,6 +222,12 @@ onMounted(load)
           >
             {{ $t('stats.qualityStatsLink') }}
           </RouterLink>
+          <RouterLink
+            :to="{ name: 'comments', params: { id: formId } }"
+            class="text-sm font-medium text-primary-600 hover:underline"
+          >
+            {{ $t('comments.link') }}
+          </RouterLink>
           <button
             v-if="q && q.flagged"
             type="button"

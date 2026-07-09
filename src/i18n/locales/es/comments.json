@@ -1,0 +1,19 @@
+{
+  "comments": {
+    "title": "Comentarios de revisión",
+    "link": "Comentarios",
+    "subtitle": "Comentarios de revisión del formulario, agrupados por equipo y encuestador.",
+    "loadError": "No se pudieron cargar los comentarios.",
+    "countN": "{n} comentario | {n} comentarios",
+    "empty": "Todavía no hay comentarios de revisión en este formulario.",
+    "allEnumerators": "Todos los encuestadores",
+    "searchPlaceholder": "Buscar en los comentarios…",
+    "filterAllStatuses": "Todos los estados",
+    "colDate": "Fecha",
+    "colStatus": "Estado",
+    "colAuthor": "Autor",
+    "colComment": "Comentario",
+    "sourceKobo": "Kobo",
+    "sourceUnknown": "—"
+  }
+}

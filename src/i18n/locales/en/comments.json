@@ -1,0 +1,19 @@
+{
+  "comments": {
+    "title": "Review comments",
+    "link": "Comments",
+    "subtitle": "The form's review comments, grouped by team and enumerator.",
+    "loadError": "Could not load the comments.",
+    "countN": "{n} comment | {n} comments",
+    "empty": "There are no review comments on this form yet.",
+    "allEnumerators": "All enumerators",
+    "searchPlaceholder": "Search comments…",
+    "filterAllStatuses": "All statuses",
+    "colDate": "Date",
+    "colStatus": "Status",
+    "colAuthor": "Author",
+    "colComment": "Comment",
+    "sourceKobo": "Kobo",
+    "sourceUnknown": "—"
+  }
+}
