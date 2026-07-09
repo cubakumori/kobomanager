@@ -130,10 +130,10 @@ onMounted(load)
   <div class="space-y-6">
     <header>
       <RouterLink
-        :to="{ name: auth.isAdmin ? 'admin-forms' : 'forms' }"
+        :to="{ name: 'submissions', params: { id: formId } }"
         class="text-sm text-primary-600 hover:underline"
       >
-        {{ auth.isAdmin ? $t('formSettings.back') : $t('formSettings.backForms') }}
+        {{ $t('formSettings.backToForm') }}
       </RouterLink>
       <h1 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
         {{ $t('formSettings.title') }}{{ formName ? ' · ' + formName : '' }}
@@ -276,7 +276,10 @@ onMounted(load)
       </div>
     </section>
 
-    <div class="flex justify-end">
+    <div class="flex items-center justify-end gap-3">
+      <!-- Confirmación junto al botón: el aviso de arriba puede quedar fuera de vista
+           al guardar desde el final de la página. -->
+      <span v-if="flash" class="text-sm font-medium text-success-700 dark:text-success-400">✓ {{ flash }}</span>
       <button
         :disabled="demoMode || saving"
         class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"

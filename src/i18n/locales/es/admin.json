@@ -130,8 +130,7 @@
   "formSettings": {
     "title": "Ajustes del formulario",
     "subtitle": "Ajustes por formulario de KoboManager (no afectan a KoboToolbox).",
-    "back": "← Formularios",
-    "backForms": "← Mis formularios",
+    "backToForm": "← Volver al formulario",
     "teamSection": "Desglose por equipo (estadísticas)",
     "teamSectionDesc": "Desglosa las estadísticas por equipo y, dentro de cada equipo, por encuestador. Respeta el filtro por filas y el ocultado de columnas.",
     "teamField": "Campo de equipo",

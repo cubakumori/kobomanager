@@ -4,6 +4,25 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.25.1] - 2026-07-09
+
+Retoques de UX tras la revisión previa al release.
+
+### Cambiado
+
+- **Control de calidad**: la **tendencia semanal** de no admitidas se muestra ahora
+  tras «Estado de revisión por equipo/encuestador», junto al marcado en lote y al
+  drill-down, de modo que todo lo relativo a las **no admitidas** queda agrupado (antes
+  el resumen de estado de revisión —que cuenta todos los envíos— partía ese bloque).
+- **Ajustes del formulario**: el enlace superior de vuelta lleva ahora **al formulario
+  concreto** (`/forms/<id>/submissions`) en vez de a la lista de formularios.
+
+### Corregido
+
+- **Ajustes del formulario**: al guardar desde el final de la página, la confirmación
+  «Ajustes guardados» quedaba fuera de vista (solo salía arriba). Ahora también se
+  muestra **junto al botón «Guardar»**.
+
 ## [1.25.0] - 2026-07-09
 
 Panel de comentarios de revisión por formulario.

@@ -301,13 +301,6 @@ onMounted(load)
         {{ $t('stats.qualityGpsHint', { n: q.gps_min_repeats }) }}
       </p>
 
-      <!-- Tendencia semanal (solo con 2+ semanas: con una sola no hay tendencia) -->
-      <div v-if="showTrend" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <h2 class="font-semibold text-slate-900">{{ $t('stats.qualityTrend') }}</h2>
-        <p class="mb-3 text-xs text-slate-400">{{ $t('stats.qualityTrendDesc') }}</p>
-        <div class="h-56"><StatsChart type="bar" :data="trendData" :options="trendOptions" /></div>
-      </div>
-
       <!-- Resumen de estado de revisión por equipo → encuestador (todos los envíos) -->
       <section v-if="reviewSummary.length" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <h2 class="font-semibold text-slate-900">{{ $t('stats.qualityReviewSummary') }}</h2>
@@ -358,6 +351,14 @@ onMounted(load)
           </details>
         </div>
       </section>
+
+      <!-- Tendencia semanal de no admitidas (solo con 2+ semanas: con una sola no hay
+           tendencia). Junto al marcado y al drill-down: todo lo de «no admitidas». -->
+      <div v-if="showTrend" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+        <h2 class="font-semibold text-slate-900">{{ $t('stats.qualityTrend') }}</h2>
+        <p class="mb-3 text-xs text-slate-400">{{ $t('stats.qualityTrendDesc') }}</p>
+        <div class="h-56"><StatsChart type="bar" :data="trendData" :options="trendOptions" /></div>
+      </div>
 
       <!-- Marcado en lote sobre el flujo de revisión existente -->
       <div
