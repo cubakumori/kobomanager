@@ -359,10 +359,13 @@ app keeps working but email-dependent features don't send. Handy for staging.
 
 ## 10. Subsequent updates
 
-1. `npm run build` locally.
-2. Replace the **contents of `dist/`** (`index.html`, `assets/`, `sw.js`, manifest, and
-   the root `.htaccess` if it changed) and the `api/` folder — **without touching
-   `config.php`**.
+1. Build the artifact. **Recommended: `npm run package`** (as in §3, Option A) — it's the
+   fastest and most precise path: one command produces `release/kobomanager-<version>.zip`
+   with the exact server layout and the pruned `api/` (no `vendor/`, `tests/`, and **never**
+   your `config.php`). *(Or `npm run build` and copy `dist/` + `api/` by hand — §3, Option B.)*
+2. Upload replacing the **contents of `dist/`** (`index.html`, `assets/`, `sw.js`, manifest,
+   and the root `.htaccess` if it changed) and the `api/` folder — **without touching
+   `config.php`** (the zip never includes it).
 3. **Schema changes — always run the migrator after uploading new code:**
 
    ```
