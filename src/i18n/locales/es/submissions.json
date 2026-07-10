@@ -69,7 +69,9 @@
     "filtersClear": "Quitar filtros",
     "filtersApply": "Aplicar",
     "viewOptions": "Vista",
-    "viewOptionsTitle": "Opciones de vista"
+    "viewOptionsTitle": "Opciones de vista",
+    "admissibleOnly": "Solo admisibles",
+    "admissibleHint": "Solo los envíos pendientes que pasan todos los umbrales automáticos de control de calidad (sin bandera; excluye alto riesgo si el Índice de riesgo está activo), para revisarlos y aprobarlos en lote."
   },
   "detail": {
     "back": "← Volver a los envíos",

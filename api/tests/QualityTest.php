@@ -366,4 +366,83 @@ final class QualityTest extends DbTestCase
             ['week' => '2026-W28', 'total' => 1, 'flagged' => 0, 'pct' => 0.0],
         ], $q['by_week']);
     }
+
+    // ---- Atajo «aprobar en lote los admisibles»: conjunto admisible-pendiente ----
+
+    /** Solo las PENDIENTES sin ninguna bandera entran en admissible_pending. */
+    public function testAdmissiblePendingExposesOnlyUnflagged(): void
+    {
+        $formId = $this->makeForm();
+        $ok    = $this->timed($formId, 'ana', '10:00:00', '10:30:00'); // 30 min: admisible
+        $short = $this->timed($formId, 'ana', '11:00:00', '11:02:00'); // 2 min < 4: bandera
+        $long  = $this->timed($formId, 'ana', '13:00:00', '14:30:00'); // 90 min > 60: bandera
+
+        $q = $this->compute($formId, 4, 60, null); // gap desactivado: solo banderas de duración
+        $uids = array_column($q['admissible_pending'], 'uid');
+        $this->assertSame([$ok], $uids);
+        $this->assertNotContains($short, $uids);
+        $this->assertNotContains($long, $uids);
+
+        // Helper sin Índice de riesgo: devuelve tal cual, sin exclusiones.
+        $picked = Quality::admissiblePendingUids($q, null);
+        $this->assertSame([$ok], $picked['uids']);
+        $this->assertSame(0, $picked['high_risk_excluded']);
+        $this->assertFalse($picked['risk_active']);
+    }
+
+    /** Una encuesta sin bandera pero NO pendiente (aprobada) no es admisible. */
+    public function testAdmissibleExcludesNonPending(): void
+    {
+        $formId = $this->makeForm();
+        $pending  = $this->timed($formId, 'ana', '10:00:00', '10:30:00');
+        $approved = $this->timed($formId, 'ana', '12:00:00', '12:30:00');
+        ValidationStatus::recordReview($approved, $this->makeUser('admin'), 'app', 'approved');
+
+        // qc_scope 'all' (scopeStatuses null): ambas están «en alcance», pero solo la
+        // pendiente es admisible.
+        $q = Quality::compute($formId, null, null, null, 'es', null, 'enum', 4, 60, null);
+        $uids = array_column($q['admissible_pending'], 'uid');
+        $this->assertSame([$pending], $uids);
+    }
+
+    /** El conjunto respeta el alcance por estado (qc_scope): si los pendientes no están
+     *  en alcance, no hay admisibles. */
+    public function testAdmissibleRespectsQcScope(): void
+    {
+        $formId = $this->makeForm();
+        $this->timed($formId, 'ana', '10:00:00', '10:30:00'); // pendiente, sin bandera
+
+        $q = Quality::compute($formId, null, null, null, 'es', null, 'enum', 4, 60, null, ['on_hold']);
+        $this->assertSame([], $q['admissible_pending']);
+    }
+
+    /** Con el Índice de riesgo activo, el helper excluye a los encuestadores de alto
+     *  riesgo (índice ≥ Risk::SUSPICION_Z) por el par de nombres (equipo, encuestador). */
+    public function testAdmissiblePendingUidsExcludesHighRisk(): void
+    {
+        // Función PURA: se construyen los resultados a mano (sin BD) para aislar la regla.
+        $qualityResult = ['admissible_pending' => [
+            ['uid' => 'u_ana',  'team' => '—', 'enum' => 'ana'],
+            ['uid' => 'u_luis', 'team' => '—', 'enum' => 'luis'],
+            ['uid' => 'u_ana2', 'team' => '—', 'enum' => 'ana'],
+        ]];
+        $riskResult = ['enabled' => true, 'teams' => [[
+            'name' => '—',
+            'enumerators' => [
+                ['name' => 'ana',  'index' => Risk::SUSPICION_Z + 0.5], // alto riesgo → fuera
+                ['name' => 'luis', 'index' => 0.3],                     // bajo → dentro
+            ],
+        ]]];
+
+        $picked = Quality::admissiblePendingUids($qualityResult, $riskResult);
+        $this->assertSame(['u_luis'], $picked['uids']);
+        $this->assertSame(2, $picked['high_risk_excluded']); // u_ana + u_ana2
+        $this->assertTrue($picked['risk_active']);
+
+        // Un Índice de riesgo deshabilitado (enabled=false) no excluye a nadie.
+        $none = Quality::admissiblePendingUids($qualityResult, ['enabled' => false, 'teams' => []]);
+        $this->assertSame(['u_ana', 'u_luis', 'u_ana2'], $none['uids']);
+        $this->assertSame(0, $none['high_risk_excluded']);
+        $this->assertFalse($none['risk_active']);
+    }
 }

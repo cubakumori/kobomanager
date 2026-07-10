@@ -311,6 +311,39 @@ class Settings {
     }
 
     /**
+     * Atajo «Aprobar en lote los envíos ADMISIBLES pendientes»: dónde se ofrece el
+     * acceso rápido para aprobar los envíos PENDIENTES que pasan todos los umbrales
+     * automáticos de control de calidad (sin ninguna bandera de lib/Quality).
+     *   'table' → filtro «solo admisibles» en la tabla de envíos (por defecto).
+     *   'qc'    → botón guardado en la página de Control de calidad.
+     *   'both'  → en ambos sitios.
+     *   'off'   → en ninguno.
+     * Gobierna SOLO este atajo de admisibles; la revisión en lote genérica de la tabla
+     * (aprobar cualquier selección con `can_validate`) NO se ve afectada. Aprobar es
+     * TERMINAL y afirma calidad, mientras que pasar los umbrales es necesario pero no
+     * suficiente (≠ encuesta verificada); por eso el atajo solo toca PENDIENTES y
+     * excluye a los encuestadores de ALTO RIESGO cuando el Índice de riesgo está activo.
+     */
+    public const VALID_QC_ADMIT_BATCH = ['table', 'qc', 'both', 'off'];
+    private const DEFAULT_QC_ADMIT_BATCH = 'table';
+
+    /** Dónde se ofrece el atajo de aprobación de admisibles ('table'|'qc'|'both'|'off'). */
+    public static function qcAdmitBatch(): string {
+        $v = self::get('qc_admit_batch', self::DEFAULT_QC_ADMIT_BATCH);
+        return in_array($v, self::VALID_QC_ADMIT_BATCH, true) ? $v : self::DEFAULT_QC_ADMIT_BATCH;
+    }
+
+    /** ¿El atajo de admisibles se ofrece en la tabla de envíos? */
+    public static function qcAdmitBatchInTable(): bool {
+        return in_array(self::qcAdmitBatch(), ['table', 'both'], true);
+    }
+
+    /** ¿El atajo de admisibles se ofrece como botón en la página de Control de calidad? */
+    public static function qcAdmitBatchInQc(): bool {
+        return in_array(self::qcAdmitBatch(), ['qc', 'both'], true);
+    }
+
+    /**
      * Tope del DESGLOSE POR EQUIPO de Estadísticas (cuántos equipos —y encuestadores
      * dentro de cada uno— se listan; el resto se agrupa en «otros»):
      *   '20' | '50' → los N primeros por volumen + bucket «otros».

@@ -150,6 +150,50 @@ if (in_array($review, ['pending', 'approved', 'on_hold', 'rejected'], true)) {
     $params[]  = $review;
 }
 
+// Filtro «solo admisibles»: restringe a los envíos PENDIENTES sin ninguna bandera de
+// control de calidad (y, si el Índice de riesgo está activo, sin los de alto riesgo).
+// La admisibilidad es DERIVADA (no hay columna que indexar), así que se calcula con el
+// MISMO motor de la página de Control de calidad —fuente de verdad compartida
+// (Quality::admissiblePendingUids)— y se aplica como un IN sobre los uids resultantes.
+// Solo se atiende si el ajuste global ofrece el atajo en la tabla y el usuario puede
+// validar; en otro caso el parámetro se ignora (la tabla no cambia).
+if (($_GET['admissible'] ?? '') === '1'
+    && Settings::qcAdmitBatchInTable()
+    && Auth::canForm($user, $formId, 'validate')
+) {
+    $qcForm = DB::run(
+        'SELECT stats_team_field, stats_enumerator_field, qc_min_duration, qc_max_duration,
+                qc_min_gap, qc_dup_min_answers, risk_min_n
+         FROM forms WHERE id = ?',
+        [$formId]
+    )->fetch();
+    $qcStatuses = Settings::qcScope() === 'all' ? null : ['pending', 'on_hold'];
+    $quality = Quality::compute(
+        $formId, $schema, $scope, $fieldScope, $user['locale'],
+        $qcForm['stats_team_field'] ?: null, $qcForm['stats_enumerator_field'] ?: null,
+        $qcForm['qc_min_duration'] !== null ? (int) $qcForm['qc_min_duration'] : null,
+        $qcForm['qc_max_duration'] !== null ? (int) $qcForm['qc_max_duration'] : null,
+        $qcForm['qc_min_gap'] !== null ? (int) $qcForm['qc_min_gap'] : null,
+        $qcStatuses,
+        $qcForm['qc_dup_min_answers'] !== null ? (int) $qcForm['qc_dup_min_answers'] : null
+    );
+    $risk = null;
+    if ($qcForm['risk_min_n'] !== null) {
+        $risk = Risk::compute(
+            $formId, $schema, $scope, $fieldScope, $user['locale'],
+            $qcForm['stats_team_field'] ?: null, $qcForm['stats_enumerator_field'] ?: null,
+            (int) $qcForm['risk_min_n'], $qcStatuses
+        );
+    }
+    $admissibleUids = Quality::admissiblePendingUids($quality, $risk)['uids'];
+    if ($admissibleUids) {
+        $where  .= ' AND sc.submission_uid IN (' . implode(',', array_fill(0, count($admissibleUids), '?')) . ')';
+        $params  = array_merge($params, $admissibleUids);
+    } else {
+        $where .= ' AND 1 = 0'; // sin admisibles en alcance: la tabla queda vacía
+    }
+}
+
 $total = (int) DB::run("SELECT COUNT(*) AS c FROM submissions_cache sc $where", $params)
     ->fetch()['c'];
 
@@ -213,4 +257,7 @@ ErrorResponse::ok([
     'schema'     => FieldScope::applySchema($fieldScope, FormSchema::resolve($schema, $user['locale'])),
     'has_geo'    => $hasGeo,
     'can_validate' => Auth::canForm($user, $formId, 'validate'),
+    // Ubicación del atajo de aprobación de admisibles: la tabla ofrece el filtro
+    // «solo admisibles» cuando vale 'table' o 'both' (y el usuario puede validar).
+    'admit_batch' => Settings::qcAdmitBatch(),
 ]);

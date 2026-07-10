@@ -14,6 +14,7 @@ ErrorResponse::ok([
     'table_freeze'           => Settings::tableFreeze(),
     'table_header_lines'     => Settings::tableHeaderLines(),
     'pct_format'             => Settings::pctFormat(),
+    'qc_admit_batch'         => Settings::qcAdmitBatch(),
     'show_view_submissions_link' => Settings::showViewSubmissionsLink(),
     'demo_mode'              => Demo::enabled(),
     'demo_reset_minutes'     => Demo::resetMinutes(),

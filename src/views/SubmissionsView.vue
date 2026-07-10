@@ -33,6 +33,12 @@ const perPageOptions = [10, 25, 50, 100]
 const search = ref('')
 const reviewFilter = ref('') // '' = todos
 const sort = ref('date_desc')
+// Filtro «solo admisibles»: envíos PENDIENTES que pasan todos los umbrales automáticos
+// de control de calidad (sin bandera; sin alto riesgo). Transitorio (no se persiste
+// entre visitas: es un filtro de acción puntual del revisor). Solo se ofrece si el
+// ajuste global lo permite en la tabla (`admit_batch` = 'table'|'both') y hay validación.
+const admissibleOnly = ref(false)
+const admitBatch = ref('table')
 
 // --- Preferencias de vista persistidas: orden y filtro de revisión por formulario;
 // tamaño de página global (gusto del usuario, no depende del formulario). Igual que
@@ -79,6 +85,8 @@ const deploymentStatus = ref(null)
 // Un formulario archivado es de solo lectura para la revisión: la columna de estado
 // sigue visible, pero se ocultan la selección y las acciones de revisión por lotes.
 const canReview = computed(() => canValidate.value && deploymentStatus.value !== 'archived')
+// ¿Se ofrece el filtro «solo admisibles» en la tabla? (ajuste global + puede validar)
+const canAdmitTable = computed(() => canReview.value && ['table', 'both'].includes(admitBatch.value))
 
 // --- Selección + revisión en lote ---
 const selected = ref(new Set())
@@ -358,6 +366,7 @@ async function load() {
         per_page: perPage.value,
         search: search.value || undefined,
         review: reviewFilter.value || undefined,
+        admissible: admissibleOnly.value ? 1 : undefined,
         sort: sort.value,
         filter: advFilter.value ? JSON.stringify(advFilter.value) : undefined,
       },
@@ -373,6 +382,10 @@ async function load() {
     fieldTruncate.value = data.data.field_truncate ?? null
     hasGeo.value = !!data.data.has_geo
     canValidate.value = !!data.data.can_validate
+    admitBatch.value = data.data.admit_batch ?? 'table'
+    // Si el filtro estaba activo pero el ajuste global ya no lo permite (o el
+    // formulario pasó a archivado), se desactiva para no mostrar un estado imposible.
+    if (admissibleOnly.value && !canAdmitTable.value) admissibleOnly.value = false
     clearSelection()
     ensurePrefs()
   } catch (e) {
@@ -400,6 +413,13 @@ let suppressPrefsReload = false
 watch([reviewFilter, sort, perPage], () => {
   if (suppressPrefsReload) return // el watcher de formId ya recarga (una sola vez)
   saveViewPrefs()
+  page.value = 1
+  load()
+})
+
+// Filtro «solo admisibles»: transitorio (no se persiste), recarga desde la 1.ª página.
+watch(admissibleOnly, () => {
+  if (suppressPrefsReload) return
   page.value = 1
   load()
 })
@@ -567,6 +587,22 @@ onMounted(() => { loadAdvFilter(); load() })
           @click="clearAdv"
         >×</button>
       </div>
+      <!-- Filtro «solo admisibles»: pendientes que pasan todos los umbrales de QC (sin
+           bandera ni alto riesgo), para revisarlos y aprobarlos en lote. Solo cuando el
+           ajuste global lo ofrece en la tabla y el usuario puede validar. -->
+      <button
+        v-if="canAdmitTable"
+        type="button"
+        class="shrink-0 whitespace-nowrap rounded-lg border px-3 py-1.5 text-sm font-medium"
+        :class="admissibleOnly
+          ? 'border-success-300 bg-success-50 text-success-700 hover:bg-success-100 dark:border-success-700 dark:bg-success-900/30 dark:text-success-300 dark:hover:bg-success-900/50'
+          : 'border-slate-300 text-slate-700 hover:bg-slate-50'"
+        :aria-pressed="admissibleOnly"
+        :title="$t('submissions.admissibleHint')"
+        @click="admissibleOnly = !admissibleOnly"
+      >
+        {{ $t('submissions.admissibleOnly') }}
+      </button>
     </div>
 
     <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">

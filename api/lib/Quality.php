@@ -46,6 +46,12 @@
  * en lote «en espera» lo hace el flujo de revisión existente (review_batch), con
  * el admin que pulsa como atribución. Respeta RowScope y FieldScope igual que
  * lib/Stats (mismo gating de visibilidad del campo de equipo/encuestador).
+ *
+ * Además del reporte de infractoras, compute() expone `admissible_pending`: los
+ * envíos PENDIENTES en alcance SIN ninguna bandera. Es la materia prima del atajo
+ * simétrico «aprobar en lote los admisibles»; Quality::admissiblePendingUids() lo
+ * combina con el Índice de riesgo (excluye a los encuestadores de alto riesgo) para
+ * decidir qué uids se aprueban. La aprobación en sí la sigue haciendo review_batch.
  */
 class Quality {
 
@@ -221,6 +227,13 @@ class Quality {
         $flagsTotal = $zeroFlags;
         $flaggedTotal = 0;
         $weekAgg    = []; // 'YYYY-Www' => ['total' => n, 'flagged' => n] (tendencia)
+        // Envíos ADMISIBLES pendientes: en alcance, estado 'pending' y SIN ninguna
+        // bandera. Cada entrada lleva el nombre RESUELTO de equipo/encuestador para
+        // que Quality::admissiblePendingUids pueda cruzarlo con el Índice de riesgo
+        // (que resuelve las mismas etiquetas) y excluir a los de alto riesgo. Es la
+        // materia prima del atajo «aprobar en lote los admisibles»; no se marca nada
+        // aquí (Quality es solo lectura).
+        $admissiblePending = [];
 
         $teams = [];
         foreach ($groups as $tKey => $enums) {
@@ -295,7 +308,17 @@ class Quality {
                 foreach ($entries as $e) {
                     if (!$e['in']) continue; // fuera del alcance: no se reporta
                     $flags = $flagged[$e['uid']] ?? [];
-                    if (!$flags) continue;
+                    if (!$flags) {
+                        // Sin bandera: si además está PENDIENTE, es candidato admisible.
+                        if ($e['st'] === 'pending') {
+                            $admissiblePending[] = [
+                                'uid'  => $e['uid'],
+                                'team' => $teamOut['name'],
+                                'enum' => $enumOut['name'],
+                            ];
+                        }
+                        continue;
+                    }
 
                     $enumOut['flagged']++;
                     foreach ($flags as $f) $enumOut['flags'][$f]++;
@@ -405,7 +428,63 @@ class Quality {
                 'key'   => $enumPath,
                 'label' => $enumIsField ? ($labelsOn ? ($labels[$enumPath] ?? $enumPath) : $enumPath) : null,
             ],
+            // Materia prima del atajo «aprobar en lote los admisibles»: pendientes en
+            // alcance sin ninguna bandera, con el nombre resuelto de equipo/encuestador
+            // (para el cruce con el Índice de riesgo en admissiblePendingUids).
+            'admissible_pending' => $admissiblePending,
         ];
         return $out;
+    }
+
+    /**
+     * Atajo «aprobar en lote los admisibles»: dado el resultado de compute() (que ya
+     * trae los pendientes sin bandera en `admissible_pending`) y, opcionalmente, el
+     * resultado de Risk::compute(), devuelve los uids que se pueden aprobar y cuántos
+     * quedaron fuera por ALTO RIESGO.
+     *
+     * Es una función PURA (sin BD): concentra en un solo sitio la regla de exclusión
+     * por riesgo, de modo que la tabla de envíos y la página de Control de calidad
+     * apliquen exactamente el mismo criterio. Un encuestador es de alto riesgo cuando
+     * su índice compuesto alcanza el corte de sospecha (Risk::SUSPICION_Z); el cruce
+     * se hace por el par de nombres RESUELTOS (equipo, encuestador), que Quality y Risk
+     * derivan de forma idéntica (mismo par de campos, misma resolución de etiquetas).
+     *
+     * @param array      $qualityResult Salida de Quality::compute (usa `admissible_pending`).
+     * @param array|null $riskResult    Salida de Risk::compute, o null si el índice no se
+     *                                  evaluó. Si viene con `enabled: false` se ignora.
+     * @return array{uids: string[], high_risk_excluded: int, risk_active: bool}
+     */
+    public static function admissiblePendingUids(array $qualityResult, ?array $riskResult = null): array {
+        $cands      = $qualityResult['admissible_pending'] ?? [];
+        $riskActive = $riskResult !== null && ($riskResult['enabled'] ?? false);
+
+        // Conjunto de encuestadores de alto riesgo, indexado por "equipo\0encuestador".
+        $highRisk = [];
+        if ($riskActive) {
+            foreach (($riskResult['teams'] ?? []) as $t) {
+                foreach (($t['enumerators'] ?? []) as $en) {
+                    $idx = $en['index'] ?? null;
+                    if ($idx !== null && $idx >= Risk::SUSPICION_Z) {
+                        $highRisk[$t['name'] . "\0" . $en['name']] = true;
+                    }
+                }
+            }
+        }
+
+        $uids     = [];
+        $excluded = 0;
+        foreach ($cands as $c) {
+            if ($riskActive && isset($highRisk[$c['team'] . "\0" . $c['enum']])) {
+                $excluded++;
+                continue;
+            }
+            $uids[] = $c['uid'];
+        }
+
+        return [
+            'uids'               => $uids,
+            'high_risk_excluded' => $excluded,
+            'risk_active'        => $riskActive,
+        ];
     }
 }

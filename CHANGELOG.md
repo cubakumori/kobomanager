@@ -4,6 +4,35 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.26.0] - 2026-07-10
+
+Contrapartida del marcado en lote «en espera»: aprobar en lote las encuestas
+**admisibles** pendientes, con más cuidado porque aprobar es terminal.
+
+### Añadido
+
+- **Aprobar en lote los envíos admisibles pendientes**: atajo simétrico al «marcar en
+  espera las N no admitidas», para aprobar de una vez las encuestas **pendientes** que
+  pasan **todos** los umbrales automáticos de control de calidad (sin ninguna bandera).
+  - **Ajuste global** *«Aprobar en lote los admisibles»* (`qc_admit_batch`, Ajustes →
+    Tablas): `En la tabla de envíos` (por defecto) · `En Control de calidad, con
+    guardarraíles` · `En ambos sitios` · `En ninguno`. Gobierna **solo** este atajo; la
+    revisión en lote genérica de la tabla no cambia. Sin cambio de esquema.
+  - **Tabla de envíos**: filtro *«Solo admisibles»* combinable con el estado, para que el
+    revisor los seleccione y apruebe.
+  - **Control de calidad**: botón *«Aprobar las N admisibles»* con confirmación que deja
+    claro que solo pasaron los umbrales automáticos (**no** una verificación).
+  - **Guardarraíles** (todos en el servidor): solo **pendientes** (nunca en espera /
+    aprobado / rechazado); si el **Índice de riesgo** está activo, se **excluyen los
+    encuestadores de alto riesgo** (índice ≥ corte de sospecha); respeta `can_validate`,
+    el scoping por filas/columnas y el alcance `qc_scope`. La aprobación reutiliza el
+    endpoint de revisión en lote existente (`forms/{id}/review`).
+  - **Banderas derivadas, no persistidas**: el conjunto admisible se calcula al vuelo con
+    el mismo motor de la página de Control de calidad (`Quality::admissiblePendingUids`,
+    fuente de verdad única para la tabla y el botón). Las banderas dependen de umbrales
+    editables y de señales relativas al cohorte, así que persistirlas sería una vista
+    materializada con recálculo en cada sync/edición; se deja derivado a propósito.
+
 ## [1.25.1] - 2026-07-09
 
 Retoques de UX tras la revisión previa al release.

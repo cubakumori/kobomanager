@@ -433,7 +433,28 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   endpoint (`forms/{id}/review`, attribution = the admin who clicks, normal Kobo push, chunks of
   1000, already‑on‑hold ones excluded), so `submission_reviews` needs no schema change. Respects
   `RowScope`/`FieldScope` like `lib/Stats` (a hidden team field drops the team level); the page
-  requires `can_view`, the batch button `can_validate` on a non‑archived form. Entry points: a
+  requires `can_view`, the batch button `can_validate` on a non‑archived form.
+- **Approve the admissible in bulk** (symmetric to "put on hold", but with more care because
+  approving is *terminal and asserts quality* whereas passing the thresholds is necessary but not
+  sufficient — passing QC ≠ a verified survey). `lib/Quality::compute` also emits
+  **`admissible_pending`**: the pending submissions *in scope with no flag at all* (carrying the
+  resolved team/enumerator names). `Quality::admissiblePendingUids()` is a **pure** helper that
+  takes that list plus (optionally) a `Risk::compute` result and returns the approvable uids,
+  **excluding high‑risk enumerators** (composite index ≥ `Risk::SUSPICION_Z`, matched by the
+  resolved (team, enumerator) name pair that Quality and Risk derive identically). It is the
+  single source of truth shared by two consumers: the submissions table's **"admissible only"**
+  filter (`?admissible=1`, applied as an `IN (…)` over those uids — flags are *derived, never
+  stored*, so there is no SQL column to index; see note below) and the QC page's **"approve the N
+  admissible"** button (both ride `forms/{id}/review` with `approved`, `can_validate`, chunks of
+  1000, the confirmation spelling out that they only passed the automatic thresholds). A global
+  setting **`qc_admit_batch`** (`table` default | `qc` | `both` | `off`, Settings → Tables tab)
+  governs *only this admissible shortcut* — the table's generic bulk review is untouched. **Why
+  flags stay derived, not persisted:** the thresholds are per‑form and user‑editable, and some
+  signals (exact‑answer duplicates, "stuck GPS") are cohort‑relative — a new sync can flip another
+  submission's flag — so a stored flag would be a materialized view needing recompute on every
+  sync and every threshold edit, plus a schema change, to solve a problem that today is just a
+  bounded on‑demand uid list. Persisting would only earn its keep for the deferred *auto‑on‑hold
+  on sync* milestone (which is inherently historical, `source='auto'`). Entry points: a
   button next to the stats team breakdown (internal view only — share links never expose it) and
   the submission table's actions. `lib/Quality` also returns a **`review_summary`**: submission
   counts per review status (pending/on-hold/approved/rejected) by team → enumerator over **all**

@@ -27,27 +27,29 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       exige atribución nueva en `submission_reviews` (p. ej. `source='auto'`, cambio de
       ENUM → SchemaCheck + nota de upgrade) y decidir si empuja a Kobo o es solo local,
       y si re-evalúa retroactivamente al cambiar los umbrales.
-- [ ] **Aprobar en lote las encuestas ADMISIBLES pendientes** *(simétrico al «marcar en
-      espera las no admitidas», pero con más cuidado)*. Aprobar es **terminal y afirma
-      calidad**, a diferencia de «en espera» (triage reversible), y los umbrales de QC son
-      **necesarios pero no suficientes** (pasar QC ≠ encuesta genuina; para eso está el
-      Índice de riesgo) → automatizar la aprobación sobre «no tiene bandera» es delicado.
-      Diseño acordado (jul-2026):
-      - **Ajuste global tipo selector** «Aprobar en lote envíos admisibles» (fila en
-        `settings`, sin cambio de esquema): `En la tabla de envíos` (default) | `En QC, con
-        guardarraíles` | `En ambos sitios` | `No`. Gobierna SOLO este atajo de *admisibles*;
-        la revisión en lote genérica de la tabla (aprobar cualquier selección, `can_validate`)
-        no se toca.
-      - **Solo PENDIENTES** (nunca on_hold/aprobado/rechazado). Confirmación que deje claro
-        que aprueba encuestas que *solo pasan los umbrales automáticos, no verificadas*. Si el
-        **Índice de riesgo** está activo, **excluir a los encuestadores de alto riesgo** del
-        lote.
-      - **Tabla de envíos**: filtro «solo admisibles / no marcadas» combinable con estado =
-        pendiente, dejando al revisor la selección.
-      - **Backend**: la página de QC hoy NO expone la lista de admisibles-pendientes (el
-        drill-down solo trae las infractoras) → calcular ese conjunto (pendientes, en alcance,
-        sin ninguna bandera de `lib/Quality`); el endpoint de revisión en lote
-        (`forms/{id}/review`) ya aprueba una lista de uids.
+- [x] **Aprobar en lote las encuestas ADMISIBLES pendientes** *(entregado en 1.26.0;
+      simétrico al «marcar en espera las no admitidas», pero con más cuidado)*. Aprobar es
+      **terminal y afirma calidad**, a diferencia de «en espera» (triage reversible), y los
+      umbrales de QC son **necesarios pero no suficientes** (pasar QC ≠ encuesta genuina;
+      para eso está el Índice de riesgo). Implementado según lo acordado:
+      - **Ajuste global tipo selector** `qc_admit_batch` (fila en `settings`, sin cambio de
+        esquema): `table` (default) | `qc` | `both` | `off`. Gobierna SOLO este atajo de
+        *admisibles*; la revisión en lote genérica de la tabla no se toca.
+      - **Solo PENDIENTES**; confirmación que advierte «solo pasan los umbrales automáticos,
+        no verificadas»; con el **Índice de riesgo** activo se **excluyen los encuestadores
+        de alto riesgo** (índice ≥ `Risk::SUSPICION_Z`).
+      - **Tabla de envíos**: filtro «solo admisibles» combinable con el estado.
+      - **Backend**: `Quality::compute` expone ahora `admissible_pending` y el helper puro
+        `Quality::admissiblePendingUids` (fuente de verdad única para tabla y QC); la
+        aprobación reutiliza `forms/{id}/review`.
+      - **Decisión de diseño — banderas DERIVADAS, no persistidas**: se evaluó guardar las
+        banderas y se descartó. Los umbrales son editables por-formulario y varias señales
+        (duplicados exactos, «GPS clavado») son relativas al cohorte (un sync nuevo puede
+        voltear la bandera de otro envío) → persistir sería una vista materializada con
+        recálculo en cada sync + edición de umbrales, más un cambio de esquema, para un
+        problema que hoy es solo una lista acotada de uids calculada al vuelo. Persistir solo
+        valdría la pena para el hito diferido «marcado on-hold AUTOMÁTICO al sincronizar»
+        (inherentemente histórico, `source='auto'`).
 - [ ] **Horario admisible de trabajo** (franja horaria por formulario, evaluada en
       `APP_TIMEZONE`): encuestas iniciadas de madrugada como bandera propia.
 - [ ] **Velocidad imposible entre puntos geo consecutivos** del mismo encuestador

@@ -28,6 +28,7 @@ const loading = ref(true)
 const error = ref('')
 const flash = ref('')
 const batchBusy = ref(false)
+const approveBusy = ref(false)
 
 // --- Export del drill-down de infracciones (mismo alcance que la página: el
 // backend reutiliza lib/Quality con el RowScope/FieldScope y el qc_scope global).
@@ -106,6 +107,50 @@ async function holdAll() {
     error.value = apiError(e, t('stats.qualityBatchError'))
   } finally {
     batchBusy.value = false
+  }
+}
+
+// ---- Atajo: aprobar en lote los ADMISIBLES pendientes ----------------------
+// Simétrico al marcado en lote «en espera», pero con más cuidado: aprobar es
+// TERMINAL y afirma calidad. Los admisibles son los PENDIENTES que pasan TODOS los
+// umbrales automáticos (sin ninguna bandera); el backend ya los calcula y, si el
+// Índice de riesgo está activo, excluye a los encuestadores de alto riesgo. La
+// confirmación deja claro que solo pasaron los umbrales, no una verificación.
+const admissible = computed(() => q.value?.admissible ?? { enabled: false })
+
+async function approveAdmissible() {
+  const uids = admissible.value.uids ?? []
+  if (!uids.length) return
+  const excluded = admissible.value.high_risk_excluded || 0
+  const ok = await confirmDialog({
+    title: t('stats.qualityApproveTitle'),
+    message: excluded
+      ? t('stats.qualityApproveConfirmRisk', { n: uids.length, excluded })
+      : t('stats.qualityApproveConfirm', { n: uids.length }),
+    confirmText: t('stats.qualityApproveConfirmBtn'),
+    danger: true,
+  })
+  if (!ok) return
+  approveBusy.value = true
+  flash.value = ''
+  error.value = ''
+  try {
+    // Reutiliza el endpoint de revisión en lote (1000 uids/petición): se trocea.
+    let applied = 0
+    for (let i = 0; i < uids.length; i += 1000) {
+      const { data } = await api.post(`/forms/${formId.value}/review`, {
+        uids: uids.slice(i, i + 1000),
+        status: 'approved',
+        comment: t('stats.qualityApproveComment'),
+      })
+      applied += data.data.applied
+    }
+    flash.value = t('stats.qualityApproveDone', { n: applied })
+    await load()
+  } catch (e) {
+    error.value = apiError(e, t('stats.qualityApproveError'))
+  } finally {
+    approveBusy.value = false
   }
 }
 
@@ -383,6 +428,30 @@ onMounted(load)
             : heldCount
               ? $t('stats.qualityBatchBtnRest', { n: pendingHold.length })
               : $t('stats.qualityBatchBtn', { n: pendingHold.length }) }}
+        </button>
+      </div>
+
+      <!-- Atajo: aprobar en lote los ADMISIBLES pendientes (los que pasan TODOS los
+           umbrales automáticos, sin bandera). Solo si el ajuste global lo ofrece aquí
+           y el usuario puede validar. Aprobar es terminal; la confirmación lo advierte. -->
+      <div
+        v-if="canReview && admissible.enabled && (admissible.count || admissible.high_risk_excluded)"
+        class="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-success-50 px-4 py-3 ring-1 ring-success-200 dark:bg-success-900/25 dark:ring-success-800"
+      >
+        <span class="text-sm text-success-900 dark:text-success-200">
+          {{ !admissible.count
+            ? $t('stats.qualityApproveNone', { excluded: admissible.high_risk_excluded })
+            : admissible.high_risk_excluded
+              ? $t('stats.qualityApproveHintRisk', { n: admissible.count, excluded: admissible.high_risk_excluded })
+              : $t('stats.qualityApproveHint', { n: admissible.count }) }}
+        </span>
+        <button
+          v-if="admissible.count"
+          :disabled="approveBusy"
+          class="rounded-lg bg-success-600 px-4 py-2 text-sm font-semibold text-white hover:bg-success-700 disabled:opacity-60"
+          @click="approveAdmissible"
+        >
+          {{ approveBusy ? $t('stats.qualityApproveBusy') : $t('stats.qualityApproveBtn', { n: admissible.count }) }}
         </button>
       </div>
 

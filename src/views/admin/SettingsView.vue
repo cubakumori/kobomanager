@@ -49,6 +49,8 @@ const qcScope = ref('pending_hold')
 const validQcScope = ref(['pending_hold', 'all'])
 const pctFormat = ref('integer')
 const validPctFormat = ref(['integer', 'decimals'])
+const qcAdmitBatch = ref('table')
+const validQcAdmitBatch = ref(['table', 'qc', 'both', 'off'])
 const tableHeaderLines = ref(2)
 const validTableHeaderLines = ref([1, 2, 3])
 const mailConfigured = ref(false)
@@ -198,6 +200,8 @@ async function load() {
     validQcScope.value = data.data.valid_qc_scope ?? validQcScope.value
     if (data.data.pct_format != null) pctFormat.value = data.data.pct_format
     validPctFormat.value = data.data.valid_pct_format ?? validPctFormat.value
+    if (data.data.qc_admit_batch != null) qcAdmitBatch.value = data.data.qc_admit_batch
+    validQcAdmitBatch.value = data.data.valid_qc_admit_batch ?? validQcAdmitBatch.value
     mailConfigured.value = data.data.mail_configured
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     sharePasswordPolicy.value = data.data.share_password_policy
@@ -251,6 +255,7 @@ async function save() {
       show_view_submissions_link: showViewSubmissionsLink.value,
       qc_scope: qcScope.value,
       pct_format: pctFormat.value,
+      qc_admit_batch: qcAdmitBatch.value,
       viewer_actions: viewerActions.value,
       share_password_policy: sharePasswordPolicy.value,
       share_attachments_policy: shareAttachmentsPolicy.value,
@@ -292,6 +297,7 @@ async function save() {
       appPctFormat.value = data.data.pct_format
       try { localStorage.setItem('km.cfg.pctFormat', data.data.pct_format) } catch { /* noop */ }
     }
+    if (data.data.qc_admit_batch != null) qcAdmitBatch.value = data.data.qc_admit_batch
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     if (data.data.share_password_policy) sharePasswordPolicy.value = data.data.share_password_policy
     if (data.data.share_attachments_policy) shareAttachmentsPolicy.value = data.data.share_attachments_policy
@@ -547,6 +553,22 @@ onMounted(load)
         >
           <option v-for="pf in validPctFormat" :key="pf" :value="pf">{{ $t('settings.pctFormat_' + pf) }}</option>
         </select>
+      </section>
+
+      <!-- Atajo «aprobar en lote los admisibles»: dónde se ofrece -->
+      <section v-show="tab === 'tables'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.qcAdmitBatch') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.qcAdmitBatchDesc') }}</p>
+        </div>
+        <select
+          v-model="qcAdmitBatch"
+          class="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          @change="saved = false"
+        >
+          <option v-for="ab in validQcAdmitBatch" :key="ab" :value="ab">{{ $t('settings.qcAdmitBatch_' + ab) }}</option>
+        </select>
+        <p class="text-xs text-slate-400">{{ $t('settings.qcAdmitBatchWarn') }}</p>
       </section>
 
       <!-- Líneas del encabezado de columna en tablas -->

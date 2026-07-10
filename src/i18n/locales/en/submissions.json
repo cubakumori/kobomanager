@@ -69,7 +69,9 @@
     "filtersClear": "Clear filters",
     "filtersApply": "Apply",
     "viewOptions": "Display",
-    "viewOptionsTitle": "Display options"
+    "viewOptionsTitle": "Display options",
+    "admissibleOnly": "Admissible only",
+    "admissibleHint": "Only the pending submissions that pass every automatic quality-control threshold (no flag; excludes high risk when the Risk index is active), to review and approve them in bulk."
   },
   "detail": {
     "back": "← Back to submissions",

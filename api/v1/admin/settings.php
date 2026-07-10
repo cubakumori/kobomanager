@@ -46,6 +46,8 @@ if (Request::method() === 'GET') {
         'valid_qc_scope'             => Settings::VALID_QC_SCOPE,
         'pct_format'                 => Settings::pctFormat(),
         'valid_pct_format'           => Settings::VALID_PCT_FORMAT,
+        'qc_admit_batch'             => Settings::qcAdmitBatch(),
+        'valid_qc_admit_batch'       => Settings::VALID_QC_ADMIT_BATCH,
         'stats_team_cap'             => Settings::statsTeamCap(),
         'valid_stats_team_cap'       => Settings::VALID_STATS_TEAM_CAP,
         'show_view_submissions_link' => Settings::showViewSubmissionsLink(),
@@ -164,6 +166,15 @@ if (Request::method() === 'PUT') {
         }
         Settings::set('pct_format', $pf);
         $out['pct_format'] = $pf;
+    }
+
+    if (array_key_exists('qc_admit_batch', $body)) {
+        $ab = (string) $body['qc_admit_batch'];
+        if (!in_array($ab, Settings::VALID_QC_ADMIT_BATCH, true)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Ubicación del atajo de aprobación de admisibles no válida');
+        }
+        Settings::set('qc_admit_batch', $ab);
+        $out['qc_admit_batch'] = $ab;
     }
 
     if (array_key_exists('stats_team_cap', $body)) {

@@ -20,7 +20,7 @@ if (Request::method() !== 'GET') {
 
 $form = DB::run(
     'SELECT id, name, schema_json, deployment_status, stats_team_field, stats_enumerator_field,
-            qc_min_duration, qc_max_duration, qc_min_gap, qc_dup_min_answers
+            qc_min_duration, qc_max_duration, qc_min_gap, qc_dup_min_answers, risk_min_n
      FROM forms WHERE id = ? AND active = 1',
     [$formId]
 )->fetch();
@@ -48,10 +48,40 @@ $quality = Quality::compute(
     $form['qc_dup_min_answers'] !== null ? (int) $form['qc_dup_min_answers'] : null
 );
 
+// Atajo «aprobar en lote los admisibles» en la página de Control de calidad: solo se
+// prepara si el ajuste global lo ofrece aquí ('qc'/'both') y el usuario puede validar.
+// El botón aprueba los PENDIENTES sin bandera; si el Índice de riesgo está activo, se
+// excluyen los envíos de los encuestadores de alto riesgo (Quality::admissiblePendingUids).
+$canValidate = Auth::canForm($user, $formId, 'validate');
+$admissible  = ['enabled' => false];
+if ($canValidate && Settings::qcAdmitBatchInQc()) {
+    $risk = null;
+    if ($form['risk_min_n'] !== null) {
+        $risk = Risk::compute(
+            $formId, $schemaRaw, $scope, $fieldScope, $user['locale'],
+            $form['stats_team_field'] ?: null, $form['stats_enumerator_field'] ?: null,
+            (int) $form['risk_min_n'], $statuses
+        );
+    }
+    $picked     = Quality::admissiblePendingUids($quality, $risk);
+    $admissible = [
+        'enabled'            => true,
+        'uids'               => $picked['uids'],
+        'count'              => count($picked['uids']),
+        'high_risk_excluded' => $picked['high_risk_excluded'],
+        'risk_active'        => $picked['risk_active'],
+    ];
+}
+
+// `admissible_pending` es interno (materia prima con nombres); no se filtra al cliente.
+unset($quality['admissible_pending']);
+
 ErrorResponse::ok(array_merge([
     'form'              => ['id' => (int) $form['id'], 'name' => $form['name']],
     'deployment_status' => $form['deployment_status'] ?? null,
-    'can_validate'      => Auth::canForm($user, $formId, 'validate'),
+    'can_validate'      => $canValidate,
     'can_settings'      => Auth::canForm($user, $formId, 'settings'),
     'scope'             => $qcScope,
+    'admit_batch'       => Settings::qcAdmitBatch(),
+    'admissible'        => $admissible,
 ], $quality));

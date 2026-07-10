@@ -48,6 +48,26 @@ final class SettingsTest extends DbTestCase
         $this->assertSame('first', Settings::tableFreeze());
     }
 
+    public function testQcAdmitBatch(): void
+    {
+        $this->assertSame('table', Settings::qcAdmitBatch()); // por defecto
+        $this->assertTrue(Settings::qcAdmitBatchInTable());
+        $this->assertFalse(Settings::qcAdmitBatchInQc());
+
+        Settings::set('qc_admit_batch', 'both');
+        $this->assertSame('both', Settings::qcAdmitBatch());
+        $this->assertTrue(Settings::qcAdmitBatchInTable());
+        $this->assertTrue(Settings::qcAdmitBatchInQc());
+
+        Settings::set('qc_admit_batch', 'off');
+        $this->assertFalse(Settings::qcAdmitBatchInTable());
+        $this->assertFalse(Settings::qcAdmitBatchInQc());
+
+        // Valor desconocido → vuelve al por defecto.
+        Settings::set('qc_admit_batch', 'bogus');
+        $this->assertSame('table', Settings::qcAdmitBatch());
+    }
+
     public function testSyncStatusesSanitizes(): void
     {
         Settings::set('sync_deployment_statuses', ['deployed', 'bogus', 'draft']);
