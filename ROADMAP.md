@@ -20,36 +20,25 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 > drill-down, el botón «Marcar en espera las N no admitidas» sobre el flujo de revisión
 > en lote existente, alcance por estado de revisión configurable (`qc_scope`), tasa de
 > no admitidas con denominador único (n / total recibido) y formato de porcentajes
-> configurable (`pct_format`, aplicado también a Estadísticas).
+> configurable (`pct_format`, aplicado también a Estadísticas). En **1.26.0** se añadió su
+> contrapartida, **«Aprobar las N admisibles pendientes»** (los pendientes sin ninguna
+> bandera): ajuste global `qc_admit_batch` (tabla | QC | ambos | ninguno) que gobierna solo
+> ese atajo, filtro «solo admisibles» en la tabla, guardarraíles server-side (solo
+> pendientes; exclusión de encuestadores de alto riesgo con el Índice de riesgo activo), y
+> banderas **derivadas, no persistidas** (`Quality::admissiblePendingUids`, fuente de verdad
+> única para tabla y QC — ver la nota del «marcado on-hold automático» abajo).
 > Quedan estas extensiones, para cuando haya demanda:
 
 - [ ] **Marcado on-hold totalmente automático al sincronizar** *(el checkbox original)*:
       exige atribución nueva en `submission_reviews` (p. ej. `source='auto'`, cambio de
       ENUM → SchemaCheck + nota de upgrade) y decidir si empuja a Kobo o es solo local,
       y si re-evalúa retroactivamente al cambiar los umbrales.
-- [x] **Aprobar en lote las encuestas ADMISIBLES pendientes** *(entregado en 1.26.0;
-      simétrico al «marcar en espera las no admitidas», pero con más cuidado)*. Aprobar es
-      **terminal y afirma calidad**, a diferencia de «en espera» (triage reversible), y los
-      umbrales de QC son **necesarios pero no suficientes** (pasar QC ≠ encuesta genuina;
-      para eso está el Índice de riesgo). Implementado según lo acordado:
-      - **Ajuste global tipo selector** `qc_admit_batch` (fila en `settings`, sin cambio de
-        esquema): `table` (default) | `qc` | `both` | `off`. Gobierna SOLO este atajo de
-        *admisibles*; la revisión en lote genérica de la tabla no se toca.
-      - **Solo PENDIENTES**; confirmación que advierte «solo pasan los umbrales automáticos,
-        no verificadas»; con el **Índice de riesgo** activo se **excluyen los encuestadores
-        de alto riesgo** (índice ≥ `Risk::SUSPICION_Z`).
-      - **Tabla de envíos**: filtro «solo admisibles» combinable con el estado.
-      - **Backend**: `Quality::compute` expone ahora `admissible_pending` y el helper puro
-        `Quality::admissiblePendingUids` (fuente de verdad única para tabla y QC); la
-        aprobación reutiliza `forms/{id}/review`.
-      - **Decisión de diseño — banderas DERIVADAS, no persistidas**: se evaluó guardar las
-        banderas y se descartó. Los umbrales son editables por-formulario y varias señales
-        (duplicados exactos, «GPS clavado») son relativas al cohorte (un sync nuevo puede
-        voltear la bandera de otro envío) → persistir sería una vista materializada con
-        recálculo en cada sync + edición de umbrales, más un cambio de esquema, para un
-        problema que hoy es solo una lista acotada de uids calculada al vuelo. Persistir solo
-        valdría la pena para el hito diferido «marcado on-hold AUTOMÁTICO al sincronizar»
-        (inherentemente histórico, `source='auto'`).
+      *Nota de diseño (jul-2026):* el atajo «aprobar admisibles» (1.26.0) mantiene las
+      banderas **derivadas, no persistidas** a propósito — los umbrales son editables y
+      señales como duplicados/«GPS clavado» son relativas al cohorte (un sync nuevo puede
+      voltear la bandera de otro envío), así que persistirlas sería una vista materializada
+      con recálculo en cada sync + edición de umbrales. Este hito (histórico por naturaleza,
+      `source='auto'`) es el único donde persistir empezaría a valer la pena.
 - [ ] **Horario admisible de trabajo** (franja horaria por formulario, evaluada en
       `APP_TIMEZONE`): encuestas iniciadas de madrugada como bandera propia.
 - [ ] **Velocidad imposible entre puntos geo consecutivos** del mismo encuestador
