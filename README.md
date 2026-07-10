@@ -70,7 +70,12 @@ native validation status.
   rate. Per-form thresholds (with a one-click **suggestion** from the form's real p5/p95
   durations), a configurable review-status scope (by default only pending / on-hold
   submissions are reported), and a one-click batch **"put the N non-admissible on
-  hold"** over the normal review flow. A companion **review-status summary** breaks down
+  hold"** over the normal review flow. Its symmetric counterpart, **"approve the N
+  admissible"** (the pending submissions that pass *every* automatic threshold), is an
+  opt-in shortcut (a global *"approve admissible in bulk"* setting places it on the
+  submissions table, the QC page, both, or nowhere): approving is terminal, so it only
+  touches pending submissions and, when the risk index is active, excludes high-risk
+  enumerators. A companion **review-status summary** breaks down
   approved / pending / on-hold / rejected counts (and %) by team and enumerator. The
   flagged drill-down is **downloadable** (CSV or `.xlsx`) to take to the field-team meeting.
 - **Risk index** (fabrication / "curbstoning" detection, opt-in per form): a heuristic
