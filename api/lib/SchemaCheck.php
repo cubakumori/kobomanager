@@ -134,6 +134,13 @@ class SchemaCheck {
         // el comportamiento deseado en las filas existentes (el índice no se activa solo).
         ['table' => 'forms', 'column' => 'risk_min_n', 'since' => '1.23.0',
          'fix' => "ALTER TABLE forms ADD COLUMN risk_min_n INT UNSIGNED NULL DEFAULT NULL AFTER qc_dup_min_answers"],
+
+        // Resumen de revisión por equipo/encuestador en enlaces compartidos. Opt-in por
+        // enlace con DEFAULT 0: la vista pública oculta el estado de revisión a propósito
+        // (share_stats va con includeReview=false), así que los enlaces existentes no
+        // deben empezar a exponerlo solos.
+        ['table' => 'share_links', 'column' => 'expose_review_summary', 'since' => '1.27.0',
+         'fix' => "ALTER TABLE share_links ADD COLUMN expose_review_summary TINYINT(1) NOT NULL DEFAULT 0 AFTER expose_attachments"],
     ];
 
     /** Columnas cuyo backfill requiere el recálculo PHP de migrate.php (no basta SQL). */

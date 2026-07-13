@@ -49,8 +49,8 @@ class ShareLink {
      * (difieren entre simple y lote).
      *
      * @return array{expose_list:int,expose_detail:int,expose_map:int,expose_stats:int,
-     *   expose_attachments:int,field_filter:?string,team_filter:?string,
-     *   stats_status:?string,password_hash:?string,expires_at:?string}
+     *   expose_attachments:int,expose_review_summary:int,field_filter:?string,
+     *   team_filter:?string,stats_status:?string,password_hash:?string,expires_at:?string}
      */
     public static function parseSettings(array $body, array $form): array {
         // Qué expone el enlace (al menos uno; la lista es lo razonable por defecto).
@@ -60,6 +60,15 @@ class ShareLink {
         $exposeStats  = !empty($body['expose_stats']) ? 1 : 0;
         if (!$exposeList && !$exposeDetail && !$exposeMap && !$exposeStats) {
             ErrorResponse::send('VALIDATION_ERROR', 'El enlace debe exponer al menos una vista');
+        }
+
+        // Resumen de revisión por equipo/encuestador: opt-in explícito (la vista pública
+        // oculta el estado de revisión por defecto) y solo si el formulario tiene campo
+        // de equipo o encuestador configurado (sin ellos no hay agrupación que mostrar).
+        $exposeReviewSummary = 0;
+        if (!empty($body['expose_review_summary'])
+            && (!empty($form['stats_team_field']) || !empty($form['stats_enumerator_field']))) {
+            $exposeReviewSummary = 1;
         }
 
         // Filtro por columna (ocultar campos en el enlace): canónico o NULL.
@@ -124,11 +133,12 @@ class ShareLink {
         }
 
         return [
-            'expose_list'        => $exposeList,
-            'expose_detail'      => $exposeDetail,
-            'expose_map'         => $exposeMap,
-            'expose_stats'       => $exposeStats,
-            'expose_attachments' => $exposeAttachments,
+            'expose_list'           => $exposeList,
+            'expose_detail'         => $exposeDetail,
+            'expose_map'            => $exposeMap,
+            'expose_stats'          => $exposeStats,
+            'expose_attachments'    => $exposeAttachments,
+            'expose_review_summary' => $exposeReviewSummary,
             'field_filter'       => $fieldJson,
             'team_filter'        => $teamJson,
             'stats_status'       => $statsStatus,
@@ -275,8 +285,9 @@ class ShareLink {
 
     /**
      * Guard común de los endpoints públicos: resuelve el token, comprueba la
-     * capacidad pedida ('list'|'detail'|'map') y, si el enlace tiene contraseña,
-     * exige un ticket válido. Corta con el error adecuado o devuelve la fila.
+     * capacidad pedida ('list'|'detail'|'map'|'stats'|'attachments'|'review_summary')
+     * y, si el enlace tiene contraseña, exige un ticket válido. Corta con el error
+     * adecuado o devuelve la fila.
      */
     public static function requireAccess(string $token, string $capability): array {
         self::throttle();
@@ -285,12 +296,13 @@ class ShareLink {
             ErrorResponse::send('NOT_FOUND', 'Enlace no válido o caducado');
         }
         $exposeCol = match ($capability) {
-            'list'        => 'expose_list',
-            'detail'      => 'expose_detail',
-            'map'         => 'expose_map',
-            'stats'       => 'expose_stats',
-            'attachments' => 'expose_attachments',
-            default       => null,
+            'list'           => 'expose_list',
+            'detail'         => 'expose_detail',
+            'map'            => 'expose_map',
+            'stats'          => 'expose_stats',
+            'attachments'    => 'expose_attachments',
+            'review_summary' => 'expose_review_summary',
+            default          => null,
         };
         if ($exposeCol === null || !(int) $link[$exposeCol]) {
             ErrorResponse::send('NOT_FOUND', 'Recurso no disponible en este enlace');

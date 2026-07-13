@@ -278,6 +278,7 @@ CREATE TABLE IF NOT EXISTS share_links (
     expose_map        TINYINT(1) NOT NULL DEFAULT 0,        -- mostrar mapa
     expose_stats      TINYINT(1) NOT NULL DEFAULT 0,        -- mostrar estadísticas (sin el estado de revisión interno)
     expose_attachments TINYINT(1) NOT NULL DEFAULT 0,       -- exponer adjuntos (solo si el enlace tiene contraseña; ver `share_attachments_policy`)
+    expose_review_summary TINYINT(1) NOT NULL DEFAULT 0,    -- exponer el resumen de revisión por equipo/encuestador (opt-in: la vista pública oculta la revisión por defecto; solo con campo de equipo/encuestador)
     row_filter        JSON NULL,                            -- {match,groups:[{match,conditions:[{field,op,values}]}]} o NULL (ver lib/RowScope; lee también el formato antiguo {conditions:[...]})
     field_filter      JSON NULL,                            -- {hidden:["clave",...]} o NULL: columnas ocultas en este enlace (ver lib/FieldScope)
     team_filter       JSON NULL,                            -- ["claveEquipo",...] o NULL: alcance FIJO por equipo (valores de forms.stats_team_field; '__none__' = sin equipo). Se combina en AND con row_filter en todos los endpoints del enlace

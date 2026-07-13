@@ -139,7 +139,8 @@ returns `readonly_fields` so the UI renders them locked (🔒). Share links don'
 ### Public share links (`lib/ShareLink.php`)
 Read‑only links let anyone browse a form's submissions **without a session** (M1). A
 `share_links` row carries an unguessable URL `token`, what it exposes (`expose_list` /
-`expose_detail` / `expose_map` / `expose_stats` / `expose_attachments`), an optional
+`expose_detail` / `expose_map` / `expose_stats` / `expose_attachments` /
+`expose_review_summary`), an optional
 `row_filter` (reuses
 `RowScope`), an optional `field_filter` (reuses `FieldScope` — hide columns in the public
 view), an optional `password_hash`, and optional `expires_at` / `revoked_at`. `resolve()`
@@ -149,8 +150,16 @@ is their guard — it resolves the token, checks the requested capability, and f
 password‑protected links requires a short‑lived **HMAC ticket** (issued by the rate‑limited
 `unlock` endpoint, sent back via the `X-Share-Ticket` header **or** the `?k=` query param so
 plain `<img>`/`<audio>` requests can carry it). Out‑of‑scope or other‑form submissions return
-404; the internal review status is never exposed. Admin CRUD is in `v1/admin/shares*`; the
-password policy is the `share_password_policy` setting.
+404; the internal review status is never exposed by default. The one **opt‑in** exception
+(1.27.0) is `expose_review_summary`: `GET /public/share/{token}/review-summary`
+(`share_review_summary.php`) returns the **aggregate review‑status counts** per
+team/enumerator — no submission data — reusing `Quality::compute` with the link's row
+scope (`row_filter` AND `team_filter`, the latter via the `$extraScope` param) and
+returning only `review_summary`. It requires the form to have a team or enumerator field
+(enforced both at creation in `parseSettings()` and live in the endpoint) and deliberately
+ignores the link's `stats_status` scope — showing review progress is the whole point of
+the flag, which stays `DEFAULT 0` so existing links never start exposing it. Admin CRUD is
+in `v1/admin/shares*`; the password policy is the `share_password_policy` setting.
 
 **Bulk creation.** `POST /admin/shares/bulk` (`shares_bulk.php`) creates one link per chosen
 value of a **`select_one`** field: each link is pinned to `field = value` via a `row_filter`

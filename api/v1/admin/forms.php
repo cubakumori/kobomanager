@@ -13,6 +13,7 @@ if (Request::method() !== 'GET') {
 $rows = DB::run(
     'SELECT f.id, f.name, f.kobo_asset_uid, f.server_url, f.deployment_status, f.last_synced_at,
             f.sync_status, f.last_sync_error, f.active,
+            f.stats_team_field, f.stats_enumerator_field,
             a.id AS account_id, a.label AS account_label
      FROM forms f
      JOIN kobo_accounts a ON a.id = f.kobo_account_id

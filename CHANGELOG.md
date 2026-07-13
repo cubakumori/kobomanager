@@ -8,6 +8,12 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 Dos mejoras de visibilidad del estado de revisión.
 
+> **Nota de actualización (esquema).** Tras subir el código, ejecuta **una vez**
+> `php api/cli/migrate.php`: añade `share_links.expose_review_summary` (opt-in del
+> resumen de revisión por enlace; `DEFAULT 0` = los enlaces existentes no cambian).
+> Sin shell, el `ALTER`:
+> `ALTER TABLE share_links ADD COLUMN expose_review_summary TINYINT(1) NOT NULL DEFAULT 0 AFTER expose_attachments`.
+
 ### Añadido
 
 - **Toggle de alcance en Control de calidad**: la página permite alternar al vuelo entre
@@ -17,6 +23,22 @@ Dos mejoras de visibilidad del estado de revisión.
   **solo para esa petición**, un valor no reconocido cae al global y no se persiste nada.
   Disponible para cualquiera con `can_view`; el toggle arranca reflejando el ajuste
   global. Sin cambio de esquema.
+- **Resumen de revisión en enlaces compartidos** (`expose_review_summary`, opt-in por
+  enlace, OFF por defecto — la vista pública sigue ocultando la revisión salvo decisión
+  explícita del admin): pestaña *«Revisión»* en el enlace público con los **recuentos
+  agregados** por equipo/encuestador y estado (pendiente / en espera / aprobado /
+  rechazado), sin ningún dato de los envíos — pensado para que un coordinador de campo
+  siga el progreso de la revisión sin cuenta.
+  - Endpoint público nuevo `GET /public/share/{token}/review-summary`: reutiliza
+    `Quality::compute` con el alcance por filas del enlace (filtro de filas Y equipos,
+    vía el parámetro `$extraScope` nuevo, espejo del de `Stats::compute`) y devuelve
+    **solo** `review_summary`; micro-caché en disco como el de `share_stats`.
+  - Solo disponible si el formulario tiene campo de equipo o encuestador (sin ellos no
+    hay agrupación): se fuerza a OFF al crear el enlace y se re-comprueba en vivo en el
+    endpoint. El alcance por estado del enlace (`stats_status = 'approved'`) **no**
+    recorta el resumen: mostrar el progreso completo es el propósito del opt-in.
+  - Casilla «Resumen de revisión» en el editor de enlaces (simple y en lote), visible
+    solo con campo de equipo/encuestador configurado.
 
 ## [1.26.0] - 2026-07-10
 

@@ -32,6 +32,7 @@ const blankForm = () => ({
   expose_map: false,
   expose_stats: false,
   expose_attachments: false,
+  expose_review_summary: false,
   password: '',
   expires_at: '',
   row_filter: null,
@@ -174,6 +175,7 @@ async function onBulkCreate() {
       expose_map: form.value.expose_map,
       expose_stats: form.value.expose_stats,
       expose_attachments: canExposeAttachments.value && form.value.expose_attachments,
+      expose_review_summary: canExposeReviewSummary.value && form.value.expose_review_summary,
       password: passwordPolicy.value === 'off' ? '' : form.value.password,
       expires_at: form.value.expires_at,
       row_filter: form.value.row_filter,
@@ -202,6 +204,13 @@ const canExposeAttachments = computed(
   () => attachmentsPolicy.value === 'require_password' && passwordPolicy.value !== 'off' && !!form.value.password,
 )
 
+// Resumen de revisión: solo si el formulario elegido tiene campo de equipo o de
+// encuestador (mismo gating que el backend; sin ellos no hay agrupación que mostrar).
+const canExposeReviewSummary = computed(() => {
+  const f = forms.value.find((x) => x.id === Number(form.value.form_id))
+  return !!(f && (f.stats_team_field || f.stats_enumerator_field))
+})
+
 async function onCreate() {
   if (!canCreate.value) return
   creating.value = true
@@ -215,6 +224,7 @@ async function onCreate() {
       expose_map: form.value.expose_map,
       expose_stats: form.value.expose_stats,
       expose_attachments: canExposeAttachments.value && form.value.expose_attachments,
+      expose_review_summary: canExposeReviewSummary.value && form.value.expose_review_summary,
       password: passwordPolicy.value === 'off' ? '' : form.value.password,
       expires_at: form.value.expires_at,
       row_filter: form.value.row_filter,
@@ -258,6 +268,7 @@ function exposesText(link) {
   if (link.expose_map) parts.push(t('shares.exposeMap'))
   if (link.expose_stats) parts.push(t('shares.exposeStats'))
   if (link.expose_attachments) parts.push(t('shares.exposeAttachments'))
+  if (link.expose_review_summary) parts.push(t('shares.exposeReviewSummary'))
   return parts.join(' · ')
 }
 
@@ -603,6 +614,11 @@ onMounted(() => {
             >
               <input type="checkbox" v-model="form.expose_attachments" :disabled="!canExposeAttachments" />
               {{ $t('shares.exposeAttachments') }}
+            </label>
+            <!-- Resumen de revisión: solo con campo de equipo/encuestador en el formulario -->
+            <label v-if="canExposeReviewSummary" class="inline-flex items-center gap-2 text-sm" :title="$t('shares.exposeReviewSummaryHint')">
+              <input type="checkbox" v-model="form.expose_review_summary" />
+              {{ $t('shares.exposeReviewSummary') }}
             </label>
           </div>
           <p v-if="!(form.expose_list || form.expose_detail || form.expose_map || form.expose_stats)" class="mt-1 text-xs text-red-600 dark:text-red-400">

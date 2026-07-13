@@ -7,14 +7,14 @@ import { i18n, setLocale } from '../i18n'
 import { makeLabeler } from '../composables/labels'
 import AttachmentsGallery from '../components/AttachmentsGallery.vue'
 import Skeleton from '../components/Skeleton.vue'
-import { useTableFreeze, useTableHeaderLines } from '../composables/appConfig'
+import { useTableFreeze, useTableHeaderLines, usePctFormat } from '../composables/appConfig'
 
 // Leaflet y Chart.js solo se descargan si el enlace expone mapa/estadísticas
 // (chunks aparte; ambos componentes se renderizan bajo v-if).
 const LeafletMap = defineAsyncComponent(() => import('../components/LeafletMap.vue'))
 const StatsPanels = defineAsyncComponent(() => import('../components/StatsPanels.vue'))
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { freezeFirst } = useTableFreeze()
 const { headerLinesClass } = useTableHeaderLines()
 const route = useRoute()
@@ -45,6 +45,7 @@ const availableViews = computed(() => {
   if (meta.value?.expose_list) v.push('list')
   if (meta.value?.expose_map) v.push('map')
   if (meta.value?.expose_stats) v.push('stats')
+  if (meta.value?.expose_review_summary) v.push('review')
   return v
 })
 
@@ -207,7 +208,34 @@ async function loadStats() {
   }
 }
 
-// Carga la vista activa (lista / mapa / estadísticas) según los flags del enlace.
+// ---------- resumen de revisión (opt-in del enlace) ----------
+// Misma presentación que la sección homónima de Control de calidad, pero con los
+// recuentos que devuelve el endpoint público (agregados; sin datos de envíos).
+const review = ref(null)
+const reviewLoading = ref(false)
+const REVIEW_STATUSES = ['pending', 'on_hold', 'approved', 'rejected']
+const REVIEW_CLS = {
+  pending: 'bg-amber-100 text-amber-700',
+  on_hold: 'bg-sky-100 text-sky-700',
+  approved: 'bg-success-100 text-success-700',
+  rejected: 'bg-red-100 text-red-700',
+}
+const { formatPctNumber } = usePctFormat()
+const pctOf = (n, total) => (total > 0 ? formatPctNumber((n * 100) / total, locale.value) + ' %' : '—')
+const reviewHasTeams = computed(() => !!review.value?.team_field)
+async function loadReview() {
+  reviewLoading.value = true
+  try {
+    const { data } = await publicApi.get(`/public/share/${token.value}/review-summary`, cfg())
+    review.value = data.data
+  } catch {
+    review.value = null
+  } finally {
+    reviewLoading.value = false
+  }
+}
+
+// Carga la vista activa (lista / mapa / estadísticas / revisión) según los flags del enlace.
 async function loadActiveView() {
   if (currentSub.value && meta.value?.expose_detail) {
     await loadDetail(currentSub.value)
@@ -215,6 +243,8 @@ async function loadActiveView() {
     await loadMap()
   } else if (view.value === 'stats') {
     await loadStats()
+  } else if (view.value === 'review') {
+    await loadReview()
   } else if (meta.value?.expose_list) {
     await loadList(1)
   }
@@ -360,6 +390,63 @@ onMounted(loadMeta)
             <StatsPanels v-else-if="stats" :stats="stats" />
             <p v-else class="rounded-xl bg-white px-5 py-8 text-center text-sm text-slate-400 ring-1 ring-slate-200">
               {{ $t('stats.noData') }}
+            </p>
+          </template>
+
+          <!-- Resumen de revisión (recuentos agregados por equipo/encuestador) -->
+          <template v-else-if="view === 'review'">
+            <Skeleton v-if="reviewLoading" variant="lines" :lines="6" />
+            <section v-else-if="review && review.review_summary.length" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+              <h2 class="font-semibold text-slate-900">{{ $t('share.reviewTitle') }}</h2>
+              <p class="mb-3 text-xs text-slate-400">{{ $t('share.reviewDesc') }}</p>
+              <div class="space-y-3">
+                <details
+                  v-for="(team, i) in review.review_summary"
+                  :key="i"
+                  class="overflow-hidden rounded-lg ring-1 ring-slate-200"
+                  :open="!reviewHasTeams || review.review_summary.length <= 3"
+                >
+                  <summary
+                    class="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 bg-slate-50 px-4 py-2 hover:bg-slate-100"
+                    :class="{ 'pointer-events-none': !reviewHasTeams }"
+                  >
+                    <span class="font-medium text-slate-800">{{ reviewHasTeams ? team.name : $t('stats.qualityAllEnumerators') }}</span>
+                    <span class="text-xs text-slate-500">{{ $t('stats.colVolume') }}: {{ team.total }}</span>
+                    <span class="ml-auto flex flex-wrap gap-1.5 text-xs">
+                      <span v-for="s in REVIEW_STATUSES" :key="s" v-show="team.status[s]" class="rounded-full px-2 py-0.5" :class="REVIEW_CLS[s]">
+                        {{ $t('review.' + s) }}: <span class="font-semibold">{{ team.status[s] }}</span>
+                      </span>
+                    </span>
+                  </summary>
+                  <div class="overflow-x-auto border-t border-slate-100">
+                    <table class="w-full whitespace-nowrap text-left text-sm">
+                      <thead class="text-xs uppercase tracking-wider text-slate-400">
+                        <tr>
+                          <th class="px-4 py-1.5">{{ $t('stats.colEnumerator') }}</th>
+                          <th class="px-4 py-1.5">{{ $t('stats.colVolume') }}</th>
+                          <th v-for="s in REVIEW_STATUSES" :key="s" class="px-4 py-1.5">{{ $t('review.' + s) }}</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-100">
+                        <tr v-for="(e, j) in team.enumerators" :key="j">
+                          <td class="px-4 py-1.5 font-medium text-slate-700">{{ e.name }}</td>
+                          <td class="px-4 py-1.5 text-slate-600">{{ e.total }}</td>
+                          <td v-for="s in REVIEW_STATUSES" :key="s" class="px-4 py-1.5" :class="e.status[s] ? 'text-slate-700' : 'text-slate-300'">
+                            <template v-if="e.status[s]">
+                              {{ e.status[s] }}
+                              <span class="text-xs text-slate-400">· {{ pctOf(e.status[s], e.total) }}</span>
+                            </template>
+                            <template v-else>—</template>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
+              </div>
+            </section>
+            <p v-else class="rounded-xl bg-white px-5 py-8 text-center text-sm text-slate-400 ring-1 ring-slate-200">
+              {{ $t('share.reviewEmpty') }}
             </p>
           </template>
 

@@ -82,6 +82,9 @@ class Quality {
      *                                 duplicados (NULL = señal desactivada). Dial de
      *                                 sensibilidad: bajarlo a 1 detecta copias de envíos
      *                                 con una sola respuesta (más sensible, más ruido).
+     * @param array|null  $extraScope  Restricción de filas ADICIONAL en AND con $scope
+     *                                 (p. ej. el alcance fijo por equipo de un enlace
+     *                                 compartido), igual que en Stats::compute.
      */
     public static function compute(
         int $formId,
@@ -95,9 +98,18 @@ class Quality {
         ?int $maxDuration,
         ?int $minGap,
         ?array $scopeStatuses = null,
-        ?int $dupMinAnswers = 2
+        ?int $dupMinAnswers = 2,
+        ?array $extraScope = null
     ): array {
         [$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'json_payload');
+
+        // Igual que en lib/Stats: la restricción adicional se pliega en `$scopeSql` a
+        // nivel SQL para no depender de la profundidad de RowScope (evita fusionar reglas).
+        if ($extraScope !== null) {
+            [$extraSql, $extraP] = RowScope::sqlCondition($extraScope, 'json_payload');
+            $scopeSql = "($scopeSql) AND ($extraSql)";
+            $scopeP   = array_merge($scopeP, $extraP);
+        }
 
         // Mismo gating que lib/Stats: no se agrupa por un campo oculto en este alcance.
         $teamField = ($teamField !== null && $teamField !== '' && !FieldScope::isHidden($fieldScope, $teamField))

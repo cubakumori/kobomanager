@@ -42,11 +42,12 @@ native validation status.
 
 - **Public read-only links** — share a form without giving anyone an account, optionally
   with a password, an expiry date, and the same row/column scoping you apply to your
-  team. Submission list, map, statistics, and attachments are opt-in per link (a
-  stats-only link shows charts without exposing individual submissions). You can also
-  **freeze a link to a subset** — only approved submissions, and/or specific teams —
-  applied across every view it exposes. The public view shows the data's freshness
-  ("data as of …").
+  team. Submission list, map, statistics, attachments, and a **review summary**
+  (aggregate review-status counts per team/enumerator — e.g. for a field coordinator
+  without an account) are opt-in per link (a stats-only link shows charts without
+  exposing individual submissions). You can also **freeze a link to a subset** — only
+  approved submissions, and/or specific teams — applied across every view it exposes.
+  The public view shows the data's freshness ("data as of …").
 - **Bulk link creation** — create one link per value of a single-choice (`select_one`)
   field in a single step (e.g. one link per province), each pinned to its value.
 

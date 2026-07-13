@@ -26,7 +26,9 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 > ese atajo, filtro «solo admisibles» en la tabla, guardarraíles server-side (solo
 > pendientes; exclusión de encuestadores de alto riesgo con el Índice de riesgo activo), y
 > banderas **derivadas, no persistidas** (`Quality::admissiblePendingUids`, fuente de verdad
-> única para tabla y QC — ver la nota del «marcado on-hold automático» abajo).
+> única para tabla y QC — ver la nota del «marcado on-hold automático» abajo). En
+> **1.27.0**: **toggle transitorio del alcance** en la propia página (y su export):
+> `?scope=all|pending_hold` sustituye el ajuste global `qc_scope` solo para esa petición.
 > Quedan estas extensiones, para cuando haya demanda:
 
 - [ ] **Marcado on-hold totalmente automático al sincronizar** *(el checkbox original)*:
@@ -80,7 +82,10 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       público (variante de `quality.php` que herede el fila/columna del enlace y
       **ofusque/omita** los identificadores según su config) + vista pública + i18n.
       **Diferido a demanda real** una vez el repo sea público; si alguien lo pide, se
-      implementa.
+      implementa. *El subconjunto menos sensible ya se entregó en **1.27.0***: el
+      **resumen de revisión** por equipo/encuestador en enlaces (`expose_review_summary`,
+      opt-in por enlace, solo recuentos agregados por estado) — esta extensión queda
+      para las **banderas de calidad** completas (umbrales + drill-down de infracciones).
 
 ---
 
