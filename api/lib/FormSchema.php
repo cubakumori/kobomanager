@@ -84,6 +84,7 @@ class FormSchema {
         $meta       = []; // campos meta de interés (start/end/today) → su ruta en el payload
         $metaFields = []; // rutas de TODOS los campos metadato/calculate (para no editarlos)
         $stack      = []; // pila de nombres de grupo/repeat para reconstruir la ruta
+        $rowCtx     = null; // dentro de begin_score/begin_rank: lista compartida + label del grupo
         foreach ($survey as $row) {
             $type = (string) ($row['type'] ?? '');
             $name = $row['name'] ?? null;
@@ -96,9 +97,48 @@ class FormSchema {
                 array_pop($stack);
                 continue;
             }
+            // Score («Rating» del builder de Kobo) y Rank: GRUPOS cuyas filas
+            // (score__row / rank__level) comparten una lista de opciones que vive en el
+            // propio begin_* (`kobo--score-choices` / `kobo--rank-items`). En el payload
+            // las filas van bajo la ruta del grupo (`Q6/carrt`), así que el grupo apila
+            // como un begin_group; el grupo en sí NO es un campo de datos (no se registra:
+            // nunca tiene valor y contaminaría el ranking de no-respuesta).
+            if ($type === 'begin_score' || $type === 'begin_rank') {
+                $pushed = $name !== null && $name !== '';
+                if ($pushed) $stack[] = $name;
+                $rowCtx = [
+                    'pushed' => $pushed,
+                    'list'   => $row['kobo--score-choices'] ?? $row['kobo--rank-items'] ?? null,
+                    'label'  => self::labelMap($row['label'] ?? null, $translations),
+                ];
+                continue;
+            }
+            if ($type === 'end_score' || $type === 'end_rank') {
+                if ($rowCtx !== null && $rowCtx['pushed']) array_pop($stack);
+                $rowCtx = null;
+                continue;
+            }
             $full = ($name !== null && $name !== '')
                 ? ($stack ? implode('/', $stack) . '/' . $name : $name)
                 : null;
+
+            // Fila de un score/rank: se registra como un select_one normal con la lista
+            // compartida del grupo y etiqueta compuesta «{pregunta} · {fila}», para que
+            // entre en estadísticas, etiquetas de opción, búsqueda y ocultado de columnas
+            // exactamente igual que cualquier otra pregunta de opción única.
+            if (($type === 'score__row' || $type === 'rank__level') && $full !== null) {
+                $fields[$full] = [
+                    'leaf'  => $name,
+                    'type'  => 'select_one',
+                    'list'  => $rowCtx['list'] ?? null,
+                    'multi' => false,
+                    'label' => self::composeLabels(
+                        $rowCtx['label'] ?? [],
+                        self::labelMap($row['label'] ?? null, $translations)
+                    ),
+                ];
+                continue;
+            }
             // Campos meta de marca de tiempo: no son datos con etiqueta, pero su nombre
             // real (puede no ser «start»/«end») hace falta para calcular la duración.
             if (in_array($type, ['start', 'end', 'today'], true) && $full !== null) {
@@ -239,6 +279,29 @@ class FormSchema {
     }
 
     // ---------- internos ----------
+
+    /**
+     * Compone la etiqueta de una fila de score/rank: «{pregunta del grupo} · {fila}»,
+     * idioma a idioma (unión de los idiomas de ambos label-maps, con el respaldo
+     * habitual de pickText). Sin etiqueta de grupo (o de fila) devuelve la otra tal cual.
+     */
+    private static function composeLabels(array $group, array $row): array {
+        if (!$group) return $row;
+        if (!$row) return $group;
+        $out = [];
+        foreach (array_unique(array_merge(array_keys($group), array_keys($row))) as $lang) {
+            $g = self::pickText($group, (string) $lang);
+            $r = self::pickText($row, (string) $lang);
+            if ($g !== null && $g !== '' && $r !== null && $r !== '') {
+                $out[$lang] = $g . ' · ' . $r;
+            } elseif ($r !== null && $r !== '') {
+                $out[$lang] = $r;
+            } elseif ($g !== null && $g !== '') {
+                $out[$lang] = $g;
+            }
+        }
+        return $out;
+    }
 
     /**
      * Normaliza el campo `label` (string en mono-idioma, o array alineado con

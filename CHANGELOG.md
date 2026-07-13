@@ -8,7 +8,28 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 Correcciones tras las primeras pruebas de 1.27.0 con enlaces compartidos reales.
 
+> **Nota de actualización.** Sin cambio de esquema de BD, pero los esquemas de formulario
+> cacheados se re-normalizan solos en el siguiente sync (o al instante con «Sincronizar
+> formularios»). Si habías **ocultado columnas** de preguntas *score/rating* o *rank* en
+> Permisos o en enlaces compartidos, ejecuta después **una vez**
+> `php api/cli/fix_field_filters.php` (admite `--dry-run`): renombra en los filtros
+> guardados las claves viejas (`carrt`) a la ruta real del payload (`Q6/carrt`) — con la
+> clave vieja el ocultado no surtía efecto.
+
 ### Corregido
+
+- **Preguntas *score* («Matriz de valoración/Rating» del builder de Kobo) y *rank***: el
+  parser del esquema no las entendía — registraba el grupo como si fuera una pregunta y
+  sus filas por el nombre hoja pelado (`carrt`), sin la lista de opciones compartida.
+  Ahora `begin_score`/`begin_rank` son grupos y cada fila se registra en su **ruta real
+  del payload** (`Q6/carrt`) como `select_one` con la lista compartida
+  (`kobo--score-choices`/`kobo--rank-items`) y etiqueta compuesta *«{pregunta} · {fila}»*.
+  Efectos: entran en **Estadísticas → por pregunta**, el detalle y el export muestran
+  etiqueta y valor legibles («MALA» en vez de «3»), la búsqueda indexa sus etiquetas, el
+  grupo ya no contamina el ranking de no-respuesta y — lo importante — **ocultarlas por
+  columna vuelve a surtir efecto**: con la clave vieja el ocultado no casaba con el
+  payload y el valor se exponía igualmente (también en enlaces públicos). CLI nuevo
+  `fix_field_filters.php` para renombrar las claves en filtros ya guardados.
 
 - **El alcance por estado de un enlace ahora se anuncia en la vista pública**: los
   metadatos exponen `status_scope` y, en enlaces «solo aprobados», la lista dice

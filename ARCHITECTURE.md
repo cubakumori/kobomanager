@@ -331,6 +331,16 @@ to a new one (key rotation; see `DEPLOY.md §12`).
     Kobo‑sourced rows (shown as “Kobo” in the history).
 - **Readable labels** (`lib/FormSchema.php`): caches a normalized XLSForm schema per form
   (`forms.schema_json`) so the UI shows question/option labels instead of raw codes.
+  **Score ("Rating") and rank questions** (`begin_score`/`begin_rank`) are *groups* whose rows
+  (`score__row`/`rank__level`) share one choice list carried on the `begin_*` row itself
+  (`kobo--score-choices` / `kobo--rank-items`): `normalize()` treats them as groups (path stack,
+  the group itself is not a data field) and registers each row at its **full payload path**
+  (`Q6/carrt`) as a plain `select_one` with the shared list and a composed
+  *"{question} · {row}"* label. Registering rows under their real payload key is
+  load‑bearing for column‑level permissions: `FieldScope` matches keys exactly, so a
+  wrong path in the schema (what the hide‑columns editor offers) would silently fail to
+  hide the value (fixed in 1.27.1; `api/cli/fix_field_filters.php` renames stale keys in
+  stored filters after schemas re‑normalize on the next sync).
 - **Geo** (`lib/Geo.php`): parses geopoint/geotrace/geoshape for the map view.
 - **Derived values** (`lib/Derived.php`): pure helper that computes per‑submission metrics not
   shipped by Kobo (duration `end − start`, completeness, upload delay, attachments by kind,
