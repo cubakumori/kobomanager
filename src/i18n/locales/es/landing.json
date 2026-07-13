@@ -29,7 +29,7 @@
     "moreTitle": "Y mucho más",
     "moreSubtitle": "Pensado para equipos que necesitan compartir y analizar datos sin renunciar a su control y seguridad.",
     "feat5Title": "Enlaces públicos de solo lectura",
-    "feat5Desc": "Comparte un formulario por enlace, sin dar cuenta: opcionalmente con contraseña, fecha de caducidad y el mismo alcance por filas y columnas que aplicas a tu equipo —e incluso acotado a solo lo aprobado o a ciertos equipos.",
+    "feat5Desc": "Comparte un formulario por enlace, sin dar cuenta: opcionalmente con contraseña, fecha de caducidad y el mismo alcance por filas y columnas que aplicas a tu equipo —e incluso acotado a solo lo aprobado o a ciertos equipos. Si quieres, el enlace puede incluir el progreso de la revisión por equipo y encuestador (solo recuentos), para coordinadores de campo sin cuenta.",
     "featQualityTitle": "Control de calidad de encuestas",
     "featQualityDesc": "Detecta encuestas apresuradas o fabricadas: demasiado cortas o largas, solapadas en el tiempo con otra del mismo encuestador, con huecos sospechosamente cortos entre una y otra, con respuestas duplicadas o con el mismo punto GPS repetido. Tú defines los umbrales por formulario, las no admitidas se marcan «En espera» de un clic y el listado se descarga en CSV o Excel.",
     "featRiskTitle": "Índice de riesgo (detección de fabricación)",
