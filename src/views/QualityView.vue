@@ -30,15 +30,28 @@ const flash = ref('')
 const batchBusy = ref(false)
 const approveBusy = ref(false)
 
+// --- Alcance por estado de revisión: toggle TRANSITORIO de la vista -----------
+// Arranca en el ajuste global (la primera carga va sin parámetro) y al cambiarlo
+// recarga con `?scope=`, que el backend aplica solo a esa petición. No persiste
+// nada ni pide permiso extra; `q.scope` es siempre el alcance EFECTIVO devuelto.
+const scopeOverride = ref(null) // null = ajuste global
+function setScope(s) {
+  if (loading.value || s === q.value?.scope) return
+  scopeOverride.value = s
+  load()
+}
+
 // --- Export del drill-down de infracciones (mismo alcance que la página: el
-// backend reutiliza lib/Quality con el RowScope/FieldScope y el qc_scope global).
-// La única elección por-petición es el formato; la cookie de sesión viaja sola.
+// backend reutiliza lib/Quality con el RowScope/FieldScope y el mismo qc_scope;
+// el alcance efectivo en pantalla —toggle incluido— viaja en la URL de descarga).
 const exportOpen = ref(false)
 const exportFormat = ref('xlsx') // 'xlsx' (columnas nativas) | 'csv'
 
 function doExport() {
-  const fmt = exportFormat.value === 'xlsx' ? '?format=xlsx' : ''
-  window.location.href = `/api/v1/forms/${formId.value}/quality/export${fmt}`
+  const params = new URLSearchParams()
+  if (exportFormat.value === 'xlsx') params.set('format', 'xlsx')
+  if (q.value?.scope) params.set('scope', q.value.scope)
+  window.location.href = `/api/v1/forms/${formId.value}/quality/export?${params}`
   exportOpen.value = false
 }
 
@@ -46,7 +59,8 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const { data } = await api.get(`/forms/${formId.value}/quality`)
+    const qs = scopeOverride.value ? `?scope=${scopeOverride.value}` : ''
+    const { data } = await api.get(`/forms/${formId.value}/quality${qs}`)
     q.value = data.data
   } catch (e) {
     error.value = apiError(e, t('stats.qualityLoadError'))
@@ -311,14 +325,34 @@ onMounted(load)
         >
           {{ $t('stats.qualityAdjust') }}
         </RouterLink>
-        <!-- Alcance por estado de revisión (ajuste global; solo el admin puede cambiarlo) -->
-        <span>
+        <!-- Alcance por estado de revisión: toggle transitorio de la vista (arranca en el
+             ajuste global; el enlace del admin sigue cambiando el default para todos) -->
+        <span class="inline-flex items-center gap-1.5">
           {{ $t('stats.qualityScopeLabel') }}:
-          <span class="font-semibold text-slate-700">{{ $t('stats.qualityScope_' + q.scope) }}</span>
+          <span
+            class="inline-flex overflow-hidden rounded-md ring-1 ring-slate-300 dark:ring-slate-600"
+            role="group"
+            :title="$t('stats.qualityScopeToggleHint')"
+          >
+            <button
+              type="button"
+              class="px-2 py-0.5 font-medium"
+              :class="q.scope === 'pending_hold' ? 'bg-primary-600 text-white' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'"
+              :aria-pressed="q.scope === 'pending_hold'"
+              @click="setScope('pending_hold')"
+            >{{ $t('stats.qualityScopeTogglePending') }}</button>
+            <button
+              type="button"
+              class="px-2 py-0.5 font-medium"
+              :class="q.scope === 'all' ? 'bg-primary-600 text-white' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'"
+              :aria-pressed="q.scope === 'all'"
+              @click="setScope('all')"
+            >{{ $t('stats.qualityScopeToggleAll') }}</button>
+          </span>
           <RouterLink
             v-if="auth.isAdmin"
             :to="{ path: '/admin/settings', query: { tab: 'tables' } }"
-            class="ml-1 font-medium text-primary-600 hover:underline"
+            class="font-medium text-primary-600 hover:underline"
           >{{ $t('stats.qualityScopeChange') }}</RouterLink>
         </span>
       </div>

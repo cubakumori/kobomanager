@@ -40,8 +40,14 @@ $scope      = RowScope::ruleForUser($user, $formId);
 $fieldScope = FieldScope::ruleForUser($user, $formId);
 $schemaRaw  = $form['schema_json'] ? json_decode($form['schema_json'], true) : null;
 
-// Mismo alcance por estado que la página (ajuste global «Control de calidad: alcance»).
-$qcScope  = Settings::qcScope();
+// Mismo alcance por estado que la página (ajuste global «Control de calidad: alcance»),
+// incluido el `?scope=` transitorio del toggle: la vista lo propaga al exportar para
+// que el archivo contenga exactamente las infracciones que se ven en pantalla.
+$qcScope = Settings::qcScope();
+$scopeParam = (string) ($_GET['scope'] ?? '');
+if (in_array($scopeParam, Settings::VALID_QC_SCOPE, true)) {
+    $qcScope = $scopeParam;
+}
 $statuses = $qcScope === 'all' ? null : ['pending', 'on_hold'];
 
 $quality = Quality::compute(

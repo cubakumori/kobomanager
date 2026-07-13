@@ -4,6 +4,20 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.27.0] - 2026-07-13
+
+Dos mejoras de visibilidad del estado de revisión.
+
+### Añadido
+
+- **Toggle de alcance en Control de calidad**: la página permite alternar al vuelo entre
+  *«Pendientes/En espera»* y *«Todos»* sin tocar el ajuste global `qc_scope`. El backend
+  acepta `?scope=all|pending_hold` en `forms/{id}/quality` y en su export (que sigue
+  reflejando exactamente lo que se ve en pantalla); el parámetro sustituye el global
+  **solo para esa petición**, un valor no reconocido cae al global y no se persiste nada.
+  Disponible para cualquiera con `can_view`; el toggle arranca reflejando el ajuste
+  global. Sin cambio de esquema.
+
 ## [1.26.0] - 2026-07-10
 
 Contrapartida del marcado en lote «en espera»: aprobar en lote las encuestas
