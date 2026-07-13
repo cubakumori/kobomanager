@@ -48,7 +48,7 @@
     "scopeStatus": "Alcance por estado",
     "scopeStatusAll": "Todos los envíos",
     "scopeStatusApproved": "Solo aprobados",
-    "scopeStatusHint": "Acota TODO el enlace (lista, mapa, detalle y estadísticas) a ese estado de revisión.",
+    "scopeStatusHint": "Acota lista, mapa, detalle, adjuntos y estadísticas a ese estado de revisión. El «Resumen de revisión», si se expone, no se recorta: su propósito es mostrar el progreso completo.",
     "scopeStatusApprovedBadge": "Solo aprobados",
     "scopeTeams": "Equipos ({field})",
     "scopeTeamsHint": "Solo los equipos marcados entran en el enlace. Todos marcados = sin restricción.",

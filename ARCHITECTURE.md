@@ -366,7 +366,8 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   single source of truth reused by the authenticated endpoint and by the public share endpoint
   (`public/share/{token}/stats`), which passes the link's scope/field rules and
   `$includeReview = false` so the **internal review status (`by_status`) is never exposed
-  publicly**. The frontend render is the shared `StatsPanels.vue` component (authenticated
+  publicly** (the opt‑in `expose_review_summary` endpoint is the one deliberate exception —
+  see *Public share links*). The frontend render is the shared `StatsPanels.vue` component (authenticated
   `StatsView` + public `PublicShareView`), which omits the review cards/chart when `by_status`
   is absent and hides the attachments/geo cards when the shown subset has none.
 - **Filtering the stats** (authenticated view): every metric is computed over a subset, with the
@@ -434,7 +435,10 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   Start/end render in `APP_TIMEZONE` via `Derived::formatLocal`. A global **scope**
   setting (`qc_scope`: `pending_hold` default | `all`, Settings → Tables tab) decides which
   submissions get *reported*: by default only pending/on-hold ones (approved/rejected already
-  passed human review, so QC counts never contradict the stats review cards). Consecutiveness
+  passed human review, so QC counts never contradict the stats review cards). Since 1.27.0
+  the page carries a **transient toggle**: `?scope=all|pending_hold` overrides the global
+  setting **for that request only** (anyone with `can_view`; unrecognised values fall back
+  to the global; nothing is persisted — the response's `scope` is the effective one). Consecutiveness
   chains are always built over **all** of an enumerator's surveys regardless of scope — a
   pending survey overlapping an approved one is still flagged (against its real end), the
   approved one just isn't listed. The analysis is
@@ -474,7 +478,9 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   status), in CSV or native `.xlsx` (`?format=csv|xlsx`, same writer as the submissions export —
   BOM + formula‑injection neutralization for CSV, numeric duration/gap cells for xlsx). It reuses
   `lib/Quality` verbatim, so it honors the same row/field scope, `qc_scope` and team/enumerator
-  gating as the page; headers and flag/status values follow the user's locale.
+  gating as the page — including the transient `?scope=` override, which the view propagates in
+  the download URL so the file always matches what's on screen; headers and flag/status values
+  follow the user's locale.
 - **Review comments panel** (`lib/Comments.php`, `v1/forms/comments.php`, view
   `CommentsView.vue` at `forms/{id}/comments`, `can_view`): gathers the comments that
   already live in `submission_reviews` (`source='app'` with an author, or `source='kobo'`

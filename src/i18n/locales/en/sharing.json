@@ -48,7 +48,7 @@
     "scopeStatus": "Scope by status",
     "scopeStatusAll": "All submissions",
     "scopeStatusApproved": "Approved only",
-    "scopeStatusHint": "Restricts the WHOLE link (list, map, detail and statistics) to that review status.",
+    "scopeStatusHint": "Restricts the list, map, detail, attachments and statistics to that review status. The “Review summary”, if exposed, is not trimmed: its purpose is to show the full progress.",
     "scopeStatusApprovedBadge": "Approved only",
     "scopeTeams": "Teams ({field})",
     "scopeTeamsHint": "Only checked teams are included in the link. All checked = no restriction.",

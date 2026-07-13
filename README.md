@@ -70,8 +70,9 @@ native validation status.
   drill-down to each offending submission, plus a **weekly trend** of the non-admissible
   rate. Per-form thresholds (with a one-click **suggestion** from the form's real p5/p95
   durations), a configurable review-status scope (by default only pending / on-hold
-  submissions are reported), and a one-click batch **"put the N non-admissible on
-  hold"** over the normal review flow. Its symmetric counterpart, **"approve the N
+  submissions are reported; a toggle on the page — and its export — switches to *all*
+  on the fly without touching the global setting), and a one-click batch **"put the N
+  non-admissible on hold"** over the normal review flow. Its symmetric counterpart, **"approve the N
   admissible"** (the pending submissions that pass *every* automatic threshold), is an
   opt-in shortcut (a global *"approve admissible in bulk"* setting places it on the
   submissions table, the QC page, both, or nowhere): approving is terminal, so it only

@@ -296,7 +296,7 @@
     "showViewSubmissionsLink": "Show the “View submissions” link in My forms",
     "showViewSubmissionsLinkHint": "The form card already opens the submissions when clicked; this link is an extra shortcut.",
     "qcScope": "Quality control: scope",
-    "qcScopeDesc": "Which submissions get flagged on the “Quality control” page. Gaps and overlaps are always computed over all of an enumerator's surveys; this only decides which ones are shown and counted.",
+    "qcScopeDesc": "Which submissions get flagged on the “Quality control” page. This is the default: any user can temporarily switch it from the page itself. Gaps and overlaps are always computed over all of an enumerator's surveys; this only decides which ones are shown and counted.",
     "qcScope_pending_hold": "Only pending or on hold",
     "qcScope_all": "All submissions",
     "pctFormat": "Percentage values",

@@ -296,7 +296,7 @@
     "showViewSubmissionsLink": "Mostrar el enlace «Ver envíos» en Mis formularios",
     "showViewSubmissionsLinkHint": "La tarjeta del formulario ya abre los envíos al pulsarla; este enlace es un acceso adicional.",
     "qcScope": "Control de calidad: alcance",
-    "qcScopeDesc": "Sobre qué envíos se marcan infractores en la página «Control de calidad». Los huecos y solapes se calculan siempre sobre todas las encuestas del encuestador; esto solo decide cuáles se muestran y se cuentan.",
+    "qcScopeDesc": "Sobre qué envíos se marcan infractores en la página «Control de calidad». Es el valor por defecto: cualquier usuario puede alternarlo temporalmente desde la propia página. Los huecos y solapes se calculan siempre sobre todas las encuestas del encuestador; esto solo decide cuáles se muestran y se cuentan.",
     "qcScope_pending_hold": "Únicamente pendientes o en espera",
     "qcScope_all": "Todos los envíos",
     "pctFormat": "Valores porcentuales",
