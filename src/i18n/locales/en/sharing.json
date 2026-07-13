@@ -96,6 +96,8 @@
     "reviewDesc": "Aggregate counts of every submission in this link, by review status.",
     "reviewEmpty": "No review data.",
     "dataAsOf": "Data as of {date}",
+    "totalApproved": "{n} approved submission(s).",
+    "scopeApprovedNote": "This link shows approved submissions only.",
     "total": "{n} submission(s).",
     "search": "Search…",
     "colSubmitted": "Submitted",

@@ -4,6 +4,22 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.27.1] - 2026-07-13
+
+Correcciones tras las primeras pruebas de 1.27.0 con enlaces compartidos reales.
+
+### Corregido
+
+- **El alcance por estado de un enlace ahora se anuncia en la vista pública**: los
+  metadatos exponen `status_scope` y, en enlaces «solo aprobados», la lista dice
+  *«N envío(s) aprobado(s)»* y una línea bajo el sello de frescura aclara *«Este
+  enlace muestra únicamente los envíos aprobados»* (ES/EN).
+- **La tarjeta «Total» de las estadísticas públicas respeta el alcance por estado**
+  del enlace. En la vista interna ese total es a propósito el conjunto completo
+  (las tarjetas de cabecera son el selector de estado), pero en la pública no hay
+  selector y mostraba el total sin acotar junto a paneles ya acotados — además de
+  revelar cuántos envíos sin aprobar existen en un enlace «solo aprobados».
+
 ## [1.27.0] - 2026-07-13
 
 Dos mejoras de visibilidad del estado de revisión.

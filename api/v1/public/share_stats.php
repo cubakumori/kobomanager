@@ -33,7 +33,7 @@ $fieldScope = FieldScope::ruleForLink($link);
 $locale      = Settings::defaultLocale();
 $cacheName   = hash_hmac('sha256', 'share_stats|' . (int) $link['id'], JWT_SECRET);
 $cacheFile   = sys_get_temp_dir() . '/km_' . $cacheName . '.json';
-$fingerprint = md5(json_encode($link, JSON_UNESCAPED_UNICODE) . '|' . $locale);
+$fingerprint = md5(json_encode($link, JSON_UNESCAPED_UNICODE) . '|' . $locale . '|v2');
 $cacheTtl    = 300;
 
 if (is_file($cacheFile) && (time() - (int) filemtime($cacheFile)) < $cacheTtl) {
@@ -46,11 +46,25 @@ if (is_file($cacheFile) && (time() - (int) filemtime($cacheFile)) < $cacheTtl) {
 // Alcance FIJO del enlace: equipos (restricción de fila adicional, vía $extraScope) y
 // estado de revisión. `includeReview=false` mantiene oculto el desglose `by_status`,
 // pero el conjunto sí se acota a «solo aprobados» si el enlace lo fija.
+$statusScope = ShareLink::statusScope($link);
 $stats = Stats::compute(
     $formId, $schemaRaw, $scope, $fieldScope, $locale, false,
     $link['stats_team_field'] ?: null, $link['stats_enumerator_field'] ?: null,
-    ShareLink::statusScope($link), null, ShareLink::teamRule($link)
+    $statusScope, null, ShareLink::teamRule($link)
 );
+
+// La tarjeta «Total» de Stats::compute es a propósito el conjunto COMPLETO en alcance
+// (en la vista interna las tarjetas de cabecera son el selector de estado). Aquí no hay
+// selector: si el enlace fija un estado, el total debe ser el acotado — un enlace «solo
+// aprobados» no debe revelar cuántos envíos sin aprobar existen.
+if ($statusScope !== null) {
+    [$rowSql, $rowP]       = ShareLink::rowSql($link, 'json_payload');
+    [$statusSql, $statusP] = ValidationStatus::statusFilterSql($statusScope);
+    $stats['total'] = (int) DB::run(
+        "SELECT COUNT(*) AS c FROM submissions_cache WHERE form_id = ? AND $rowSql AND $statusSql",
+        array_merge([$formId], $rowP, $statusP)
+    )->fetch()['c'];
+}
 
 $payload = array_merge([
     'form'              => ['name' => $link['form_name']],

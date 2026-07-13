@@ -316,11 +316,17 @@ onMounted(loadMeta)
 
       <!-- Contenido desbloqueado -->
       <template v-else-if="meta && meta.unlocked">
-        <!-- Sello de frescura: los datos provienen de la caché local, refrescada por
-             el cron de sincronización. Informa al visitante de su antigüedad. -->
-        <p v-if="meta.last_synced_at" class="mb-4 text-xs text-slate-400">
-          {{ $t('share.dataAsOf', { date: meta.last_synced_at }) }}
-        </p>
+        <!-- Sello de frescura (caché local refrescada por el cron) y, si el enlace fija
+             un alcance por estado, su anuncio: así los recuentos de todas las vistas
+             (lista, mapa, estadísticas) no desconciertan al visitante. -->
+        <div v-if="meta.last_synced_at || meta.status_scope === 'approved'" class="mb-4 space-y-0.5">
+          <p v-if="meta.last_synced_at" class="text-xs text-slate-400">
+            {{ $t('share.dataAsOf', { date: meta.last_synced_at }) }}
+          </p>
+          <p v-if="meta.status_scope === 'approved'" class="text-xs font-medium text-slate-500">
+            {{ $t('share.scopeApprovedNote') }}
+          </p>
+        </div>
 
         <!-- Detalle de un envío -->
         <section v-if="currentSub && meta.expose_detail" class="space-y-5">
@@ -467,7 +473,9 @@ onMounted(loadMeta)
           <!-- Lista -->
           <template v-else>
             <div class="flex flex-wrap items-center justify-between gap-3">
-              <p class="text-sm text-slate-500">{{ $t('share.total', { n: list.total }) }}</p>
+              <p class="text-sm text-slate-500">
+                {{ $t(meta.status_scope === 'approved' ? 'share.totalApproved' : 'share.total', { n: list.total }) }}
+              </p>
               <input
                 v-model="search"
                 :placeholder="$t('share.search')"

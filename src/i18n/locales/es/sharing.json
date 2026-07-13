@@ -97,6 +97,8 @@
     "reviewEmpty": "Sin datos de revisión.",
     "dataAsOf": "Datos a fecha de {date}",
     "total": "{n} envío(s).",
+    "totalApproved": "{n} envío(s) aprobado(s).",
+    "scopeApprovedNote": "Este enlace muestra únicamente los envíos aprobados.",
     "search": "Buscar…",
     "colSubmitted": "Enviado",
     "empty": "Sin envíos.",

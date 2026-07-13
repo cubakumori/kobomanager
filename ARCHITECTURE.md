@@ -179,7 +179,12 @@ filter is expressed as a `RowScope` rule (`RowScope::teamRule`) **combined in AN
 endpoints consume, so teams ride the existing row‑scope path for free. The status filter is a
 separate SQL fragment over the denormalised `submissions_cache.review_status` column
 (`ValidationStatus::statusFilterSql`, shared with `lib/Stats`); it is **decoupled from review exposure** — an `approved`‑only link narrows the set
-without ever revealing the `by_status` breakdown.
+without ever revealing the `by_status` breakdown. The public meta announces the scope
+(`status_scope` in `GET /public/share/{token}`, rendered as *"approved submissions only"*
+plus an "N approved submission(s)" list count), and the public stats override the `total`
+card with the status‑scoped count — `Stats::compute`'s total is deliberately unfiltered
+because the internal header cards act as the status selector, but the public view has no
+selector and an unscoped total would both confuse and reveal how many unapproved rows exist.
 
 **Attachments (P4).** A link may also expose submission attachments through a dedicated public
 proxy (`GET /public/share/{token}/submissions/{uid}/attachments/{attId}`,

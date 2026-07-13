@@ -36,6 +36,9 @@ ErrorResponse::ok([
     'expose_map'       => (bool) $link['expose_map'],
     'expose_stats'     => (bool) $link['expose_stats'],
     'expose_review_summary' => (bool) $link['expose_review_summary'],
+    // Alcance por estado del enlace ('approved' o null): la vista pública lo anuncia
+    // («solo envíos aprobados») para que los recuentos no desconcierten al visitante.
+    'status_scope'     => ShareLink::statusScope($link),
     'requires_password'=> $needsPassword,
     'unlocked'         => $unlocked,
     'last_synced_at'   => $link['last_synced_at'],
