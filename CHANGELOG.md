@@ -24,7 +24,7 @@ y salida ordenada de la guardia anti-vaciado del sync. Sin cambio de esquema.
   confirmar quien pudo lanzar ese sync (admin siempre; viewer solo con la acción
   habilitada).
 - **Sincronizar al iniciar sesión** (ajuste global `sync_on_login`, Configuración →
-  Sincronización y notificaciones, OFF por defecto): tras entrar, la app pone al día **en
+  Sincronización, OFF por defecto): tras entrar, la app pone al día **en
   segundo plano** los formularios visibles del usuario que lleven >10 minutos sin
   sincronizar (`POST /forms/sync-stale`), sin bloquear el login. Red de seguridad contra
   datos obsoletos pensada para instalaciones **sin cron** (con cron cada 15 min aporta

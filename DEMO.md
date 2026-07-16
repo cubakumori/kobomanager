@@ -41,7 +41,8 @@ disabled with a tooltip, and the API enforces the same list centrally (403
 - **Global settings** (`PUT /admin/settings`).
 - **Submission editing** — it writes to the real Kobo account; the local DB reset would
   not undo it.
-- **Manual sync against Kobo** ("Update"/"Resync"/account discovery) — saves the demo
+- **Manual sync against Kobo** ("Update"/"Resync"/account discovery, and the
+  login-triggered background pass `POST /forms/sync-stale`) — saves the demo
   account's API quota.
 - **Contact inbox management** (`PUT`/`DELETE /admin/messages/:id`) — the public demo
   can receive *real* messages from interested visitors via the support page; an

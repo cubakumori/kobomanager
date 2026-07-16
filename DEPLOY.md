@@ -287,6 +287,12 @@ location /api/ {
 
 (A **demo instance** adds a third cron, the periodic DB reset — see §13 / [DEMO.md](DEMO.md).)
 
+**No cron available?** Users can always refresh a form by hand ("Update"/"Resync"), and
+since 1.28.0 the admin can enable **"Sync on login"** (Settings → Sync): after each sign-in
+the app refreshes, in the background, the user's visible forms that are more than 10 minutes
+stale. It's a freshness safety net, not a replacement — email summaries and truly idle
+periods still need the cron, so schedule it whenever the hosting allows.
+
 Both run only from the CLI (they reject web requests), so trigger them with the **PHP
 CLI binary on the file path** — not a URL/`wget`/`curl` job (that would hit the web
 front controller and get a 403). On panels like cPanel/DirectAdmin, cron jobs are

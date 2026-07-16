@@ -566,7 +566,9 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   retention (`audit_retention_days`, 0 = keep forever; drives opportunistic pruning in
   `Audit::log`), viewer action
   flags, share password policy, share attachments policy (`share_attachments_policy`),
-  the default daily‑summary subscription (`notifications_default_on`), table display
+  the default daily‑summary subscription (`notifications_default_on`), the login‑triggered
+  background sync (`sync_on_login`, served by the public `GET /config` — see *Sync on login*),
+  table display
   (`table_freeze`, `table_header_lines`), stats/QC display (`stats_default_scope` —
   default review‑status scope on opening stats; `qc_scope` — which submissions quality
   control reports on; `stats_team_cap` — team‑breakdown cap, `20`|`50`|`all`; `pct_format`
