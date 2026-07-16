@@ -18,8 +18,15 @@ class SubmissionSync {
      *  - completo ($full=true): re-descarga TODOS los envíos y reconcilia por `_uuid`,
      *    de modo que también refleja ediciones externas (una edición en la UI de Kobo
      *    conserva el `_id` pero cambia el `_uuid`) y elimina las bajas.
+     *
+     * Guardia anti-vaciado: si Kobo devuelve CERO envíos vivos con la caché poblada, no
+     * se borra nada (más probablemente un fallo aguas arriba que un borrado real del
+     * 100 %); el resultado lleva `wipe_available: true` + `cached: n` para que un sync
+     * MANUAL pueda ofrecer la confirmación. Con `$confirmWipe = true` (solo lo mandan
+     * los endpoints manuales tras confirmar el humano; el cron jamás) esa guardia se
+     * levanta y la caché se vacía — el resultado lleva `wiped: true`.
      */
-    public static function syncForm(int $formId, string $assetUid, KoboClient $client, bool $full = false): array {
+    public static function syncForm(int $formId, string $assetUid, KoboClient $client, bool $full = false, bool $confirmWipe = false): array {
         // Lock por formulario (GET_LOCK de MySQL, sin espera): dos sincronizaciones
         // simultáneas del mismo formulario (un cron retrasado + el siguiente, o el
         // cron + un «Actualizar» manual) duplicarían revisiones sintéticas en
@@ -31,14 +38,14 @@ class SubmissionSync {
             throw new KoboException('SYNC_IN_PROGRESS', 'Ya hay una sincronización de este formulario en curso');
         }
         try {
-            return self::syncFormLocked($formId, $assetUid, $client, $full);
+            return self::syncFormLocked($formId, $assetUid, $client, $full, $confirmWipe);
         } finally {
             DB::run('SELECT RELEASE_LOCK(?)', [$lockName]);
         }
     }
 
     /** Cuerpo de la sincronización; se ejecuta con el lock del formulario ya adquirido. */
-    private static function syncFormLocked(int $formId, string $assetUid, KoboClient $client, bool $full): array {
+    private static function syncFormLocked(int $formId, string $assetUid, KoboClient $client, bool $full, bool $confirmWipe = false): array {
         try {
             // Refrescar el esquema legible (labels) junto con los envíos. Es a prueba
             // de fallos: no interrumpe la sincronización si el contenido no se puede leer.
@@ -133,9 +140,9 @@ class SubmissionSync {
             // cambió en Kobo, así que se reconcilia con un barrido ligero aparte.
             self::reconcileValidation($formId, $client, $assetUid);
 
-            $removed = $full
-                ? self::reconcileFull($formId, array_keys($seenUids))
-                : self::reconcileDeletions($formId, $client, $assetUid);
+            $rec = $full
+                ? self::reconcileFull($formId, array_keys($seenUids), $confirmWipe)
+                : self::reconcileDeletions($formId, $client, $assetUid, $confirmWipe);
 
             DB::run(
                 'UPDATE forms SET last_synced_at = NOW(), submissions_synced_at = NOW(),
@@ -144,7 +151,7 @@ class SubmissionSync {
                  WHERE id = ?',
                 [$formId]
             );
-            return ['upserted' => $count, 'removed' => $removed];
+            return ['upserted' => $count] + $rec;
         } catch (KoboException $e) {
             DB::run(
                 'UPDATE forms SET sync_status = \'error\', last_sync_error = ? WHERE id = ?',
@@ -211,28 +218,33 @@ class SubmissionSync {
      * no está entre los recién traídos (cubre borrados y ediciones externas que
      * cambian el uuid). Devuelve cuántos se eliminaron.
      */
-    private static function reconcileFull(int $formId, array $keepUids): int {
+    private static function reconcileFull(int $formId, array $keepUids, bool $confirmWipe = false): array {
         $rows = DB::run('SELECT id, submission_uid FROM submissions_cache WHERE form_id = ?', [$formId])->fetchAll();
-        if (!$rows) return 0;
+        if (!$rows) return ['removed' => 0];
         // Guardia anti-vaciado: una lista viva VACÍA con caché poblada es mucho más
         // probablemente un fallo aguas arriba (respuesta anómala no detectada, bug)
-        // que un borrado real del 100 % de los envíos en Kobo. No se borra nada; si
-        // el formulario de verdad quedó vacío, la caché se limpia al desactivar/
-        // eliminar el formulario o cuando Kobo devuelva al menos un envío vivo.
-        if (!$keepUids) return 0;
+        // que un borrado real del 100 % de los envíos en Kobo. No se borra nada de
+        // oficio: se anuncia `wipe_available` para que el sync MANUAL ofrezca la
+        // confirmación, y solo con ella ($confirmWipe, jamás desde el cron) se vacía.
+        if (!$keepUids) {
+            if (!$confirmWipe) {
+                return ['removed' => 0, 'wipe_available' => true, 'cached' => count($rows)];
+            }
+            return ['removed' => self::deleteByIds(array_map(fn($r) => (int) $r['id'], $rows)), 'wiped' => true];
+        }
         $keep   = array_flip($keepUids);
         $toDrop = [];
         foreach ($rows as $r) {
             if (!isset($keep[$r['submission_uid']])) $toDrop[] = (int) $r['id'];
         }
-        return self::deleteByIds($toDrop);
+        return ['removed' => self::deleteByIds($toDrop)];
     }
 
     /**
      * Barrido de bajas incremental: pide a Kobo solo los `_id` actuales (barato) y
      * borra de la caché los envíos cuyo `_id` ya no existe. Devuelve cuántos se eliminaron.
      */
-    private static function reconcileDeletions(int $formId, KoboClient $client, string $assetUid): int {
+    private static function reconcileDeletions(int $formId, KoboClient $client, string $assetUid, bool $confirmWipe = false): array {
         $liveIds = array_flip($client->getAllSubmissionIds($assetUid));
 
         // kobo_id es la columna materializada por el sync; NULL (fila anterior al
@@ -242,9 +254,14 @@ class SubmissionSync {
             [$formId]
         )->fetchAll();
 
-        // Guardia anti-vaciado (espejo de reconcileFull): sin ningún _id vivo pero
-        // con caché poblada, no borrar nada en un cron rutinario.
-        if (!$liveIds && $rows) return 0;
+        // Guardia anti-vaciado (espejo de reconcileFull): sin ningún _id vivo pero con
+        // caché poblada, no borrar nada de oficio; solo con la confirmación del humano.
+        if (!$liveIds && $rows) {
+            if (!$confirmWipe) {
+                return ['removed' => 0, 'wipe_available' => true, 'cached' => count($rows)];
+            }
+            return ['removed' => self::deleteByIds(array_map(fn($r) => (int) $r['id'], $rows)), 'wiped' => true];
+        }
 
         $toDrop = [];
         foreach ($rows as $r) {
@@ -252,7 +269,7 @@ class SubmissionSync {
             // Si no podemos determinar el _id (0), conservar por prudencia.
             if ($kid !== 0 && !isset($liveIds[$kid])) $toDrop[] = (int) $r['id'];
         }
-        return self::deleteByIds($toDrop);
+        return ['removed' => self::deleteByIds($toDrop)];
     }
 
     /**

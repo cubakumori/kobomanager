@@ -5,6 +5,7 @@ import { useRoute, RouterLink } from 'vue-router'
 import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 import { confirmDialog } from '../../composables/confirm'
+import { resolveWipe } from '../../composables/syncWipe'
 import Skeleton from '../../components/Skeleton.vue'
 import EmptyState from '../../components/EmptyState.vue'
 import { useTableFreeze, useDemoMode } from '../../composables/appConfig'
@@ -134,6 +135,7 @@ async function openEnketo(f) {
 function syncFlash(name, d) {
   let msg = t('forms.updatedFlash', { name, n: d.submissions })
   if (d.removed) msg += t('forms.removedFlash', { n: d.removed })
+  if (d.wiped) msg += t('forms.wipedFlash')
   return msg
 }
 
@@ -142,8 +144,10 @@ async function onUpdateForm(f) {
   flash.value = ''
   syncError.value = ''
   try {
-    const { data } = await api.post(`/admin/forms/${f.id}/sync`)
-    flash.value = syncFlash(f.name, data.data)
+    let d = (await api.post(`/admin/forms/${f.id}/sync`)).data.data
+    d = await resolveWipe(d, f.name, async () =>
+      (await api.post(`/admin/forms/${f.id}/sync`, { confirm_wipe: true })).data.data)
+    flash.value = syncFlash(f.name, d)
     await load()
   } catch (e) {
     syncError.value = `«${f.name}»: ${apiError(e, t('forms.updateErr'))}`
@@ -163,8 +167,10 @@ async function onFullResync(f) {
   flash.value = ''
   syncError.value = ''
   try {
-    const { data } = await api.post(`/admin/forms/${f.id}/sync`, { full: true })
-    flash.value = syncFlash(f.name, data.data)
+    let d = (await api.post(`/admin/forms/${f.id}/sync`, { full: true })).data.data
+    d = await resolveWipe(d, f.name, async () =>
+      (await api.post(`/admin/forms/${f.id}/sync`, { full: true, confirm_wipe: true })).data.data)
+    flash.value = syncFlash(f.name, d)
     await load()
   } catch (e) {
     syncError.value = `«${f.name}»: ${apiError(e, t('forms.updateErr'))}`

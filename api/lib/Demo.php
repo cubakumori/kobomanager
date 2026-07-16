@@ -89,6 +89,7 @@ class Demo {
         'admin/forms/sync'         => ['POST'],
         'admin/forms/:id/sync'     => ['POST'],
         'forms/:id/sync'           => ['POST'],
+        'forms/sync-stale'         => ['POST'],
         // Bandeja de mensajes de contacto: la demo pública puede recibir mensajes
         // REALES (alguien interesado en el proyecto escribe desde /apoyar); un
         // visitante anónimo no debe poder marcarlos ni borrarlos antes de que el

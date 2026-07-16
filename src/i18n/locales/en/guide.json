@@ -19,7 +19,7 @@
     "syncTitle": "“Update” vs. “Resync”",
     "syncIntro": "Both fetch submissions from Kobo into the local cache, but with different scope:",
     "syncUpdate": "Update (incremental)",
-    "syncUpdateBody": "Fetches only new submissions and removes from the cache those deleted in Kobo. Fast; the everyday option.",
+    "syncUpdateBody": "Fetches only new submissions and removes from the cache those deleted in Kobo. Fast; the everyday option. If Kobo returns 0 submissions while data is cached here, nothing is deleted as a precaution: the app asks before emptying (it could be a server glitch rather than a real deletion).",
     "syncResync": "Resync (full)",
     "syncResyncBody": "Re-downloads all submissions. Also reflects edits made directly in Kobo. Slower; use it if you edited submissions in Kobo or suspect the cache is stale.",
     "pwTitle": "Passwords",

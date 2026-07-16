@@ -20,6 +20,11 @@ Auth::requireForm($user, $formId, 'view');
 
 $full = !empty($_GET['full']) || !empty(Request::json()['full']);
 
+// Confirmación humana del VACIADO cuando Kobo devuelve 0 envíos vivos con caché
+// poblada (ver la guardia anti-vaciado de SubmissionSync). Mismo permiso que el
+// sync que la ofreció; el backend re-verifica contra Kobo en esta misma pasada.
+$confirmWipe = !empty(Request::json()['confirm_wipe']);
+
 if ($user['role'] !== 'admin') {
     $acts = Settings::viewerActions();
     if (!$acts[$full ? 'resync' : 'update']) {
@@ -41,13 +46,19 @@ if (!$form) {
 
 try {
     $client = new KoboClient($form['server_url'], TokenVault::decrypt($form['api_token']));
-    $res    = SubmissionSync::syncForm($formId, $form['kobo_asset_uid'], $client, $full);
+    $res    = SubmissionSync::syncForm($formId, $form['kobo_asset_uid'], $client, $full, $confirmWipe);
     Audit::log($user['id'], 'sync_submissions', $formId, null, $res + ['full' => $full, 'via' => 'viewer']);
+    if (!empty($res['wiped'])) {
+        Audit::log($user['id'], 'cache_wipe', $formId, null, ['removed' => $res['removed'], 'via' => 'viewer']);
+    }
     ErrorResponse::ok([
         'form_id'     => $formId,
         'submissions' => $res['upserted'],
         'removed'     => $res['removed'],
         'full'        => $full,
+        'wipe_available' => !empty($res['wipe_available']),
+        'cached'      => $res['cached'] ?? 0,
+        'wiped'       => !empty($res['wiped']),
     ]);
 } catch (KoboException $e) {
     ErrorResponse::send($e->errorCode, $e->getMessage());

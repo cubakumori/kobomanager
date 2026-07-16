@@ -27,6 +27,19 @@ function uuid4(): string {
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($b), 4));
 }
 
+// GET /api/v2/assets/{uid}/data/ — lista de envíos VACÍA (suficiente para que un
+// sync completo contra el stub termine limpio: 0 upserts, reconcile sin vivos).
+if ($method === 'GET' && preg_match('#/api/v2/assets/[^/]+/data/?$#', $path)) {
+    echo json_encode(['count' => 0, 'next' => null, 'previous' => null, 'results' => []]);
+    exit;
+}
+
+// GET /api/v2/assets/{uid}/ — asset con contenido mínimo (esquema vacío).
+if ($method === 'GET' && preg_match('#/api/v2/assets/[^/]+/?$#', $path)) {
+    echo json_encode(['content' => ['survey' => [], 'choices' => [], 'translations' => [null]]]);
+    exit;
+}
+
 // PATCH /api/v2/assets/{uid}/data/bulk/
 if ($method === 'PATCH' && preg_match('#/api/v2/assets/[^/]+/data/bulk/?$#', $path)) {
     $body = json_decode(file_get_contents('php://input'), true) ?: [];

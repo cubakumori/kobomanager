@@ -142,6 +142,7 @@ $routes = [
     'profile/password'          => 'profile_password.php',
     'profile/sessions'          => 'profile_sessions.php',
     'forms'                     => 'forms/index.php',
+    'forms/sync-stale'          => 'forms/sync_stale.php',
     'forms/:id/enketo'          => 'forms/enketo.php',
     'forms/:id/sync'            => 'forms/sync.php',
     'forms/:id/submissions'     => 'forms/submissions.php',

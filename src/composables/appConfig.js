@@ -52,6 +52,11 @@ const landingCtaEnabled = ref(true)
 // enlace extra es irrelevante.
 const showViewSubmissionsLink = ref(true)
 
+// Sincronizar en segundo plano los formularios del usuario al iniciar sesión
+// (ajuste global; red de seguridad para instalaciones sin cron). Sin caché local:
+// solo se consulta tras un login, cuando /config ya respondió.
+const syncOnLogin = ref(false)
+
 // Promesa de «config lista»: la usa el guard del router para decidir rutas
 // públicas (p. ej. /apoyar) sin depender del orden de carga.
 const configReady = publicApi
@@ -85,6 +90,7 @@ const configReady = publicApi
     if (data.data.support_page_enabled != null) supportPageEnabled.value = !!data.data.support_page_enabled
     if (data.data.landing_cta_enabled != null) landingCtaEnabled.value = !!data.data.landing_cta_enabled
     if (data.data.show_view_submissions_link != null) showViewSubmissionsLink.value = !!data.data.show_view_submissions_link
+    syncOnLogin.value = !!data.data.sync_on_login
   })
   .catch(() => { /* sin red: vale el valor cacheado o el default */ })
 
@@ -148,6 +154,11 @@ export function usePublicSurface() {
 /** Interruptores de UI interna (reactivo): enlace «Ver envíos» en Mis formularios. */
 export function useUiToggles() {
   return { showViewSubmissionsLink }
+}
+
+/** ¿Sincronizar los formularios del usuario al iniciar sesión? (reactivo) */
+export function useSyncOnLogin() {
+  return { syncOnLogin }
 }
 
 /** Promesa que resuelve cuando /config se ha cargado (para el guard del router). */

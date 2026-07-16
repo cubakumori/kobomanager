@@ -4,7 +4,33 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
-## [1.27.1] - 2026-07-13
+## [1.28.0] - 2026-07-16
+
+Frescura de la caché sin depender del cron ni de que el usuario recuerde actualizar,
+y salida ordenada de la guardia anti-vaciado del sync. Sin cambio de esquema.
+
+### Añadido
+
+- **Vaciado confirmado cuando Kobo devuelve 0 envíos**: los barridos de bajas del sync
+  tienen desde siempre una *guardia anti-vaciado* (una lista viva VACÍA con caché poblada
+  se trata como fallo aguas arriba, no como borrado masivo — nada se borra de oficio).
+  Ahora el sync **manual** («Actualizar»/«Resync», en Mis formularios y en
+  admin→Formularios) detecta ese caso y levanta un modal: *«KoboToolbox ya no tiene
+  envíos… hay N en caché»*, con la opción de mantenerlos o **«Vaciar y sincronizar»**. Al
+  confirmar se repite el sync con `confirm_wipe`, que **re-verifica contra Kobo en esa
+  misma pasada** antes de vaciar (si mientras tanto llegaron envíos vivos, hace el barrido
+  normal) y queda auditado (`cache_wipe`). Los comentarios y el historial de revisión se
+  conservan. El **cron nunca confirma**: sin humano, la guardia sigue mandando. Puede
+  confirmar quien pudo lanzar ese sync (admin siempre; viewer solo con la acción
+  habilitada).
+- **Sincronizar al iniciar sesión** (ajuste global `sync_on_login`, Configuración →
+  Sincronización y notificaciones, OFF por defecto): tras entrar, la app pone al día **en
+  segundo plano** los formularios visibles del usuario que lleven >10 minutos sin
+  sincronizar (`POST /forms/sync-stale`), sin bloquear el login. Red de seguridad contra
+  datos obsoletos pensada para instalaciones **sin cron** (con cron cada 15 min aporta
+  poco). El umbral evita tormentas con logins seguidos, el candado por formulario absorbe
+  solapes con el cron, los errores por formulario no abortan la pasada (auditada como
+  `sync_stale`) y en modo demo queda bloqueado como toda la sync manual.
 
 Correcciones tras las primeras pruebas de 1.27.0 con enlaces compartidos reales.
 

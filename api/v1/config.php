@@ -16,6 +16,7 @@ ErrorResponse::ok([
     'pct_format'             => Settings::pctFormat(),
     'qc_admit_batch'         => Settings::qcAdmitBatch(),
     'show_view_submissions_link' => Settings::showViewSubmissionsLink(),
+    'sync_on_login'          => Settings::syncOnLogin(),
     'demo_mode'              => Demo::enabled(),
     'demo_reset_minutes'     => Demo::resetMinutes(),
     'demo_login_admin'       => Demo::loginAdmin(),

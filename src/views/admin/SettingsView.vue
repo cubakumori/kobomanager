@@ -26,6 +26,7 @@ const auditSelfViewEnabled = ref(false)
 const auditRetentionDays = ref(0)
 const auditRetentionMax = ref(3650)
 const notificationsDefaultOn = ref(false)
+const syncOnLoginSetting = ref(false)
 const defaultTheme = ref('auto')
 const validThemes = ref(['light', 'dark', 'auto'])
 const showThemeToggle = ref(true)
@@ -180,6 +181,7 @@ async function load() {
     if (data.data.audit_retention_days != null) auditRetentionDays.value = data.data.audit_retention_days
     if (data.data.audit_retention_max != null) auditRetentionMax.value = data.data.audit_retention_max
     if (data.data.notifications_default_on != null) notificationsDefaultOn.value = data.data.notifications_default_on
+    if (data.data.sync_on_login != null) syncOnLoginSetting.value = data.data.sync_on_login
     defaultTheme.value = data.data.default_theme
     validThemes.value = data.data.valid_themes ?? validThemes.value
     showThemeToggle.value = data.data.show_theme_toggle
@@ -243,6 +245,7 @@ async function save() {
       audit_self_view_enabled: auditSelfViewEnabled.value,
       audit_retention_days: Math.max(0, Number(auditRetentionDays.value) || 0),
       notifications_default_on: notificationsDefaultOn.value,
+      sync_on_login: syncOnLoginSetting.value,
       default_theme: defaultTheme.value,
       show_theme_toggle: showThemeToggle.value,
       support_page_enabled: supportPageEnabled.value,
@@ -271,6 +274,7 @@ async function save() {
     if (data.data.audit_self_view_enabled != null) auditSelfViewEnabled.value = data.data.audit_self_view_enabled
     if (data.data.audit_retention_days != null) auditRetentionDays.value = data.data.audit_retention_days
     if (data.data.notifications_default_on != null) notificationsDefaultOn.value = data.data.notifications_default_on
+    if (data.data.sync_on_login != null) syncOnLoginSetting.value = data.data.sync_on_login
     if (data.data.default_theme != null) defaultTheme.value = data.data.default_theme
     if (data.data.show_theme_toggle != null) showThemeToggle.value = data.data.show_theme_toggle
     if (data.data.support_page_enabled != null) supportPageEnabled.value = data.data.support_page_enabled
@@ -700,6 +704,26 @@ onMounted(load)
             @input="auditRetentionDays = Number($event.target.value); saved = false"
           />
           <span class="text-xs text-slate-400">{{ $t('settings.auditRetentionHint') }}</span>
+        </label>
+      </section>
+
+      <!-- Sincronizar al iniciar sesión -->
+      <section v-show="tab === 'sync'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.syncOnLogin') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.syncOnLoginDesc') }}</p>
+        </div>
+        <label class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+          <input
+            type="checkbox"
+            class="mt-0.5 h-4 w-4"
+            :checked="syncOnLoginSetting"
+            @change="syncOnLoginSetting = !syncOnLoginSetting; saved = false"
+          />
+          <span>
+            <span class="block text-sm font-medium text-slate-800">{{ $t('settings.syncOnLoginToggle') }}</span>
+            <span class="block text-xs text-slate-400">{{ $t('settings.syncOnLoginHint') }}</span>
+          </span>
         </label>
       </section>
 

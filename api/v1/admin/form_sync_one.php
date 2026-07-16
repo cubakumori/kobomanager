@@ -28,15 +28,25 @@ if (!$form) {
 // las ediciones hechas directamente en Kobo, además de eliminar las bajas.
 $full = !empty($_GET['full']) || !empty(Request::json()['full']);
 
+// Confirmación humana del VACIADO cuando Kobo devuelve 0 envíos vivos con caché
+// poblada (guardia anti-vaciado de SubmissionSync; se re-verifica en esta pasada).
+$confirmWipe = !empty(Request::json()['confirm_wipe']);
+
 try {
     $client = new KoboClient($form['server_url'], TokenVault::decrypt($form['api_token']));
-    $res    = SubmissionSync::syncForm($formId, $form['kobo_asset_uid'], $client, $full);
+    $res    = SubmissionSync::syncForm($formId, $form['kobo_asset_uid'], $client, $full, $confirmWipe);
     Audit::log($admin['id'], 'sync_submissions', $formId, null, $res + ['full' => $full]);
+    if (!empty($res['wiped'])) {
+        Audit::log($admin['id'], 'cache_wipe', $formId, null, ['removed' => $res['removed']]);
+    }
     ErrorResponse::ok([
         'form_id'     => $formId,
         'submissions' => $res['upserted'],
         'removed'     => $res['removed'],
         'full'        => $full,
+        'wipe_available' => !empty($res['wipe_available']),
+        'cached'      => $res['cached'] ?? 0,
+        'wiped'       => !empty($res['wiped']),
     ]);
 } catch (KoboException $e) {
     ErrorResponse::send($e->errorCode, $e->getMessage());

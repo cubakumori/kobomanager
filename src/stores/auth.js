@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import api from '../services/api'
 import i18n, { setLocale } from '../i18n'
 import { clearDataCaches } from '../composables/offline'
+import { useSyncOnLogin } from '../composables/appConfig'
 
 // Traduce un error de Axios a un mensaje legible. Si hay traducción para el código
 // de error, se usa; si no, el mensaje del backend; si no, un genérico.
@@ -34,6 +35,13 @@ export const useAuthStore = defineStore('auth', {
       this.user = data.data
       this.checked = true
       setLocale(this.user?.locale)
+      // Ajuste global «sincronizar al iniciar sesión»: dispara EN SEGUNDO PLANO la
+      // puesta al día de los formularios del usuario (>10 min sin sincronizar), sin
+      // bloquear el login ni molestar si falla (el cron o el próximo login recogen).
+      const { syncOnLogin } = useSyncOnLogin()
+      if (syncOnLogin.value) {
+        api.post('/forms/sync-stale').catch(() => {})
+      }
       return this.user
     },
     async logout() {

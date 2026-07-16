@@ -19,7 +19,7 @@
     "syncTitle": "«Actualizar» vs. «Resync»",
     "syncIntro": "Ambos traen los envíos desde Kobo a la caché local, pero con distinto alcance:",
     "syncUpdate": "Actualizar (incremental)",
-    "syncUpdateBody": "Trae solo los envíos nuevos y elimina de la caché los que se borraron en Kobo. Rápido; es el uso habitual.",
+    "syncUpdateBody": "Trae solo los envíos nuevos y elimina de la caché los que se borraron en Kobo. Rápido; es el uso habitual. Si Kobo devuelve 0 envíos y aquí hay datos en caché, por seguridad no se borra nada: la app pregunta antes de vaciar (podría ser un fallo del servidor, no un borrado real).",
     "syncResync": "Resync (completo)",
     "syncResyncBody": "Re-descarga todos los envíos. Refleja también las ediciones hechas directamente en Kobo. Más lento; úsalo si editaste envíos en Kobo o sospechas que la caché quedó desfasada.",
     "pwTitle": "Contraseñas",

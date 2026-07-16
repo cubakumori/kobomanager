@@ -24,8 +24,10 @@ final class FakeIdsClient extends KoboClient
 
 /**
  * Barridos de bajas del sync (reconcileDeletions / reconcileFull): borran lo que ya
- * no existe en Kobo, pero con guardia anti-vaciado — una lista viva vacía frente a
- * una caché poblada se trata como fallo aguas arriba, no como borrado masivo.
+ * no existe en Kobo, pero con guardia anti-vaciado — una lista viva vacía frente a una
+ * caché poblada se trata como fallo aguas arriba, no como borrado masivo: no se borra
+ * nada de oficio y se anuncia `wipe_available` (+ `cached`) para que el sync MANUAL
+ * ofrezca la confirmación; solo con `$confirmWipe` (jamás desde el cron) se vacía.
  */
 final class SyncReconcileTest extends DbTestCase
 {
@@ -55,16 +57,16 @@ final class SyncReconcileTest extends DbTestCase
         );
     }
 
-    private function reconcileDeletions(array $liveIds): int
+    private function reconcileDeletions(array $liveIds, bool $confirmWipe = false): array
     {
         $m = new ReflectionMethod(SubmissionSync::class, 'reconcileDeletions');
-        return (int) $m->invoke(null, $this->formId, new FakeIdsClient($liveIds), 'aXYZ');
+        return $m->invoke(null, $this->formId, new FakeIdsClient($liveIds), 'aXYZ', $confirmWipe);
     }
 
-    private function reconcileFull(array $keepUids): int
+    private function reconcileFull(array $keepUids, bool $confirmWipe = false): array
     {
         $m = new ReflectionMethod(SubmissionSync::class, 'reconcileFull');
-        return (int) $m->invoke(null, $this->formId, $keepUids);
+        return $m->invoke(null, $this->formId, $keepUids, $confirmWipe);
     }
 
     public function testIncrementalSweepDropsOnlyDeadIds(): void
@@ -72,7 +74,7 @@ final class SyncReconcileTest extends DbTestCase
         $this->seedCache('u1', 1);
         $this->seedCache('u2', 2);
 
-        $this->assertSame(1, $this->reconcileDeletions([1]));
+        $this->assertSame(1, $this->reconcileDeletions([1])['removed']);
         $this->assertSame(['u1'], $this->cachedUids());
     }
 
@@ -81,9 +83,36 @@ final class SyncReconcileTest extends DbTestCase
         $this->seedCache('u1', 1);
         $this->seedCache('u2', 2);
 
-        // Lista viva vacía + caché poblada → no se borra nada.
-        $this->assertSame(0, $this->reconcileDeletions([]));
+        // Lista viva vacía + caché poblada → no se borra nada; se ofrece el vaciado.
+        $res = $this->reconcileDeletions([]);
+        $this->assertSame(0, $res['removed']);
+        $this->assertTrue($res['wipe_available']);
+        $this->assertSame(2, $res['cached']);
         $this->assertSame(['u1', 'u2'], $this->cachedUids());
+    }
+
+    public function testIncrementalSweepWipesWithConfirmation(): void
+    {
+        $this->seedCache('u1', 1);
+        $this->seedCache('u2', 2);
+
+        $res = $this->reconcileDeletions([], true);
+        $this->assertSame(2, $res['removed']);
+        $this->assertTrue($res['wiped']);
+        $this->assertSame([], $this->cachedUids());
+    }
+
+    public function testConfirmationIsHarmlessWithLiveSubmissions(): void
+    {
+        $this->seedCache('u1', 1);
+        $this->seedCache('u2', 2);
+
+        // Si al confirmar Kobo YA devuelve vivos (llegó un envío entre medias), la
+        // confirmación no vacía nada: barrido normal.
+        $res = $this->reconcileDeletions([1], true);
+        $this->assertSame(1, $res['removed']);
+        $this->assertArrayNotHasKey('wiped', $res);
+        $this->assertSame(['u1'], $this->cachedUids());
     }
 
     public function testFullSweepDropsOnlyMissingUids(): void
@@ -91,7 +120,7 @@ final class SyncReconcileTest extends DbTestCase
         $this->seedCache('u1', 1);
         $this->seedCache('u2', 2);
 
-        $this->assertSame(1, $this->reconcileFull(['u1']));
+        $this->assertSame(1, $this->reconcileFull(['u1'])['removed']);
         $this->assertSame(['u1'], $this->cachedUids());
     }
 
@@ -100,7 +129,21 @@ final class SyncReconcileTest extends DbTestCase
         $this->seedCache('u1', 1);
         $this->seedCache('u2', 2);
 
-        $this->assertSame(0, $this->reconcileFull([]));
+        $res = $this->reconcileFull([]);
+        $this->assertSame(0, $res['removed']);
+        $this->assertTrue($res['wipe_available']);
+        $this->assertSame(2, $res['cached']);
         $this->assertSame(['u1', 'u2'], $this->cachedUids());
+    }
+
+    public function testFullSweepWipesWithConfirmation(): void
+    {
+        $this->seedCache('u1', 1);
+        $this->seedCache('u2', 2);
+
+        $res = $this->reconcileFull([], true);
+        $this->assertSame(2, $res['removed']);
+        $this->assertTrue($res['wiped']);
+        $this->assertSame([], $this->cachedUids());
     }
 }

@@ -5,6 +5,7 @@ import { RouterLink } from 'vue-router'
 import api from '../services/api'
 import { useAuthStore, apiError } from '../stores/auth'
 import { confirmDialog } from '../composables/confirm'
+import { resolveWipe } from '../composables/syncWipe'
 import { useDemoMode, useUiToggles } from '../composables/appConfig'
 import Skeleton from '../components/Skeleton.vue'
 import EmptyState from '../components/EmptyState.vue'
@@ -140,9 +141,14 @@ async function onUpdate(f, full = false) {
   flash.value = ''
   actionError.value = ''
   try {
-    const { data } = await api.post(`/forms/${f.id}/sync`, full ? { full: true } : {})
-    let msg = t('forms.updatedFlash', { name: f.name, n: data.data.submissions })
-    if (data.data.removed) msg += t('forms.removedFlash', { n: data.data.removed })
+    let d = (await api.post(`/forms/${f.id}/sync`, full ? { full: true } : {})).data.data
+    // Guardia anti-vaciado: si Kobo devuelve 0 envíos con caché poblada, el backend
+    // no borra nada y ofrece el vaciado; se confirma con el usuario y se repite.
+    d = await resolveWipe(d, f.name, async () =>
+      (await api.post(`/forms/${f.id}/sync`, { ...(full ? { full: true } : {}), confirm_wipe: true })).data.data)
+    let msg = t('forms.updatedFlash', { name: f.name, n: d.submissions })
+    if (d.removed) msg += t('forms.removedFlash', { n: d.removed })
+    if (d.wiped) msg += t('forms.wipedFlash')
     flash.value = msg
     await load()
   } catch (e) {

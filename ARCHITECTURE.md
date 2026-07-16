@@ -306,6 +306,20 @@ to a new one (key rotation; see `DEPLOY.md §12`).
 - **Submissions** (`lib/SubmissionSync.php`, cron + on demand): *incremental* (cursor =
   `MAX(submitted_at)` in cache) with a deletion sweep, or *full* (re‑download + reconcile by
   `_uuid`, reflecting edits made in Kobo). Reused by admin and viewer sync endpoints.
+  **Anti‑wipe guard** (both sweep modes): if Kobo returns **zero** live submissions while the
+  cache has rows, nothing is deleted of its own accord — an empty live list is more likely an
+  upstream failure than a real 100 % deletion. The sync result carries `wipe_available` +
+  `cached`, the **manual** sync endpoints surface it, and the UI offers a confirmation modal
+  ("empty and sync"); confirming repeats the sync with `confirm_wipe: true`, which re‑checks
+  against Kobo in that same pass before emptying (audited as `cache_wipe`). The cron never
+  confirms. Review comments/history are kept, as with partial deletions.
+- **Sync on login** (`v1/forms/sync_stale.php`, global `sync_on_login` setting, OFF by
+  default): after a successful login the SPA fires a background `POST /forms/sync-stale`
+  that syncs the user's visible forms whose submissions are >10 min old — a staleness safety
+  net for installs **without** a cron. No‑op when the setting is off; per‑form errors don't
+  abort the pass; the per‑form lock absorbs overlaps with the cron or concurrent logins;
+  `ignore_user_abort` + no time limit so the fire‑and‑forget pass (and its `sync_stale` audit
+  entry) survives the browser navigating away. Blocked in demo mode like all manual sync.
 - **Validation status sync** (`lib/ValidationStatus.php` + `SubmissionSync::reconcileValidation`):
   the internal review status is kept in sync with Kobo's native `_validation_status` in **both
   directions**.

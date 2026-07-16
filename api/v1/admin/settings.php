@@ -36,6 +36,7 @@ if (Request::method() === 'GET') {
         'table_header_lines'         => Settings::tableHeaderLines(),
         'valid_table_header_lines'   => Settings::VALID_TABLE_HEADER_LINES,
         'notifications_default_on'   => Settings::notificationsDefaultOn(),
+        'sync_on_login'              => Settings::syncOnLogin(),
         'support_page_enabled'       => Settings::supportPageEnabled(),
         'landing_cta_enabled'        => Settings::landingCtaEnabled(),
         'forms_order'                => Settings::formsOrder(),
@@ -102,6 +103,11 @@ if (Request::method() === 'PUT') {
     if (array_key_exists('notifications_default_on', $body)) {
         Settings::set('notifications_default_on', (bool) $body['notifications_default_on']);
         $out['notifications_default_on'] = (bool) $body['notifications_default_on'];
+    }
+
+    if (array_key_exists('sync_on_login', $body)) {
+        Settings::set('sync_on_login', (bool) $body['sync_on_login']);
+        $out['sync_on_login'] = (bool) $body['sync_on_login'];
     }
 
     if (array_key_exists('support_page_enabled', $body)) {

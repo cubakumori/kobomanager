@@ -223,6 +223,16 @@ class Settings {
     }
 
     /**
+     * ¿Sincronizar en segundo plano los formularios visibles del usuario al iniciar
+     * sesión? (Red de seguridad contra datos obsoletos pensada para instalaciones SIN
+     * cron; con cron cada 15 min aporta poco.) El front lo lee de `GET /config` y
+     * dispara `POST /forms/sync-stale` tras el login, sin bloquearlo. OFF por defecto.
+     */
+    public static function syncOnLogin(): bool {
+        return (bool) self::get('sync_on_login', false);
+    }
+
+    /**
      * Visibilidad de la parte pública «de escaparate». Ambos activados por defecto.
      *   - support_page_enabled → la página «Apoyar» (/apoyar) y sus enlaces.
      *   - landing_cta_enabled  → la banda de cierre de la portada («monta tu instancia»).
