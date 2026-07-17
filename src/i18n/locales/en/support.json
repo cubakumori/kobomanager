@@ -16,7 +16,7 @@
     "service1": "Turnkey installation (server, domain, HTTPS, Kobo connection and first admin).",
     "service2": "Support and maintenance (updates, security patches, backups).",
     "service3": "Custom development (reports, integrations, custom fields or flows).",
-    "service4": "Training for the team that will use the tool.",
+    "service4": "Training for the team, both in KoboToolbox (form design, deployment and data collection) and in KoboManager (review, quality control, permissions and statistics).",
     "servicesCta": "Contact us for a quote",
     "contactTitle": "Contact & proposals",
     "contactBody": "Want to hire a service, propose an improvement, or tell us something about the app? If you're an organization already using KoboManager, we'd love to hear from you.",

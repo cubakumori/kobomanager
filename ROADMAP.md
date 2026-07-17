@@ -12,11 +12,13 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 
 > **Orden de prioridad acordado (jul-2026).** Partiendo de que los usuarios reales manejan
 > datos sensibles (instancia real = denuncias de DDHH): **(1) seguridad y privacidad**
-> (abajo, lo primero), **(2) cadena de aprobación multi-nivel** (evolución del flujo de
-> revisión — ver «Frentes mayores»), **(3) monitorización de muestra** (abajo), **(4)**
-> paneles/dashboards y escalabilidad como apuestas posteriores. La estrategia de **adopción
-> y servicio** (instalar + formar + supervisión técnica; la organización asume la
-> responsabilidad y el hosting) no vive aquí sino en `my.docs/MONETIZE.md`.
+> (abajo, lo primero), **(2) monitorización de muestra por equipo** (abajo, PRÓXIMA feature
+> de producto a construir), **(3)** paneles/dashboards y escalabilidad como apuestas
+> posteriores. La **cadena de aprobación multi-nivel** se DESCARTA por ahora (ver «Frentes
+> mayores»): con un revisor profesional o un doble-check ligero basta para el tamaño típico
+> de una ONG. La estrategia de **adopción y servicio** (instalar + formar + supervisión
+> técnica; la organización asume la responsabilidad y el hosting) vive en
+> `my.docs/MONETIZE.md`, no aquí.
 
 ---
 
@@ -154,18 +156,21 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 
 ---
 
-## Frentes mayores
+## Frentes mayores (supeditados a demanda real)
 
-> **Actualización de prioridad (jul-2026):** de los dos frentes, la **cadena de aprobación
-> multi-nivel** pasa a ser la **próxima gran feature de producto** (prioridad nº2 tras
-> seguridad): es la evolución natural del flujo de revisión y lo que Kobo explícitamente no
-> hace. Los **dashboards** siguen como apuesta de crecimiento **posterior** (mayor esfuerzo
-> de UI; su valor depende de que ya haya varias organizaciones con datos que presentar).
-> *(Decisión previa, jun-2026: ambos quedaban supeditados a demanda tras hacer público el
-> repo; la cadena de aprobación se adelanta ahora por el ajuste con el caso de uso real.)*
+> **Decisión (jul-2026):** ninguno de los dos se aborda ahora.
+> - La **cadena de aprobación multi-nivel** se **DESCARTA por ahora**: para el tamaño típico
+>   de una ONG (pocos empleados), el flujo actual —4 estados fijos + `can_validate` por
+>   formulario— basta si hay **una persona profesional** responsable de la revisión. Si en
+>   algún momento hiciera falta más control, la alternativa **ligera** preferida no es la
+>   cadena por roles sino un **doble-check** (dos revisores deben aprobar) o una **revisión
+>   más profunda de los «en espera»** por el mismo revisor — mucho menos coste que una
+>   máquina de estados con roles por etapa. Se reabre solo con demanda real.
+> - Los **dashboards** siguen como apuesta de crecimiento posterior (mayor esfuerzo de UI;
+>   su valor depende de que ya haya varias organizaciones con datos que presentar).
 
-- [ ] **Cadena de aprobación multi-nivel por roles** *(PRÓXIMA gran feature de producto —
-      evolución del flujo de revisión)*.
+- [ ] **Cadena de aprobación multi-nivel por roles** *(DESCARTADA por ahora — ver decisión
+      arriba; se documenta por si reaparece la necesidad)*.
       Flujo por **etapas ordenadas**, cada una a cargo de un rol distinto
       (p. ej. solicitante → revisor → aprobador), de modo que un envío solo avanza cuando la
       etapa anterior lo despacha. Añade sobre lo ya entregado: definición de la cadena
@@ -216,49 +221,70 @@ Quedan como ideas reabribles si aparece una necesidad real.
 
 ---
 
-## Monitorización de muestra por equipo — CANDIDATA (prioridad nº3, jul-2026)
+## Monitorización de muestra por equipo — PRÓXIMA feature a construir (prioridad nº2, jul-2026)
 
-> Idea del usuario (jul-2026): en trabajo de campo real cada **equipo** debe cumplir una
-> **muestra planificada** —un nº de encuestas repartido por los valores de un campo de
-> muestreo (p. ej. rango de edad)—. La app hoy calcula lo *recibido* (Estadísticas, con
-> desglose por equipo/encuestador) pero no lo compara contra un *plan*. Esta feature añade
-> el «cuánto falta»: un panel de **cumplimiento de la muestra por equipo**. Reutiliza el
-> campo de equipo/encuestador ya existente, `Stats::compute`/`Quality` (scope + estado) y
-> Chart.js. Aún **sin implementar** (en discusión de diseño).
+> Idea del usuario (jul-2026), aprobada para construir en una **sesión nueva**. En trabajo
+> de campo real cada **equipo** debe cumplir una **muestra planificada**: un nº de encuestas
+> repartido por los valores de un campo de muestreo (p. ej. rango de edad). La app hoy
+> calcula lo *recibido* (Estadísticas, desglose por equipo/encuestador) pero no lo compara
+> contra un *plan*. Esta feature añade el «cuánto falta»: un panel de **cumplimiento de la
+> muestra por equipo**, con **histórico** (el plan puede cambiar en campaña) y una
+> **proyección simple** de fecha de cierre al ritmo actual. Reutiliza el campo de
+> equipo/encuestador ya existente, `Stats::compute` (scope + alcance por estado) y Chart.js.
 
-- [ ] **Definición del plan de muestra** (nuevo, por formulario; sobre el campo de equipo ya
-      configurable):
-      - **Campo principal de muestreo** (un `select_one` del formulario; p. ej. «rango de
-        edad»). El plan es una matriz **equipo × valor-del-campo → nº de envíos objetivo**.
-      - **Origen de valores**: equipos = valores del campo de equipo ya configurado; valores
-        de muestreo = opciones del `select_one` elegido (del esquema). La matriz se rellena a
-        mano (objetivo por celda) — pensar en un editor tipo tabla + defaults/carga rápida.
-      - **Denominador**: elegir si «cumplido» cuenta **solo aprobados** o **aprobados +
-        pendientes** (ajuste del plan; espeja la lógica de alcance de QC/`qc_scope`).
-- [ ] **Panel de cumplimiento**: por equipo y por valor de muestreo, **hecho / objetivo**
-      (nº y %), con barras/heatmap de progreso y el total del equipo; resaltar sobre-muestra
-      y déficit. Respeta el scoping por filas (un jefe de equipo ve el suyo).
-- [ ] **Hasta dos campos secundarios de muestreo** (p. ej. sexo, raza): en una 1ª etapa,
-      **solo mostrar la distribución observada** de lo hecho por esos campos (no objetivos por
-      celda todavía) — informa sin exigir planificar una matriz N-dimensional.
+### Plan concreto (para la sesión de implementación)
 
-> **Ideas para afinar el diseño** (de la conversación jul-2026):
-> - **Almacenamiento del plan**: tabla nueva `sample_plan`/`sample_targets`
->   (form_id, sampling_field, team_value, sampling_value, target) → red de esquema
->   (canónico + SchemaCheck + migrate + CHANGELOG). El campo principal y los secundarios,
->   en `forms` (como `stats_team_field`).
-> - **Evitar la matriz gigante**: si un equipo × muchos valores se vuelve inmanejable,
->   permitir un **objetivo por equipo** con reparto por defecto entre valores (uniforme o
->   proporcional) y ajuste fino solo donde haga falta.
-> - **Cuadrar con la realidad del dato**: el valor de muestreo sale del payload como los
->   demás (código, no etiqueta); ojo con valores fuera del plan (equipo o rango que no
->   estaba previsto) → mostrarlos como «fuera de plan», no descartarlos.
-> - **Reutilización**: es casi una variante «con objetivos» del desglose por equipo de
->   Estadísticas → conviene construirlo sobre `Stats::compute` para no duplicar el scoping.
-> - **Exponer/compartir**: encaja naturalmente con un enlace público de solo lectura (un
->   coordinador sigue el avance sin cuenta), como ya hace el resumen de revisión.
-> - **Relación con dashboards**: este panel fijo de muestra es un caso concreto y acotado;
->   si algún día llegan los dashboards configurables, sería uno de sus widgets.
+**Modelo de datos** (red de esquema completa: canónico `db/001_schema.sql` + `SchemaCheck`
++ `migrate.php` + nota en CHANGELOG):
+
+- En `forms`: `sample_field` (clave del `select_one` principal de muestreo),
+  `sample_field2` / `sample_field3` (secundarios opcionales), y `sample_denominator`
+  (`approved` | `approved_pending`, default `approved`). Espejo de cómo viven ya
+  `stats_team_field` / `stats_enumerator_field`.
+- Tabla nueva `sample_targets` (el plan **vigente**): `(id, form_id, team_value,
+  sample_value, target, updated_at)`, única por `(form_id, team_value, sample_value)`.
+  `team_value` = valor del campo de equipo; `sample_value` = opción del campo principal.
+- Tabla nueva `sample_target_history` (para el **histórico**, ya que el plan cambia): al
+  editar el plan se **inserta** la versión con marca de tiempo en vez de sobrescribir sin
+  rastro `(id, form_id, snapshot_at, payload_json)` o filas equivalentes. Así una
+  renegociación a mitad de campaña no borra lo que se había planificado antes, y el panel
+  puede mostrar «plan vigente» sin recalcular hacia atrás.
+
+**Backend**:
+
+- `Sample::compute(formId, schema, scope, ...)` — gemelo de `Stats`/`Quality`: para cada
+  celda `equipo × valor`, cuenta lo **hecho** según `sample_denominator` (reutiliza el
+  scoping por filas y el alcance por estado), lee el **objetivo** de `sample_targets`, y
+  devuelve hecho/objetivo/% + totales por equipo. Marca las celdas **«fuera de plan»**
+  (equipo o valor presente en los datos pero sin objetivo) sin descartarlas.
+- **Proyección simple**: con la fecha del primer envío en alcance y el ritmo medio
+  (hecho ÷ días transcurridos), estimar la fecha en que cada equipo alcanzaría su objetivo.
+  Etiquetarla como estimación, no promesa. Barato (sin subsistema de snapshots diarios;
+  basta el ritmo agregado).
+- Endpoints: `GET /forms/{id}/sample` (panel) y `GET/PUT` del plan (admin o permiso
+  «Ajustes» del formulario, como los umbrales QC). Micro-caché en disco como `share_stats`.
+
+**Frontend**:
+
+- Editor del plan en «Ajustes» del formulario: elegir campo principal (+ secundarios),
+  el denominador, y rellenar la matriz **equipo × valor → objetivo**. Para evitar la
+  matriz gigante: permitir un **objetivo por equipo** con **reparto por defecto** (uniforme
+  o proporcional a lo ya recibido) y ajuste fino por celda.
+- Panel de cumplimiento (vista propia o pestaña): heatmap/barras hecho/objetivo por celda,
+  total y % por equipo, resaltar déficit y sobre-muestra, sección «fuera de plan», y la
+  proyección por equipo. Muestra **etiquetas** legibles del `select_one` (no el código).
+- Campos secundarios (etapa 1): **solo distribución observada** de lo hecho (sexo, raza…),
+  sin objetivos por celda todavía. i18n ES/EN.
+
+**Notas de diseño**:
+
+- Construir sobre `Stats::compute` para no duplicar el scoping (es casi el desglose por
+  equipo «con objetivos»).
+- Respeta el scoping por filas: un jefe de equipo ve el suyo.
+- Exponer en un **enlace público** de solo lectura encaja natural (un coordinador sigue el
+  avance sin cuenta), como el resumen de revisión — dejarlo para una 2ª iteración.
+- Si algún día llegan los **dashboards configurables**, este panel fijo sería uno de sus
+  widgets.
 
 ---
 

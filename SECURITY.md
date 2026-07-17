@@ -77,6 +77,39 @@ Out of scope:
 - Best-practice/header reports with no demonstrated impact, and automated-scanner
   output without a working proof of concept.
 
+## Threat model
+
+KoboManager is used by organizations that handle **sensitive survey data** (e.g.
+human-rights monitoring), so we design against these adversaries and state the
+current boundaries honestly:
+
+- **Network attacker (in transit).** Mitigated by HTTPS + `COOKIE_SECURE` + HSTS
+  (operator must deploy over TLS). The KoboToolbox API token never reaches the
+  browser and is encrypted at rest.
+- **Malicious or compromised low-privilege user (viewer).** The whole access-control
+  model exists for this: per-form permissions, row scoping (`RowScope`), column
+  hiding (`FieldScope`) and share-link scoping. A viewer must never read rows,
+  fields, or attachments beyond their grant — that class of bug is our highest
+  severity.
+- **Anonymous internet (public surface).** Read-only share links and the contact
+  form (`api/v1/public/`) are the only unauthenticated entry points; they enforce
+  the link's own scope, optional password, expiry and revocation.
+- **Untrusted submission content.** Survey data is treated as untrusted input:
+  escaped on render (XSS), neutralized in CSV/Excel exports (formula injection),
+  and never interpolated into SQL. Attachment proxies set `nosniff` and guard
+  against SSRF.
+- **Server / database seizure or backup theft (at rest).** This is the boundary an
+  operator in a hostile context must understand. **Today, submission payloads are
+  stored in the database in cleartext** (`submissions_cache.json_payload`); only the
+  Kobo API token is encrypted (`TokenVault`). So the confidentiality of survey data
+  at rest depends on the operator's own controls: database access restrictions,
+  full-disk/volume encryption, and protected backups. **Per-form encryption of
+  fields marked as sensitive is on the roadmap** but not yet shipped — plan
+  accordingly if your data is high-risk.
+- **Admin account.** Admins are **trusted** and bypass scoping by design; protecting
+  the admin credential is the operator's responsibility (2FA is planned). A
+  compromised admin is out of scope as a *vulnerability*, but see hardening below.
+
 ## Deploying securely
 
 If you self-host, follow [`DEPLOY.md`](./DEPLOY.md): serve over HTTPS with
@@ -85,3 +118,15 @@ vendor` directories unreachable from the web, keep the shipped security headers
 (CSP, `nosniff`, `X-Frame-Options`, HSTS), and generate your own
 `CONFIG_TOKEN_KEY` / `JWT_SECRET`. See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the
 security model.
+
+**If your survey data is sensitive**, given the at-rest boundary above, also:
+
+- Restrict database access to the app's dedicated MySQL user from localhost only;
+  never expose the DB port publicly and remove tools like phpMyAdmin after setup.
+- Enable **full-disk or volume encryption** on the server, and **encrypt backups**
+  (the in-app backup export and any `mysqldump`), storing them off-server encrypted.
+- Use a strong, unique admin password and limit who has admin (admins bypass
+  scoping). Rotate `CONFIG_TOKEN_KEY` with `api/cli/rotate_token_key.php` if you
+  suspect exposure.
+- Prefer a jurisdiction-appropriate host (e.g. EU for GDPR), and minimize retention
+  (don't keep submissions cached longer than you need).
