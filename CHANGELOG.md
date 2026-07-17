@@ -4,6 +4,25 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.30.1] - 2026-07-17
+
+Robustez de la búsqueda de envíos tras verificar (con medición) que no había un
+problema de rendimiento real. Sin cambio de esquema.
+
+### Corregido
+
+- **Búsqueda de la tabla de envíos: se cancela la petición en vuelo** al lanzar otra
+  (`AbortController` en `SubmissionsView`). Con el debounce de 300 ms bastaba en la
+  práctica, pero si dos cargas se solapaban una respuesta lenta anterior podía **pisar**
+  el resultado de una búsqueda más nueva; ahora la más reciente siempre gana y una
+  cancelada no toca el estado ni apaga el spinner de la nueva.
+
+> **Nota de la verificación.** Medida contra datos reales (1000 envíos/formulario), la
+> búsqueda usa el índice FULLTEXT (`MATCH … AGAINST`, 4–20 ms) y no necesita optimización
+> a los volúmenes típicos de Kobo; un FULLTEXT por-formulario no es posible en InnoDB. La
+> única mejora incremental pendiente (calidad de resultados, no velocidad) —limpiar el
+> ruido de metadatos de `search_text`— queda anotada en el ROADMAP.
+
 ## [1.30.0] - 2026-07-17
 
 Notificaciones casi inmediatas, Fase 2 del hito del ROADMAP: los avisos de envíos

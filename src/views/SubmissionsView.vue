@@ -356,7 +356,16 @@ const totalLabel = computed(() =>
     : t('submissions.totalFiltered', { n: total.value, total: scopeTotal.value }),
 )
 
+// Carga en vuelo actual: al teclear rápido en la búsqueda, cada nueva carga cancela
+// la anterior para que la respuesta MÁS NUEVA siempre gane (una respuesta lenta
+// anterior no debe pisar a otra posterior). El debounce reduce las peticiones; esto
+// resuelve la carrera cuando aun así se solapan.
+let loadController = null
 async function load() {
+  loadController?.abort()
+  const controller = new AbortController()
+  loadController = controller
+
   loading.value = true
   error.value = ''
   try {
@@ -370,6 +379,7 @@ async function load() {
         sort: sort.value,
         filter: advFilter.value ? JSON.stringify(advFilter.value) : undefined,
       },
+      signal: controller.signal,
     })
     formName.value = data.data.form.name
     deploymentStatus.value = data.data.form.deployment_status ?? null
@@ -389,9 +399,12 @@ async function load() {
     clearSelection()
     ensurePrefs()
   } catch (e) {
+    // Cancelada por una carga más nueva: no tocar el estado (lo gobierna la nueva).
+    if (controller.signal.aborted) return
     error.value = apiError(e, t('submissions.loadError'))
   } finally {
-    loading.value = false
+    // Solo la última carga apaga el spinner; una cancelada no lo apaga bajo la nueva.
+    if (loadController === controller) loading.value = false
   }
 }
 

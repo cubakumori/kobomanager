@@ -192,6 +192,16 @@ Sin pendientes en esta sección.
 
 ## Optimización y UX
 
+- [ ] **Limpiar el ruido de metadatos de `search_text`** *(de la verificación de la
+      búsqueda, jul-2026; incremental)* — `SubmissionSearch::textFor` salta las claves con
+      prefijo `_`, pero recoge campos estándar de Kobo que NO lo llevan (`start`, `end`,
+      `today`, `formhub/uuid`, `meta/instanceID`, `__version__`…), así que el índice
+      FULLTEXT acaba con UUIDs, timestamps ISO y URLs. Efecto: un fragmento que aparezca
+      dentro de un UUID puede dar un falso positivo, y el índice pesa de más. Añadir una
+      **denylist de nombres de metadatos** (además del prefijo `_`) y re-poblar con
+      `php api/cli/rebuild_search_text.php`. *No urgente:* medido, la búsqueda va sobrada a
+      escala Kobo (FULLTEXT 4–20 ms a 1000 filas/formulario) y el FULLTEXT por-formulario
+      **no es posible** en InnoDB (error 1283); esto es calidad de resultados, no velocidad.
 - [ ] **Cabeceras ordenables también en la tabla pública de enlaces compartidos**
       *(extensión de 1.12.0)*: la tabla interna ya ordena por cualquier columna clicando
       la cabecera (`sort=field:<clave>`); la vista pública `/s/<token>` podría heredar el
