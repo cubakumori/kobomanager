@@ -79,7 +79,7 @@
     "shareLifecycle": "Caducidad y revocación",
     "shareLifecycleBody": "Un enlace puede tener fecha de caducidad y siempre puede revocarse al instante desde «Compartir».",
     "notifTitle": "Notificaciones",
-    "notifBody": "Cada usuario puede activar, en «Notificaciones», un resumen diario por email con los nuevos envíos de los formularios elegidos (requiere que el administrador haya configurado el envío de email).",
+    "notifBody": "Cada usuario elige, en «Notificaciones», con qué frecuencia enterarse de los envíos nuevos de cada formulario: resumen diario, cada hora o tras cada sincronización (~15 min). El aviso llega por email y, si el usuario lo activa en su perfil («Notificaciones push», por dispositivo), también como notificación del sistema en el móvil u ordenador — incluso con la app cerrada. Siempre es un recuento agrupado con enlace (nunca el contenido del envío), respeta el filtro por filas del usuario y puede callar en un horario de silencio que fija el administrador. Requiere que el administrador haya configurado el envío de email y, para el push, las claves del servidor.",
     "auditTitle": "Auditoría y estado del sistema (admin)",
     "auditBody": "En «Auditoría», el administrador consulta el registro de acciones (quién hizo qué y cuándo) con filtros por acción, usuario, formulario y fecha, y un panel con la última ejecución de las tareas programadas y el estado de la sincronización.",
     "auditSelfBody": "Si el administrador activa «Auditoría propia» en Configuración, cualquier usuario verá la entrada «Mi actividad» en el menú, donde consulta únicamente su propio registro de acciones (nunca el de otros), con filtros por acción, formulario y fecha.",

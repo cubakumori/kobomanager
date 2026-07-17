@@ -79,7 +79,7 @@
     "shareLifecycle": "Expiry and revocation",
     "shareLifecycleBody": "A link can have an expiry date and can always be revoked instantly from “Sharing”.",
     "notifTitle": "Notifications",
-    "notifBody": "Each user can enable, under “Notifications”, a daily email summary of new submissions for the chosen forms (requires the admin to have configured email sending).",
+    "notifBody": "Each user chooses, under “Notifications”, how often to hear about new submissions per form: daily summary, hourly, or after each sync (~15 min). The alert arrives by email and — if the user enables it in their profile (“Push notifications”, per device) — also as a system notification on their phone or computer, even with the app closed. It is always a grouped count with a link (never the submission's content), it respects the user's row filter, and it can stay silent during quiet hours set by the admin. Requires the admin to have configured email sending and, for push, the server keys.",
     "auditTitle": "Audit log and system status (admin)",
     "auditBody": "Under “Audit log”, the admin browses the record of actions (who did what and when) with filters by action, user, form and date, plus a panel with the last run of the scheduled tasks and the sync status.",
     "auditSelfBody": "If the admin enables “Self-service activity log” in Settings, every user gets a “My activity” menu entry where they review only their own action log (never anyone else's), with filters by action, form and date.",
