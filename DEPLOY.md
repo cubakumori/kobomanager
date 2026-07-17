@@ -174,6 +174,11 @@ define('CORS_ALLOWED_ORIGINS', ['https://yourdomain.com']);
 define('RESEND_API_KEY', 're_••••••');  // email (§8); leave '' to disable
 define('MAIL_FROM', 'KoboManager <noreply@yourdomain.com>');
 
+// Web Push (§8, optional): generate with `php api/cli/vapid_keys.php`; leave '' to disable.
+define('VAPID_PUBLIC_KEY',  '');
+define('VAPID_PRIVATE_KEY', '');            // secret
+define('VAPID_SUBJECT',     '');            // 'mailto:you@yourdomain.com'; '' falls back to APP_URL
+
 define('APP_TIMEZONE', 'America/Havana');  // stats hour/weekday in local time (IANA; default 'UTC')
 define('APP_TIMEZONE_LABEL', 'La Habana'); // UI label; '' falls back to the IANA id
 

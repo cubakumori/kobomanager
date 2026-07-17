@@ -170,8 +170,8 @@ already did, delete it before generating the seed, with `DEMO_MODE` still off).
 
 Your setup *trail*, on the other hand, needs no manual cleanup: the seed export
 **never includes** the private tables (sessions, login attempts, rate-limit hits,
-password-reset tokens, the audit trail, contact messages), so your IPs and browser
-fingerprints cannot end up in the seed even if you forget about them. The reset
+password-reset tokens, push subscriptions, the audit trail, contact messages), so your
+IPs and browser fingerprints cannot end up in the seed even if you forget about them. The reset
 empties the visitor-generated trail each cycle (see next section).
 
 ---

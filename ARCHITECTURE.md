@@ -566,7 +566,8 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   retention (`audit_retention_days`, 0 = keep forever; drives opportunistic pruning in
   `Audit::log`), viewer action
   flags, share password policy, share attachments policy (`share_attachments_policy`),
-  the default daily‑summary subscription (`notifications_default_on`), the login‑triggered
+  the default notification frequency (`notifications_default_frequency`) and the optional
+  global quiet‑hours window (`notifications_quiet_start`/`notifications_quiet_end`), the login‑triggered
   background sync (`sync_on_login`, served by the public `GET /config` — see *Sync on login*),
   table display
   (`table_freeze`, `table_header_lines`), stats/QC display (`stats_default_scope` —

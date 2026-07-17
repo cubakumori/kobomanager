@@ -89,13 +89,14 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 
 ---
 
-## Notificaciones casi inmediatas de envíos nuevos — HITO ACORDADO (jul-2026)
+## Notificaciones casi inmediatas de envíos nuevos — ENTREGADO (jul-2026, 1.29.0 + 1.30.0)
 
-> Hoy solo existe el **resumen diario por email**. Decisión: algunos usuarios quieren
-> enterarse «casi al instante» de un envío nuevo. Clave del diseño: KoboManager solo ve
-> envíos nuevos **cuando sincroniza** (cron cada 15 min), así que «inmediato» = «al
-> siguiente sync» salvo que se añada el webhook de Kobo (ver Fase 2). Se acordó ejecutar
-> **Fase 1 y, a continuación, Fase 2**, todo configurable en Configuración.
+> **Contexto de la decisión.** Antes solo existía el **resumen diario por email**; algunos
+> usuarios querían enterarse «casi al instante» de un envío nuevo. Clave del diseño:
+> KoboManager solo ve envíos nuevos **cuando sincroniza** (cron cada 15 min), así que
+> «inmediato» = «al siguiente sync» salvo que se añada el webhook de Kobo (ver Fase 2). Se
+> acordó ejecutar **Fase 1 y, a continuación, Fase 2**, todo configurable en Configuración.
+> Ambas fases quedaron entregadas; el webhook opcional sigue sin construir (ver abajo).
 
 - [x] **Fase 1 — frecuencia de email por usuario** *(entregada en 1.29.0)*: la
       preferencia por usuario pasó de binaria («resumen diario sí/no») a **frecuencia**
