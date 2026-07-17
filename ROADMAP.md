@@ -251,10 +251,6 @@ Sin pendientes en esta sección.
       vistas (hoy los labels envuelven al input sin `for`); revisar validación inline y
       marcado de campos requeridos. Los diálogos, popovers y botones-icono ya están
       cubiertos.
-- [ ] **Aviso «nueva versión disponible» en la PWA** *(de la revisión de jul-2026)* — hoy
-      el service worker actualiza en silencio (`skipWaiting`); un toast «Hay una versión
-      nueva — recargar» daría visibilidad al cambio. Solo descubribilidad, el mecanismo
-      funciona.
 - [ ] **Escalabilidad más allá de ~200k envíos por formulario** *(de la revisión de
       jul-2026; medir ANTES con slow query log)* — dos palancas si aparecen instancias
       así: columnas generadas/índices MySQL para los filtros `JSON_EXTRACT` más usados, y

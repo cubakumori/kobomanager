@@ -4,6 +4,25 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.31.0] - 2026-07-17
+
+Aviso «hay una versión nueva» en la PWA: el usuario decide cuándo cargar el código
+recién desplegado, en vez de que el service worker lo cambie en silencio. Sin cambio
+de esquema.
+
+### Cambiado
+
+- **La PWA pasa de actualización silenciosa a modo AVISO** (`registerType: 'prompt'`):
+  al desplegar un build nuevo, el service worker nuevo queda **en espera** y aparece un
+  toast discreto *«Hay una versión nueva de KoboManager»* con **«Recargar»** y **«Ahora
+  no»**. «Recargar» aplica el relevo (mensaje `SKIP_WAITING` al SW) y recarga con el
+  código nuevo; «Ahora no» oculta el aviso y el SW sigue en espera (se volverá a ofrecer).
+  Antes (`autoUpdate` + `skipWaiting` incondicional) el código podía cambiar bajo los pies
+  del usuario a mitad de una tarea. Componente nuevo `PwaUpdateToast.vue` (usa
+  `virtual:pwa-register/vue`), montado en `App.vue`; el SW (`src/sw.js`) ya no se activa
+  solo, sino al recibir `SKIP_WAITING`. Solo afecta al build de producción (el SW está
+  desactivado en desarrollo).
+
 ## [1.30.1] - 2026-07-17
 
 Robustez de la búsqueda de envíos tras verificar (con medición) que no había un

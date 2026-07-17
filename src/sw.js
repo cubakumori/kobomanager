@@ -21,7 +21,13 @@ import { registerRoute, NavigationRoute } from 'workbox-routing'
 import { NetworkFirst, CacheFirst } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 
-self.skipWaiting()
+// Modo 'prompt' (ver vite.config): el SW nuevo NO se activa solo (nada de
+// skipWaiting incondicional), queda EN ESPERA hasta que el usuario acepta el aviso
+// «versión nueva → recargar». La app pide el relevo con updateServiceWorker(), que
+// envía este mensaje; solo entonces tomamos el control y la recarga trae el código nuevo.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting()
+})
 clientsClaim()
 
 precacheAndRoute(self.__WB_MANIFEST)

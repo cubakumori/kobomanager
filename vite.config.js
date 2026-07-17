@@ -29,7 +29,12 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.js',
-      registerType: 'autoUpdate',
+      // 'prompt' (no 'autoUpdate'): al desplegar una versión nueva, el SW nuevo
+      // queda EN ESPERA y la app muestra un aviso «hay una versión nueva → recargar»
+      // (src/components/PwaUpdateToast.vue) en vez de recargar en silencio. El
+      // usuario decide cuándo cargar el código nuevo (no se le cambia bajo los pies
+      // a mitad de una tarea). El SW aplica el cambio al recibir SKIP_WAITING (ver sw.js).
+      registerType: 'prompt',
       manifest: {
         name: 'KoboManager',
         short_name: 'KoboManager',

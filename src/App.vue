@@ -1,6 +1,7 @@
 <script setup>
 import { RouterView } from 'vue-router'
 import AppLayout from './views/AppLayout.vue'
+import PwaUpdateToast from './components/PwaUpdateToast.vue'
 import { useAuthStore } from './stores/auth'
 import { useOnline } from './composables/offline'
 
@@ -31,4 +32,5 @@ const useShell = (route) =>
     </AppLayout>
     <component :is="Component" v-else />
   </RouterView>
+  <PwaUpdateToast />
 </template>
