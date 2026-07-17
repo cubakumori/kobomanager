@@ -120,7 +120,7 @@ const flowSteps = [1, 2, 3, 4]
 
     <!-- Pareja corta: Notificaciones + PWA -->
     <div class="grid gap-6 lg:grid-cols-2">
-      <section class="space-y-2 rounded-2xl bg-slate-50 p-6 ring-1 ring-slate-200">
+      <section id="notifications" class="scroll-mt-24 space-y-2 rounded-2xl bg-slate-50 p-6 ring-1 ring-slate-200">
         <h2 class="font-semibold text-slate-900">{{ $t('guide.notifTitle') }}</h2>
         <p class="text-sm text-slate-600">{{ $t('guide.notifBody') }}</p>
       </section>

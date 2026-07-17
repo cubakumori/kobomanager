@@ -22,12 +22,14 @@ watch(demoMode, (v) => { if (v) showDemoModal.value = true }, { immediate: true 
 // acceso granular (permisos por filas), añadido recientemente.
 const features = [1, 2, 3, 4]
 
-// Sección «Y mucho más»: las capacidades más vendibles como tarjetas destacadas
-// (el trío de calidad —control de calidad, índice de riesgo, comentarios— y luego
-// seguimiento por equipo, permisos por columna y enlaces públicos) y el resto como
-// chips, mismo lenguaje visual verde. Seis destacadas = rejilla 3×2 limpia.
+// Sección «Y mucho más»: una tarjeta ANCHA de apertura para las notificaciones
+// (email + push; lleva una maqueta decorativa de la notificación del sistema, que
+// además rompe la monotonía de la rejilla), seis tarjetas destacadas (el trío de
+// calidad —control de calidad, índice de riesgo, comentarios— y luego seguimiento
+// por equipo, permisos por columna y enlaces públicos) en rejilla 3×2, y el resto
+// como chips, mismo lenguaje visual verde.
 const highlights = ['featQuality', 'featRisk', 'featComments', 'featStats', 'featColumns', 'feat5']
-const chips = ['chipEmail', 'chipLabels', 'chipMap', 'chipCsv', 'chipEdit', 'chipBackup']
+const chips = ['chipLabels', 'chipMap', 'chipCsv', 'chipEdit', 'chipBackup']
 
 // Tarjetas destacadas con explicación ampliada en la Guía pública: se enlaza al
 // ancla correspondiente (`/guide#<ancla>`). El índice de riesgo introduce un término
@@ -123,6 +125,45 @@ const showCta = computed(() => landingCtaEnabled.value && (!!links.value.repo ||
 
       <!-- Tarjetas destacadas: control de calidad, seguimiento por equipo, permisos por columna y enlaces públicos -->
       <div class="mx-auto mt-8 grid max-w-5xl gap-4 sm:grid-cols-2">
+        <!-- Tarjeta ancha de apertura: avisos de envíos nuevos (email + push), con una
+             maqueta decorativa de la notificación del sistema. -->
+        <div class="rounded-2xl bg-accent-50 p-6 ring-1 ring-accent-200 dark:bg-accent-900/25 dark:ring-accent-800 sm:col-span-2">
+          <div class="grid items-center gap-6 sm:grid-cols-2">
+            <div>
+              <h3 class="flex items-center gap-2 font-semibold text-accent-800 dark:text-accent-300">
+                <span class="h-1.5 w-1.5 rounded-full bg-accent-500"></span>
+                {{ $t('landing.featNotifyTitle') }}
+              </h3>
+              <p class="mt-2 text-sm text-accent-900/70 dark:text-accent-200/70">{{ $t('landing.featNotifyDesc') }}</p>
+              <RouterLink
+                :to="{ name: 'guide', hash: '#notifications' }"
+                class="mt-2 inline-flex items-center gap-1 text-sm font-medium text-accent-700 hover:underline dark:text-accent-300"
+              >
+                {{ $t('landing.moreInGuide') }} <span aria-hidden="true">→</span>
+              </RouterLink>
+            </div>
+            <!-- Maqueta (decorativa: aria-hidden) de la notificación push tal como la
+                 muestra el sistema; el pie ancla la promesa «con la app cerrada». -->
+            <!-- Los neutros (white/slate) se invierten solos bajo `.dark` vía variables
+                 CSS (ver style.css): aquí no van variantes dark:, salvo en accent. -->
+            <div aria-hidden="true" class="select-none">
+              <div class="mx-auto max-w-xs rounded-xl bg-white p-3 shadow-lg ring-1 ring-slate-200">
+                <div class="flex items-start gap-2.5">
+                  <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-600 text-xs font-bold text-white">K</span>
+                  <div class="min-w-0 flex-1">
+                    <p class="flex items-baseline justify-between gap-2 text-xs font-semibold text-slate-900">
+                      KoboManager
+                      <span class="shrink-0 font-normal text-slate-400">{{ $t('landing.featNotifyMockTime') }}</span>
+                    </p>
+                    <p class="mt-0.5 truncate text-xs text-slate-600">{{ $t('landing.featNotifyMockBody') }}</p>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-2 text-center text-xs text-accent-900/60 dark:text-accent-200/60">{{ $t('landing.featNotifyMockCaption') }}</p>
+            </div>
+          </div>
+        </div>
+
         <div
           v-for="h in highlights"
           :key="h"
