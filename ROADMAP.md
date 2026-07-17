@@ -89,6 +89,38 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 
 ---
 
+## Notificaciones casi inmediatas de envíos nuevos — HITO ACORDADO (jul-2026)
+
+> Hoy solo existe el **resumen diario por email**. Decisión: algunos usuarios quieren
+> enterarse «casi al instante» de un envío nuevo. Clave del diseño: KoboManager solo ve
+> envíos nuevos **cuando sincroniza** (cron cada 15 min), así que «inmediato» = «al
+> siguiente sync» salvo que se añada el webhook de Kobo (ver Fase 2). Se acordó ejecutar
+> **Fase 1 y, a continuación, Fase 2**, todo configurable en Configuración.
+
+- [ ] **Fase 1 — frecuencia de email por usuario** *(barata; reutiliza Mailer,
+      `notification_config` y el cron de sync)*: la preferencia por usuario pasa de
+      binaria («resumen diario sí/no») a **frecuencia**: `diario | cada hora | cada
+      sync (~15 min)`. El cron de sincronización, tras cada pasada, envía un email
+      **agrupado** («N envíos nuevos en {formulario}») a quien lo pidió. Guardarraíles:
+      respetar el **scoping por filas** del usuario (no avisar de envíos fuera de su
+      alcance), **throttle anti-inundación** (mínimo un intervalo entre emails por
+      usuario, agrupando lo acumulado), **horario de silencio** opcional, y el aviso es
+      **recuento + enlace**, nunca contenido del envío (no filtrar datos que el scoping
+      protege). Gobernado desde Configuración → Sincronización.
+- [ ] **Fase 2 — Web Push sobre la PWA** *(el «aviso al móvil»; a continuación de la
+      Fase 1)*: notificación del sistema vía service worker (la PWA ya existe): opt-in
+      por dispositivo desde el perfil, tabla de suscripciones push, claves **VAPID** en
+      config, envío desde el cron (misma cadencia y guardarraíles que la Fase 1) con
+      `minishlink/web-push` (composer). Funciona con el navegador cerrado en Android;
+      en iOS requiere la PWA **instalada** (≥16.4). *Acelerador opcional si alguien
+      necesita segundos de latencia*: endpoint webhook para los **REST Services** de
+      KoboToolbox (Kobo hace POST por cada envío) con token secreto en la URL +
+      mini-upsert en caché — además mantiene la caché fresca sin esperar al cron;
+      configuración por formulario en Kobo y endpoint público extra que asegurar.
+      *(Idea aparcada, solo si se pide: canal Telegram vía bot por instancia.)*
+
+---
+
 ## Frentes mayores (supeditados a demanda real)
 
 > **Decisión (jun-2026):** estos dos frentes **no se abordan ahora**; quedan supeditados
