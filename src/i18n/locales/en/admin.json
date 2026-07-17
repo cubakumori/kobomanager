@@ -403,7 +403,9 @@
     "action_share_revoke": "Share link revoked",
     "action_share_delete": "Share link deleted",
     "action_contact_message_archive": "Contact message archived",
-    "action_contact_message_delete": "Contact message deleted"
+    "action_contact_message_delete": "Contact message deleted",
+    "action_push_subscribe": "Push enabled on a device",
+    "action_push_unsubscribe": "Push disabled on a device"
   },
   "messages": {
     "title": "Contact messages",

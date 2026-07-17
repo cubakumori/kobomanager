@@ -44,6 +44,15 @@ define('MAIL_FROM', 'KoboManager <noreply@tudominio.com>');
 // Vacío = no se intenta notificar por email (el mensaje igual se guarda en BD).
 define('CONTACT_TO', 'contacto@tudominio.com');
 
+// --- Web Push (opcional; avisos de envíos nuevos como notificación del sistema) ---
+// Generar el par UNA vez con `php api/cli/vapid_keys.php` y pegar aquí. Vacías =
+// push desactivado (la app ni ofrece la opción). Cambiar las claves invalida las
+// suscripciones existentes (cada dispositivo tendría que re-suscribirse). Requiere
+// servir la app por HTTPS (los navegadores no permiten push en HTTP).
+define('VAPID_PUBLIC_KEY', '');
+define('VAPID_PRIVATE_KEY', '');                       // SECRETO
+define('VAPID_SUBJECT', '');                           // contacto del operador ('mailto:…'); vacío = APP_URL
+
 // --- App ---
 define('APP_URL', 'http://localhost:5173');
 // Orígenes permitidos para CORS (frontend en dev). Añade 'http://localhost:4173'

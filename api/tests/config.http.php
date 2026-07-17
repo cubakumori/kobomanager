@@ -38,6 +38,12 @@ define('COOKIE_SAMESITE', 'Lax');
 
 define('RESEND_API_KEY', '');
 define('MAIL_FROM', 'KoboManager <noreply@test.local>');
+
+// Claves VAPID de TEST (par fijo generado para la suite; sin valor fuera de ella):
+// permiten ejercer el alta/baja de suscripciones push y la cabecera VAPID sin red.
+define('VAPID_PUBLIC_KEY', 'BNVR_QW7Yiaj96VKqFRUNSCo5TCV6L4nPRVuhOJmyjRXrzJxX8NjLOCQrOcknqcfoL0ZldzoF0u7f7nR0_pD51o');
+define('VAPID_PRIVATE_KEY', 'shG41hA7yszkoCNWVTaZBOLoDxA-MjbjTlDtwQZfsFc');
+define('VAPID_SUBJECT', 'mailto:tests@test.local');
 define('APP_URL', 'http://localhost:5173');
 define('CORS_ALLOWED_ORIGINS', ['http://localhost:5173']);
 define('APP_ENV', 'dev');

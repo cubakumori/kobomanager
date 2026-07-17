@@ -68,3 +68,43 @@ registerRoute(
     ],
   }),
 )
+
+// ── Web Push (avisos de envíos nuevos; ver api/lib/Notifier + api/lib/WebPush) ──
+// El payload llega cifrado extremo a extremo y ya descifrado aquí por el navegador:
+// { title, body, url, tag }. Solo recuento + enlace, nunca contenido del envío.
+self.addEventListener('push', (event) => {
+  let data = {}
+  try {
+    data = event.data ? event.data.json() : {}
+  } catch {
+    /* payload no-JSON: se muestra un aviso genérico */
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'KoboManager', {
+      body: data.body || '',
+      tag: data.tag || 'km-new-submissions', // reemplaza el aviso anterior en vez de apilar
+      icon: '/pwa-192.png',
+      badge: '/pwa-192.png',
+      data: { url: data.url || '/forms' },
+    }),
+  )
+})
+
+// Al tocar la notificación: enfocar una pestaña abierta de la app (navegándola al
+// destino) o abrir una nueva.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const url = event.notification.data?.url || '/forms'
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ('focus' in client) {
+          client.focus()
+          if ('navigate' in client) client.navigate(url)
+          return
+        }
+      }
+      return self.clients.openWindow(url)
+    }),
+  )
+})

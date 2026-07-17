@@ -109,16 +109,22 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       opcional (Configuración → Sincronización, en `APP_TIMEZONE`, puede cruzar la
       medianoche) y aviso de solo **recuento + enlace**. El resumen `daily` sigue en su
       cron; las sync manuales o al iniciar sesión no disparan emails.
-- [ ] **Fase 2 — Web Push sobre la PWA** *(el «aviso al móvil»; a continuación de la
-      Fase 1)*: notificación del sistema vía service worker (la PWA ya existe): opt-in
-      por dispositivo desde el perfil, tabla de suscripciones push, claves **VAPID** en
-      config, envío desde el cron (misma cadencia y guardarraíles que la Fase 1) con
-      `minishlink/web-push` (composer). Funciona con el navegador cerrado en Android;
-      en iOS requiere la PWA **instalada** (≥16.4). *Acelerador opcional si alguien
-      necesita segundos de latencia*: endpoint webhook para los **REST Services** de
-      KoboToolbox (Kobo hace POST por cada envío) con token secreto en la URL +
-      mini-upsert en caché — además mantiene la caché fresca sin esperar al cron;
-      configuración por formulario en Kobo y endpoint público extra que asegurar.
+- [x] **Fase 2 — Web Push sobre la PWA** *(entregada en 1.30.0)*: notificación del
+      sistema vía el service worker existente: opt-in **por dispositivo** desde el
+      perfil, tabla `push_subscriptions` (única por sha256 del endpoint; poda de
+      suscripciones muertas), claves **VAPID** en config (`php api/cli/vapid_keys.php`)
+      y envío desde el mismo `Notifier` del cron (misma frecuencia, scoping, throttle y
+      silencio que el email; la marca de agua avanza si cualquier canal entregó).
+      **Decisión de diseño**: en lugar de `minishlink/web-push` (composer), implementación
+      **propia sin dependencias** (`lib/WebPush`: cifrado RFC 8291 blindado con el vector
+      oficial + VAPID RFC 8292 con OpenSSL) — el runtime sigue sin `vendor/` y el modelo
+      de despliegue (FTP/phpMyAdmin, sin composer) no cambia. Funciona con el navegador
+      cerrado en Android; en iOS requiere la PWA **instalada** (≥16.4) y siempre HTTPS.
+- [ ] *Acelerador opcional si alguien necesita segundos de latencia*: endpoint webhook
+      para los **REST Services** de KoboToolbox (Kobo hace POST por cada envío) con
+      token secreto en la URL + mini-upsert en caché — además mantiene la caché fresca
+      sin esperar al cron; configuración por formulario en Kobo y endpoint público extra
+      que asegurar. **No construido a propósito** (solo si aparece la demanda).
       *(Idea aparcada, solo si se pide: canal Telegram vía bot por instancia.)*
 
 ---

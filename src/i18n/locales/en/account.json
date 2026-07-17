@@ -56,7 +56,22 @@
     "sessError": "Could not close the sessions",
     "theme": "Theme",
     "themeDesc": "Interface theme on this device (it does not travel with your account).",
-    "themeSiteDefault": "Site default"
+    "themeSiteDefault": "Site default",
+    "push": "Push notifications",
+    "pushDesc": "New-submission alerts as system notifications on this device, even with the app closed. Enabled per device; which forms alert and how often is decided under Notifications (the same preference as email).",
+    "pushEnable": "Enable on this device",
+    "pushDisable": "Disable on this device",
+    "pushOnHere": "Enabled on this device ✓",
+    "pushThisDevice": "This device",
+    "pushUnknownDevice": "Unnamed device",
+    "pushSince": "Since",
+    "pushLastUsed": "Last alert",
+    "pushRemove": "Remove",
+    "pushHint": "On iPhone/iPad the app must be installed on the home screen (iOS 16.4+). The alert is only a count with a link; it never includes the submission's content.",
+    "pushUnsupported": "This browser does not support push notifications.",
+    "pushDenied": "Notifications are blocked for this site in the browser. Unblock them in the site settings to enable them.",
+    "pushLoadError": "Could not load the devices",
+    "pushError": "Could not change the subscription"
   },
   "notifications": {
     "title": "Notifications",

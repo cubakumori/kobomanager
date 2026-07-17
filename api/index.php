@@ -40,6 +40,7 @@ require __DIR__ . '/lib/SqlScript.php';
 require __DIR__ . '/lib/DbSnapshot.php';
 require __DIR__ . '/lib/DemoSeed.php';
 require __DIR__ . '/lib/DbBackup.php';
+require __DIR__ . '/lib/WebPush.php';
 
 // --- CORS (frontend en dev sobre otro origen) ---
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
@@ -138,6 +139,7 @@ $routes = [
     'admin/messages/:id'        => 'admin/message_item.php',
     'audit/me'                  => 'audit/me.php',
     'notifications'             => 'notifications.php',
+    'push/subscriptions'        => 'push_subscriptions.php',
     'profile'                   => 'profile.php',
     'profile/password'          => 'profile_password.php',
     'profile/sessions'          => 'profile_sessions.php',

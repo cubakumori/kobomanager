@@ -22,7 +22,7 @@ class DemoSeed {
     ];
 
     /** Tablas efímeras: nunca se exportan y el reset las vacía (rastro de visitantes). */
-    public const EPHEMERAL_TABLES = ['audit_log', 'login_attempts', 'rate_hits', 'password_resets'];
+    public const EPHEMERAL_TABLES = ['audit_log', 'login_attempts', 'rate_hits', 'password_resets', 'push_subscriptions'];
 
     /**
      * Intocables: ni se exportan ni el reset las toca.

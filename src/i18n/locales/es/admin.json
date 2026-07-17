@@ -403,7 +403,9 @@
     "action_share_revoke": "Enlace revocado",
     "action_share_delete": "Enlace eliminado",
     "action_contact_message_archive": "Mensaje de contacto archivado",
-    "action_contact_message_delete": "Mensaje de contacto eliminado"
+    "action_contact_message_delete": "Mensaje de contacto eliminado",
+    "action_push_subscribe": "Push activado en un dispositivo",
+    "action_push_unsubscribe": "Push desactivado en un dispositivo"
   },
   "messages": {
     "title": "Mensajes de contacto",

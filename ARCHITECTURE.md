@@ -604,6 +604,19 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   for every currently‑visible form (an opt‑out persists even when the default is on, a
   newly‑added form inherits the default until the user next saves) and preserves the
   watermark — except when a form *enters* a live frequency, where it re‑anchors to "now".
+- **Web Push** (near‑immediate alerts as system notifications; requires VAPID keys in
+  config — `php api/cli/vapid_keys.php` — and HTTPS): `lib/WebPush` is a **dependency‑free**
+  implementation of the Web Push protocol — RFC 8291 payload encryption (ECDH P‑256 +
+  HKDF‑SHA256 + AES‑128‑GCM, `aes128gcm`, pinned to the RFC's official test vector in
+  `WebPushTest`) and RFC 8292 VAPID (ES256 JWT via OpenSSL) — keeping the runtime
+  composer‑free. Opt‑in is **per device** from the profile (`GET/POST/DELETE
+  /push/subscriptions`, table `push_subscriptions`, unique by `sha256(endpoint)`); the
+  browser's `applicationServerKey` (public VAPID key) travels on the public `GET /config`.
+  The same `Notifier` pass fans out to the user's devices with the same items, frequency
+  and guardrails as the email; the watermark advances when **any** channel delivered. Dead
+  subscriptions (404/410) are pruned on send; other failures increment `failed_count`
+  (pruned past a threshold). In the demo, `push_subscriptions` is an *ephemeral* table
+  (visitor trace): wiped on every reset, never exported with the seed.
 - `lib/Audit.php`: writes to `audit_log` (who did what) via `log()` — which also prunes
   opportunistically (1 % of writes, `LIMIT 5000`) when `audit_retention_days` > 0, so the
   log doesn't grow without bound (a row per attachment view) — and reads it back via
@@ -674,7 +687,10 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   returned to the app** (not masked as a network error) so real errors stay visible. Only
   200s are cached. `composables/offline.js` exposes
   `isOnline` (banner in `App.vue`) and `clearDataCaches()`, called on logout so no sensitive
-  data outlives the session on shared devices. The SW is build-only (disabled in dev).
+  data outlives the session on shared devices. The SW is build-only (disabled in dev). It
+  also carries the **Web Push handlers**: `push` shows the system notification from the
+  (end‑to‑end‑encrypted) payload `{title, body, url, tag}` — count + link only — and
+  `notificationclick` focuses an open app tab (or opens one) at the target URL.
 - **Reusable UI**: `Modal.vue` + `ConfirmDialog.vue` (`composables/confirm.js`), with
   `composables/dialogA11y.js` providing Escape‑to‑close, focus trap and focus restore for
   modals and drawers.

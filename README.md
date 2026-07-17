@@ -106,8 +106,9 @@ native validation status.
 **Operation**
 
 - Bilingual UI (Spanish / English), light/dark theme, installable **PWA** with offline
-  reads, **email notifications**, a built-in **demo mode**, a one-command **CLI
-  installer**, in-app **database backup & restore** (full or settings-only, no shell
+  reads, **new-submission alerts** by email and **Web Push** (per-form frequency: daily,
+  hourly or every sync; row-scoped, count-only), a built-in **demo mode**, a one-command
+  **CLI installer**, in-app **database backup & restore** (full or settings-only, no shell
   needed), and fully **themable** colors (below).
 
 ## Repository layout

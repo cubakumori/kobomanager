@@ -1,12 +1,12 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '../services/api'
 import { useAuthStore, apiError } from '../stores/auth'
 import { setLocale } from '../i18n'
 import { confirmDialog } from '../composables/confirm'
 import { useDarkMode } from '../composables/darkMode'
-import { useDemoMode } from '../composables/appConfig'
+import { useDemoMode, usePushConfig, configReady } from '../composables/appConfig'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -143,9 +143,119 @@ function fmtDate(s) {
   return isNaN(d) ? s : d.toLocaleString()
 }
 
+// ── Notificaciones push (opt-in POR DISPOSITIVO; requiere claves VAPID en el
+// servidor — pushPublicKey vacía = la sección ni se muestra). Qué se avisa y con
+// qué frecuencia lo decide la página Notificaciones (misma preferencia que el email).
+const { pushPublicKey } = usePushConfig()
+const pushSupported =
+  typeof navigator !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
+const pushDevices = ref([])
+const pushBusy = ref(false)
+const pushError = ref('')
+const pushDenied = ref(false)
+const thisEndpointHash = ref('') // sha256 del endpoint de ESTE navegador (si está suscrito)
+const pushOnHere = computed(() => !!thisEndpointHash.value && pushDevices.value.some((d) => d.endpoint_hash === thisEndpointHash.value))
+
+async function sha256hex(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+  return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+// applicationServerKey: base64url → Uint8Array (lo exige pushManager.subscribe).
+function vapidKeyBytes(b64u) {
+  const b64 = (b64u + '='.repeat((4 - (b64u.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/')
+  return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))
+}
+
+// Etiqueta legible del dispositivo (best-effort desde el user-agent).
+function deviceLabel() {
+  const ua = navigator.userAgent
+  const browser = (ua.match(/(Edg|OPR|Firefox|Chrome|Safari)\/[\d.]+/) || ['—'])[0].split('/')[0]
+  const os = /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS' : /Mac/.test(ua) ? 'macOS' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : ''
+  return [browser === 'Edg' ? 'Edge' : browser === 'OPR' ? 'Opera' : browser, os].filter(Boolean).join(' · ')
+}
+
+async function loadPush() {
+  if (!pushPublicKey.value || !pushSupported) return
+  pushError.value = ''
+  try {
+    const { data } = await api.get('/push/subscriptions')
+    pushDevices.value = data.data.subscriptions
+    // getRegistration (no .ready): en dev el SW no se registra y .ready no resuelve nunca.
+    const reg = await navigator.serviceWorker.getRegistration()
+    const sub = reg ? await reg.pushManager.getSubscription() : null
+    thisEndpointHash.value = sub ? await sha256hex(sub.endpoint) : ''
+    pushDenied.value = Notification.permission === 'denied'
+  } catch (e) {
+    pushError.value = apiError(e, t('profile.pushLoadError'))
+  }
+}
+
+async function enablePush() {
+  pushBusy.value = true
+  pushError.value = ''
+  try {
+    const perm = await Notification.requestPermission()
+    pushDenied.value = perm === 'denied'
+    if (perm !== 'granted') return
+    const reg = await navigator.serviceWorker.getRegistration()
+    if (!reg) {
+      pushError.value = t('profile.pushUnsupported')
+      return
+    }
+    const sub =
+      (await reg.pushManager.getSubscription()) ||
+      (await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: vapidKeyBytes(pushPublicKey.value),
+      }))
+    const json = sub.toJSON()
+    await api.post('/push/subscriptions', {
+      endpoint: sub.endpoint,
+      keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+      label: deviceLabel(),
+    })
+    await loadPush()
+  } catch (e) {
+    pushError.value = apiError(e, t('profile.pushError'))
+  } finally {
+    pushBusy.value = false
+  }
+}
+
+async function disablePush() {
+  pushBusy.value = true
+  pushError.value = ''
+  try {
+    const reg = await navigator.serviceWorker.getRegistration()
+    const sub = reg ? await reg.pushManager.getSubscription() : null
+    if (sub) {
+      await api.delete('/push/subscriptions', { data: { endpoint: sub.endpoint } })
+      await sub.unsubscribe()
+    }
+    await loadPush()
+  } catch (e) {
+    pushError.value = apiError(e, t('profile.pushError'))
+  } finally {
+    pushBusy.value = false
+  }
+}
+
+async function removePushDevice(id) {
+  pushError.value = ''
+  try {
+    await api.delete('/push/subscriptions', { data: { id } })
+    await loadPush()
+  } catch (e) {
+    pushError.value = apiError(e, t('profile.pushError'))
+  }
+}
+
 onMounted(() => {
   load()
   loadSessions()
+  // El push depende de la clave pública de /config: esperar a que esté cargada.
+  configReady.then(loadPush)
 })
 </script>
 
@@ -193,6 +303,69 @@ onMounted(() => {
         <option value="dark">{{ $t('common.theme_dark') }}</option>
         <option value="auto">{{ $t('common.theme_auto') }}</option>
       </select>
+    </section>
+
+    <!-- Notificaciones push (solo si el servidor tiene claves VAPID) -->
+    <section v-if="pushPublicKey" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 space-y-3">
+      <div>
+        <h2 class="font-semibold text-slate-900">{{ $t('profile.push') }}</h2>
+        <p class="mt-0.5 text-sm text-slate-500">{{ $t('profile.pushDesc') }}</p>
+      </div>
+
+      <div v-if="pushError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
+        {{ pushError }}
+      </div>
+
+      <p v-if="!pushSupported" class="text-sm text-slate-400">{{ $t('profile.pushUnsupported') }}</p>
+      <p v-else-if="pushDenied" class="text-sm text-slate-400">{{ $t('profile.pushDenied') }}</p>
+
+      <div v-if="pushSupported" class="flex items-center gap-3">
+        <button
+          v-if="!pushOnHere"
+          type="button"
+          :disabled="pushBusy || pushDenied"
+          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+          @click="enablePush"
+        >
+          {{ pushBusy ? $t('common.saving') : $t('profile.pushEnable') }}
+        </button>
+        <button
+          v-else
+          type="button"
+          :disabled="pushBusy"
+          class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+          @click="disablePush"
+        >
+          {{ pushBusy ? $t('common.saving') : $t('profile.pushDisable') }}
+        </button>
+        <span v-if="pushOnHere" class="text-sm text-success-600 dark:text-success-400">{{ $t('profile.pushOnHere') }}</span>
+      </div>
+
+      <ul v-if="pushDevices.length" class="divide-y divide-slate-100 rounded-lg ring-1 ring-slate-200">
+        <li v-for="d in pushDevices" :key="d.id" class="flex items-start justify-between gap-4 px-3 py-2.5 text-sm">
+          <div class="min-w-0">
+            <p class="truncate text-slate-700">
+              {{ d.label || $t('profile.pushUnknownDevice') }}
+              <span
+                v-if="d.endpoint_hash === thisEndpointHash"
+                class="ml-1 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:text-primary-300 dark:ring-primary-800"
+              >{{ $t('profile.pushThisDevice') }}</span>
+            </p>
+            <p class="text-xs text-slate-400">
+              {{ $t('profile.pushSince') }}: {{ fmtDate(d.created_at) }}
+              <template v-if="d.last_used_at"> · {{ $t('profile.pushLastUsed') }}: {{ fmtDate(d.last_used_at) }}</template>
+            </p>
+          </div>
+          <button
+            type="button"
+            class="shrink-0 text-xs font-medium text-red-600 hover:underline dark:text-red-400"
+            @click="removePushDevice(d.id)"
+          >
+            {{ $t('profile.pushRemove') }}
+          </button>
+        </li>
+      </ul>
+      <p class="text-xs text-slate-400">{{ $t('profile.pushHint') }}</p>
     </section>
 
     <!-- Contraseña -->

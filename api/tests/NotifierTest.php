@@ -270,6 +270,93 @@ final class NotifierTest extends DbTestCase
         $this->assertTrue(Notifier::inQuietHours($at('2026-07-18 02:30:00'), '22:00', '07:00', 'America/Santo_Domingo'));
     }
 
+    private function addPushSub(int $userId, string $endpoint): int
+    {
+        DB::run(
+            'INSERT INTO push_subscriptions (user_id, endpoint, endpoint_hash, p256dh, auth)
+             VALUES (?, ?, ?, ?, ?)',
+            [$userId, $endpoint, hash('sha256', $endpoint), 'k', 'a']
+        );
+        return (int) DB::conn()->lastInsertId();
+    }
+
+    public function testPushGoesToSubscribedDevicesWithSameGuardrails(): void
+    {
+        $uid = $this->makeUser('viewer', true, 'push@test.local');
+        $f   = $this->makeForm();
+        $this->grantView($uid, $f);
+        $this->subscribe($uid, $f, 'every_sync', '2026-07-17 11:00:00');
+        $this->addSubmission($f, '2026-07-17 11:30:00');
+        $this->addPushSub($uid, 'https://push.example/dev1');
+        $this->addPushSub($uid, 'https://push.example/dev2');
+
+        $pushed = [];
+        $res = Notifier::run($this->now(), $this->collector(), function (array $sub, string $payload) use (&$pushed): int {
+            $pushed[] = ['endpoint' => $sub['endpoint'], 'payload' => json_decode($payload, true)];
+            return 201;
+        });
+
+        // Email + un push por dispositivo, mismo contenido (recuento + enlace).
+        $this->assertSame(1, $res['sent']);
+        $this->assertSame(2, $res['push_sent']);
+        $this->assertCount(2, $pushed);
+        $this->assertStringContainsString('1 envío nuevo', $pushed[0]['payload']['body']);
+        $this->assertStringContainsString('/forms', $pushed[0]['payload']['url']);
+        $this->assertArrayNotHasKey('json_payload', $pushed[0]['payload']);
+
+        // El push aceptado deja rastro (last_used_at) y resetea el contador de fallos.
+        $row = DB::run('SELECT last_used_at, failed_count FROM push_subscriptions WHERE user_id = ? LIMIT 1', [$uid])->fetch();
+        $this->assertSame('2026-07-17 12:00:00', $row['last_used_at']);
+        $this->assertSame(0, (int) $row['failed_count']);
+    }
+
+    public function testGoneSubscriptionIsPruned(): void
+    {
+        $uid = $this->makeUser('viewer', true, 'gone@test.local');
+        $f   = $this->makeForm();
+        $this->grantView($uid, $f);
+        $this->subscribe($uid, $f, 'every_sync', '2026-07-17 11:00:00');
+        $this->addSubmission($f, '2026-07-17 11:30:00');
+        $this->addPushSub($uid, 'https://push.example/dead');
+
+        Notifier::run($this->now(), $this->collector(), fn(): int => 410);
+
+        // 410 = suscripción muerta → se poda; no cuenta como error.
+        $count = (int) DB::run('SELECT COUNT(*) c FROM push_subscriptions WHERE user_id = ?', [$uid])->fetch()['c'];
+        $this->assertSame(0, $count);
+    }
+
+    public function testPushOnlyDeliveryAdvancesWatermark(): void
+    {
+        $uid = $this->makeUser('viewer', true, 'pushonly@test.local');
+        $f   = $this->makeForm();
+        $this->grantView($uid, $f);
+        $this->subscribe($uid, $f, 'every_sync', '2026-07-17 11:00:00');
+        $this->addSubmission($f, '2026-07-17 11:30:00');
+        $this->addPushSub($uid, 'https://push.example/only');
+
+        // El email falla pero el push entrega: el aviso llegó → la marca avanza.
+        $res = Notifier::run($this->now(), $this->collector(ok: false), fn(): int => 201);
+        $this->assertSame(0, $res['sent']);
+        $this->assertSame(1, $res['push_sent']);
+        $this->assertSame('2026-07-17 12:00:00', $this->watermark($uid, $f));
+    }
+
+    public function testFailedPushIncrementsCounterWithoutPruning(): void
+    {
+        $uid = $this->makeUser('viewer', true, 'flaky@test.local');
+        $f   = $this->makeForm();
+        $this->grantView($uid, $f);
+        $this->subscribe($uid, $f, 'every_sync', '2026-07-17 11:00:00');
+        $this->addSubmission($f, '2026-07-17 11:30:00');
+        $id = $this->addPushSub($uid, 'https://push.example/flaky');
+
+        Notifier::run($this->now(), $this->collector(), fn(): int => 500);
+
+        $row = DB::run('SELECT failed_count FROM push_subscriptions WHERE id = ?', [$id])->fetch();
+        $this->assertSame(1, (int) $row['failed_count']); // sigue viva, con el fallo anotado
+    }
+
     public function testLegacyDefaultOnFallback(): void
     {
         // Partir de cero: la BD de test puede arrastrar estos ajustes de otras corridas.

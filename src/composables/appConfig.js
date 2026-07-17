@@ -57,6 +57,10 @@ const showViewSubmissionsLink = ref(true)
 // solo se consulta tras un login, cuando /config ya respondió.
 const syncOnLogin = ref(false)
 
+// Clave pública VAPID de Web Push (applicationServerKey). Vacía = push no
+// configurado en el servidor (el perfil ni ofrece la opción). Sin caché local.
+const pushPublicKey = ref('')
+
 // Promesa de «config lista»: la usa el guard del router para decidir rutas
 // públicas (p. ej. /apoyar) sin depender del orden de carga.
 const configReady = publicApi
@@ -91,6 +95,7 @@ const configReady = publicApi
     if (data.data.landing_cta_enabled != null) landingCtaEnabled.value = !!data.data.landing_cta_enabled
     if (data.data.show_view_submissions_link != null) showViewSubmissionsLink.value = !!data.data.show_view_submissions_link
     syncOnLogin.value = !!data.data.sync_on_login
+    pushPublicKey.value = String(data.data.push_public_key || '')
   })
   .catch(() => { /* sin red: vale el valor cacheado o el default */ })
 
@@ -159,6 +164,11 @@ export function useUiToggles() {
 /** ¿Sincronizar los formularios del usuario al iniciar sesión? (reactivo) */
 export function useSyncOnLogin() {
   return { syncOnLogin }
+}
+
+/** Clave pública VAPID (reactivo). Vacía = Web Push no configurado en el servidor. */
+export function usePushConfig() {
+  return { pushPublicKey }
 }
 
 /** Promesa que resuelve cuando /config se ha cargado (para el guard del router). */

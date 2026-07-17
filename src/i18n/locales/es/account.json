@@ -56,7 +56,22 @@
     "sessError": "No se pudieron cerrar las sesiones",
     "theme": "Tema",
     "themeDesc": "Tema visual de la interfaz en este dispositivo (no viaja con tu cuenta).",
-    "themeSiteDefault": "Por defecto del sitio"
+    "themeSiteDefault": "Por defecto del sitio",
+    "push": "Notificaciones push",
+    "pushDesc": "Avisos de envíos nuevos como notificación del sistema en este dispositivo, aunque la app esté cerrada. Se activa por dispositivo; qué formularios avisan y con qué frecuencia se decide en Notificaciones (la misma preferencia que el email).",
+    "pushEnable": "Activar en este dispositivo",
+    "pushDisable": "Desactivar en este dispositivo",
+    "pushOnHere": "Activadas en este dispositivo ✓",
+    "pushThisDevice": "Este dispositivo",
+    "pushUnknownDevice": "Dispositivo sin nombre",
+    "pushSince": "Desde",
+    "pushLastUsed": "Último aviso",
+    "pushRemove": "Quitar",
+    "pushHint": "En iPhone/iPad hace falta tener la app instalada en la pantalla de inicio (iOS 16.4+). El aviso es solo un recuento con enlace; nunca incluye el contenido del envío.",
+    "pushUnsupported": "Este navegador no soporta notificaciones push.",
+    "pushDenied": "Las notificaciones están bloqueadas para este sitio en el navegador. Desbloquéalas en los ajustes del sitio para poder activarlas.",
+    "pushLoadError": "No se pudieron cargar los dispositivos",
+    "pushError": "No se pudo cambiar la suscripción"
   },
   "notifications": {
     "title": "Notificaciones",

@@ -285,10 +285,11 @@ location /api/ {
 0    7 * * *  php /path/api/cron/daily_summary.php       # daily email summary
 ```
 
-The sync cron also delivers the **near-immediate email alerts** (per-user "hourly" /
-"every sync" frequencies, since 1.29.0) right after each pass — no extra cron entry
-needed, but the alert latency is your sync cadence: with `*/15` an "every sync" alert
-arrives within ~15 minutes of the submission reaching Kobo.
+The sync cron also delivers the **near-immediate alerts** (per-user "hourly" /
+"every sync" frequencies, since 1.29.0; by email and — since 1.30.0 — Web Push, §8)
+right after each pass — no extra cron entry needed, but the alert latency is your sync
+cadence: with `*/15` an "every sync" alert arrives within ~15 minutes of the submission
+reaching Kobo.
 
 (A **demo instance** adds a third cron, the periodic DB reset — see §13 / [DEMO.md](DEMO.md).)
 
@@ -351,6 +352,24 @@ If `RESEND_API_KEY` is empty, sending is **skipped gracefully** (logged, no erro
 app keeps working but email-dependent features don't send. Handy for staging.
 
 > The secret lives only in `config.php` — never in the database or exposed to the frontend.
+
+### Web Push (optional)
+
+Since 1.30.0 the near-immediate alerts can also arrive as **system notifications** (Web
+Push over the PWA) — no extra service or dependency: the protocol is implemented in
+`api/lib/WebPush.php` and delivery rides the same sync cron. To enable it:
+
+1. Generate the VAPID key pair **once**: `php api/cli/vapid_keys.php`.
+2. Paste the three constants it prints into `api/config.php` (`VAPID_PUBLIC_KEY`,
+   `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`).
+3. Each user opts in **per device** from their profile ("Push notifications").
+
+Requirements and caveats: the app must be served over **HTTPS** (browsers refuse push on
+plain HTTP); on iPhone/iPad the PWA must be **installed to the home screen** (iOS 16.4+);
+changing the VAPID keys later invalidates every existing subscription (each device must
+re-enable). With the constants empty the feature is simply absent from the UI. Works
+independently of Resend — push and email are separate channels sharing the same per-user
+frequency.
 
 ## 9. Post-deployment checks
 

@@ -4,6 +4,41 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.30.0] - 2026-07-17
+
+Notificaciones casi inmediatas, Fase 2 del hito del ROADMAP: los avisos de envíos
+nuevos llegan también como **notificación del sistema (Web Push)** sobre la PWA, con
+opt-in por dispositivo y la misma frecuencia, scoping y guardarraíles que el email.
+
+> **Nota de actualización (esquema).** Tabla nueva `push_subscriptions` (suscripciones
+> push por dispositivo). Ejecuta `php api/cli/migrate.php` tras desplegar (la crea; sin
+> ella, `GET /push/subscriptions` y el perfil fallan). Instalaciones nuevas no necesitan
+> nada. Para ACTIVAR push además hace falta generar claves VAPID
+> (`php api/cli/vapid_keys.php` → 3 constantes en `api/config.php`) y servir por HTTPS;
+> sin claves, la app funciona igual y la opción simplemente no aparece.
+
+### Añadido
+
+- **Web Push** (perfil → «Notificaciones push»): cada usuario activa el aviso **por
+  dispositivo**; al llegar envíos nuevos, el mismo `Notifier` del cron manda — además
+  del email — una notificación del sistema con el recuento agrupado y enlace a la app
+  (payload cifrado extremo a extremo; nunca contenido del envío). Lista de dispositivos
+  suscritos con baja individual; suscripciones caducadas (404/410 del push service) se
+  podan solas y los fallos repetidos también. La marca de agua del aviso avanza si
+  **cualquier** canal entregó. Funciona con el navegador cerrado en Android; en
+  iPhone/iPad requiere la PWA instalada (iOS 16.4+). En demo, las suscripciones son
+  tabla efímera (se vacían en cada reset y no viajan en la semilla).
+- **`lib/WebPush` sin dependencias**: implementación propia del protocolo — cifrado del
+  payload según **RFC 8291** (ECDH P-256 + HKDF-SHA256 + AES-128-GCM, `aes128gcm`),
+  blindada con el **vector de prueba oficial** del RFC, y autenticación **VAPID
+  (RFC 8292)** con JWT ES256 vía OpenSSL. Decisión de diseño frente a
+  `minishlink/web-push`: el runtime sigue **sin composer/`vendor/`** y el modelo de
+  despliegue no cambia. CLI nuevo `api/cli/vapid_keys.php` genera el par de claves.
+- **Endpoints `GET/POST/DELETE /push/subscriptions`** (alta/baja por dispositivo, upsert
+  por endpoint, solo lo propio) y `push_public_key` en el `GET /config` público (la
+  `applicationServerKey` que el navegador necesita; no es secreta). Handlers `push` y
+  `notificationclick` en el service worker (tocar el aviso enfoca/abre la app).
+
 ## [1.29.0] - 2026-07-17
 
 Notificaciones casi inmediatas de envíos nuevos, Fase 1 del hito del ROADMAP: la

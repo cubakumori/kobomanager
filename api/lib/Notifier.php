@@ -1,13 +1,16 @@
 <?php
 /**
- * Avisos por email «casi inmediatos» de envíos nuevos (frecuencias hourly/every_sync).
+ * Avisos «casi inmediatos» de envíos nuevos (frecuencias hourly/every_sync), por
+ * email y por Web Push.
  *
  * Lo invoca el cron de sincronización (cron/sync_submissions.php) tras cada pasada:
  * para cada usuario cuya frecuencia EFECTIVA (notification_config.frequency o, en su
  * ausencia, el default global) sea 'hourly' o 'every_sync', cuenta los envíos con
  * `submitted_at` posterior a su marca de agua (`last_notified_at`, UTC) y le envía UN
- * email agrupado («N envíos nuevos en {formulario}»). El resumen 'daily' sigue en su
- * propio cron (cron/daily_summary.php).
+ * email agrupado («N envíos nuevos en {formulario}») más, si suscribió dispositivos
+ * (push_subscriptions, opt-in por dispositivo y claves VAPID en config), una
+ * notificación push con el mismo recuento (lib/WebPush). El resumen 'daily' sigue en
+ * su propio cron (cron/daily_summary.php) y es solo email.
  *
  * Guardarraíles (ver ROADMAP «Notificaciones casi inmediatas»):
  *   - Scoping por filas: el conteo aplica el row_filter del usuario (RowScope), igual
@@ -37,26 +40,37 @@ class Notifier {
     /** Tolerancia al desfase del cron (un cron a :00/:15/... nunca cae exacto). */
     private const INTERVAL_SLACK = 120;
 
+    /** Fallos de push consecutivos (no-410) tras los que se poda la suscripción. */
+    private const PUSH_FAIL_LIMIT = 10;
+
     /**
      * Ejecuta una pasada del notificador. Devuelve un resumen apto para
-     * Settings::recordCronRun: { sent, recipients, baselined, errors, skipped? }.
+     * Settings::recordCronRun: { sent, push_sent, recipients, baselined, errors, skipped? }.
+     *
+     * Canales: email (si hay transporte) y Web Push (si hay claves VAPID y el usuario
+     * suscribió dispositivos) — mismo contenido, misma cadencia y guardarraíles. La
+     * marca de agua avanza si CUALQUIER canal entregó (el aviso llegó).
      *
      * @param DateTimeImmutable|null $nowUtc «Ahora» inyectable (tests); default = now UTC.
-     * @param callable|null $send  fn(to, subject, html, text): bool — default Mailer::send.
+     * @param callable|null $send      fn(to, subject, html, text): bool — default Mailer::send.
+     * @param callable|null $pushSend  fn(sub, payloadJson): int (status HTTP) — default WebPush::send.
      */
-    public static function run(?DateTimeImmutable $nowUtc = null, ?callable $send = null): array {
+    public static function run(?DateTimeImmutable $nowUtc = null, ?callable $send = null, ?callable $pushSend = null): array {
         $now    = $nowUtc ?? new DateTimeImmutable('now', new DateTimeZone('UTC'));
         $nowStr = $now->format('Y-m-d H:i:s');
 
-        if ($send === null && !Settings::mailConfigured()) {
-            return ['sent' => 0, 'recipients' => 0, 'baselined' => 0, 'errors' => 0, 'skipped' => 'mail_not_configured'];
+        $emailEnabled = $send !== null || Settings::mailConfigured();
+        $pushEnabled  = $pushSend !== null || WebPush::configured();
+        if (!$emailEnabled && !$pushEnabled) {
+            return ['sent' => 0, 'push_sent' => 0, 'recipients' => 0, 'baselined' => 0, 'errors' => 0, 'skipped' => 'no_channel_configured'];
         }
-        $send ??= fn(string $to, string $subject, string $html, string $text): bool
+        $send     ??= fn(string $to, string $subject, string $html, string $text): bool
             => Mailer::send($to, $subject, $html, $text);
+        $pushSend ??= fn(array $sub, string $payload): int => WebPush::send($sub, $payload);
 
         $quiet = Settings::notificationsQuiet();
         if ($quiet !== null && self::inQuietHours($now, $quiet['start'], $quiet['end'])) {
-            return ['sent' => 0, 'recipients' => 0, 'baselined' => 0, 'errors' => 0, 'skipped' => 'quiet_hours'];
+            return ['sent' => 0, 'push_sent' => 0, 'recipients' => 0, 'baselined' => 0, 'errors' => 0, 'skipped' => 'quiet_hours'];
         }
 
         $default   = Settings::notificationsDefaultFrequency();
@@ -81,8 +95,9 @@ class Notifier {
             unset($u);
         }
 
-        $sent   = 0;
-        $errors = 0;
+        $sent     = 0;
+        $pushSent = 0;
+        $errors   = 0;
         foreach ($byUser as $u) {
             // Reloj 'hourly' del usuario: su último aviso hourly = la marca de agua
             // más reciente entre sus formularios hourly. Debido si pasó ≥1 h (menos
@@ -118,21 +133,90 @@ class Notifier {
             }
             if (!$items) continue;
 
-            [$subject, $html, $text] = self::buildEmail($u['name'], $items, $u['locale']);
-            if ($send($u['email'], $subject, $html, $text)) {
-                $sent++;
-                // La marca de agua solo avanza en los formularios AVISADOS y solo si
-                // el email salió: un fallo de envío reintenta (agrupado) en la
-                // siguiente pasada.
+            $delivered = false;
+
+            if ($emailEnabled) {
+                [$subject, $html, $text] = self::buildEmail($u['name'], $items, $u['locale']);
+                if ($send($u['email'], $subject, $html, $text)) {
+                    $sent++;
+                    $delivered = true;
+                } else {
+                    $errors++;
+                }
+            }
+
+            // Web Push a los dispositivos suscritos del usuario (opt-in por
+            // dispositivo): mismo contenido — recuento + enlace, nunca el envío.
+            if ($pushEnabled) {
+                $userId  = $items[0]['row']['user_id'];
+                $payload = self::buildPushPayload($items, $u['locale']);
+                foreach (self::subscriptionsFor($userId) as $subRow) {
+                    $status = $pushSend(
+                        ['endpoint' => $subRow['endpoint'], 'p256dh' => $subRow['p256dh'], 'auth' => $subRow['auth']],
+                        $payload
+                    );
+                    if ($status >= 200 && $status < 300) {
+                        $pushSent++;
+                        $delivered = true;
+                        DB::run('UPDATE push_subscriptions SET last_used_at = ?, failed_count = 0 WHERE id = ?',
+                            [$nowStr, $subRow['id']]);
+                    } elseif ($status === 404 || $status === 410) {
+                        // Suscripción muerta (dispositivo des-suscrito/caducado): poda.
+                        DB::run('DELETE FROM push_subscriptions WHERE id = ?', [$subRow['id']]);
+                    } else {
+                        $errors++;
+                        DB::run('UPDATE push_subscriptions SET failed_count = failed_count + 1 WHERE id = ?', [$subRow['id']]);
+                        DB::run('DELETE FROM push_subscriptions WHERE id = ? AND failed_count >= ?',
+                            [$subRow['id'], self::PUSH_FAIL_LIMIT]);
+                    }
+                }
+            }
+
+            // La marca de agua solo avanza en los formularios AVISADOS y solo si
+            // ALGÚN canal entregó: si todo falló, se reintenta (agrupado) en la
+            // siguiente pasada.
+            if ($delivered) {
                 foreach ($items as $it) {
                     self::advance($it['row'], $nowStr);
                 }
-            } else {
-                $errors++;
             }
         }
 
-        return ['sent' => $sent, 'recipients' => count($byUser), 'baselined' => $baselined, 'errors' => $errors];
+        return ['sent' => $sent, 'push_sent' => $pushSent, 'recipients' => count($byUser), 'baselined' => $baselined, 'errors' => $errors];
+    }
+
+    /** Suscripciones push del usuario. */
+    private static function subscriptionsFor(int $userId): array {
+        return DB::run(
+            'SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = ?',
+            [$userId]
+        )->fetchAll();
+    }
+
+    /**
+     * Payload JSON del push (lo interpreta el service worker): título, cuerpo con el
+     * recuento agrupado y URL de la app. Nunca contenido del envío.
+     */
+    public static function buildPushPayload(array $items, string $locale): string {
+        $total = array_sum(array_column($items, 'count'));
+        $en    = $locale === 'en';
+
+        if (count($items) === 1) {
+            $body = $en
+                ? sprintf('%d new submission%s in "%s"', $total, $total === 1 ? '' : 's', $items[0]['form_name'])
+                : sprintf('%d envío%s nuevo%s en «%s»', $total, $total === 1 ? '' : 's', $total === 1 ? '' : 's', $items[0]['form_name']);
+        } else {
+            $body = $en
+                ? sprintf('%d new submissions in %d forms', $total, count($items))
+                : sprintf('%d envíos nuevos en %d formularios', $total, count($items));
+        }
+
+        return json_encode([
+            'title' => 'KoboManager',
+            'body'  => $body,
+            'url'   => rtrim(APP_URL, '/') . '/forms',
+            'tag'   => 'km-new-submissions',
+        ], JSON_UNESCAPED_UNICODE);
     }
 
     /**

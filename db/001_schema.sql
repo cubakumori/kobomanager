@@ -320,4 +320,23 @@ CREATE TABLE IF NOT EXISTS contact_messages (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 3.15 Suscripciones Web Push (una fila por dispositivo/navegador con opt-in del
+--      usuario; ver api/v1/push_subscriptions.php y lib/WebPush). El endpoint del
+--      push service puede superar los 255 caracteres y no cabe en un índice único
+--      → la unicidad va sobre su sha256 (endpoint_hash).
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id       INT UNSIGNED NOT NULL,
+    endpoint      TEXT NOT NULL,                        -- URL del push service (FCM/Mozilla/APNs web)
+    endpoint_hash CHAR(64) NOT NULL UNIQUE,             -- sha256(endpoint), clave real de la fila
+    p256dh        VARCHAR(255) NOT NULL,                -- clave pública P-256 del navegador (base64url)
+    auth          VARCHAR(64)  NOT NULL,                -- secreto auth de la suscripción (base64url)
+    ua_label      VARCHAR(160) NULL,                    -- descripción del dispositivo (best-effort, la manda el cliente)
+    failed_count  TINYINT UNSIGNED NOT NULL DEFAULT 0,  -- fallos de envío consecutivos (poda al superar el umbral; 404/410 podan al instante)
+    created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_used_at  DATETIME NULL,                        -- último push aceptado por el push service
+    CONSTRAINT fk_push_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_push_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;
