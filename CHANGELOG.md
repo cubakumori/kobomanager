@@ -4,6 +4,24 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.31.1] - 2026-07-17
+
+Pulido móvil tras una pasada de verificación a 375 px. Sin cambio de esquema.
+
+### Corregido
+
+- **iOS Safari ya no hace zoom al enfocar un campo en el móvil**: los controles de
+  formulario usan `text-sm` (14px) y iOS amplía automáticamente al enfocar cualquier
+  input < 16px (la página salta). En pantallas de teléfono (`max-width: 640px`) los
+  `input`/`select`/`textarea` pasan a 16px; en escritorio se conserva el `text-sm`.
+  Regla global en `style.css` (no toca componente por componente).
+
+> **Nota.** La verificación a 375 px del shell y de las superficies nuevas de este ciclo
+> (Notificaciones, Configuración → Sincronización, perfil → push, tarjeta de la portada,
+> tabla de envíos) no encontró más problemas: el drawer, el colapso de la barra en
+> «Acciones», el apilado de rejillas y el scroll lateral **dentro** de la tabla (sin
+> desbordar la página) ya funcionaban.
+
 ## [1.31.0] - 2026-07-17
 
 Aviso «hay una versión nueva» en la PWA: el usuario decide cuándo cargar el código

@@ -269,3 +269,20 @@
 body {
   margin: 0;
 }
+
+/*
+  Móvil: los controles de formulario usan `text-sm` (14px) en toda la app, pero
+  iOS Safari hace AUTO-ZOOM al enfocar un input con font-size < 16px (molesto: la
+  página salta y hay que volver a alejar). En pantallas de teléfono forzamos ≥16px
+  solo en los controles; en escritorio se conserva el text-sm de la interfaz.
+  El `!important` es necesario porque `.text-sm` (clase) gana a un selector de
+  elemento; va acotado a este media query. Se excluyen checkbox/radio (su tamaño no
+  es tipográfico y no disparan el zoom).
+*/
+@media (max-width: 640px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
