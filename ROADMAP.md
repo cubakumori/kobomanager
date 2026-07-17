@@ -10,6 +10,52 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 > skeletons, columnas de solo lectura y filtros avanzados) están **entregados** — ver
 > `CHANGELOG.md`. Este documento recoge solo lo pendiente.
 
+> **Orden de prioridad acordado (jul-2026).** Partiendo de que los usuarios reales manejan
+> datos sensibles (instancia real = denuncias de DDHH): **(1) seguridad y privacidad**
+> (abajo, lo primero), **(2) cadena de aprobación multi-nivel** (evolución del flujo de
+> revisión — ver «Frentes mayores»), **(3) monitorización de muestra** (abajo), **(4)**
+> paneles/dashboards y escalabilidad como apuestas posteriores. La estrategia de **adopción
+> y servicio** (instalar + formar + supervisión técnica; la organización asume la
+> responsabilidad y el hosting) no vive aquí sino en `my.docs/MONETIZE.md`.
+
+---
+
+## Seguridad y privacidad — PRIORIDAD (jul-2026)
+
+> Los usuarios reales de KoboManager manejan datos que en el contexto equivocado ponen a
+> personas en riesgo. Antes de crecer en adopción, la postura de seguridad debe estar a la
+> altura de ese modelo de amenaza. Este bloque va **por delante** del resto del roadmap.
+
+- [ ] **2FA (segundo factor)** *(subido desde «Ampliaciones futuras»)* — una sola contraseña
+      protegiendo el acceso a datos sensibles es poco. TOTP (app autenticadora) como primer
+      método; la tabla `user_sessions` ya está pensada para soportarlo. Decidir: obligatorio
+      por instancia o por usuario/rol; códigos de recuperación; reset por admin.
+- [ ] **Cifrado en reposo de los datos SENSIBLES marcados por formulario** — hoy el token de
+      Kobo se cifra (TokenVault), pero los envíos en `submissions_cache.json_payload` están
+      en claro. Diseño acordado (jul-2026): **no cifrar todo** (no todos los formularios
+      tienen datos sensibles y el cifrado total rompe búsqueda/orden/stats), sino permitir
+      **marcar por formulario qué campos son sensibles** (como ya se marca el campo de
+      equipo/encuestador o los umbrales QC) y cifrar **solo esos** en reposo, descifrándolos
+      al vuelo para quien tenga permiso de verlos. Tensiones de diseño a resolver:
+      - Un campo cifrado **no puede** entrar en `search_text` (FULLTEXT), ni ordenarse, ni
+        filtrarse por valor en SQL, ni agregarse en Estadísticas → definir qué se degrada
+        (probablemente: un campo sensible queda fuera de búsqueda/orden/stats por diseño).
+      - Clave de cifrado: derivada de `CONFIG_TOKEN_KEY` o clave aparte; qué pasa en rotación
+        (`rotate_token_key.php` ya existe para el token — extender el patrón).
+      - Interacción con FieldScope (oculto) y con los enlaces públicos (un campo sensible
+        nunca debería exponerse en un enlace, ni siquiera cifrado→descifrado).
+      - Backfill al marcar un campo como sensible (cifrar lo ya cacheado) y al desmarcarlo.
+- [ ] **Borrado seguro, minimización y retención de envíos** — hoy la retención existe para
+      el `audit_log` (`audit_retention_days`); extender esa idea a los datos: ¿cuánto vive un
+      envío en caché?, ¿purga real (no solo marcado)?, ¿retención configurable por formulario?
+      Relevante para minimizar la superficie ante una incautación del servidor.
+- [ ] **Auditoría de seguridad formal antes de crecer en adopción** — el repo es público
+      (AGPL); conviene una revisión de terceros antes de que más organizaciones sensibles
+      confíen en él. Vías posibles: programas de auditoría para OSS (p. ej. OSTIF /
+      fondos que financian auditorías de software libre), revisión por pares de otra
+      persona con perfil de seguridad, o un pentest acotado de pago. Complementa la
+      revisión de seguridad interna ya planificada.
+
 ---
 
 ## Control de calidad por equipo/encuestador — extensiones diferidas
@@ -108,13 +154,18 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 
 ---
 
-## Frentes mayores (supeditados a demanda real)
+## Frentes mayores
 
-> **Decisión (jun-2026):** estos dos frentes **no se abordan ahora**; quedan supeditados
-> a **demanda real una vez el repositorio sea público**. Prioridad actual = reforzar y
-> pulir lo ya entregado.
+> **Actualización de prioridad (jul-2026):** de los dos frentes, la **cadena de aprobación
+> multi-nivel** pasa a ser la **próxima gran feature de producto** (prioridad nº2 tras
+> seguridad): es la evolución natural del flujo de revisión y lo que Kobo explícitamente no
+> hace. Los **dashboards** siguen como apuesta de crecimiento **posterior** (mayor esfuerzo
+> de UI; su valor depende de que ya haya varias organizaciones con datos que presentar).
+> *(Decisión previa, jun-2026: ambos quedaban supeditados a demanda tras hacer público el
+> repo; la cadena de aprobación se adelanta ahora por el ajuste con el caso de uso real.)*
 
-- [ ] **Cadena de aprobación multi-nivel por roles** *(fase futura del flujo de revisión)*.
+- [ ] **Cadena de aprobación multi-nivel por roles** *(PRÓXIMA gran feature de producto —
+      evolución del flujo de revisión)*.
       Flujo por **etapas ordenadas**, cada una a cargo de un rol distinto
       (p. ej. solicitante → revisor → aprobador), de modo que un envío solo avanza cuando la
       etapa anterior lo despacha. Añade sobre lo ya entregado: definición de la cadena
@@ -162,6 +213,52 @@ baja utilidad / posible confusión para el caso actual: el **estado inicial auto
 y los **estados de validación personalizables**
 ([15808](https://community.kobotoolbox.org/t/customizing-validation-statuses/15808)).
 Quedan como ideas reabribles si aparece una necesidad real.
+
+---
+
+## Monitorización de muestra por equipo — CANDIDATA (prioridad nº3, jul-2026)
+
+> Idea del usuario (jul-2026): en trabajo de campo real cada **equipo** debe cumplir una
+> **muestra planificada** —un nº de encuestas repartido por los valores de un campo de
+> muestreo (p. ej. rango de edad)—. La app hoy calcula lo *recibido* (Estadísticas, con
+> desglose por equipo/encuestador) pero no lo compara contra un *plan*. Esta feature añade
+> el «cuánto falta»: un panel de **cumplimiento de la muestra por equipo**. Reutiliza el
+> campo de equipo/encuestador ya existente, `Stats::compute`/`Quality` (scope + estado) y
+> Chart.js. Aún **sin implementar** (en discusión de diseño).
+
+- [ ] **Definición del plan de muestra** (nuevo, por formulario; sobre el campo de equipo ya
+      configurable):
+      - **Campo principal de muestreo** (un `select_one` del formulario; p. ej. «rango de
+        edad»). El plan es una matriz **equipo × valor-del-campo → nº de envíos objetivo**.
+      - **Origen de valores**: equipos = valores del campo de equipo ya configurado; valores
+        de muestreo = opciones del `select_one` elegido (del esquema). La matriz se rellena a
+        mano (objetivo por celda) — pensar en un editor tipo tabla + defaults/carga rápida.
+      - **Denominador**: elegir si «cumplido» cuenta **solo aprobados** o **aprobados +
+        pendientes** (ajuste del plan; espeja la lógica de alcance de QC/`qc_scope`).
+- [ ] **Panel de cumplimiento**: por equipo y por valor de muestreo, **hecho / objetivo**
+      (nº y %), con barras/heatmap de progreso y el total del equipo; resaltar sobre-muestra
+      y déficit. Respeta el scoping por filas (un jefe de equipo ve el suyo).
+- [ ] **Hasta dos campos secundarios de muestreo** (p. ej. sexo, raza): en una 1ª etapa,
+      **solo mostrar la distribución observada** de lo hecho por esos campos (no objetivos por
+      celda todavía) — informa sin exigir planificar una matriz N-dimensional.
+
+> **Ideas para afinar el diseño** (de la conversación jul-2026):
+> - **Almacenamiento del plan**: tabla nueva `sample_plan`/`sample_targets`
+>   (form_id, sampling_field, team_value, sampling_value, target) → red de esquema
+>   (canónico + SchemaCheck + migrate + CHANGELOG). El campo principal y los secundarios,
+>   en `forms` (como `stats_team_field`).
+> - **Evitar la matriz gigante**: si un equipo × muchos valores se vuelve inmanejable,
+>   permitir un **objetivo por equipo** con reparto por defecto entre valores (uniforme o
+>   proporcional) y ajuste fino solo donde haga falta.
+> - **Cuadrar con la realidad del dato**: el valor de muestreo sale del payload como los
+>   demás (código, no etiqueta); ojo con valores fuera del plan (equipo o rango que no
+>   estaba previsto) → mostrarlos como «fuera de plan», no descartarlos.
+> - **Reutilización**: es casi una variante «con objetivos» del desglose por equipo de
+>   Estadísticas → conviene construirlo sobre `Stats::compute` para no duplicar el scoping.
+> - **Exponer/compartir**: encaja naturalmente con un enlace público de solo lectura (un
+>   coordinador sigue el avance sin cuenta), como ya hace el resumen de revisión.
+> - **Relación con dashboards**: este panel fijo de muestra es un caso concreto y acotado;
+>   si algún día llegan los dashboards configurables, sería uno de sus widgets.
 
 ---
 
@@ -251,12 +348,19 @@ Sin pendientes en esta sección.
       vistas (hoy los labels envuelven al input sin `for`); revisar validación inline y
       marcado de campos requeridos. Los diálogos, popovers y botones-icono ya están
       cubiertos.
-- [ ] **Escalabilidad más allá de ~200k envíos por formulario** *(de la revisión de
-      jul-2026; medir ANTES con slow query log)* — dos palancas si aparecen instancias
-      así: columnas generadas/índices MySQL para los filtros `JSON_EXTRACT` más usados, y
-      pasar `Stats::compute` de un bucle PHP sobre toda la caché a agregación SQL (o
-      cachear también la vista interna; la pública ya se cachea). A los volúmenes típicos
-      de Kobo no hace falta.
+- [ ] **Vigilar dos riesgos técnicos de escala** *(de la conversación jul-2026; MEDIR
+      antes de actuar, no optimizar a ciegas)*:
+      - **Backend — más allá de ~200k envíos por formulario**: `Stats::compute` recorre en
+        un bucle PHP toda la caché del formulario, y los filtros por valor usan
+        `JSON_EXTRACT` sin índice. Palancas si aparecen instancias así (medir con slow query
+        log primero): columnas generadas/índices MySQL para los `JSON_EXTRACT` más usados, y
+        pasar `Stats::compute` a agregación SQL (o cachear también la vista interna; la
+        pública ya se cachea). A los volúmenes típicos de Kobo no hace falta.
+      - **Frontend — peso del bundle/precache** (~1.16 MB precache): Chart.js, Leaflet y un
+        `guide.json` que crece pesan. Si molesta el arranque en redes lentas, palancas:
+        carga diferida por ruta de Chart.js/Leaflet (solo en Estadísticas/Mapa) y del
+        catálogo i18n de la Guía (ya anotado arriba). Medir con el reporte de tamaño del
+        build antes de trocear.
 
 ---
 
@@ -290,7 +394,7 @@ Sin pendientes en esta sección.
 - [ ] **Notificaciones por otros canales** (Telegram, Slack, WhatsApp).
 - [ ] **Permiso `can_delete`** cuando exista la funcionalidad de borrado de envíos.
 - [ ] **Permisos por período de tiempo** (acceso a envíos de un rango de fechas).
-- [ ] **2FA** — la tabla `user_sessions` ya está preparada para soportarlo.
+- *(2FA subido a la sección «Seguridad y privacidad — PRIORIDAD» al inicio del roadmap.)*
 
 ---
 
