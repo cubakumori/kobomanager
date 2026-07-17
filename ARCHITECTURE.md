@@ -710,13 +710,15 @@ redaction) and share‑link resolution/tickets/attachment access.
 real front controller in an ephemeral `php -S` server once per run (config isolated via the
 `KM_CONFIG` env → `tests/config.http.php`; same constants the unit bootstrap uses) plus a tiny
 **Kobo stub** (`tests/kobo_stub.php`) that the test account's `server_url` points at, so the
-edit path can be exercised without real Kobo. Tests make real HTTP calls (cURL + cookie jar,
+edit path — and, since it also serves the `GET` asset/data endpoints (empty lists), full
+submission syncs — can be exercised without real Kobo. Tests make real HTTP calls (cURL + cookie jar,
 self‑Origin to pass CSRF). Because the server runs in another process, fixtures are committed:
 each test truncates the working tables and seeds what it needs (`setUp`/`tearDown`). Coverage:
 login/`/auth/me`/logout/login rate‑limit, CSRF enforcement, password reset (forgot → seeded
 token → reset), single + batch review (incl. `can_validate` gating and RowScope 404), list/
-detail/export with RowScope + FieldScope, and submission editing (uuid migration, review
-migration, `KOBO_EDIT_FAILED` on a forced bulk failure). CI runs both layers (see below).
+detail/export with RowScope + FieldScope, submission editing (uuid migration, review
+migration, `KOBO_EDIT_FAILED` on a forced bulk failure), and the sync flows (the anti‑wipe
+confirmation and the login‑triggered stale pass). CI runs both layers (see below).
 
 ### CI
 `.github/workflows/ci.yml` (GitHub Actions, **no Docker**) runs three jobs on push/PR:

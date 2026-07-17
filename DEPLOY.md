@@ -391,6 +391,12 @@ app keeps working but email-dependent features don't send. Handy for staging.
    names the missing columns too. Alternatively, recreate the DB from `db/*.sql` and re-sync
    from Kobo. (Schema changes ship only as edits to the canonical `CREATE TABLE`s in
    `db/001_schema.sql`; there are no migration files.)
+
+   **Beyond the migrator.** Some versions ship a one-off step that is *not* a schema
+   change — it appears in that version's **«Nota de actualización»** in `CHANGELOG.md`
+   (e.g. 1.27.1 asks to run `php api/cli/fix_field_filters.php` once, after the next sync
+   re-normalizes the form schemas). When jumping several versions at once, skim the
+   upgrade notes of each version you skipped.
 4. PWA: the **first** load after an update still serves the previous version from the SW
    precache (the new one activates in the background) — reload once before judging.
 
