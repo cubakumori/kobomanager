@@ -112,6 +112,8 @@ y salida ordenada de la guardia anti-vaciado del sync. Sin cambio de esquema.
   solapes con el cron, los errores por formulario no abortan la pasada (auditada como
   `sync_stale`) y en modo demo queda bloqueado como toda la sync manual.
 
+## [1.27.1] - 2026-07-14
+
 Correcciones tras las primeras pruebas de 1.27.0 con enlaces compartidos reales.
 
 > **Nota de actualización.** Sin cambio de esquema de BD, pero los esquemas de formulario

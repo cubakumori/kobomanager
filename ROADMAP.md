@@ -89,44 +89,22 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 
 ---
 
-## Notificaciones casi inmediatas de envíos nuevos — ENTREGADO (jul-2026, 1.29.0 + 1.30.0)
+## Notificaciones casi inmediatas de envíos nuevos — acelerador diferido
 
-> **Contexto de la decisión.** Antes solo existía el **resumen diario por email**; algunos
-> usuarios querían enterarse «casi al instante» de un envío nuevo. Clave del diseño:
-> KoboManager solo ve envíos nuevos **cuando sincroniza** (cron cada 15 min), así que
-> «inmediato» = «al siguiente sync» salvo que se añada el webhook de Kobo (ver Fase 2). Se
-> acordó ejecutar **Fase 1 y, a continuación, Fase 2**, todo configurable en Configuración.
-> Ambas fases quedaron entregadas; el webhook opcional sigue sin construir (ver abajo).
+> El hito está **entregado** (ver CHANGELOG): **Fase 1** en **1.29.0** (frecuencia de aviso
+> por email por usuario/formulario: `off | diario | cada hora | cada sync`, con marca de
+> agua, throttle, horario de silencio y scoping por filas) y **Fase 2** en **1.30.0** (Web
+> Push sobre la PWA: opt-in por dispositivo, `lib/WebPush` sin dependencias —RFC 8291/8292—,
+> claves VAPID en config). Como KoboManager solo ve envíos nuevos al sincronizar (cron cada
+> 15 min), «inmediato» = «al siguiente sync». Queda solo el acelerador opcional:
 
-- [x] **Fase 1 — frecuencia de email por usuario** *(entregada en 1.29.0)*: la
-      preferencia por usuario pasó de binaria («resumen diario sí/no») a **frecuencia**
-      por formulario: `off | diario | cada hora | cada sync (~15 min)`
-      (`notification_config.frequency` + marca de agua `last_notified_at`; default
-      global `notifications_default_frequency`). El cron de sincronización, tras cada
-      pasada, envía vía `lib/Notifier` un email **agrupado** («N envíos nuevos en
-      {formulario}») a quien lo pidió. Guardarraíles implementados: **scoping por
-      filas** en el conteo, **throttle anti-inundación** (máx. un email/hora en
-      `hourly`; la marca de agua agrupa lo no avisado), **horario de silencio** global
-      opcional (Configuración → Sincronización, en `APP_TIMEZONE`, puede cruzar la
-      medianoche) y aviso de solo **recuento + enlace**. El resumen `daily` sigue en su
-      cron; las sync manuales o al iniciar sesión no disparan emails.
-- [x] **Fase 2 — Web Push sobre la PWA** *(entregada en 1.30.0)*: notificación del
-      sistema vía el service worker existente: opt-in **por dispositivo** desde el
-      perfil, tabla `push_subscriptions` (única por sha256 del endpoint; poda de
-      suscripciones muertas), claves **VAPID** en config (`php api/cli/vapid_keys.php`)
-      y envío desde el mismo `Notifier` del cron (misma frecuencia, scoping, throttle y
-      silencio que el email; la marca de agua avanza si cualquier canal entregó).
-      **Decisión de diseño**: en lugar de `minishlink/web-push` (composer), implementación
-      **propia sin dependencias** (`lib/WebPush`: cifrado RFC 8291 blindado con el vector
-      oficial + VAPID RFC 8292 con OpenSSL) — el runtime sigue sin `vendor/` y el modelo
-      de despliegue (FTP/phpMyAdmin, sin composer) no cambia. Funciona con el navegador
-      cerrado en Android; en iOS requiere la PWA **instalada** (≥16.4) y siempre HTTPS.
-- [ ] *Acelerador opcional si alguien necesita segundos de latencia*: endpoint webhook
-      para los **REST Services** de KoboToolbox (Kobo hace POST por cada envío) con
-      token secreto en la URL + mini-upsert en caché — además mantiene la caché fresca
-      sin esperar al cron; configuración por formulario en Kobo y endpoint público extra
-      que asegurar. **No construido a propósito** (solo si aparece la demanda).
-      *(Idea aparcada, solo si se pide: canal Telegram vía bot por instancia.)*
+- [ ] **Webhook de los REST Services de KoboToolbox** *(acelerador opcional; solo si
+      alguien necesita segundos de latencia)*: Kobo hace POST por cada envío a un endpoint
+      con token secreto en la URL + mini-upsert en caché — baja la latencia por debajo del
+      ciclo del cron y de paso mantiene la caché fresca sin esperar al sync. Coste:
+      configuración por formulario en Kobo y un endpoint público extra que asegurar. **No
+      construido a propósito** (solo a demanda). *(Idea aparcada, solo si se pide: canal
+      Telegram vía bot por instancia — ver también «Ampliaciones futuras».)*
 
 ---
 
