@@ -7,8 +7,11 @@ import { apiError, useAuthStore } from '../stores/auth'
 const { t } = useI18n()
 const auth = useAuthStore()
 
-const forms = ref([]) // [{ form_id, name, account_label, daily_summary }]
-const defaultOn = ref(false) // ajuste global: suscripción por defecto en formularios visibles
+const FREQUENCIES = ['off', 'daily', 'hourly', 'every_sync']
+
+const forms = ref([]) // [{ form_id, name, account_label, frequency }]
+const defaultFrequency = ref('off') // ajuste global: frecuencia por defecto en formularios sin preferencia
+const quiet = ref(null) // horario de silencio global { start, end } | null
 const loading = ref(true)
 const error = ref('')
 const saving = ref(false)
@@ -20,7 +23,8 @@ async function load() {
   try {
     const { data } = await api.get('/notifications')
     forms.value = data.data.forms
-    defaultOn.value = !!data.data.default_on
+    defaultFrequency.value = data.data.default_frequency
+    quiet.value = data.data.quiet
   } catch (e) {
     error.value = apiError(e, t('notifications.loadError'))
   } finally {
@@ -33,8 +37,8 @@ async function save() {
   saved.value = false
   error.value = ''
   try {
-    const enabled = forms.value.filter((f) => f.daily_summary).map((f) => f.form_id)
-    await api.put('/notifications', { enabled })
+    const frequencies = Object.fromEntries(forms.value.map((f) => [f.form_id, f.frequency]))
+    await api.put('/notifications', { frequencies })
     saved.value = true
   } catch (e) {
     error.value = apiError(e, t('notifications.saveError'))
@@ -57,27 +61,36 @@ onMounted(load)
       {{ error }}
     </div>
 
-    <!-- Resumen diario por email -->
+    <!-- Avisos de envíos nuevos por email -->
     <section class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
       <div class="border-b border-slate-100 px-5 py-3">
-        <h2 class="font-semibold text-slate-900">{{ $t('notifications.dailySummary') }}</h2>
-        <p class="mt-0.5 text-sm text-slate-500">{{ $t('notifications.dailySummaryDesc') }}</p>
+        <h2 class="font-semibold text-slate-900">{{ $t('notifications.emailAlerts') }}</h2>
+        <p class="mt-0.5 text-sm text-slate-500">{{ $t('notifications.emailAlertsDesc') }}</p>
         <p class="mt-1 text-xs text-slate-400">{{ $t('notifications.sentTo', { email: auth.user?.email }) }}</p>
       </div>
 
       <div v-if="loading" class="px-5 py-4 text-sm text-slate-500">{{ $t('common.loading') }}</div>
 
       <template v-else>
-        <p v-if="defaultOn" class="border-b border-slate-100 bg-slate-50 px-5 py-2 text-xs text-slate-500">
-          {{ $t('notifications.defaultOnHint') }}
+        <p v-if="defaultFrequency !== 'off'" class="border-b border-slate-100 bg-slate-50 px-5 py-2 text-xs text-slate-500">
+          {{ $t('notifications.defaultOnHint', { frequency: $t('notifications.freq_' + defaultFrequency) }) }}
+        </p>
+        <p v-if="quiet" class="border-b border-slate-100 bg-slate-50 px-5 py-2 text-xs text-slate-500">
+          {{ $t('notifications.quietHint', { start: quiet.start, end: quiet.end }) }}
         </p>
         <ul class="divide-y divide-slate-100">
-          <li v-for="f in forms" :key="f.form_id" class="flex items-center justify-between px-5 py-3">
-            <div>
-              <p class="text-sm font-medium text-slate-900">{{ f.name }}</p>
-              <p class="text-xs text-slate-400">{{ f.account_label }}</p>
+          <li v-for="f in forms" :key="f.form_id" class="flex items-center justify-between gap-3 px-5 py-3">
+            <div class="min-w-0">
+              <p class="truncate text-sm font-medium text-slate-900">{{ f.name }}</p>
+              <p class="truncate text-xs text-slate-400">{{ f.account_label }}</p>
             </div>
-            <input v-model="f.daily_summary" type="checkbox" class="h-4 w-4" @change="saved = false" />
+            <select
+              v-model="f.frequency"
+              class="shrink-0 rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+              @change="saved = false"
+            >
+              <option v-for="freq in FREQUENCIES" :key="freq" :value="freq">{{ $t('notifications.freq_' + freq) }}</option>
+            </select>
           </li>
           <li v-if="!forms.length" class="px-5 py-6 text-center text-sm text-slate-400">
             {{ $t('notifications.noForms') }}

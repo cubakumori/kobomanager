@@ -195,12 +195,21 @@ CREATE TABLE IF NOT EXISTS user_form_permissions (
     UNIQUE KEY unique_user_form (user_id, form_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3.8 Configuración de notificaciones
+-- 3.8 Configuración de notificaciones (una fila por usuario × formulario)
 CREATE TABLE IF NOT EXISTS notification_config (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id         INT UNSIGNED NOT NULL,
     form_id         INT UNSIGNED NOT NULL,
-    daily_summary   TINYINT(1) DEFAULT 1,
+    -- Frecuencia del aviso por email de envíos nuevos:
+    --   'off' | 'daily' (resumen diario) | 'hourly' | 'every_sync' (tras cada pasada
+    --   del cron de sync). NULL = sin preferencia explícita → aplica el valor por
+    --   defecto global (ajuste notifications_default_frequency).
+    frequency       VARCHAR(12) NULL DEFAULT NULL,
+    -- Marca de agua UTC de los avisos casi inmediatos (hourly/every_sync): último
+    -- `submitted_at` ya avisado. La mantiene lib/Notifier; NULL = sin línea base
+    -- (el notificador la inicializa a «ahora» sin avisar, para no inundar con el
+    -- histórico). El resumen diario no la usa (su ventana es el día natural).
+    last_notified_at DATETIME NULL,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_notif_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_notif_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE

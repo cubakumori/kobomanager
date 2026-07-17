@@ -577,16 +577,33 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   `GET /config`), public-surface toggles (`support_page_enabled` / `landing_cta_enabled`,
   served by the public `GET /config`), and `cron_runs`
   (last run per cron, written by `recordCronRun()` at the end of each cron job).
-- **Email notifications**: `cron/daily_summary.php` (e.g. `0 7 * * *`) sends each user one
-  digest of the previous day's new submissions per form, over `submissions_cache` (not
-  Kobo), via `lib/Mailer` (Resend REST, no SDK; a no‑op returning `false` when
-  `RESEND_API_KEY` is empty). A user's effective subscription per form is their explicit
-  `notification_config` row if present, else the global `notifications_default_on`
-  (`COALESCE(nc.daily_summary, default)`), scoped to **active** forms they can view
-  (admins: all active; viewers: `can_view`, honoring their row scope). `GET/PUT
-  /notifications` reads/writes those preferences: PUT stores an explicit 0/1 for every
-  currently‑visible form, so an opt‑out persists even when the default is on, while a
-  newly‑added form inherits the default until the user next saves.
+- **Email notifications**: a per‑user × form **frequency** (`notification_config.frequency`:
+  `off` | `daily` | `hourly` | `every_sync`; `NULL` = no explicit preference → the global
+  `notifications_default_frequency` applies, `COALESCE(nc.frequency, default)`), scoped to
+  **active** forms the user can view (admins: all active; viewers: `can_view`, honoring
+  their row scope). All email goes through `lib/Mailer` (Resend REST, no SDK; a no‑op
+  returning `false` when `RESEND_API_KEY` is empty), localized per `users.locale`, and is
+  always **count + link** — never submission content (nothing the row/column scoping
+  protects leaves by email). Two senders share the model:
+  - `cron/daily_summary.php` (e.g. `0 7 * * *`) serves `daily`: one digest of the previous
+    day's new submissions per form, over `submissions_cache` (not Kobo).
+  - `lib/Notifier` serves `hourly`/`every_sync` ("near‑immediate"): invoked at the end of
+    each `cron/sync_submissions.php` pass (manual/login syncs never send — only the cron
+    sets the cadence). Per (user, form) it keeps a UTC watermark
+    (`notification_config.last_notified_at`): it counts in‑scope rows with `submitted_at`
+    after the watermark, sends **one grouped email per user**, and advances the watermark
+    only for the forms actually notified and only if the send succeeded (a failed send
+    regroups next pass). A `NULL` watermark is baselined to "now" without sending (no
+    history flood on opt‑in; for default‑subscribed users without a row it lazily inserts
+    one with `frequency NULL`, still inheriting the default). Guardrails: `hourly` users get
+    at most one email per hour (their most recent hourly watermark is the clock); the
+    optional global **quiet hours** window (`notifications_quiet_start/end`, `HH:MM` in
+    `APP_TIMEZONE`, may cross midnight) skips the run entirely, so everything accumulates
+    and goes out grouped once it ends.
+  `GET/PUT /notifications` reads/writes the preferences: PUT stores an explicit frequency
+  for every currently‑visible form (an opt‑out persists even when the default is on, a
+  newly‑added form inherits the default until the user next saves) and preserves the
+  watermark — except when a form *enters* a live frequency, where it re‑anchors to "now".
 - `lib/Audit.php`: writes to `audit_log` (who did what) via `log()` — which also prunes
   opportunistically (1 % of writes, `LIMIT 5000`) when `audit_retention_days` > 0, so the
   log doesn't grow without bound (a row per attachment view) — and reads it back via

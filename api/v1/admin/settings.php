@@ -35,7 +35,9 @@ if (Request::method() === 'GET') {
         'valid_table_freeze'         => Settings::VALID_TABLE_FREEZE,
         'table_header_lines'         => Settings::tableHeaderLines(),
         'valid_table_header_lines'   => Settings::VALID_TABLE_HEADER_LINES,
-        'notifications_default_on'   => Settings::notificationsDefaultOn(),
+        'notifications_default_frequency' => Settings::notificationsDefaultFrequency(),
+        'valid_notify_frequencies'   => Settings::VALID_NOTIFY_FREQUENCIES,
+        'notifications_quiet'        => Settings::notificationsQuiet(),
         'sync_on_login'              => Settings::syncOnLogin(),
         'support_page_enabled'       => Settings::supportPageEnabled(),
         'landing_cta_enabled'        => Settings::landingCtaEnabled(),
@@ -100,9 +102,32 @@ if (Request::method() === 'PUT') {
         $out['show_theme_toggle'] = (bool) $body['show_theme_toggle'];
     }
 
-    if (array_key_exists('notifications_default_on', $body)) {
-        Settings::set('notifications_default_on', (bool) $body['notifications_default_on']);
-        $out['notifications_default_on'] = (bool) $body['notifications_default_on'];
+    if (array_key_exists('notifications_default_frequency', $body)) {
+        $freq = (string) $body['notifications_default_frequency'];
+        if (!in_array($freq, Settings::VALID_NOTIFY_FREQUENCIES, true)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Frecuencia de notificación no válida');
+        }
+        Settings::set('notifications_default_frequency', $freq);
+        $out['notifications_default_frequency'] = $freq;
+    }
+
+    // Horario de silencio: { start: 'HH:MM', end: 'HH:MM' } o null para quitarlo.
+    if (array_key_exists('notifications_quiet', $body)) {
+        $q = $body['notifications_quiet'];
+        if ($q === null) {
+            Settings::set('notifications_quiet_start', '');
+            Settings::set('notifications_quiet_end', '');
+            $out['notifications_quiet'] = null;
+        } else {
+            $start = is_array($q) ? ($q['start'] ?? '') : '';
+            $end   = is_array($q) ? ($q['end'] ?? '') : '';
+            if (!Settings::isValidQuietTime($start) || !Settings::isValidQuietTime($end) || $start === $end) {
+                ErrorResponse::send('VALIDATION_ERROR', 'Horario de silencio no válido (usa HH:MM, inicio ≠ fin)');
+            }
+            Settings::set('notifications_quiet_start', $start);
+            Settings::set('notifications_quiet_end', $end);
+            $out['notifications_quiet'] = ['start' => $start, 'end' => $end];
+        }
     }
 
     if (array_key_exists('sync_on_login', $body)) {

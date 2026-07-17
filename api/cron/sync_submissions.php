@@ -95,3 +95,22 @@ Settings::recordCronRun('sync_submissions', [
 ]);
 
 fwrite(STDOUT, sprintf("Hecho: %d formularios, %d envíos sincronizados.\n", $totalForms, $totalSubs));
+
+// Avisos casi inmediatos (frecuencias hourly/every_sync): tras cada pasada, un email
+// agrupado por usuario con lo nuevo desde su marca de agua (lib/Notifier: scoping por
+// filas, throttle y horario de silencio). Va DENTRO del cron a propósito: solo el
+// cron marca la cadencia (las sync manuales o al iniciar sesión no disparan emails).
+require __DIR__ . '/../lib/Mailer.php';
+require __DIR__ . '/../lib/RowScope.php';
+require __DIR__ . '/../lib/Notifier.php';
+try {
+    $notif = Notifier::run();
+    Settings::recordCronRun('notifier', ['ok' => $notif['errors'] === 0] + $notif);
+    fwrite(STDOUT, isset($notif['skipped'])
+        ? sprintf("Avisos: omitidos (%s).\n", $notif['skipped'])
+        : sprintf("Avisos: %d email(s) a %d usuario(s).\n", $notif['sent'], $notif['recipients']));
+} catch (Throwable $e) {
+    // Un fallo del notificador no debe marcar la sincronización como fallida.
+    Settings::recordCronRun('notifier', ['ok' => false, 'error' => $e->getMessage()]);
+    fwrite(STDERR, "[ERR] notifier: " . $e->getMessage() . "\n");
+}

@@ -4,6 +4,51 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.29.0] - 2026-07-17
+
+Notificaciones casi inmediatas de envíos nuevos, Fase 1 del hito del ROADMAP: la
+preferencia de aviso por email pasa de binaria («resumen diario sí/no») a **frecuencia
+por formulario**, y el cron de sincronización envía avisos agrupados tras cada pasada.
+
+> **Nota de actualización (esquema).** `notification_config` gana dos columnas:
+> `frequency VARCHAR(12) NULL` (off|daily|hourly|every_sync; NULL = hereda el default
+> global) y `last_notified_at DATETIME NULL` (marca de agua UTC de los avisos casi
+> inmediatos). Ejecuta `php api/cli/migrate.php` tras desplegar: añade las columnas y
+> **traduce** la preferencia vieja (`daily_summary` 1 → `'daily'`, 0 → `'off'`; la
+> columna vieja queda sin uso, no se borra). Sin migración, `GET /notifications` y los
+> crons fallan con «Unknown column». Instalaciones nuevas no necesitan nada.
+
+### Añadido
+
+- **Frecuencia de aviso por formulario** (Notificaciones): `sin avisos | diaria | cada
+  hora | cada sincronización`. Las dos últimas son los avisos «casi inmediatos»: al
+  terminar cada pasada del cron de sync, `lib/Notifier` envía **un email agrupado por
+  usuario** («N envíos nuevos en {formulario}», localizado es|en por `users.locale`) con
+  lo acumulado desde su marca de agua. Guardarraíles: el conteo aplica el **scoping por
+  filas** del usuario; **throttle** anti-inundación (máx. un email/hora en «cada hora»;
+  «cada sincronización» va a la cadencia del cron); el aviso es solo **recuento +
+  enlace** (nunca contenido del envío); un fallo de envío no avanza la marca (reagrupa
+  en la siguiente pasada); al activar una frecuencia viva la marca se ancla a «ahora»
+  (no se avisa del histórico). Solo el cron envía: las sync manuales o al iniciar
+  sesión no disparan emails. Última corrida visible en Auditoría (cron `notifier`).
+- **Frecuencia por defecto global** (Configuración → Sincronización,
+  `notifications_default_frequency`): sustituye al binario «notificaciones por
+  defecto»; se aplica a los formularios donde el usuario no eligió otra cosa. El valor
+  del ajuste anterior se respeta (activado → «diaria») sin tocar la BD.
+- **Horario de silencio** global opcional (Configuración → Sincronización): tramo
+  `HH:MM`–`HH:MM` en `APP_TIMEZONE` (puede cruzar la medianoche) en el que los avisos
+  casi inmediatos no se envían; lo acumulado sale agrupado al terminar. No afecta al
+  resumen diario (su hora la fija el crontab).
+
+### Cambiado
+
+- `GET/PUT /notifications` habla en frecuencias (`frequencies: {form_id: freq}`) en vez
+  del flag binario; guardar conserva la marca de agua salvo al entrar en una frecuencia
+  viva. `GET/PUT /admin/settings` cambia `notifications_default_on` por
+  `notifications_default_frequency` + `notifications_quiet`.
+- El resumen diario (`cron/daily_summary.php`) selecciona por frecuencia efectiva
+  `'daily'` (`COALESCE(nc.frequency, default)`); mismo contenido y hora que antes.
+
 ## [1.28.0] - 2026-07-16
 
 Frescura de la caché sin depender del cron ni de que el usuario recuerde actualizar,

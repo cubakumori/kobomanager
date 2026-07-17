@@ -97,16 +97,18 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 > siguiente sync» salvo que se añada el webhook de Kobo (ver Fase 2). Se acordó ejecutar
 > **Fase 1 y, a continuación, Fase 2**, todo configurable en Configuración.
 
-- [ ] **Fase 1 — frecuencia de email por usuario** *(barata; reutiliza Mailer,
-      `notification_config` y el cron de sync)*: la preferencia por usuario pasa de
-      binaria («resumen diario sí/no») a **frecuencia**: `diario | cada hora | cada
-      sync (~15 min)`. El cron de sincronización, tras cada pasada, envía un email
-      **agrupado** («N envíos nuevos en {formulario}») a quien lo pidió. Guardarraíles:
-      respetar el **scoping por filas** del usuario (no avisar de envíos fuera de su
-      alcance), **throttle anti-inundación** (mínimo un intervalo entre emails por
-      usuario, agrupando lo acumulado), **horario de silencio** opcional, y el aviso es
-      **recuento + enlace**, nunca contenido del envío (no filtrar datos que el scoping
-      protege). Gobernado desde Configuración → Sincronización.
+- [x] **Fase 1 — frecuencia de email por usuario** *(entregada en 1.29.0)*: la
+      preferencia por usuario pasó de binaria («resumen diario sí/no») a **frecuencia**
+      por formulario: `off | diario | cada hora | cada sync (~15 min)`
+      (`notification_config.frequency` + marca de agua `last_notified_at`; default
+      global `notifications_default_frequency`). El cron de sincronización, tras cada
+      pasada, envía vía `lib/Notifier` un email **agrupado** («N envíos nuevos en
+      {formulario}») a quien lo pidió. Guardarraíles implementados: **scoping por
+      filas** en el conteo, **throttle anti-inundación** (máx. un email/hora en
+      `hourly`; la marca de agua agrupa lo no avisado), **horario de silencio** global
+      opcional (Configuración → Sincronización, en `APP_TIMEZONE`, puede cruzar la
+      medianoche) y aviso de solo **recuento + enlace**. El resumen `daily` sigue en su
+      cron; las sync manuales o al iniciar sesión no disparan emails.
 - [ ] **Fase 2 — Web Push sobre la PWA** *(el «aviso al móvil»; a continuación de la
       Fase 1)*: notificación del sistema vía service worker (la PWA ya existe): opt-in
       por dispositivo desde el perfil, tabla de suscripciones push, claves **VAPID** en

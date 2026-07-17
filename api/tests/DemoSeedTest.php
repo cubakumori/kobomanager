@@ -81,7 +81,7 @@ final class DemoSeedTest extends TestCase
             'INSERT INTO share_links (token, form_id, created_by, label) VALUES (?, ?, ?, ?)',
             [str_repeat('a', 64), $formId, $adminId, 'Enlace demo']
         );
-        DB::run('INSERT INTO notification_config (user_id, form_id, daily_summary) VALUES (?, ?, 1)', [$adminId, $formId]);
+        DB::run("INSERT INTO notification_config (user_id, form_id, frequency) VALUES (?, ?, 'daily')", [$adminId, $formId]);
         Settings::set('default_locale', 'es');
 
         return ['accId' => $accId, 'adminId' => $adminId, 'viewerId' => $viewerId, 'formId' => $formId];

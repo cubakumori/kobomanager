@@ -281,9 +281,14 @@ location /api/ {
 ## 7. Cron jobs
 
 ```cron
-*/15 * * * *  php /path/api/cron/sync_submissions.php   # Kobo submissions → cache
+*/15 * * * *  php /path/api/cron/sync_submissions.php   # Kobo submissions → cache (+ email alerts)
 0    7 * * *  php /path/api/cron/daily_summary.php       # daily email summary
 ```
+
+The sync cron also delivers the **near-immediate email alerts** (per-user "hourly" /
+"every sync" frequencies, since 1.29.0) right after each pass — no extra cron entry
+needed, but the alert latency is your sync cadence: with `*/15` an "every sync" alert
+arrives within ~15 minutes of the submission reaching Kobo.
 
 (A **demo instance** adds a third cron, the periodic DB reset — see §13 / [DEMO.md](DEMO.md).)
 
@@ -298,9 +303,10 @@ CLI binary on the file path** — not a URL/`wget`/`curl` job (that would hit th
 front controller and get a 403). On panels like cPanel/DirectAdmin, cron jobs are
 **account-wide**, not per-domain/subdomain: there is no subdomain to pick — just point
 the command at the script's absolute path (e.g. `/usr/local/bin/php
-/home/<user>/domains/<domain>/public_html/api/cron/daily_summary.php`). The daily
-summary needs `RESEND_API_KEY` and `MAIL_FROM` (§8), and only reports what's already in
-the cache — so keep `sync_submissions.php` scheduled too, or there's nothing new to send.
+/home/<user>/domains/<domain>/public_html/api/cron/daily_summary.php`). Email
+notifications (daily summary and near-immediate alerts) need `RESEND_API_KEY` and
+`MAIL_FROM` (§8), and only report what's already in the cache — so keep
+`sync_submissions.php` scheduled too, or there's nothing new to send.
 
 **Cron output / notifications.** Cron mails the command's output to the account on
 **every** run, which gets noisy (especially the 15-min sync). Append a redirection to
@@ -323,7 +329,8 @@ Tip: run with no redirection at first to confirm it works (and pass a date —
 KoboManager sends email through the **Resend HTTP API** (`api/lib/Mailer.php`) — no SDK,
 no SMTP server/port. Email powers:
 
-- the **daily summary** of new submissions (cron, §7),
+- the **new-submission alerts** (daily summary, hourly, or every-sync — per-user
+  frequency; cron, §7),
 - **password recovery** (when enabled), and
 - the **contact form** on the public `/apoyar` page (sends to `CONTACT_TO`; messages are
   also stored in `contact_messages`, so nothing is lost if delivery fails — admins read

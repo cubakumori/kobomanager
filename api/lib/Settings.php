@@ -213,13 +213,42 @@ class Settings {
     }
 
     /**
-     * ¿Los usuarios reciben el resumen diario por DEFECTO en los formularios activos
-     * que pueden ver? Cuando está activo, un formulario sin preferencia explícita en
-     * `notification_config` se considera suscrito (el usuario puede desmarcarlo, lo que
-     * guarda una preferencia explícita en 0). Desactivado por defecto.
+     * Frecuencia de aviso por email que se aplica a los formularios SIN preferencia
+     * explícita en `notification_config` (fila ausente o frequency NULL):
+     *   'off' | 'daily' (resumen diario) | 'hourly' | 'every_sync'.
+     * Retrocompatibilidad: si el ajuste nuevo no existe, se traduce el binario
+     * anterior (`notifications_default_on`: true → 'daily', false → 'off').
      */
-    public static function notificationsDefaultOn(): bool {
-        return (bool) self::get('notifications_default_on', false);
+    public const VALID_NOTIFY_FREQUENCIES = ['off', 'daily', 'hourly', 'every_sync'];
+
+    public static function notificationsDefaultFrequency(): string {
+        $v = self::get('notifications_default_frequency');
+        if (in_array($v, self::VALID_NOTIFY_FREQUENCIES, true)) {
+            return $v;
+        }
+        return self::get('notifications_default_on', false) ? 'daily' : 'off';
+    }
+
+    /**
+     * Horario de silencio GLOBAL de los avisos casi inmediatos (hourly/every_sync):
+     * dentro del tramo no se envía nada y lo acumulado sale agrupado al terminar
+     * (la marca de agua de lib/Notifier no avanza mientras calla). Se expresa en
+     * hora local de APP_TIMEZONE como ['start' => 'HH:MM', 'end' => 'HH:MM'] y puede
+     * cruzar la medianoche (p. ej. 22:00 → 07:00). NULL = sin silencio. No afecta al
+     * resumen diario (su hora la fija el crontab).
+     */
+    public static function notificationsQuiet(): ?array {
+        $start = self::get('notifications_quiet_start', '');
+        $end   = self::get('notifications_quiet_end', '');
+        if (!self::isValidQuietTime($start) || !self::isValidQuietTime($end) || $start === $end) {
+            return null;
+        }
+        return ['start' => $start, 'end' => $end];
+    }
+
+    /** ¿'HH:MM' de 24 h válida? (una hora de silencio; '' = desactivado). */
+    public static function isValidQuietTime(mixed $v): bool {
+        return is_string($v) && preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $v) === 1;
     }
 
     /**

@@ -29,12 +29,14 @@ $day   = $argv[1] ?? (new DateTime('now', new DateTimeZone('UTC')))->modify('-1 
 $start = $day . ' 00:00:00';
 $end   = (new DateTime($day, new DateTimeZone('UTC')))->modify('+1 day')->format('Y-m-d') . ' 00:00:00';
 
-// Candidatos (usuario × formulario con resumen activo). El conteo se calcula aparte
+// Candidatos (usuario × formulario con resumen diario). El conteo se calcula aparte
 // porque cada (usuario, formulario) puede tener un filtro por filas distinto.
-// Suscripción EFECTIVA = preferencia explícita en notification_config o, en su
-// ausencia, el valor por defecto global (notifications_default_on). Solo cuentan los
-// formularios ACTIVOS que el usuario puede ver (viewer: can_view; admin: todos).
-$def = Settings::notificationsDefaultOn() ? 1 : 0;
+// Frecuencia EFECTIVA = notification_config.frequency o, si es NULL / no hay fila,
+// el valor por defecto global (notifications_default_frequency). Este cron atiende
+// solo 'daily'; 'hourly' y 'every_sync' los atiende lib/Notifier desde el cron de
+// sync. Solo cuentan los formularios ACTIVOS que el usuario puede ver (viewer:
+// can_view; admin: todos).
+$def = Settings::notificationsDefaultFrequency();
 
 $viewerRows = DB::run(
     "SELECT u.id AS user_id, u.name, u.email, u.role,
@@ -43,7 +45,7 @@ $viewerRows = DB::run(
      JOIN user_form_permissions p ON p.user_id = u.id AND p.can_view = 1
      JOIN forms f ON f.id = p.form_id AND f.active = 1
      LEFT JOIN notification_config nc ON nc.user_id = u.id AND nc.form_id = f.id
-     WHERE u.active = 1 AND u.role <> 'admin' AND COALESCE(nc.daily_summary, ?) = 1
+     WHERE u.active = 1 AND u.role <> 'admin' AND COALESCE(nc.frequency, ?) = 'daily'
      ORDER BY u.id, f.name",
     [$def]
 )->fetchAll();
@@ -55,7 +57,7 @@ $adminRows = DB::run(
      FROM users u
      JOIN forms f ON f.active = 1
      LEFT JOIN notification_config nc ON nc.user_id = u.id AND nc.form_id = f.id
-     WHERE u.active = 1 AND u.role = 'admin' AND COALESCE(nc.daily_summary, ?) = 1
+     WHERE u.active = 1 AND u.role = 'admin' AND COALESCE(nc.frequency, ?) = 'daily'
      ORDER BY u.id, f.name",
     [$def]
 )->fetchAll();

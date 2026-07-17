@@ -141,6 +141,17 @@ class SchemaCheck {
         // deben empezar a exponerlo solos.
         ['table' => 'share_links', 'column' => 'expose_review_summary', 'since' => '1.27.0',
          'fix' => "ALTER TABLE share_links ADD COLUMN expose_review_summary TINYINT(1) NOT NULL DEFAULT 0 AFTER expose_attachments"],
+
+        // Frecuencia de aviso por email (off|daily|hourly|every_sync; NULL = usa el
+        // default global). Sustituye al binario `daily_summary`, que se conserva en
+        // BDs que se actualizan (el código ya no lo lee) y el backfill lo traduce:
+        // 1 → 'daily', 0 → 'off'. En una instalación nueva la columna vieja no existe
+        // y este check nunca dispara (frequency viene del CREATE canónico).
+        ['table' => 'notification_config', 'column' => 'frequency', 'since' => '1.29.0',
+         'fix' => "ALTER TABLE notification_config ADD COLUMN frequency VARCHAR(12) NULL DEFAULT NULL AFTER form_id",
+         'backfill' => "UPDATE notification_config SET frequency = CASE WHEN daily_summary = 1 THEN 'daily' ELSE 'off' END"],
+        ['table' => 'notification_config', 'column' => 'last_notified_at', 'since' => '1.29.0',
+         'fix' => "ALTER TABLE notification_config ADD COLUMN last_notified_at DATETIME NULL AFTER frequency"],
     ];
 
     /** Columnas cuyo backfill requiere el recálculo PHP de migrate.php (no basta SQL). */

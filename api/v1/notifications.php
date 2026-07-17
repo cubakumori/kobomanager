@@ -1,14 +1,23 @@
 <?php
 /**
  * /api/v1/notifications   (usuario autenticado, configura lo suyo)
- *   GET → formularios visibles para el usuario, con su flag daily_summary.
- *   PUT → { enabled: [form_id, ...] }  guarda qué formularios tienen resumen diario.
+ *   GET → formularios visibles para el usuario, con su frecuencia de aviso EFECTIVA
+ *         (off|daily|hourly|every_sync): la explícita si existe o, en su ausencia,
+ *         el valor por defecto global (notifications_default_frequency).
+ *   PUT → { frequencies: { <form_id>: 'off'|'daily'|'hourly'|'every_sync', ... } }
+ *         guarda la frecuencia por formulario.
  *
  * notification_config no tiene clave única (user,form), así que en PUT se borran
- * las filas del usuario y se reinsertan solo las habilitadas (daily_summary = 1).
+ * las filas del usuario y se reinsertan. La marca de agua de los avisos casi
+ * inmediatos (last_notified_at, ver lib/Notifier) se CONSERVA al reinsertar; al
+ * pasar un formulario a hourly/every_sync desde un estado no-vivo se inicializa a
+ * «ahora» para no avisar del histórico acumulado.
  */
 
 $user = Auth::require();
+
+/** Frecuencias con marca de agua (avisos tras cada sync). */
+const LIVE_FREQUENCIES = ['hourly', 'every_sync'];
 
 /** IDs de formularios que el usuario puede ver (admin = todos los activos). */
 function visible_form_ids(array $user): array {
@@ -27,17 +36,19 @@ function visible_form_ids(array $user): array {
 }
 
 if (Request::method() === 'GET') {
-    // Preferencia EXPLÍCITA del usuario por formulario (0/1). La ausencia de fila
-    // significa «sin preferencia» → se aplica el valor por defecto global.
+    // Preferencia EXPLÍCITA del usuario por formulario. frequency NULL (o fila
+    // ausente) significa «sin preferencia» → se aplica el valor por defecto global.
     $rows = DB::run(
-        'SELECT form_id, daily_summary FROM notification_config WHERE user_id = ?',
+        'SELECT form_id, frequency FROM notification_config WHERE user_id = ?',
         [$user['id']]
     )->fetchAll();
     $explicit = [];
     foreach ($rows as $r) {
-        $explicit[(int) $r['form_id']] = (int) $r['daily_summary'];
+        if ($r['frequency'] !== null) {
+            $explicit[(int) $r['form_id']] = $r['frequency'];
+        }
     }
-    $defaultOn = Settings::notificationsDefaultOn();
+    $default = Settings::notificationsDefaultFrequency();
 
     if ($user['role'] === 'admin') {
         $forms = DB::run(
@@ -60,35 +71,71 @@ if (Request::method() === 'GET') {
         'form_id'       => (int) $f['id'],
         'name'          => $f['name'],
         'account_label' => $f['account_label'],
-        // Efectivo = preferencia explícita si existe; si no, el valor por defecto.
-        'daily_summary' => array_key_exists((int) $f['id'], $explicit)
-            ? (bool) $explicit[(int) $f['id']]
-            : $defaultOn,
+        // Efectiva = preferencia explícita si existe; si no, el valor por defecto.
+        'frequency'     => $explicit[(int) $f['id']] ?? $default,
     ], $forms);
 
-    ErrorResponse::ok(['forms' => $out, 'default_on' => $defaultOn]);
+    ErrorResponse::ok([
+        'forms'             => $out,
+        'default_frequency' => $default,
+        'valid_frequencies' => Settings::VALID_NOTIFY_FREQUENCIES,
+        'quiet'             => Settings::notificationsQuiet(),
+    ]);
 }
 
 if (Request::method() === 'PUT') {
-    $enabled = Request::json()['enabled'] ?? [];
-    if (!is_array($enabled)) {
-        ErrorResponse::send('VALIDATION_ERROR', 'enabled debe ser una lista de form_id');
+    $freqs = Request::json()['frequencies'] ?? [];
+    if (!is_array($freqs)) {
+        ErrorResponse::send('VALIDATION_ERROR', 'frequencies debe ser un mapa form_id → frecuencia');
     }
-    // Formularios que el usuario puede ver (activos). Se guarda una preferencia
-    // EXPLÍCITA (1/0) para cada uno, de modo que un «desmarcado» persista frente al
-    // valor por defecto global (sin fila = sin preferencia = usa el default). Los
-    // formularios no visibles en este momento (p. ej. nuevos) heredarán el default.
-    $visible    = visible_form_ids($user);
-    $enabledSet = array_flip(array_map('intval', $enabled));
+    foreach ($freqs as $v) {
+        if (!in_array($v, Settings::VALID_NOTIFY_FREQUENCIES, true)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Frecuencia de notificación no válida');
+        }
+    }
+
+    // Se guarda una preferencia EXPLÍCITA para cada formulario visible presente en el
+    // mapa (la UI manda todos), de modo que la elección persista frente al valor por
+    // defecto global. Los visibles ausentes del mapa quedan «sin preferencia»
+    // (frequency NULL = heredan el default); los no visibles ahora (p. ej. nuevos)
+    // también lo heredarán.
+    $visible = visible_form_ids($user);
+    $default = Settings::notificationsDefaultFrequency();
+    $nowUtc  = gmdate('Y-m-d H:i:s');
+
+    // Estado anterior, para conservar la marca de agua de los avisos casi inmediatos.
+    $old = [];
+    foreach (DB::run(
+        'SELECT form_id, frequency, last_notified_at FROM notification_config WHERE user_id = ?',
+        [$user['id']]
+    )->fetchAll() as $r) {
+        $old[(int) $r['form_id']] = $r;
+    }
 
     $pdo = DB::conn();
     $pdo->beginTransaction();
     try {
         DB::run('DELETE FROM notification_config WHERE user_id = ?', [$user['id']]);
         foreach ($visible as $formId) {
+            $newFreq = array_key_exists($formId, $freqs) ? $freqs[$formId]
+                     : (array_key_exists((string) $formId, $freqs) ? $freqs[(string) $formId] : null);
+
+            $oldRow       = $old[$formId] ?? null;
+            $oldEffective = ($oldRow['frequency'] ?? null) ?? $default;
+            $newEffective = $newFreq ?? $default;
+
+            // Marca de agua: se conserva si el formulario ya estaba en una frecuencia
+            // «viva»; al ENTRAR en una viva se ancla a ahora (no avisar del histórico).
+            $watermark = $oldRow['last_notified_at'] ?? null;
+            if (in_array($newEffective, LIVE_FREQUENCIES, true)
+                && (!in_array($oldEffective, LIVE_FREQUENCIES, true) || $watermark === null)) {
+                $watermark = $nowUtc;
+            }
+
             DB::run(
-                'INSERT INTO notification_config (user_id, form_id, daily_summary) VALUES (?, ?, ?)',
-                [$user['id'], $formId, isset($enabledSet[$formId]) ? 1 : 0]
+                'INSERT INTO notification_config (user_id, form_id, frequency, last_notified_at)
+                 VALUES (?, ?, ?, ?)',
+                [$user['id'], $formId, $newFreq, $watermark]
             );
         }
         $pdo->commit();
@@ -97,7 +144,11 @@ if (Request::method() === 'PUT') {
         throw $e;
     }
 
-    ErrorResponse::ok(['enabled' => array_values(array_filter($visible, fn($id) => isset($enabledSet[$id])))]);
+    $saved = [];
+    foreach ($visible as $formId) {
+        $saved[$formId] = $freqs[$formId] ?? $freqs[(string) $formId] ?? $default;
+    }
+    ErrorResponse::ok(['frequencies' => $saved]);
 }
 
 ErrorResponse::send('VALIDATION_ERROR', 'Método no permitido', 405);

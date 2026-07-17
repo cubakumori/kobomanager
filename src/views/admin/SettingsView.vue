@@ -25,7 +25,12 @@ const passwordResetEnabled = ref(false)
 const auditSelfViewEnabled = ref(false)
 const auditRetentionDays = ref(0)
 const auditRetentionMax = ref(3650)
-const notificationsDefaultOn = ref(false)
+const notificationsDefaultFrequency = ref('off')
+const validNotifyFrequencies = ref(['off', 'daily', 'hourly', 'every_sync'])
+// Horario de silencio de los avisos casi inmediatos (modelo local; null en la API = sin silencio).
+const quietEnabled = ref(false)
+const quietStart = ref('22:00')
+const quietEnd = ref('07:00')
 const syncOnLoginSetting = ref(false)
 const defaultTheme = ref('auto')
 const validThemes = ref(['light', 'dark', 'auto'])
@@ -180,7 +185,13 @@ async function load() {
     auditSelfViewEnabled.value = data.data.audit_self_view_enabled
     if (data.data.audit_retention_days != null) auditRetentionDays.value = data.data.audit_retention_days
     if (data.data.audit_retention_max != null) auditRetentionMax.value = data.data.audit_retention_max
-    if (data.data.notifications_default_on != null) notificationsDefaultOn.value = data.data.notifications_default_on
+    if (data.data.notifications_default_frequency != null) notificationsDefaultFrequency.value = data.data.notifications_default_frequency
+    validNotifyFrequencies.value = data.data.valid_notify_frequencies ?? validNotifyFrequencies.value
+    quietEnabled.value = !!data.data.notifications_quiet
+    if (data.data.notifications_quiet) {
+      quietStart.value = data.data.notifications_quiet.start
+      quietEnd.value = data.data.notifications_quiet.end
+    }
     if (data.data.sync_on_login != null) syncOnLoginSetting.value = data.data.sync_on_login
     defaultTheme.value = data.data.default_theme
     validThemes.value = data.data.valid_themes ?? validThemes.value
@@ -244,7 +255,8 @@ async function save() {
       password_reset_enabled: passwordResetEnabled.value,
       audit_self_view_enabled: auditSelfViewEnabled.value,
       audit_retention_days: Math.max(0, Number(auditRetentionDays.value) || 0),
-      notifications_default_on: notificationsDefaultOn.value,
+      notifications_default_frequency: notificationsDefaultFrequency.value,
+      notifications_quiet: quietEnabled.value ? { start: quietStart.value, end: quietEnd.value } : null,
       sync_on_login: syncOnLoginSetting.value,
       default_theme: defaultTheme.value,
       show_theme_toggle: showThemeToggle.value,
@@ -273,7 +285,14 @@ async function save() {
     passwordResetEnabled.value = data.data.password_reset_enabled
     if (data.data.audit_self_view_enabled != null) auditSelfViewEnabled.value = data.data.audit_self_view_enabled
     if (data.data.audit_retention_days != null) auditRetentionDays.value = data.data.audit_retention_days
-    if (data.data.notifications_default_on != null) notificationsDefaultOn.value = data.data.notifications_default_on
+    if (data.data.notifications_default_frequency != null) notificationsDefaultFrequency.value = data.data.notifications_default_frequency
+    if ('notifications_quiet' in data.data) {
+      quietEnabled.value = !!data.data.notifications_quiet
+      if (data.data.notifications_quiet) {
+        quietStart.value = data.data.notifications_quiet.start
+        quietEnd.value = data.data.notifications_quiet.end
+      }
+    }
     if (data.data.sync_on_login != null) syncOnLoginSetting.value = data.data.sync_on_login
     if (data.data.default_theme != null) defaultTheme.value = data.data.default_theme
     if (data.data.show_theme_toggle != null) showThemeToggle.value = data.data.show_theme_toggle
@@ -727,24 +746,71 @@ onMounted(load)
         </label>
       </section>
 
-      <!-- Notificaciones por defecto -->
+      <!-- Notificaciones: frecuencia por defecto -->
       <section v-show="tab === 'sync'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.notificationsDefault') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.notificationsDefaultDesc') }}</p>
         </div>
+        <label
+          v-for="freq in validNotifyFrequencies"
+          :key="freq"
+          class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50"
+        >
+          <input
+            type="radio"
+            class="mt-0.5 h-4 w-4"
+            name="notifications_default_frequency"
+            :value="freq"
+            :checked="notificationsDefaultFrequency === freq"
+            @change="notificationsDefaultFrequency = freq; saved = false"
+          />
+          <span>
+            <span class="block text-sm font-medium text-slate-800">{{ $t('settings.notifyFreq_' + freq) }}</span>
+            <span class="block text-xs text-slate-400">{{ $t('settings.notifyFreq_' + freq + 'Hint') }}</span>
+          </span>
+        </label>
+      </section>
+
+      <!-- Notificaciones: horario de silencio -->
+      <section v-show="tab === 'sync'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.notificationsQuiet') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.notificationsQuietDesc') }}</p>
+        </div>
         <label class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
           <input
             type="checkbox"
             class="mt-0.5 h-4 w-4"
-            :checked="notificationsDefaultOn"
-            @change="notificationsDefaultOn = !notificationsDefaultOn; saved = false"
+            :checked="quietEnabled"
+            @change="quietEnabled = !quietEnabled; saved = false"
           />
           <span>
-            <span class="block text-sm font-medium text-slate-800">{{ $t('settings.notificationsDefaultToggle') }}</span>
-            <span class="block text-xs text-slate-400">{{ $t('settings.notificationsDefaultHint') }}</span>
+            <span class="block text-sm font-medium text-slate-800">{{ $t('settings.notificationsQuietToggle') }}</span>
+            <span class="block text-xs text-slate-400">{{ $t('settings.notificationsQuietHint') }}</span>
           </span>
         </label>
+        <div v-if="quietEnabled" class="flex flex-wrap items-center gap-3 pl-1">
+          <label class="flex items-center gap-2 text-sm text-slate-700">
+            {{ $t('settings.notificationsQuietFrom') }}
+            <input
+              type="time"
+              class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+              :value="quietStart"
+              @input="quietStart = $event.target.value; saved = false"
+            />
+          </label>
+          <label class="flex items-center gap-2 text-sm text-slate-700">
+            {{ $t('settings.notificationsQuietTo') }}
+            <input
+              type="time"
+              class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+              :value="quietEnd"
+              @input="quietEnd = $event.target.value; saved = false"
+            />
+          </label>
+          <span class="text-xs text-slate-400">{{ $t('settings.notificationsQuietTz') }}</span>
+        </div>
       </section>
 
       <!-- Contraseña de los enlaces de compartir -->
