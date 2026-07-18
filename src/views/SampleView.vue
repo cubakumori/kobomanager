@@ -110,7 +110,9 @@ const colTotals = computed(() =>
 // Mapa de calor: chip coloreado por tramo de cumplimiento según la PALETA global
 // (Configuración → «Muestras»; ver composables/samplePalette). «Fuera de plan»
 // queda fuera de la paleta: ámbar fijo (otra semántica, no un grado).
-const { heatChip, trafficChip, doneColor } = useSamplePalette()
+const { heatChip, trafficChip, doneColor, barFill, metText, chartDone, distBar } = useSamplePalette()
+// Texto «cumplido» vs neutro (sobre-muestra/faltan de barras y tabla).
+const metOrMuted = (met) => (met ? metText() : { class: 'text-slate-500', style: null })
 function heatCell(cell) {
   if (cell.target == null) return { class: 'bg-amber-100 text-amber-800', style: null }
   return heatChip(cell.pct ?? 0)
@@ -154,14 +156,12 @@ function trafficTitle(cell, label) {
 }
 
 // ---------- Gráficos (barras agrupadas y doughnut de resumen) ----------
-const PRIMARY = '#2563eb'
-
 const barsData = computed(() => {
   const teams = data.value?.teams ?? []
   return {
     labels: teams.map((tm) => tm.name),
     datasets: [
-      { label: t('sample.done'), data: teams.map((tm) => tm.done), backgroundColor: PRIMARY, borderRadius: 4 },
+      { label: t('sample.done'), data: teams.map((tm) => tm.done), backgroundColor: chartDone(), borderRadius: 4 },
       { label: t('sample.target'), data: teams.map((tm) => tm.target), backgroundColor: '#cbd5e1', borderRadius: 4 },
     ],
   }
@@ -268,8 +268,8 @@ onMounted(load)
             <div class="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
               <div
                 class="h-full rounded-full transition-all"
-                :class="(data.grand.pct ?? 0) >= 100 ? 'bg-success-500' : 'bg-primary-500'"
-                :style="{ width: barWidth(data.grand.done, data.grand.target) + '%' }"
+                :class="barFill((data.grand.pct ?? 0) >= 100).class"
+                :style="[barFill((data.grand.pct ?? 0) >= 100).style, { width: barWidth(data.grand.done, data.grand.target) + '%' }]"
               ></div>
             </div>
           </div>
@@ -298,11 +298,11 @@ onMounted(load)
               <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
                   class="h-full rounded-full transition-all"
-                  :class="(team.pct ?? 0) >= 100 ? 'bg-success-500' : 'bg-primary-500'"
-                  :style="{ width: barWidth(team.done, team.target) + '%' }"
+                  :class="barFill((team.pct ?? 0) >= 100).class"
+                  :style="[barFill((team.pct ?? 0) >= 100).style, { width: barWidth(team.done, team.target) + '%' }]"
                 ></div>
               </div>
-              <p v-if="team.target > 0" class="mt-1 text-xs" :class="team.done >= team.target ? 'text-success-700 dark:text-success-400' : 'text-slate-500'">
+              <p v-if="team.target > 0" class="mt-1 text-xs" v-bind="metOrMuted(team.done >= team.target)">
                 <template v-if="team.done >= team.target">{{ $t('sample.surplus', { n: num(team.done - team.target) }) }}</template>
                 <template v-else>{{ $t('sample.remaining', { n: num(team.target - team.done) }) }}</template>
               </p>
@@ -322,8 +322,8 @@ onMounted(load)
                   <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                     <div
                       class="h-full rounded-full"
-                      :class="cell.target == null ? 'bg-amber-400' : ((cell.pct ?? 0) >= 100 ? 'bg-success-500' : 'bg-primary-500')"
-                      :style="{ width: (cell.target == null ? 100 : barWidth(cell.done, cell.target)) + '%' }"
+                      :class="cell.target == null ? 'bg-amber-400' : barFill((cell.pct ?? 0) >= 100).class"
+                      :style="[cell.target == null ? null : barFill((cell.pct ?? 0) >= 100).style, { width: (cell.target == null ? 100 : barWidth(cell.done, cell.target)) + '%' }]"
                     ></div>
                   </div>
                 </div>
@@ -333,7 +333,7 @@ onMounted(load)
               <div v-if="team.projection" class="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
                 <span class="font-medium text-slate-600">{{ $t('sample.projection') }}:</span>
                 <template v-if="team.projection.met">
-                  <span class="ml-1 text-success-700 dark:text-success-400">{{ $t('sample.projectionMet') }}</span>
+                  <span class="ml-1" v-bind="metText()">{{ $t('sample.projectionMet') }}</span>
                 </template>
                 <template v-else-if="team.projection.eta">
                   <span class="ml-1">{{ $t('sample.projectionRate', { n: (team.projection.rate_per_day ?? 0).toLocaleString(locale, { maximumFractionDigits: 1 }) }) }}</span>
@@ -380,7 +380,7 @@ onMounted(load)
                           <span class="font-semibold text-slate-700">{{ num(row.map[v.value].done) }}</span><span v-if="row.map[v.value].target != null" class="text-slate-400"> / {{ num(row.map[v.value].target) }}</span>
                           <div class="text-xs">
                             <span v-if="row.map[v.value].target == null" class="text-amber-600">{{ $t('sample.outOfPlan') }}</span>
-                            <span v-else-if="row.map[v.value].done >= row.map[v.value].target" class="text-success-700 dark:text-success-400">{{ row.map[v.value].done > row.map[v.value].target ? '+' + num(row.map[v.value].done - row.map[v.value].target) : '✓' }}</span>
+                            <span v-else-if="row.map[v.value].done >= row.map[v.value].target" v-bind="metText()">{{ row.map[v.value].done > row.map[v.value].target ? '+' + num(row.map[v.value].done - row.map[v.value].target) : '✓' }}</span>
                             <span v-else class="text-slate-400">{{ $t('sample.cellRemaining', { n: num(row.map[v.value].target - row.map[v.value].done) }) }}</span>
                           </div>
                         </template>
@@ -390,7 +390,7 @@ onMounted(load)
                     <td class="py-2 tabular-nums align-top">
                       <span class="font-semibold text-slate-700">{{ num(row.team.done) }}</span><span class="text-slate-400"> / {{ num(row.team.target) }}</span>
                       <div v-if="view === 'table' && row.team.target > 0" class="text-xs">
-                        <span v-if="row.team.done >= row.team.target" class="text-success-700 dark:text-success-400">{{ row.team.done > row.team.target ? '+' + num(row.team.done - row.team.target) : '✓' }}</span>
+                        <span v-if="row.team.done >= row.team.target" v-bind="metText()">{{ row.team.done > row.team.target ? '+' + num(row.team.done - row.team.target) : '✓' }}</span>
                         <span v-else class="text-slate-400">{{ $t('sample.cellRemaining', { n: num(row.team.target - row.team.done) }) }}</span>
                       </div>
                     </td>
@@ -499,7 +499,7 @@ onMounted(load)
                 <div v-for="opt in sec.options" :key="opt.label" class="flex items-center gap-2">
                   <span class="w-32 shrink-0 truncate text-xs text-slate-600" :title="opt.label">{{ opt.label }}</span>
                   <div class="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
-                    <div class="h-full rounded-full bg-primary-400" :style="{ width: Math.min(100, opt.pct) + '%' }"></div>
+                    <div class="h-full rounded-full" :class="distBar().class" :style="[distBar().style, { width: Math.min(100, opt.pct) + '%' }]"></div>
                   </div>
                   <span class="w-20 shrink-0 text-right text-xs tabular-nums text-slate-500">{{ num(opt.count) }} · {{ pct(opt.pct) }}</span>
                 </div>

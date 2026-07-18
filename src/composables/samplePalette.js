@@ -3,9 +3,11 @@ import { useDarkMode } from './darkMode'
 
 /**
  * Paleta de CUMPLIMIENTO del panel de muestra (ajuste global del admin, ver
- * Configuración → «Muestras»). Gobierna los tres modos cuyo COLOR codifica el
- * cumplimiento: mapa de calor, semáforo y el doughnut de resumen; los demás
- * modos comunican con cifras (y su verde puntual sigue el token `success`).
+ * Configuración → «Paneles» → Muestras). Gobierna TODO el panel: mapa de calor,
+ * semáforo, doughnut de resumen, barras de avance (total general, modo lineal),
+ * textos de «cumplido» (✓/+n) y el «hecho» del gráfico de barras. La
+ * «Distribución observada» no codifica cumplimiento (no hay objetivos), pero
+ * adopta el TONO neutro de la familia para que el panel sea una sola paleta.
  *
  * Presets con pares fondo/texto CURADOS (contraste garantizado, nada de
  * combinaciones libres): 'classic' (rojo→verde), 'soft' (pastel), 'accessible'
@@ -52,6 +54,36 @@ const DONE = {
   classic: ['--color-success-600', '#16a34a'],
   soft: ['--color-success-400', '#4ade80'],
   accessible: ['--color-sky-600', '#0284c7'],
+}
+
+// Barras de avance (total general y modo lineal): [en curso, cumplido]. En
+// 'accessible' el «en curso» NO es naranja (una barra a medias no está «mal»,
+// solo incompleta): claro→oscuro del mismo azul.
+const PROGRESS = {
+  classic: ['bg-primary-500', 'bg-success-500'],
+  soft: ['bg-primary-300', 'bg-success-300'],
+  accessible: ['bg-sky-400', 'bg-sky-600'],
+}
+
+// Texto de «cumplido» (✓, sobre-muestra, proyección alcanzada).
+const MET_TEXT = {
+  classic: 'text-success-700 dark:text-success-400',
+  soft: 'text-success-700 dark:text-success-400',
+  accessible: 'text-sky-700 dark:text-sky-400',
+}
+
+// «Hecho» del gráfico de barras (hex para Chart.js; «objetivo» = gris fijo).
+const CHART_DONE = {
+  classic: '#2563eb',
+  soft: '#93c5fd',
+  accessible: '#0284c7',
+}
+
+// Tono neutro de la «Distribución observada» (reparto real, sin objetivos).
+const DIST = {
+  classic: 'bg-primary-400',
+  soft: 'bg-primary-300',
+  accessible: 'bg-sky-400',
 }
 
 // Opacidad del preset 'mono' por tramo del mapa de calor y estado del semáforo.
@@ -118,5 +150,32 @@ export function useSamplePalette() {
     return themeColor(token, fallback)
   }
 
-  return { samplePalette, heatChip, trafficChip, doneColor }
+  // Relleno de una barra de avance: met=true → color de «cumplido».
+  function barFill(met) {
+    if (samplePalette.value === 'mono') {
+      return { class: '', style: { backgroundColor: monoRgba(met ? 1 : 0.55) } }
+    }
+    const [progress, done] = PROGRESS[samplePalette.value] ?? PROGRESS.classic
+    return { class: met ? done : progress, style: null }
+  }
+
+  // Texto de «cumplido» (✓ / sobre-muestra / proyección alcanzada).
+  function metText() {
+    if (samplePalette.value === 'mono') return { class: '', style: { color: monoColor() } }
+    return { class: MET_TEXT[samplePalette.value] ?? MET_TEXT.classic, style: null }
+  }
+
+  // «Hecho» del gráfico de barras (hex para Chart.js).
+  function chartDone() {
+    if (samplePalette.value === 'mono') return monoColor()
+    return CHART_DONE[samplePalette.value] ?? CHART_DONE.classic
+  }
+
+  // Barras de la «Distribución observada» (tono neutro de la familia).
+  function distBar() {
+    if (samplePalette.value === 'mono') return { class: '', style: { backgroundColor: monoRgba(0.7) } }
+    return { class: DIST[samplePalette.value] ?? DIST.classic, style: null }
+  }
+
+  return { samplePalette, heatChip, trafficChip, doneColor, barFill, metText, chartDone, distBar }
 }

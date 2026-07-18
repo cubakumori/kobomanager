@@ -84,7 +84,7 @@ const saved = ref(false)
 // para toda instancia); dentro, la tarjeta de la semilla de la demo sigue siendo
 // condicional a DEMO_SEED_PATH. El tab activo se refleja en ?tab= para poder
 // enlazarlo y sobrevivir a recargas; 'general' va sin query (URL limpia).
-const TAB_IDS = ['general', 'tables', 'sync', 'sharing', 'security', 'database']
+const TAB_IDS = ['general', 'tables', 'panels', 'sync', 'sharing', 'security', 'database']
 const initialTab = typeof route.query.tab === 'string' && TAB_IDS.includes(route.query.tab)
   ? route.query.tab
   : 'general'
@@ -543,7 +543,7 @@ onMounted(load)
       </section>
 
       <!-- Alcance por defecto de las estadísticas -->
-      <section v-show="tab === 'tables'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+      <section v-show="tab === 'panels'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.statsDefaultScope') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.statsDefaultScopeDesc') }}</p>
@@ -558,7 +558,7 @@ onMounted(load)
       </section>
 
       <!-- Tope del desglose por equipo en estadísticas -->
-      <section v-show="tab === 'tables'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+      <section v-show="tab === 'panels'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.statsTeamCap') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.statsTeamCapDesc') }}</p>
@@ -575,7 +575,7 @@ onMounted(load)
       </section>
 
       <!-- Alcance del control de calidad -->
-      <section v-show="tab === 'tables'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+      <section v-show="tab === 'panels'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.qcScope') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.qcScopeDesc') }}</p>
@@ -590,7 +590,7 @@ onMounted(load)
       </section>
 
       <!-- Formato de los valores porcentuales -->
-      <section v-show="tab === 'tables'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+      <section v-show="tab === 'general'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.pctFormat') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.pctFormatDesc') }}</p>
@@ -605,7 +605,7 @@ onMounted(load)
       </section>
 
       <!-- Atajo «aprobar en lote los admisibles»: dónde se ofrece -->
-      <section v-show="tab === 'tables'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
+      <section v-show="tab === 'panels'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-3">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.qcAdmitBatch') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.qcAdmitBatchDesc') }}</p>
@@ -621,7 +621,7 @@ onMounted(load)
       </section>
 
       <!-- Muestras: reparto rápido del editor + paleta de cumplimiento del panel -->
-      <section v-show="tab === 'tables'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+      <section v-show="tab === 'panels'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.samples') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.samplesDesc') }}</p>

@@ -4,6 +4,31 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.36.0] - 2026-07-18
+
+La **paleta de cumplimiento gobierna todo el panel de muestra** y Configuración gana la
+pestaña **«Paneles»**. Sin cambio de esquema.
+
+### Cambiado
+
+- **Paleta de cumplimiento en todo el panel** (antes solo mapa de calor, semáforo y
+  resumen): también la barra del «Total general», las barras del modo lineal, los
+  textos de «cumplido» (✓, sobre-muestra, proyección alcanzada) y el color «hecho» del
+  gráfico de barras. Razón de peso: con la paleta **Accesible**, un «Total general» en
+  verde anulaba su propósito; con **Monotonal**, el panel quedaba bicolor. Matiz: la
+  «Distribución observada» no codifica cumplimiento (no hay objetivos), así que adopta
+  el **tono neutro de la familia** de la paleta activa (Monotonal → el color elegido;
+  Accesible → azul; Clásica/Suave → el primario, como antes). En Accesible, la barra
+  de avance «en curso» es azul claro (no naranja): una barra a medias no está «mal»,
+  solo incompleta.
+- **Configuración reorganizada**: pestaña nueva **«Paneles»** (alcance de estadísticas,
+  desglose/tope de equipos, alcance del QC, atajo de admisibles y Muestras — antes en
+  «Tablas y vistas», que quedaba con 11 acápites heterogéneos) y **«Valores
+  porcentuales» pasa a «General»** (aplica a toda la app, no solo a tablas). «Tablas y
+  vistas» conserva lo que sí es de tablas: congelado, líneas de encabezado, etiquetas,
+  truncado y el orden de «Mis formularios». El enlace de Control de calidad a los
+  umbrales apunta a la pestaña nueva.
+
 ## [1.35.0] - 2026-07-18
 
 Acápite **«Muestras»** en Configuración (reparto rápido ocultable + paleta de

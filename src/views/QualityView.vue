@@ -351,7 +351,7 @@ onMounted(load)
           </span>
           <RouterLink
             v-if="auth.isAdmin"
-            :to="{ path: '/admin/settings', query: { tab: 'tables' } }"
+            :to="{ path: '/admin/settings', query: { tab: 'panels' } }"
             class="font-medium text-primary-600 hover:underline"
           >{{ $t('stats.qualityScopeChange') }}</RouterLink>
         </span>
