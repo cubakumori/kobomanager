@@ -24,9 +24,10 @@ native validation status.
 
 - Your team signs in with app users — **no KoboToolbox account needed**, and the API
   token is never exposed to the browser (stored encrypted on the server).
-- Per-form permissions (view / edit / validate / settings — the last one lets a trusted
-  user tune that form's team-breakdown fields and quality-control thresholds without
-  being an admin).
+- Per-form permissions (view / edit / validate / settings / sample). *Settings* lets a
+  trusted user tune that form's team-breakdown fields and quality-control thresholds
+  without being an admin; *Sample* additionally opens the sample-plan editor and is
+  **hierarchical** (it implies *Settings*, enforced server-side).
 - **Multi-condition row-level scoping** (AND/OR groups; `in`, `not in`, ranges, empty,
   and `has_any/all/none` for multi-selects) — each user sees only the rows that match.
 - **Column-level permissions**: hide fields or mark them read-only, per user.
@@ -65,11 +66,17 @@ native validation status.
 - **Sample by team**: compares what's *received* against a *planned sample* — how many
   surveys each team must collect per value of a sampling `select_one` (e.g. age range).
   A panel shows done/target and % per team × value, highlights shortfall and over-sample,
-  flags cells "out of plan", and projects a completion date per team at the current pace.
+  flags cells "out of plan", and projects a completion date per team at the current pace —
+  with a **view-type selector** (linear bars, table, heat map, grouped bars, traffic light,
+  summary doughnut; remembered per device) and an instance-wide **compliance palette**
+  (classic, soft, colorblind-safe, or single-color where opacity encodes progress).
   You count either approved-only or approved-and-pending submissions, and secondary fields
-  (sex, race…) show their observed distribution. The plan is edited as a team × value matrix
-  (per-team total with even/proportional fill) and keeps a history of changes across the
-  campaign. Respects each user's row scoping (a team lead sees their own team).
+  (sex, race…) show their observed distribution. The plan is edited on its own page
+  (gated by the hierarchical *Sample* permission) as a team × value matrix — per-team
+  quick fill with even/proportional distribution (hideable: shortcuts are typing aids,
+  not methodology — the sampling design is made outside the app), a clear-targets button —
+  and keeps a history of changes across the campaign. Respects each user's row scoping
+  (a team lead sees their own team).
 - **Quality control**: flags interviews outside the form's admissible thresholds — too
   **short** or too **long**, per enumerator **overlapping** in time (a fabrication signal)
   or with a suspiciously **short gap** between consecutive interviews, **duplicate** answers

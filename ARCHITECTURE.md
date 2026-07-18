@@ -466,7 +466,7 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   also returns `enumerator_median` / `enumerators` (median submissions per enumerator), which the
   settings page surfaces as an informative hint for the risk index's minimum-N (never auto‑filled).
   Start/end render in `APP_TIMEZONE` via `Derived::formatLocal`. A global **scope**
-  setting (`qc_scope`: `pending_hold` default | `all`, Settings → Tables tab) decides which
+  setting (`qc_scope`: `pending_hold` default | `all`, Settings → Panels tab) decides which
   submissions get *reported*: by default only pending/on-hold ones (approved/rejected already
   passed human review, so QC counts never contradict the stats review cards). Since 1.27.0
   the page carries a **transient toggle**: `?scope=all|pending_hold` overrides the global
@@ -493,7 +493,7 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   stored*, so there is no SQL column to index; see note below) and the QC page's **"approve the N
   admissible"** button (both ride `forms/{id}/review` with `approved`, `can_validate`, chunks of
   1000, the confirmation spelling out that they only passed the automatic thresholds). A global
-  setting **`qc_admit_batch`** (`table` default | `qc` | `both` | `off`, Settings → Tables tab)
+  setting **`qc_admit_batch`** (`table` default | `qc` | `both` | `off`, Settings → Panels tab)
   governs *only this admissible shortcut* — the table's generic bulk review is untouched. **Why
   flags stay derived, not persisted:** the thresholds are per‑form and user‑editable, and some
   signals (exact‑answer duplicates, "stuck GPS") are cohort‑relative — a new sync can flip another
@@ -602,8 +602,12 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   control reports on; `stats_team_cap` — team‑breakdown cap, `20`|`50`|`all`; `pct_format`
   — app‑wide percent rendering, integer or two decimals, served by the public `GET /config`
   so public share views honor it too), the `show_view_submissions_link` toggle (also on
-  `GET /config`), public-surface toggles (`support_page_enabled` / `landing_cta_enabled`,
-  served by the public `GET /config`), and `cron_runs`
+  `GET /config`), the **Samples** block (`sample_show_quick_fill` — show/hide the plan
+  editor's quick‑fill column; `sample_palette` — instance‑wide compliance palette of the
+  sample panel, `classic`|`soft`|`accessible`|`mono`, with `sample_mono_color` for the
+  mono preset, `''` = theme primary; all three on `GET /config`, consumed by
+  `composables/samplePalette.js`), public-surface toggles (`support_page_enabled` /
+  `landing_cta_enabled`, served by the public `GET /config`), and `cron_runs`
   (last run per cron, written by `recordCronRun()` at the end of each cron job).
 - **Email notifications**: a per‑user × form **frequency** (`notification_config.frequency`:
   `off` | `daily` | `hourly` | `every_sync`; `NULL` = no explicit preference → the global

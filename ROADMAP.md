@@ -225,7 +225,10 @@ Quedan como ideas reabribles si aparece una necesidad real.
 ## Muestra por equipo — pendientes (2ª iteración)
 
 > El núcleo se **entregó en 1.32.0** (panel, editor de la matriz, denominador, histórico y
-> guards de tipo de campo) — ver `CHANGELOG.md`. Aquí quedan solo las extensiones pendientes.
+> guards de tipo de campo), y la 2ª tanda en **1.33.0–1.36.0** (selector de seis vistas,
+> permiso «Muestra» jerárquico con página propia del plan, acápite «Muestras» en
+> Configuración con paleta de cumplimiento para todo el panel) — ver `CHANGELOG.md`.
+> Aquí quedan solo las extensiones pendientes.
 
 - [ ] **Enlace público de solo lectura del panel de muestra** — un coordinador sigue el avance
       sin cuenta, como el resumen de revisión de los enlaces compartidos. Encaja con la
@@ -240,19 +243,6 @@ Quedan como ideas reabribles si aparece una necesidad real.
       la «Distribución observada» de los secundarios CON objetivo pasa de reparto neutro a
       cumplimiento → la **paleta** debe aplicarles la semántica completa (tramos por %,
       como al campo principal), no solo el tono de la familia como hoy (nota jul-2026).
-- [x] **Permiso «Muestra» jerárquico + página propia del plan** — **entregado en 1.34.0**
-      (decisión de la conversación jul-2026, ver `CHANGELOG.md`): `can_sample` implica
-      «Ajustes» (normalizado en servidor y espejado en la UI de Permisos), el editor del
-      plan vive en `/admin/forms/{id}/sample-plan`, Ajustes muestra el botón «Configurar
-      la muestra» (deshabilitado sin permiso o sin campo de equipo) y avisa si cambiar el
-      campo de equipo desalinearía un plan vigente. Migración: quien tenía «Ajustes»
-      hereda «Muestra».
-- [x] **Selector de tipo de vista en el panel de muestra** — **entregado en 1.33.0** (ver
-      `CHANGELOG.md`): seis modos (lineal / tabla / mapa de calor / barras / semáforo /
-      resumen-doughnut), preferencia por dispositivo en `localStorage`, frontend-only en
-      `SampleView.vue`. «Atrasado» del semáforo y el doughnut de resumen se calculan sobre
-      las celdas con objetivo con el hecho acotado a su meta (la sobre-muestra de un equipo
-      no distorsiona a los demás).
 - [ ] **Normalización del eje de miembro/equipo cuando es texto libre** *(de la conversación
       jul-2026)* — un campo de miembro de **texto libre** (p. ej. iniciales) sufre variantes de
       la misma persona («ABC» / «abc» / «Abc», o espacios), y hoy la clave de agrupación es el
