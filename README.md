@@ -62,6 +62,14 @@ native validation status.
   scope on open is configurable in *Settings* (all submissions or approved only). A
   **team → enumerator breakdown** (you pick the form's team and enumerator fields) adds
   volume, review mix, duration and completeness per team and per enumerator.
+- **Sample by team**: compares what's *received* against a *planned sample* — how many
+  surveys each team must collect per value of a sampling `select_one` (e.g. age range).
+  A panel shows done/target and % per team × value, highlights shortfall and over-sample,
+  flags cells "out of plan", and projects a completion date per team at the current pace.
+  You count either approved-only or approved-and-pending submissions, and secondary fields
+  (sex, race…) show their observed distribution. The plan is edited as a team × value matrix
+  (per-team total with even/proportional fill) and keeps a history of changes across the
+  campaign. Respects each user's row scoping (a team lead sees their own team).
 - **Quality control**: flags interviews outside the form's admissible thresholds — too
   **short** or too **long**, per enumerator **overlapping** in time (a fabrication signal)
   or with a suspiciously **short gap** between consecutive interviews, **duplicate** answers

@@ -25,16 +25,28 @@ con proyección de cierre al ritmo actual y distribución observada de campos se
   de muestreo principal (+ dos secundarios opcionales) y el denominador, y rellena la
   matriz **equipo × valor → objetivo**. Para no rellenar celda a celda: un **total por
   equipo** con reparto **uniforme** o **proporcional a lo recibido**, más ajuste fino por
-  celda. El eje de equipo reutiliza el «Campo de equipo» del desglose de estadísticas.
+  celda. Se admite un **plan parcial**; guardar sin ningún objetivo pide confirmación (no se
+  monitorea) y el panel avisa cuando el plan está vacío. **Línea de cobertura** viva
+  (celdas/equipos/total) y **aviso al cambiar el campo de muestreo** (los objetivos del campo
+  anterior se descartan del plan vigente y quedan en el histórico). El eje de equipo reutiliza
+  el «Campo de equipo» del desglose de estadísticas.
 - **Denominador de «hecho»** configurable (`forms.sample_denominator`): *solo aprobados*
   (por defecto) o *aprobados y pendientes* (excluye «en espera» y rechazados).
 - **Histórico del plan**: cada guardado archiva un snapshot completo en
   `sample_target_history` en vez de sobrescribir sin rastro, para que una renegociación a
   mitad de campaña no borre lo planificado antes.
 - Backend `lib/Sample::compute` (gemelo de `lib/Stats`), endpoints
-  `GET /forms/{id}/sample` y `GET|PUT /admin/forms/{id}/sample-plan`, y `SampleTest`
-  (9 casos: recuento por celda, denominador, fuera de plan, scoping, etiquetas, secundarios
-  y proyección).
+  `GET /forms/{id}/sample` y `GET|PUT /admin/forms/{id}/sample-plan`, con `SampleTest`
+  (lib) y `SamplePlanHttpTest` (integración: permisos, guards y snapshots).
+
+### Restricciones de tipo de campo
+
+- El **campo de muestreo** (principal y secundarios) debe ser de **opción única**
+  (`select_one`): sus valores son un conjunto cerrado que forma las columnas del plan y cada
+  fila cae en un solo valor. Se valida en el editor y en el backend (422). Los tres campos de
+  muestreo deben ser **distintos** entre sí (selectores mutuamente excluyentes + guard en API).
+- El **campo de equipo/encuestador** ahora excluye `select_multiple` (un eje de agrupación es
+  monovaluado), pero sigue admitiendo texto/metadatos monovaluados; validado en UI y backend.
 
 ### Esquema
 

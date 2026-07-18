@@ -222,15 +222,10 @@ Quedan como ideas reabribles si aparece una necesidad real.
 
 ---
 
-## Monitorización de muestra por equipo — ENTREGADA (1.32.0)
+## Muestra por equipo — pendientes (2ª iteración)
 
-> **Estado (jul-2026): ENTREGADA en 1.32.0** (ver `CHANGELOG.md`). Panel `/forms/{id}/sample`
-> (hecho/objetivo por celda equipo × valor, totales por equipo, «fuera de plan» y proyección
-> de cierre), editor de la matriz en los ajustes (con reparto por equipo uniforme/proporcional
-> e histórico por snapshots), denominador configurable y campos secundarios como distribución
-> observada. Construido sobre `lib/Sample` (gemelo de `Stats`), respeta el scoping por filas.
-
-### Pendiente (2ª iteración)
+> El núcleo se **entregó en 1.32.0** (panel, editor de la matriz, denominador, histórico y
+> guards de tipo de campo) — ver `CHANGELOG.md`. Aquí quedan solo las extensiones pendientes.
 
 - [ ] **Enlace público de solo lectura del panel de muestra** — un coordinador sigue el avance
       sin cuenta, como el resumen de revisión de los enlaces compartidos. Encaja con la
@@ -280,73 +275,6 @@ Quedan como ideas reabribles si aparece una necesidad real.
       lectura, reversible); (d) al cambiar el default a «Normalizar» en formularios existentes se
       fusionan variantes de golpe al actualizar — casi siempre deseable, inocuo para
       `_submitted_by` y `select_one`, pero mencionarlo en el CHANGELOG cuando toque.
-
-<details><summary>Plan original (histórico)</summary>
-
-> Idea del usuario (jul-2026), aprobada para construir en una **sesión nueva**. En trabajo
-> de campo real cada **equipo** debe cumplir una **muestra planificada**: un nº de encuestas
-> repartido por los valores de un campo de muestreo (p. ej. rango de edad). La app hoy
-> calcula lo *recibido* (Estadísticas, desglose por equipo/encuestador) pero no lo compara
-> contra un *plan*. Esta feature añade el «cuánto falta»: un panel de **cumplimiento de la
-> muestra por equipo**, con **histórico** (el plan puede cambiar en campaña) y una
-> **proyección simple** de fecha de cierre al ritmo actual. Reutiliza el campo de
-> equipo/encuestador ya existente, `Stats::compute` (scope + alcance por estado) y Chart.js.
-
-### Plan concreto (para la sesión de implementación)
-
-**Modelo de datos** (red de esquema completa: canónico `db/001_schema.sql` + `SchemaCheck`
-+ `migrate.php` + nota en CHANGELOG):
-
-- En `forms`: `sample_field` (clave del `select_one` principal de muestreo),
-  `sample_field2` / `sample_field3` (secundarios opcionales), y `sample_denominator`
-  (`approved` | `approved_pending`, default `approved`). Espejo de cómo viven ya
-  `stats_team_field` / `stats_enumerator_field`.
-- Tabla nueva `sample_targets` (el plan **vigente**): `(id, form_id, team_value,
-  sample_value, target, updated_at)`, única por `(form_id, team_value, sample_value)`.
-  `team_value` = valor del campo de equipo; `sample_value` = opción del campo principal.
-- Tabla nueva `sample_target_history` (para el **histórico**, ya que el plan cambia): al
-  editar el plan se **inserta** la versión con marca de tiempo en vez de sobrescribir sin
-  rastro `(id, form_id, snapshot_at, payload_json)` o filas equivalentes. Así una
-  renegociación a mitad de campaña no borra lo que se había planificado antes, y el panel
-  puede mostrar «plan vigente» sin recalcular hacia atrás.
-
-**Backend**:
-
-- `Sample::compute(formId, schema, scope, ...)` — gemelo de `Stats`/`Quality`: para cada
-  celda `equipo × valor`, cuenta lo **hecho** según `sample_denominator` (reutiliza el
-  scoping por filas y el alcance por estado), lee el **objetivo** de `sample_targets`, y
-  devuelve hecho/objetivo/% + totales por equipo. Marca las celdas **«fuera de plan»**
-  (equipo o valor presente en los datos pero sin objetivo) sin descartarlas.
-- **Proyección simple**: con la fecha del primer envío en alcance y el ritmo medio
-  (hecho ÷ días transcurridos), estimar la fecha en que cada equipo alcanzaría su objetivo.
-  Etiquetarla como estimación, no promesa. Barato (sin subsistema de snapshots diarios;
-  basta el ritmo agregado).
-- Endpoints: `GET /forms/{id}/sample` (panel) y `GET/PUT` del plan (admin o permiso
-  «Ajustes» del formulario, como los umbrales QC). Micro-caché en disco como `share_stats`.
-
-**Frontend**:
-
-- Editor del plan en «Ajustes» del formulario: elegir campo principal (+ secundarios),
-  el denominador, y rellenar la matriz **equipo × valor → objetivo**. Para evitar la
-  matriz gigante: permitir un **objetivo por equipo** con **reparto por defecto** (uniforme
-  o proporcional a lo ya recibido) y ajuste fino por celda.
-- Panel de cumplimiento (vista propia o pestaña): heatmap/barras hecho/objetivo por celda,
-  total y % por equipo, resaltar déficit y sobre-muestra, sección «fuera de plan», y la
-  proyección por equipo. Muestra **etiquetas** legibles del `select_one` (no el código).
-- Campos secundarios (etapa 1): **solo distribución observada** de lo hecho (sexo, raza…),
-  sin objetivos por celda todavía. i18n ES/EN.
-
-**Notas de diseño**:
-
-- Construir sobre `Stats::compute` para no duplicar el scoping (es casi el desglose por
-  equipo «con objetivos»).
-- Respeta el scoping por filas: un jefe de equipo ve el suyo.
-- Exponer en un **enlace público** de solo lectura encaja natural (un coordinador sigue el
-  avance sin cuenta), como el resumen de revisión — dejarlo para una 2ª iteración.
-- Si algún día llegan los **dashboards configurables**, este panel fijo sería uno de sus
-  widgets.
-
-</details>
 
 ---
 

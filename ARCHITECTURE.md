@@ -543,6 +543,25 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   availability (Benford needs numeric volume, GPS needs geo, percentmatch ≥2 content submissions).
   Read‑only; respects `RowScope`/`FieldScope`. **Phase 2** (Kobo `audit.csv` per‑submission timing)
   and a persisted weekly history are deferred (see ROADMAP).
+- **Sample by team** (`lib/Sample.php`, `v1/forms/sample.php`, view `SampleView.vue` at
+  `forms/{id}/sample`, `can_view`): planned‑sample compliance — for each **team × value** cell of
+  a sampling `select_one`, counts what is **done** vs a **target** and projects a completion date at
+  the current pace. Twin of `lib/Stats`: one streaming pass over `submissions_cache` with the same
+  `RowScope`/`FieldScope` (a team lead sees only their team). The team axis reuses
+  `forms.stats_team_field`; the sampling field is `forms.sample_field` (+ optional
+  `sample_field2/3`, **observed distribution only** in stage 1), all **required to be `select_one`**
+  (closed value set; enforced in `admin/sample_plan.php` and in the editor). "Done" is scoped by
+  `forms.sample_denominator` (`approved` default | `approved_pending`) over the denormalised
+  `review_status`. Cells with data but **no target** are flagged *out of plan* (kept, not dropped);
+  the empty team/value bucket is `Sample::NONE` (`__none__`). The **current plan** lives in
+  `sample_targets` (one target row per `(form_id, team_value, sample_value)`, target > 0 only); each
+  save **archives** a full snapshot in `sample_target_history` (the plan changes mid‑campaign, so
+  history is never overwritten). The plan is edited from the per‑form settings screen
+  (`SamplePlanEditor.vue`, `GET`/`PUT /admin/forms/{id}/sample-plan`, admin or `can_settings`): a
+  team × value matrix with per‑team total + even/proportional distribution, mutually‑exclusive field
+  selectors, a live coverage line and an empty‑plan confirmation. A public read‑only link and a
+  view‑type selector (table/heatmap/bar/pie) are deferred (see ROADMAP). Not cached (per‑user scope +
+  review‑status‑dependent denominator, like `forms/stats.php`).
 - **Search** (`lib/SubmissionSearch.php`, M4a): submission‑table search no longer does a `LIKE`
   over the whole JSON. `textFor()` builds a plain‑text projection of the answer **values**
   (skipping `_*` metadata keys) into the indexed `submissions_cache.search_text` column,
@@ -726,7 +745,9 @@ Key tables: `kobo_accounts`, `users`, `user_sessions`, `forms`, `submissions_cac
 `submission_reviews`, `user_form_permissions`, `notification_config`, `audit_log`,
 `login_attempts`, `rate_hits`, `settings`, `password_resets`, `share_links`,
 `contact_messages` (messages from the public contact form on the «Apoyar» page; admins read
-and manage them from the `/admin/messages` inbox — statuses `new`/`read`/`archived`).
+and manage them from the `/admin/messages` inbox — statuses `new`/`read`/`archived`),
+`push_subscriptions`, and the sample‑monitoring pair `sample_targets` (current plan) /
+`sample_target_history` (plan snapshots).
 
 ## Tests
 
