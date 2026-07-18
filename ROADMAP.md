@@ -237,6 +237,28 @@ Quedan como ideas reabribles si aparece una necesidad real.
       micro-caché en disco de `share_stats` y con el alcance fijo por equipo del enlace.
 - [ ] **Objetivos por celda para los campos secundarios** — hoy los secundarios (sexo, raza…)
       solo muestran distribución observada; una etapa 2 podría planificar también su cuota.
+- [ ] **Selector de tipo de vista en el panel de muestra** *(de la conversación jul-2026)* — hoy
+      el panel `/forms/{id}/sample` tiene un único diseño «lineal» (tarjeta por equipo con barras
+      por celda). Añadir un **selector** para elegir la presentación. Es **frontend-only**: el
+      endpoint ya devuelve todo (equipos, celdas hecho/objetivo/%, totales, proyección), así que
+      solo cambia el render en `SampleView.vue`; sin tocar backend/esquema/plan. Modos propuestos:
+      1. **Lineal** (el actual).
+      2. **Tabla** — filas = equipos, columnas = valores; cada celda «hecho / faltan» con totales
+         por fila y columna. La grafía numérica simple que pidió el usuario.
+      3. **Mapa de calor** — la misma tabla con la celda **coloreada por % de cumplimiento**
+         (rojo→ámbar→verde). Puede ser el modo Tabla con un toggle de color, para no multiplicar
+         modos.
+      4. **Barras agrupadas (Chart.js)** — «hecho vs objetivo» por equipo; reutiliza Chart.js y el
+         helper `themeColor` ya presentes en Estadísticas.
+      5. **Semáforo de estado** — rejilla de celdas coloreadas cumplido/parcial/atrasado, sin
+         cifras, para un vistazo rápido a los huecos.
+      6. **Pastel de resumen general** — doughnut con el **% global hecho vs falta** (sobre el
+         total del plan); puede ser un widget de cabecera visible en cualquier modo o su propio
+         modo «resumen».
+      Preferencia de vista **por usuario en `localStorage`** (como el tema), no en el servidor. La
+      distribución de campos secundarios se mantiene igual bajo cualquier vista. Mobile: la tabla
+      va en contenedor con scroll horizontal (patrón ya existente). i18n ES/EN + verificar cada
+      modo en el preview. *No es «menor»: conviene una sesión propia.*
 - [ ] **Normalización del eje de miembro/equipo cuando es texto libre** *(de la conversación
       jul-2026)* — un campo de miembro de **texto libre** (p. ej. iniciales) sufre variantes de
       la misma persona («ABC» / «abc» / «Abc», o espacios), y hoy la clave de agrupación es el
