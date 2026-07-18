@@ -127,6 +127,20 @@ function distribute(teamValue, mode) {
   })
 }
 
+// Borrar objetivos: vacía la matriz y los campos de reparto EN PANTALLA; el plan
+// guardado no se toca hasta que el usuario pulse «Guardar» (que además archiva
+// snapshot). Confirmación porque deshacer un mis-clic exige recargar sin guardar.
+async function clearTargets() {
+  const ok = await confirmDialog({
+    title: t('formSettings.sampleClearTitle'),
+    message: t('formSettings.sampleClearBody', { n: cellsWithTarget.value }),
+    confirmText: t('formSettings.sampleClearConfirm'),
+  })
+  if (!ok) return
+  targets.value = {}
+  teamTotals.value = {}
+}
+
 const rowTotal = (teamValue) =>
   sampleOptions.value.reduce((s, c) => s + Number(targets.value[key(teamValue, c.value)] || 0), 0)
 
@@ -294,7 +308,7 @@ watch(() => props.formId, load)
                         type="number"
                         min="0"
                         class="w-16 rounded-md border border-slate-300 px-2 py-1 text-sm tabular-nums outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30"
-                        :placeholder="$t('formSettings.samplePerTeam')"
+                        :placeholder="$t('formSettings.samplePerTeamPlaceholder')"
                       />
                       <button type="button" class="rounded-md px-1.5 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50" :title="$t('formSettings.sampleDistributeEven')" @click="distribute(tm.value, 'even')">{{ $t('formSettings.sampleDistributeEven') }}</button>
                       <button type="button" class="rounded-md px-1.5 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50" :title="$t('formSettings.sampleDistributeProportional')" @click="distribute(tm.value, 'proportional')">{{ $t('formSettings.sampleDistributeProportional') }}</button>
@@ -309,6 +323,15 @@ watch(() => props.formId, load)
 
       <div class="mt-5 flex items-center justify-end gap-3">
         <span v-if="flash" class="text-sm font-medium text-success-700 dark:text-success-400">✓ {{ flash }}</span>
+        <button
+          v-if="sampleField && teamField && teamOptions.length"
+          type="button"
+          :disabled="cellsWithTarget === 0"
+          class="rounded-lg px-4 py-2 text-sm font-medium text-red-600 ring-1 ring-red-200 hover:bg-red-50 disabled:opacity-50 disabled:hover:bg-transparent dark:text-red-400 dark:ring-red-900 dark:hover:bg-red-950/40"
+          @click="clearTargets"
+        >
+          {{ $t('formSettings.sampleClearBtn') }}
+        </button>
         <button
           :disabled="demoMode || saving"
           class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"

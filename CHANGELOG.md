@@ -4,6 +4,28 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.33.1] - 2026-07-18
+
+Mejoras del editor del plan de muestra (Ajustes → «Muestra por equipo»), de la revisión
+del usuario.
+
+### Añadido
+
+- Botón **«Borrar objetivos»** junto al de guardar (visible con la matriz, deshabilitado
+  si ya está vacía): vacía la matriz y los campos de reparto **en pantalla**, con
+  confirmación que indica cuántos objetivos se borran. No guarda nada: el plan vigente
+  sigue intacto (y con snapshot en el histórico) hasta pulsar «Guardar el plan de muestra».
+
+### Cambiado
+
+- La columna auxiliar **«Total del equipo» pasa a llamarse «Reparto rápido»** (placeholder
+  «total a repartir»): era fácil leerla como «lo hecho» cuando en realidad es una ayuda de
+  escritura para repartir un objetivo total entre las celdas de la fila.
+- El texto de ayuda de la matriz **reposiciona los atajos de reparto**: los objetivos salen
+  del diseño muestral, que se hace **fuera de la app** con los datos que correspondan
+  (demografía, marcos, estratos); «Uniforme» y «Según lo recibido» solo ayudan a rellenar,
+  no son un criterio muestral.
+
 ## [1.33.0] - 2026-07-18
 
 **Selector de tipo de vista** en el panel de muestra por equipo. Solo presentación
