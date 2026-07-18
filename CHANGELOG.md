@@ -4,6 +4,37 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.34.0] - 2026-07-18
+
+Permiso **«Muestra»** por formulario (jerárquico sobre «Ajustes») y **página propia** para
+el plan de muestra. **Cambio de esquema** → requiere `php api/cli/migrate.php` al actualizar.
+
+### Añadido
+
+- **Permiso «Muestra»** (`user_form_permissions.can_sample`) en la página de Permisos:
+  puede editar el **plan de muestra** del formulario. Es **jerárquico**: implica «Ajustes»
+  (quien planifica la muestra configura también el campo de equipo del que depende el
+  plan); al marcarlo, la casilla de «Ajustes» queda marcada y deshabilitada, y el servidor
+  normaliza la implicación en cada guardado (ningún cliente puede guardar el estado
+  incoherente). Un usuario con solo «Ajustes» sigue editando desglose por equipo, QC e
+  índice de riesgo, pero recibe 403 en el plan de muestra.
+- **Página propia del plan de muestra** (`/admin/forms/{id}/sample-plan`): la matriz sale
+  de la página de Ajustes (le robaba el foco y quiere espacio); en su lugar hay una tarjeta
+  con el botón **«Configurar la muestra»**, deshabilitado —con el motivo visible— si falta
+  el permiso «Muestra» o el campo de equipo. El aviso «no configurada» del panel de
+  muestra enlaza ahora directo a la página nueva (y solo para quien tiene «Muestra»).
+- **Aviso al cambiar el campo de equipo con un plan vigente** (en Ajustes): los objetivos
+  están clavados a los códigos del campo anterior, así que cambiarlo los desalinea todos
+  (pasarían a «fuera de plan»). Importa especialmente porque un usuario de solo «Ajustes»
+  puede cambiar el campo sin poder editar el plan.
+
+### Nota de actualización (esquema)
+
+- Columna nueva `user_form_permissions.can_sample` (TINYINT(1) DEFAULT 0). `migrate.php`
+  la añade y **hereda el permiso a quien ya tenía «Ajustes»** (`can_sample = can_settings`):
+  hasta 1.33.x el plan se editaba con «Ajustes» y nadie debe perder esa capacidad al
+  actualizar; el admin puede restringirlo después desde Permisos.
+
 ## [1.33.1] - 2026-07-18
 
 Mejoras del editor del plan de muestra (Ajustes → «Muestra por equipo»), de la revisión

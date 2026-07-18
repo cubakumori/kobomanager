@@ -208,8 +208,10 @@ class Auth {
     }
 
     /**
-     * ¿El usuario tiene la capacidad ('view'|'edit'|'validate'|'settings') sobre un
-     * formulario? Los admin tienen acceso total.
+     * ¿El usuario tiene la capacidad ('view'|'edit'|'validate'|'settings'|'sample')
+     * sobre un formulario? Los admin tienen acceso total. 'sample' (editar el plan de
+     * muestra) es jerárquico sobre 'settings': el endpoint de permisos normaliza
+     * can_sample ⇒ can_settings al guardar, así que aquí basta leer la columna.
      */
     public static function canForm(array $user, int $formId, string $cap): bool {
         if (($user['role'] ?? '') === 'admin') {
@@ -220,6 +222,7 @@ class Auth {
             'edit'     => 'can_edit',
             'validate' => 'can_validate',
             'settings' => 'can_settings',
+            'sample'   => 'can_sample',
             default    => null,
         };
         if ($col === null) return false;

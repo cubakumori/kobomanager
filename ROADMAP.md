@@ -232,6 +232,13 @@ Quedan como ideas reabribles si aparece una necesidad real.
       micro-caché en disco de `share_stats` y con el alcance fijo por equipo del enlace.
 - [ ] **Objetivos por celda para los campos secundarios** — hoy los secundarios (sexo, raza…)
       solo muestran distribución observada; una etapa 2 podría planificar también su cuota.
+- [x] **Permiso «Muestra» jerárquico + página propia del plan** — **entregado en 1.34.0**
+      (decisión de la conversación jul-2026, ver `CHANGELOG.md`): `can_sample` implica
+      «Ajustes» (normalizado en servidor y espejado en la UI de Permisos), el editor del
+      plan vive en `/admin/forms/{id}/sample-plan`, Ajustes muestra el botón «Configurar
+      la muestra» (deshabilitado sin permiso o sin campo de equipo) y avisa si cambiar el
+      campo de equipo desalinearía un plan vigente. Migración: quien tenía «Ajustes»
+      hereda «Muestra».
 - [x] **Selector de tipo de vista en el panel de muestra** — **entregado en 1.33.0** (ver
       `CHANGELOG.md`): seis modos (lineal / tabla / mapa de calor / barras / semáforo /
       resumen-doughnut), preferencia por dispositivo en `localStorage`, frontend-only en

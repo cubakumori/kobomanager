@@ -1,6 +1,8 @@
 <?php
 /**
- * /api/v1/admin/forms/{id}/sample-plan   (admin, o permiso «Ajustes» del formulario)
+ * /api/v1/admin/forms/{id}/sample-plan   (admin, o permiso «Muestra» del formulario;
+ * jerárquico: «Muestra» implica «Ajustes», pero NO al revés — un usuario con solo
+ * «Ajustes» edita QC/desglose y aquí recibe 403)
  *
  *   GET → configuración de la muestra (campo principal + secundarios + denominador)
  *         y el PLAN VIGENTE como matriz de objetivos por celda, más lo RECIBIDO por
@@ -19,7 +21,7 @@ $user   = Auth::require();
 $formId = (int) Request::param('id');
 $method = Request::method();
 
-Auth::requireForm($user, $formId, 'settings');
+Auth::requireForm($user, $formId, 'sample');
 
 $form = DB::run(
     'SELECT id, name, schema_json, stats_team_field,

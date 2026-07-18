@@ -193,6 +193,10 @@ CREATE TABLE IF NOT EXISTS user_form_permissions (
     -- «Ajustes»: puede editar los ajustes de ESTE formulario (desglose por equipo y
     -- umbrales del control de calidad) sin ser admin. No incluye borrar el formulario.
     can_settings    TINYINT(1) DEFAULT 0,
+    -- «Muestra»: puede editar el PLAN DE MUESTRA de este formulario. Jerárquico:
+    -- implica can_settings (la API lo normaliza al guardar; quien planifica la
+    -- muestra configura también el campo de equipo del que depende el plan).
+    can_sample      TINYINT(1) DEFAULT 0,
     -- Scoping por filas: restringe qué envíos ve/edita/valida este usuario en este
     -- formulario, sin tocar las capacidades. NULL = sin restricción. Objeto JSON con
     -- grupos a 2 niveles (AND/OR + operadores); ver lib/RowScope:

@@ -73,12 +73,16 @@ to HTTP statuses in one table; the frontend maps codes → localized messages (`
   (the current one flagged via `Auth::currentTokenId()`) / close all but the current. Mirrors
   the admin remote‑revoke at `/admin/users/{id}/sessions`.
 - Guards: `require()`, `requireAdmin()`, and per‑form `canForm($user,$id,$cap)` /
-  `requireForm(...)` where `cap ∈ {view,edit,validate,settings}` (admins bypass). `settings`
+  `requireForm(...)` where `cap ∈ {view,edit,validate,settings,sample}` (admins bypass). `settings`
   (`user_form_permissions.can_settings`, the *Settings* checkbox in the permissions UI) lets a
   non‑admin edit that form's per‑form settings (team breakdown + quality‑control thresholds):
-  `admin/forms/{id}` `GET`/`PATCH` accept it, `DELETE` stays admin‑only. Any extra capability
-  implies `can_view` (enforced on save). The forms list and the quality endpoint expose the flag
-  so the UI can offer the form card's *Settings* shortcut and the threshold link.
+  `admin/forms/{id}` `GET`/`PATCH` accept it, `DELETE` stays admin‑only. `sample`
+  (`can_sample`, the *Sample* checkbox) gates the **sample‑plan editor** and is **hierarchical**:
+  it implies `can_settings` (whoever plans the sample also configures the team field the plan
+  depends on) — normalized server‑side on every permissions save, and mirrored in the UI (checking
+  *Sample* checks and disables *Settings*). Any extra capability implies `can_view` (enforced on
+  save). The forms list and the quality endpoint expose the flags so the UI can offer the form
+  card's *Settings* shortcut and the threshold link.
 
 ### Row‑level scoping (`lib/RowScope.php`)
 A per‑(user, form) filter (`user_form_permissions.row_filter`, JSON) can restrict **which
@@ -556,12 +560,16 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   the empty team/value bucket is `Sample::NONE` (`__none__`). The **current plan** lives in
   `sample_targets` (one target row per `(form_id, team_value, sample_value)`, target > 0 only); each
   save **archives** a full snapshot in `sample_target_history` (the plan changes mid‑campaign, so
-  history is never overwritten). The plan is edited from the per‑form settings screen
-  (`SamplePlanEditor.vue`, `GET`/`PUT /admin/forms/{id}/sample-plan`, admin or `can_settings`): a
-  team × value matrix with per‑team total + even/proportional distribution, mutually‑exclusive field
-  selectors, a live coverage line and an empty‑plan confirmation. A public read‑only link and a
-  view‑type selector (table/heatmap/bar/pie) are deferred (see ROADMAP). Not cached (per‑user scope +
-  review‑status‑dependent denominator, like `forms/stats.php`).
+  history is never overwritten). The plan is edited on its **own page**
+  (`/admin/forms/{id}/sample-plan` → `SamplePlanView.vue` wrapping `SamplePlanEditor.vue`;
+  `GET`/`PUT /admin/forms/{id}/sample-plan`, admin or the hierarchical `can_sample` permission —
+  plain `can_settings` gets 403 here): a team × value matrix with per‑team quick‑fill +
+  even/proportional distribution, mutually‑exclusive field selectors, a live coverage line, a
+  clear‑targets button and an empty‑plan confirmation; the settings screen links to it and warns
+  when changing the team field would strand an existing plan's targets. The read‑only panel has a
+  **view‑type selector** (linear/table/heatmap/grouped bars/traffic light/summary doughnut,
+  per‑device preference in `localStorage`). A public read‑only link is deferred (see ROADMAP).
+  Not cached (per‑user scope + review‑status‑dependent denominator, like `forms/stats.php`).
 - **Search** (`lib/SubmissionSearch.php`, M4a): submission‑table search no longer does a `LIKE`
   over the whole JSON. `textFor()` builds a plain‑text projection of the answer **values**
   (skipping `_*` metadata keys) into the indexed `submissions_cache.search_text` column,

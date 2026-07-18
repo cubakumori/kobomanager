@@ -6,9 +6,12 @@ require_once __DIR__ . '/HttpTestCase.php';
 
 /**
  * Integración HTTP del plan de muestra (admin/forms/{id}/sample-plan) y del panel
- * (forms/{id}/sample). Cubre: permiso «Ajustes», el guard de que el campo de muestreo
- * sea de opción única (select_one, no select_multiple ni inexistente), el reemplazo
- * del plan vigente + snapshot en el histórico, y que el panel exija can_view.
+ * (forms/{id}/sample). Cubre: el permiso jerárquico «Muestra» (el plan exige
+ * can_sample; «Ajustes» a secas recibe 403 aquí pero sigue abriendo el resto de
+ * ajustes; el guardado de permisos normaliza can_sample ⇒ can_settings), el guard
+ * de que el campo de muestreo sea de opción única (select_one, no select_multiple
+ * ni inexistente), el reemplazo del plan vigente + snapshot en el histórico, y que
+ * el panel exija can_view.
  */
 final class SamplePlanHttpTest extends HttpTestCase
 {
@@ -40,6 +43,72 @@ final class SamplePlanHttpTest extends HttpTestCase
 
         $this->assertSame(403, $this->request('GET', "admin/forms/$formId/sample-plan", null, $jar)['status']);
         $this->assertSame(403, $this->request('PUT', "admin/forms/$formId/sample-plan", ['sample_field' => 'age', 'cells' => []], $jar)['status']);
+        @unlink($jar);
+    }
+
+    public function testSettingsOnlyUserGets403OnPlanButKeepsSettings(): void
+    {
+        $userId = $this->seedUser('viewer', 'sp_settings@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $formId = $this->seedForm($accId, null, $this->schemaJson());
+        $this->grant($userId, $formId, settings: true); // «Ajustes» sin «Muestra»
+        $jar = $this->login('sp_settings@test.local', 'Secret123!');
+
+        // El plan de muestra exige el permiso jerárquico «Muestra».
+        $this->assertSame(403, $this->request('GET', "admin/forms/$formId/sample-plan", null, $jar)['status']);
+        $this->assertSame(403, $this->request('PUT', "admin/forms/$formId/sample-plan", ['sample_field' => 'age', 'cells' => []], $jar)['status']);
+        // Pero el resto de Ajustes sigue abierto, y el GET informa can_sample=false.
+        $res = $this->request('GET', "admin/forms/$formId", null, $jar);
+        $this->assertSame(200, $res['status'], $res['raw']);
+        $this->assertFalse($res['json']['data']['can_sample']);
+        @unlink($jar);
+    }
+
+    public function testSampleUserEditsPlanAndImpliedSettings(): void
+    {
+        $userId = $this->seedUser('viewer', 'sp_sample@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $formId = $this->seedForm($accId, null, $this->schemaJson());
+        $this->grant($userId, $formId, sample: true); // «Muestra» (implica «Ajustes»)
+        $jar = $this->login('sp_sample@test.local', 'Secret123!');
+
+        $res = $this->request('PUT', "admin/forms/$formId/sample-plan", [
+            'sample_field' => 'age',
+            'cells' => [['team_value' => 't1', 'sample_value' => 'a1', 'target' => 5]],
+        ], $jar);
+        $this->assertSame(200, $res['status'], $res['raw']);
+        // «Muestra» implica «Ajustes»: el GET de ajustes funciona y lo declara.
+        $res = $this->request('GET', "admin/forms/$formId", null, $jar);
+        $this->assertSame(200, $res['status'], $res['raw']);
+        $this->assertTrue($res['json']['data']['can_sample']);
+        $this->assertSame(1, $res['json']['data']['sample_target_count']);
+        @unlink($jar);
+    }
+
+    public function testPermissionsPutNormalizesSampleImpliesSettings(): void
+    {
+        $adminId = $this->seedUser('admin', 'sp_padmin@test.local', 'Secret123!');
+        $userId  = $this->seedUser('viewer', 'sp_puser@test.local', 'Secret123!');
+        $accId   = $this->seedAccount();
+        $formId  = $this->seedForm($accId, null, $this->schemaJson());
+        $jar = $this->login('sp_padmin@test.local', 'Secret123!');
+
+        // Guardar SOLO can_sample: el servidor debe normalizar can_settings=1 (y can_view=1).
+        $res = $this->request('PUT', 'admin/permissions', [
+            'user_id' => $userId,
+            'permissions' => [['form_id' => $formId, 'can_sample' => true]],
+        ], $jar);
+        $this->assertSame(200, $res['status'], $res['raw']);
+        $row = DB::run('SELECT can_view, can_settings, can_sample FROM user_form_permissions WHERE user_id = ? AND form_id = ?', [$userId, $formId])->fetch();
+        $this->assertSame(1, (int) $row['can_sample']);
+        $this->assertSame(1, (int) $row['can_settings']);
+        $this->assertSame(1, (int) $row['can_view']);
+        // Y el GET de permisos lo devuelve como booleano.
+        $res = $this->request('GET', "admin/permissions?user_id=$userId", null, $jar);
+        $this->assertSame(200, $res['status'], $res['raw']);
+        $mine = array_values(array_filter($res['json']['data'], fn($p) => $p['form_id'] === $formId))[0];
+        $this->assertTrue($mine['can_sample']);
+        $this->assertTrue($mine['can_settings']);
         @unlink($jar);
     }
 

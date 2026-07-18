@@ -4,8 +4,11 @@
  *
  *   GET  ?user_id=ID  → todos los formularios con el permiso actual de ese usuario
  *                       (los que no tienen fila aparecen con permisos en false).
- *   PUT  { user_id, permissions: [ { form_id, can_view, can_edit, can_validate, can_settings } ] }
- *                     → guarda (upsert) los permisos del usuario.
+ *   PUT  { user_id, permissions: [ { form_id, can_view, can_edit, can_validate, can_settings, can_sample } ] }
+ *                     → guarda (upsert) los permisos del usuario. Jerarquía: can_sample
+ *                       implica can_settings (quien planifica la muestra configura también
+ *                       el campo de equipo del que depende); se normaliza aquí, no solo en
+ *                       la UI, para que ningún cliente pueda guardar el estado incoherente.
  */
 
 $admin = Auth::requireAdmin();
@@ -27,6 +30,7 @@ if ($method === 'GET') {
                 COALESCE(p.can_edit, 0)     AS can_edit,
                 COALESCE(p.can_validate, 0) AS can_validate,
                 COALESCE(p.can_settings, 0) AS can_settings,
+                COALESCE(p.can_sample, 0)   AS can_sample,
                 p.row_filter, p.field_filter
          FROM forms f
          JOIN kobo_accounts a ON a.id = f.kobo_account_id
@@ -43,6 +47,7 @@ if ($method === 'GET') {
         $r['can_edit']     = (bool) $r['can_edit'];
         $r['can_validate'] = (bool) $r['can_validate'];
         $r['can_settings'] = (bool) $r['can_settings'];
+        $r['can_sample']   = (bool) $r['can_sample'];
         // Filtro por filas (scoping): objeto canónico {conditions:[...]} o null.
         $r['row_filter']   = RowScope::normalize($r['row_filter'] ? json_decode($r['row_filter'], true) : null);
         // Filtro por columna: objeto canónico {hidden:[...]} o null.
@@ -71,6 +76,9 @@ if ($method === 'PUT') {
         $canEdit     = !empty($p['can_edit']) ? 1 : 0;
         $canValidate = !empty($p['can_validate']) ? 1 : 0;
         $canSettings = !empty($p['can_settings']) ? 1 : 0;
+        $canSample   = !empty($p['can_sample']) ? 1 : 0;
+        // Jerarquía: «Muestra» implica «Ajustes» (la UI lo fuerza; aquí se garantiza).
+        if ($canSample) $canSettings = 1;
         // Cualquier capacidad extra implica poder ver el formulario (la UI ya lo fuerza).
         if ($canEdit || $canValidate || $canSettings) $canView = 1;
 
@@ -83,16 +91,17 @@ if ($method === 'PUT') {
         $fieldJson  = $fieldRule ? json_encode($fieldRule, JSON_UNESCAPED_UNICODE) : null;
 
         DB::run(
-            'INSERT INTO user_form_permissions (user_id, form_id, can_view, can_edit, can_validate, can_settings, row_filter, field_filter)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            'INSERT INTO user_form_permissions (user_id, form_id, can_view, can_edit, can_validate, can_settings, can_sample, row_filter, field_filter)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                 can_view = VALUES(can_view),
                 can_edit = VALUES(can_edit),
                 can_validate = VALUES(can_validate),
                 can_settings = VALUES(can_settings),
+                can_sample = VALUES(can_sample),
                 row_filter = VALUES(row_filter),
                 field_filter = VALUES(field_filter)',
-            [$userId, $formId, $canView, $canEdit, $canValidate, $canSettings, $filterJson, $fieldJson]
+            [$userId, $formId, $canView, $canEdit, $canValidate, $canSettings, $canSample, $filterJson, $fieldJson]
         );
     }
 

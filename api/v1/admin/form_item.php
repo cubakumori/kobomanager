@@ -58,6 +58,12 @@ $dupOut = fn(array $f): ?int => $f['qc_dup_min_answers'] !== null ? (int) $f['qc
 $riskOut = fn(array $f): ?int => $f['risk_min_n'] !== null ? (int) $f['risk_min_n'] : null;
 
 if ($method === 'GET') {
+    // Para la página de Ajustes: si el usuario puede abrir el editor del plan de
+    // muestra (permiso jerárquico «Muestra») y cuántos objetivos tiene el plan
+    // vigente (para avisar de que cambiar el campo de equipo los desalinearía).
+    $targetCount = (int) DB::run(
+        'SELECT COUNT(*) c FROM sample_targets WHERE form_id = ?', [$formId]
+    )->fetch()['c'];
     ErrorResponse::ok([
         'id'                     => (int) $form['id'],
         'name'                   => $form['name'],
@@ -65,6 +71,8 @@ if ($method === 'GET') {
         'stats_enumerator_field' => $form['stats_enumerator_field'],
         'qc_dup_min_answers'     => $dupOut($form),
         'risk_min_n'             => $riskOut($form),
+        'can_sample'             => Auth::canForm($user, $formId, 'sample'),
+        'sample_target_count'    => $targetCount,
     ] + $qcOut($form));
 }
 

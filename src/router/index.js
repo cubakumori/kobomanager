@@ -36,6 +36,9 @@ const routes = [
   // Sin requiresAdmin: también entra un usuario con permiso «Ajustes» sobre ese
   // formulario (el gate real es la API, que responde 403 si no lo tiene).
   { path: '/admin/forms/:id/settings', name: 'admin-form-settings', component: () => import('../views/admin/FormSettingsView.vue'), meta: shell() },
+  // Editor del plan de muestra, página propia; entra también un usuario con el
+  // permiso «Muestra» (jerárquico sobre «Ajustes»; el gate real es la API).
+  { path: '/admin/forms/:id/sample-plan', name: 'admin-form-sample-plan', component: () => import('../views/admin/SamplePlanView.vue'), meta: shell() },
   { path: '/admin/permissions', name: 'admin-permissions', component: () => import('../views/admin/PermissionsView.vue'), meta: shell({ requiresAdmin: true }) },
   { path: '/admin/shares', name: 'admin-shares', component: () => import('../views/admin/SharesView.vue'), meta: shell({ requiresAdmin: true }) },
   { path: '/admin/audit', name: 'admin-audit', component: () => import('../views/admin/AuditView.vue'), meta: shell({ requiresAdmin: true }) },

@@ -50,9 +50,10 @@ const barWidth = (done, target) => {
   if (!target || target <= 0) return 0
   return Math.min(100, Math.round((done * 100) / target))
 }
-const canSettings = computed(() => {
+// Configurar el plan pide el permiso jerárquico «Muestra» (no basta «Ajustes»).
+const canSample = computed(() => {
   const f = data.value
-  return auth.isAdmin || !!(f && f.can_settings)
+  return auth.isAdmin || !!(f && f.can_sample)
 })
 
 // ---------- Selector de tipo de vista ----------
@@ -222,8 +223,8 @@ onMounted(load)
         <p class="text-sm text-slate-600">{{ $t('sample.notConfigured') }}</p>
         <p class="mt-1 text-sm text-slate-400">{{ $t('sample.notConfiguredBody') }}</p>
         <RouterLink
-          v-if="canSettings"
-          :to="{ name: 'admin-form-settings', params: { id: formId } }"
+          v-if="canSample"
+          :to="{ name: 'admin-form-sample-plan', params: { id: formId } }"
           class="mt-4 inline-block rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
         >
           {{ $t('sample.configureLink') }}

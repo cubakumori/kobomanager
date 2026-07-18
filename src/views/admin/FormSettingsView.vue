@@ -10,7 +10,6 @@ import { useRoute, RouterLink } from 'vue-router'
 import api from '../../services/api'
 import { useAuthStore, apiError } from '../../stores/auth'
 import Skeleton from '../../components/Skeleton.vue'
-import SamplePlanEditor from '../../components/SamplePlanEditor.vue'
 import { useDemoMode } from '../../composables/appConfig'
 
 const { t, locale } = useI18n()
@@ -39,6 +38,12 @@ const qcMinGap = ref('')
 const qcDupMinAnswers = ref('')
 // Índice de riesgo: N mínimo de encuestas por encuestador/equipo ('' = índice desactivado, opt-in).
 const riskMinN = ref('')
+// Plan de muestra (página propia): permiso jerárquico «Muestra» del usuario, nº de
+// objetivos del plan vigente y el campo de equipo GUARDADO (para avisar de que
+// cambiarlo desalinea el plan: los objetivos están clavados a los códigos de equipo).
+const canSample = ref(false)
+const sampleTargetCount = ref(0)
+const savedTeamField = ref('')
 
 async function load() {
   loading.value = true
@@ -62,6 +67,9 @@ async function load() {
     qcMinGap.value = cfg.data.data.qc_min_gap ?? ''
     qcDupMinAnswers.value = cfg.data.data.qc_dup_min_answers ?? ''
     riskMinN.value = cfg.data.data.risk_min_n ?? ''
+    canSample.value = !!cfg.data.data.can_sample
+    sampleTargetCount.value = cfg.data.data.sample_target_count ?? 0
+    savedTeamField.value = teamField.value
     fields.value = sf.data.data.fields || []
   } catch (e) {
     error.value = apiError(e, t('formSettings.loadError'))
@@ -72,6 +80,22 @@ async function load() {
 
 // Umbral de la UI ('' | número) → minutos (entero) o null.
 const minutes = (v) => (v === '' || v === null ? null : Number(v))
+
+// Aviso: cambiar el campo de equipo con un plan de muestra vigente desalinea TODOS
+// sus objetivos (quedan clavados a los códigos del campo anterior → «fuera de plan»).
+// Se muestra mientras el cambio esté sin guardar; también lo ve un usuario de solo
+// «Ajustes», que puede provocar el destrozo sin poder editar el plan.
+const teamChangeWarning = computed(() =>
+  savedTeamField.value !== '' && teamField.value !== savedTeamField.value && sampleTargetCount.value > 0)
+
+// Botón «Configurar la muestra»: deshabilitado sin permiso «Muestra» o sin campo de
+// equipo (el plan se organiza por equipo). El tooltip explica cuál de las dos causas.
+const sampleBtnEnabled = computed(() => (auth.isAdmin || canSample.value) && !!teamField.value)
+const sampleBtnHint = computed(() => {
+  if (!auth.isAdmin && !canSample.value) return t('formSettings.sampleBtnNoPerm')
+  if (!teamField.value) return t('formSettings.sampleBtnNeedsTeam')
+  return ''
+})
 
 // ---- Sugerencia de umbrales a partir de las duraciones reales (p5/p95) ----
 // Solo RELLENA los inputs de duración mín/máx: el usuario revisa y guarda.
@@ -127,6 +151,7 @@ async function save() {
       risk_min_n: minutes(riskMinN.value),
     })
     flash.value = t('formSettings.saved')
+    savedTeamField.value = teamField.value
   } catch (e) {
     error.value = apiError(e, t('formSettings.saveError'))
   } finally {
@@ -195,10 +220,40 @@ onMounted(load)
         </label>
       </div>
 
+      <!-- Cambiar el campo de equipo con un plan vigente desalinea sus objetivos -->
+      <div v-if="teamChangeWarning" class="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900">
+        {{ $t('formSettings.teamChangeSampleWarning', { n: sampleTargetCount }) }}
+      </div>
+
     </section>
 
-    <!-- Plan de muestra por equipo (panel «Muestra» del formulario) -->
-    <SamplePlanEditor v-if="fields.length" :form-id="formId" :fields="fields" :team-field="teamField" />
+    <!-- Plan de muestra por equipo: página propia (permiso jerárquico «Muestra») -->
+    <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('formSettings.sampleSection') }}</h2>
+          <p class="mt-1 text-sm text-slate-500">{{ $t('formSettings.sampleSectionDesc') }}</p>
+        </div>
+        <div :title="sampleBtnHint || undefined">
+          <RouterLink
+            v-if="sampleBtnEnabled"
+            :to="{ name: 'admin-form-sample-plan', params: { id: formId } }"
+            class="inline-block rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+          >
+            {{ $t('formSettings.sampleConfigureBtn') }}
+          </RouterLink>
+          <button
+            v-else
+            type="button"
+            disabled
+            class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white opacity-50"
+          >
+            {{ $t('formSettings.sampleConfigureBtn') }}
+          </button>
+        </div>
+      </div>
+      <p v-if="!sampleBtnEnabled && sampleBtnHint" class="mt-2 text-xs text-amber-600 dark:text-amber-400">{{ sampleBtnHint }}</p>
+    </section>
 
     <!-- Umbrales del control de calidad (página «Control de calidad» del formulario) -->
     <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">

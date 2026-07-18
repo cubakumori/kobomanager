@@ -80,6 +80,9 @@ async function onSave() {
 }
 
 function onToggle(p) {
+  // Jerarquía: «Muestra» implica «Ajustes» (el checkbox de Ajustes queda marcado y
+  // deshabilitado mientras Muestra esté activo). El servidor lo normaliza igual.
+  if (p.can_sample) p.can_settings = true
   if (p.can_edit || p.can_validate || p.can_settings) p.can_view = true
   saved.value = false
 }
@@ -236,6 +239,7 @@ onMounted(async () => {
               <th class="px-4 py-3 text-center">{{ $t('permissions.colEdit') }}</th>
               <th class="px-4 py-3 text-center">{{ $t('permissions.colValidate') }}</th>
               <th class="px-4 py-3 text-center" :title="$t('permissions.colSettingsHint')">{{ $t('permissions.colSettings') }}</th>
+              <th class="px-4 py-3 text-center" :title="$t('permissions.colSampleHint')">{{ $t('permissions.colSample') }}</th>
               <th class="px-4 py-3 text-center">{{ $t('permissions.colScope') }}</th>
               <th class="px-4 py-3 text-center">{{ $t('permissions.colColumns') }}</th>
             </tr>
@@ -258,7 +262,17 @@ onMounted(async () => {
                 <input type="checkbox" v-model="p.can_validate" @change="onToggle(p)" />
               </td>
               <td class="px-4 py-3 text-center">
-                <input type="checkbox" v-model="p.can_settings" @change="onToggle(p)" :title="$t('permissions.colSettingsHint')" />
+                <!-- Con «Muestra» activo queda marcado y deshabilitado (implicado). -->
+                <input
+                  type="checkbox"
+                  v-model="p.can_settings"
+                  :disabled="p.can_sample"
+                  @change="onToggle(p)"
+                  :title="p.can_sample ? $t('permissions.colSettingsImplied') : $t('permissions.colSettingsHint')"
+                />
+              </td>
+              <td class="px-4 py-3 text-center">
+                <input type="checkbox" v-model="p.can_sample" @change="onToggle(p)" :title="$t('permissions.colSampleHint')" />
               </td>
               <td class="px-4 py-3 text-center">
                 <button
@@ -296,7 +310,7 @@ onMounted(async () => {
               </td>
             </tr>
             <tr v-if="!visiblePerms.length">
-              <td colspan="7" class="px-4 py-6 text-center text-slate-400">{{ $t('permissions.empty') }}</td>
+              <td colspan="8" class="px-4 py-6 text-center text-slate-400">{{ $t('permissions.empty') }}</td>
             </tr>
           </tbody>
         </table>

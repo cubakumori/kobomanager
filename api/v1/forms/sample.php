@@ -35,6 +35,9 @@ $base = [
     'deployment_status'    => $form['deployment_status'] ?? null,
     'team_field_configured'=> ($form['stats_team_field'] ?? '') !== '',
     'can_settings'         => Auth::canForm($user, $formId, 'settings'),
+    // Para el enlace «Configurar la muestra» del panel: editar el plan pide el
+    // permiso jerárquico «Muestra», no basta «Ajustes».
+    'can_sample'           => Auth::canForm($user, $formId, 'sample'),
 ];
 
 // Sin campo de muestreo configurado: el panel muestra el aviso de «configúralo».

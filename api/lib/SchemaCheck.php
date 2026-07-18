@@ -202,6 +202,14 @@ class SchemaCheck {
          'fix' => "ALTER TABLE forms ADD COLUMN sample_field3 VARCHAR(255) NULL AFTER sample_field2"],
         ['table' => 'forms', 'column' => 'sample_denominator', 'since' => '1.32.0',
          'fix' => "ALTER TABLE forms ADD COLUMN sample_denominator VARCHAR(20) NOT NULL DEFAULT 'approved' AFTER sample_field3"],
+
+        // Permiso «Muestra» por formulario (editar el plan de muestra; implica «Ajustes»,
+        // normalizado por la API al guardar). El backfill hereda el permiso a quienes ya
+        // tenían «Ajustes»: hasta 1.33.x el plan se editaba con can_settings y nadie debe
+        // perder esa capacidad al actualizar (el admin restringe después si quiere).
+        ['table' => 'user_form_permissions', 'column' => 'can_sample', 'since' => '1.34.0',
+         'fix' => "ALTER TABLE user_form_permissions ADD COLUMN can_sample TINYINT(1) DEFAULT 0 AFTER can_settings",
+         'backfill' => "UPDATE user_form_permissions SET can_sample = can_settings"],
     ];
 
     /** Columnas cuyo backfill requiere el recálculo PHP de migrate.php (no basta SQL). */
