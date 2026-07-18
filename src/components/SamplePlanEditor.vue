@@ -40,10 +40,10 @@ const received = ref({})
 // Total por equipo (ayuda de reparto): teamCode => cadena numérica.
 const teamTotals = ref({})
 
-// Campos elegibles como muestreo principal: opción única con valores conocidos.
+// Campos elegibles como muestreo (principal y secundarios): opción única (`select_one`)
+// con valores conocidos. Se excluye `select_multiple` (una fila caería en varias celdas)
+// y los campos sin opciones (sin conjunto cerrado que forme las columnas/distribución).
 const singleFields = computed(() => props.fields.filter(f => (f.options?.length || 0) > 0 && !f.multi))
-// Secundarios: cualquier campo con opciones (single o multiple).
-const optionFields = computed(() => props.fields.filter(f => (f.options?.length || 0) > 0))
 
 const teamOptions = computed(() => {
   const f = props.fields.find(x => x.key === props.teamField)
@@ -185,11 +185,11 @@ watch(() => props.formId, load)
         <div class="mt-2 grid gap-4 sm:grid-cols-2">
           <select v-model="sampleField2" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30">
             <option value="">{{ $t('formSettings.sampleField2') }} —</option>
-            <option v-for="f in optionFields" :key="f.key" :value="f.key" :disabled="f.key === sampleField">{{ f.label }}</option>
+            <option v-for="f in singleFields" :key="f.key" :value="f.key" :disabled="f.key === sampleField">{{ f.label }}</option>
           </select>
           <select v-model="sampleField3" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30">
             <option value="">{{ $t('formSettings.sampleField3') }} —</option>
-            <option v-for="f in optionFields" :key="f.key" :value="f.key" :disabled="f.key === sampleField || f.key === sampleField2">{{ f.label }}</option>
+            <option v-for="f in singleFields" :key="f.key" :value="f.key" :disabled="f.key === sampleField || f.key === sampleField2">{{ f.label }}</option>
           </select>
         </div>
       </div>

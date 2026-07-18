@@ -72,16 +72,23 @@ if ($method === 'PATCH') {
     $body = Request::json();
 
     // Rutas válidas: las del esquema del formulario (clave tal como aparece en el envío).
+    // Los ejes de agrupación (equipo y encuestador) deben ser MONOVALUADOS: una fila
+    // pertenece a un solo equipo/encuestador, así que se rechaza `select_multiple` (una
+    // fila multivalor caería en varios grupos). Se sigue admitiendo texto/metadatos
+    // monovaluados (p. ej. un código de equipo escrito), que no son select_one.
     $schema    = $form['schema_json'] ? json_decode($form['schema_json'], true) : null;
-    $validKeys = array_map('strval', array_keys($schema['fields'] ?? []));
+    $fieldsMeta = $schema['fields'] ?? [];
 
     // Normaliza una entrada a una ruta del esquema o null. Cadena vacía → null.
-    $clean = function ($v) use ($validKeys): ?string {
+    $clean = function ($v) use ($fieldsMeta): ?string {
         if ($v === null) return null;
         $v = trim((string) $v);
         if ($v === '') return null;
-        if (!in_array($v, $validKeys, true)) {
+        if (!isset($fieldsMeta[$v])) {
             ErrorResponse::send('VALIDATION_ERROR', "Campo no válido: $v");
+        }
+        if (!empty($fieldsMeta[$v]['multi'])) {
+            ErrorResponse::send('VALIDATION_ERROR', "El campo no puede ser de opción múltiple: $v");
         }
         return $v;
     };

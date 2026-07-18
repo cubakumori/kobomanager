@@ -12,6 +12,42 @@ require_once __DIR__ . '/HttpTestCase.php';
  */
 final class FormSettingsHttpTest extends HttpTestCase
 {
+    /** Esquema con un select_one (team) y un select_multiple (langs). */
+    private function schemaJson(): string
+    {
+        return json_encode([
+            'fields' => [
+                'team'  => ['leaf' => 'team', 'type' => 'select_one teams', 'list' => 'teams', 'multi' => false, 'label' => ['' => 'Equipo']],
+                'langs' => ['leaf' => 'langs', 'type' => 'select_multiple langs', 'list' => 'langs', 'multi' => true, 'label' => ['' => 'Idiomas']],
+            ],
+            'choices' => [
+                'teams' => ['t1' => ['' => 'Uno'], 't2' => ['' => 'Dos']],
+                'langs' => ['es' => ['' => 'Español'], 'en' => ['' => 'Inglés']],
+            ],
+            'languages' => [null], 'meta_fields' => [], 'meta' => [],
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function testTeamFieldRejectsSelectMultiple(): void
+    {
+        $userId = $this->seedUser('viewer', 'teamsetter@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $formId = $this->seedForm($accId, null, $this->schemaJson());
+        $this->grant($userId, $formId, settings: true);
+        $jar = $this->login('teamsetter@test.local', 'Secret123!');
+
+        // Un select_one monovaluado se acepta como campo de equipo.
+        $res = $this->request('PATCH', "admin/forms/$formId", ['stats_team_field' => 'team'], $jar);
+        $this->assertSame(200, $res['status'], $res['raw']);
+        // Un select_multiple se rechaza (una fila multivalor caería en varios equipos).
+        $res = $this->request('PATCH', "admin/forms/$formId", ['stats_team_field' => 'langs'], $jar);
+        $this->assertSame(422, $res['status'], $res['raw']);
+        // El campo de equipo no cambió tras el rechazo.
+        $row = DB::run('SELECT stats_team_field FROM forms WHERE id = ?', [$formId])->fetch();
+        $this->assertSame('team', $row['stats_team_field']);
+        @unlink($jar);
+    }
+
     public function testViewerWithoutSettingsPermissionGets403(): void
     {
         $userId = $this->seedUser('viewer', 'viewer@test.local', 'Secret123!');

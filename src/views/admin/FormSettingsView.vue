@@ -25,7 +25,10 @@ const error = ref('')
 const flash = ref('')
 
 const formName = ref('')
-const fields = ref([])           // [{ key, label, type, ... }]
+const fields = ref([])           // [{ key, label, type, multi, ... }]
+// Ejes de agrupación (equipo/encuestador): monovaluados. Se excluye select_multiple
+// (una fila caería en varios grupos); se sigue admitiendo texto/metadatos monovaluados.
+const groupFields = computed(() => fields.value.filter(f => !f.multi))
 const teamField = ref('')        // '' = sin desglose
 const enumField = ref('')        // '' = _submitted_by
 // Umbrales del control de calidad (minutos; '' = comprobación desactivada).
@@ -173,7 +176,7 @@ onMounted(load)
             class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
           >
             <option value="">{{ $t('formSettings.teamNone') }}</option>
-            <option v-for="f in fields" :key="f.key" :value="f.key">{{ f.label }}</option>
+            <option v-for="f in groupFields" :key="f.key" :value="f.key">{{ f.label }}</option>
           </select>
           <span class="mt-1 block text-xs text-slate-400">{{ $t('formSettings.teamFieldHint') }}</span>
         </label>
@@ -186,7 +189,7 @@ onMounted(load)
             class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 disabled:bg-slate-100 disabled:text-slate-400"
           >
             <option value="">{{ $t('formSettings.enumDefault') }}</option>
-            <option v-for="f in fields" :key="f.key" :value="f.key">{{ f.label }}</option>
+            <option v-for="f in groupFields" :key="f.key" :value="f.key">{{ f.label }}</option>
           </select>
           <span class="mt-1 block text-xs text-slate-400">{{ $t('formSettings.enumFieldHint') }}</span>
         </label>

@@ -83,17 +83,25 @@ if ($method !== 'PUT') {
 
 $body = Request::json();
 
-// Rutas válidas: claves del esquema del formulario.
+// Rutas válidas: claves del esquema del formulario. El campo de muestreo (principal y
+// secundarios) DEBE ser de opción única (`select_one`): sus valores son un conjunto
+// cerrado y conocido que forma las columnas del plan / la distribución, y cada fila cae
+// en un solo valor. Un `select_multiple` rompería la partición (una fila en varias
+// celdas); un campo de texto daría valores ilimitados sin objetivo por columna posible.
 $schema    = $form['schema_json'] ? json_decode($form['schema_json'], true) : null;
-$validKeys = array_map('strval', array_keys($schema['fields'] ?? []));
-$cleanField = function ($v, bool $required) use ($validKeys): ?string {
+$fieldsMeta = $schema['fields'] ?? [];
+$cleanField = function ($v, bool $required) use ($fieldsMeta): ?string {
     if ($v === null || (is_string($v) && trim($v) === '')) {
         if ($required) ErrorResponse::send('VALIDATION_ERROR', 'Falta el campo de muestreo principal');
         return null;
     }
     $v = trim((string) $v);
-    if (!in_array($v, $validKeys, true)) {
+    if (!isset($fieldsMeta[$v])) {
         ErrorResponse::send('VALIDATION_ERROR', "Campo no válido: $v");
+    }
+    $type = (string) ($fieldsMeta[$v]['type'] ?? '');
+    if (!str_starts_with($type, 'select_one')) {
+        ErrorResponse::send('VALIDATION_ERROR', "El campo de muestreo debe ser de opción única: $v");
     }
     return $v;
 };
