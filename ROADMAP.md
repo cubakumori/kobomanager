@@ -236,7 +236,10 @@ Quedan como ideas reabribles si aparece una necesidad real.
       ajuste global **«Objetivos por equipo»** (SELECT) en Configuración → «Muestras», con
       las opciones «Únicamente para el campo de muestreo principal» (comportamiento actual)
       y «Para todos los campos de muestreo». El select NO se añade antes: un ajuste con una
-      sola opción efectiva solo confunde; nace junto con la funcionalidad.
+      sola opción efectiva solo confunde; nace junto con la funcionalidad. Al construirse,
+      la «Distribución observada» de los secundarios CON objetivo pasa de reparto neutro a
+      cumplimiento → la **paleta** debe aplicarles la semántica completa (tramos por %,
+      como al campo principal), no solo el tono de la familia como hoy (nota jul-2026).
 - [x] **Permiso «Muestra» jerárquico + página propia del plan** — **entregado en 1.34.0**
       (decisión de la conversación jul-2026, ver `CHANGELOG.md`): `can_sample` implica
       «Ajustes» (normalizado en servidor y espejado en la UI de Permisos), el editor del
