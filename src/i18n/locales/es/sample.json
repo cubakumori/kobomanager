@@ -18,6 +18,8 @@
     "pendingNow": "Pendientes de revisión",
     "onHoldNow": "En espera",
     "toggleTeam": "Plegar/desplegar el equipo",
+    "collapseAll": "Plegar todos",
+    "expandAll": "Desplegar todos",
     "done": "Hecho",
     "target": "Objetivo",
     "remaining": "Faltan {n}",

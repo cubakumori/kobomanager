@@ -84,6 +84,17 @@ function toggleTeam(key) {
   else s.add(key)
   collapsedTeams.value = s
 }
+// Pleca global del «Total general»: pliega todos los equipos, o los despliega si
+// ya están todos plegados.
+const allCollapsed = computed(() => {
+  const teams = data.value?.teams ?? []
+  return teams.length > 0 && teams.every((tm) => collapsedTeams.value.has(tm.key))
+})
+function toggleAllTeams() {
+  collapsedTeams.value = allCollapsed.value
+    ? new Set()
+    : new Set((data.value?.teams ?? []).map((tm) => tm.key))
+}
 
 // ---------- Ejes de la tabla (tabla / mapa de calor / semáforo) ----------
 // El backend omite en `team.cells` las celdas vacías sin objetivo, así que la
@@ -297,6 +308,19 @@ onMounted(load)
               {{ $t('sample.onHoldNow') }}:
               <span class="font-semibold tabular-nums text-slate-700">{{ num(data.grand.on_hold) }}</span>
             </span>
+            <!-- Pleca global: plegar/desplegar todos los equipos (solo modo lineal) -->
+            <button
+              v-if="view === 'linear' && data.teams.length"
+              type="button"
+              class="ml-auto flex items-center gap-1 font-medium text-slate-500 transition hover:text-slate-700"
+              :aria-expanded="!allCollapsed"
+              @click="toggleAllTeams"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="h-3.5 w-3.5 transition-transform" :class="allCollapsed ? '-rotate-90' : ''">
+                <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+              </svg>
+              {{ allCollapsed ? $t('sample.expandAll') : $t('sample.collapseAll') }}
+            </button>
           </div>
         </section>
 

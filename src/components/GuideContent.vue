@@ -48,6 +48,7 @@ const flowSteps = [1, 2, 3, 4]
         <li><strong>{{ $t('guide.faUpdate') }}:</strong> {{ $t('guide.faUpdateBody') }}</li>
         <li><strong>{{ $t('guide.faResync') }}:</strong> {{ $t('guide.faResyncBody') }}</li>
         <li><strong>{{ $t('guide.faLogin') }}:</strong> {{ $t('guide.faLoginBody') }}</li>
+        <li><strong>{{ $t('guide.faFavorite') }}:</strong> {{ $t('guide.faFavoriteBody') }}</li>
       </ul>
       <p class="text-sm text-slate-500">{{ $t('guide.formActionsNote') }}</p>
     </section>
@@ -76,7 +77,7 @@ const flowSteps = [1, 2, 3, 4]
         <li><strong>{{ $t('guide.exploreColumns') }}:</strong> {{ $t('guide.exploreColumnsBody') }}</li>
         <li><strong>{{ $t('guide.exploreCalculated') }}:</strong> {{ $t('guide.exploreCalculatedBody') }}</li>
         <li><strong>{{ $t('guide.exploreStats') }}:</strong> {{ $t('guide.exploreStatsBody') }}</li>
-        <li><strong>{{ $t('guide.exploreSample') }}:</strong> {{ $t('guide.exploreSampleBody') }}</li>
+        <li id="sample" class="scroll-mt-24"><strong>{{ $t('guide.exploreSample') }}:</strong> {{ $t('guide.exploreSampleBody') }}</li>
       </ul>
     </section>
 

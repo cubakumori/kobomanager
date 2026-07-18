@@ -56,7 +56,8 @@ Everything else stays enabled on purpose — it is what the demo is for: browsin
 and filters, single and batch review, the quality-control page (including its batch
 "put on hold" button — the review it rides is local in demo, Kobo is never touched) and
 its **drill-down export** (CSV/xlsx), the **risk index**, the **review-comments panel**,
-CSV export, statistics, the map, creating and revoking share links, language and theme…
+CSV export, statistics, the **sample-by-team panel** (compliance vs. plan, all six
+views), the map, creating and revoking share links, language and theme…
 All of it is local and restored by the reset.
 
 ---

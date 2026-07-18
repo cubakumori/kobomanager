@@ -72,6 +72,15 @@ to HTTP statuses in one table; the frontend maps codes → localized messages (`
 - **Self‑service session control.** `GET/DELETE /profile/sessions`: list my active sessions
   (the current one flagged via `Auth::currentTokenId()`) / close all but the current. Mirrors
   the admin remote‑revoke at `/admin/users/{id}/sessions`.
+- **Per‑user UI preferences** (1.37.0). `users.ui_prefs` (JSON, NULL = none) stores
+  interface preferences that must survive logout and follow the user across devices — today
+  the persisted "My forms" view (`forms_view` = account + type + favorites filters). Written
+  by `PUT /profile/prefs` with a **whitelist of top‑level keys** (each validated to its
+  canonical shape; never arbitrary client JSON), delivered decoded on `/auth/me` and login.
+  **Favorites** themselves live in `user_form_favorites` (star on each "My forms" card):
+  `PUT /forms/{id}/favorite` (requires `can_view`, idempotent) toggles the row, and
+  `GET /forms` exposes a `favorite` flag per form. Both are pure preferences — access control
+  is untouched.
 - Guards: `require()`, `requireAdmin()`, and per‑form `canForm($user,$id,$cap)` /
   `requireForm(...)` where `cap ∈ {view,edit,validate,settings,sample}` (admins bypass). `settings`
   (`user_form_permissions.can_settings`, the *Settings* checkbox in the permissions UI) lets a
@@ -570,6 +579,13 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   **view‑type selector** (linear/table/heatmap/grouped bars/traffic light/summary doughnut,
   per‑device preference in `localStorage`). A public read‑only link is deferred (see ROADMAP).
   Not cached (per‑user scope + review‑status‑dependent denominator, like `forms/stats.php`).
+  The panel also returns **review context** (1.37.0): `last_approved_at` — the *cutoff*, i.e.
+  the latest **approve action** from the `submission_reviews` history (whether made in the app
+  or pulled from Kobo by the sync), joined against `submissions_cache` under the same
+  `RowScope` — plus the current **backlog** (`pending`/`on_hold` counts, global and per team;
+  a team with only backlog still appears on the axis). The same streaming pass covers the
+  denominator *and* the backlog statuses. In linear mode the team cards **collapse/expand**
+  (clickable header, plus a collapse‑all toggle on the grand‑total card; ephemeral state).
 - **Search** (`lib/SubmissionSearch.php`, M4a): submission‑table search no longer does a `LIKE`
   over the whole JSON. `textFor()` builds a plain‑text projection of the answer **values**
   (skipping `_*` metadata keys) into the indexed `submissions_cache.search_text` column,

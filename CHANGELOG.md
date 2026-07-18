@@ -25,7 +25,9 @@ congelado en móvil y los administradores fuera del selector de Permisos.
 - **Tarjetas de equipo plegables** (panel de muestra, modo lineal): el encabezado
   pliega/despliega el detalle (celdas, proyección, backlog) con un clic; el nombre,
   el total y la barra de avance quedan siempre visibles. Estado efímero (se resetea
-  al recargar) y accesible por teclado.
+  al recargar) y accesible por teclado. La tarjeta «Total general» gana una **pleca
+  global** (abajo a la derecha, solo en modo lineal) que pliega todos los equipos de
+  golpe — o los despliega si ya están todos plegados.
 - **Favoritos en «Mis formularios»** (`/forms`): estrella en la esquina de cada
   tarjeta para marcar el formulario como favorito (por usuario, guardado en servidor:
   tabla nueva `user_form_favorites` + `PUT /forms/{id}/favorite`, exige `can_view`) y
@@ -50,6 +52,15 @@ congelado en móvil y los administradores fuera del selector de Permisos.
   comportamiento deliberado en pantallas estrechas (<540 px, de la 2ª tanda
   responsive): si la tabla de envíos incluye la casilla de selección, solo esta queda
   fija, para que lo congelado nunca ocupe media pantalla.
+- **Documentación y escaparate sincronizados** (auditoría docs vs. código): la
+  **portada** gana dos tarjetas — **«Muestra por equipo»** (el buque insignia de
+  1.32–1.36, que no se mencionaba en absoluto; con enlace a su acápite de la guía) y
+  **«Búsqueda y filtros que se recuerdan»** — más el chip «Instalable (PWA) con
+  lectura sin conexión»; la **guía** añade «Favoritos» a las acciones de «Mis
+  formularios» y el congelado de columnas al acápite de columnas; ARCHITECTURE
+  documenta `PUT /forms/{id}/favorite`, `PUT /profile/prefs`, `users.ui_prefs` y el
+  contexto de revisión del panel de muestra; README suma favoritos/vista persistida
+  al bloque «Operation»; DEMO añade el panel de muestra al tour de la demo.
 
 ### Nota de actualización (esquema)
 

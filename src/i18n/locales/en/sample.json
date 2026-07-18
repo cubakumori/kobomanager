@@ -18,6 +18,8 @@
     "pendingNow": "Pending review",
     "onHoldNow": "On hold",
     "toggleTeam": "Collapse/expand team",
+    "collapseAll": "Collapse all",
+    "expandAll": "Expand all",
     "done": "Done",
     "target": "Target",
     "remaining": "{n} to go",

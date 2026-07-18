@@ -24,17 +24,18 @@ const features = [1, 2, 3, 4]
 
 // Sección «Y mucho más»: una tarjeta ANCHA de apertura para las notificaciones
 // (email + push; lleva una maqueta decorativa de la notificación del sistema, que
-// además rompe la monotonía de la rejilla), seis tarjetas destacadas (el trío de
-// calidad —control de calidad, índice de riesgo, comentarios— y luego seguimiento
-// por equipo, permisos por columna y enlaces públicos) en rejilla 3×2, y el resto
-// como chips, mismo lenguaje visual verde.
-const highlights = ['featQuality', 'featRisk', 'featComments', 'featStats', 'featColumns', 'feat5']
-const chips = ['chipLabels', 'chipMap', 'chipCsv', 'chipEdit', 'chipBackup']
+// además rompe la monotonía de la rejilla), ocho tarjetas destacadas en rejilla de
+// dos columnas (el trío de calidad —control de calidad, índice de riesgo,
+// comentarios—, el par de campo —seguimiento por equipo y muestra por equipo—,
+// búsqueda, y el par de acceso —permisos por columna y enlaces públicos—), y el
+// resto como chips, mismo lenguaje visual verde.
+const highlights = ['featQuality', 'featRisk', 'featComments', 'featStats', 'featSample', 'featSearch', 'featColumns', 'feat5']
+const chips = ['chipLabels', 'chipMap', 'chipCsv', 'chipEdit', 'chipBackup', 'chipPwa']
 
 // Tarjetas destacadas con explicación ampliada en la Guía pública: se enlaza al
 // ancla correspondiente (`/guide#<ancla>`). El índice de riesgo introduce un término
 // que conviene poder ampliar de un clic; se puede extender a más tarjetas.
-const guideHash = { featRisk: 'risk' }
+const guideHash = { featRisk: 'risk', featSample: 'sample' }
 
 // Enlace al repo para la CTA de cierre («monta tu propia instancia»); vacío = oculto.
 const { links } = usePublicLinks()
