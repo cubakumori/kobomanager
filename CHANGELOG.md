@@ -4,6 +4,31 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.33.0] - 2026-07-18
+
+**Selector de tipo de vista** en el panel de muestra por equipo. Solo presentación
+(frontend): el endpoint no cambia y no hay cambio de esquema.
+
+### Añadido
+
+- **Selector de vista** en `/forms/{id}/sample` con seis modos; la elección se guarda
+  por dispositivo (`localStorage`, como el tema):
+  - **Lineal** — el diseño original (tarjeta por equipo con barras y proyección).
+  - **Tabla** — filas = equipos, columnas = valores; cada celda `hecho / objetivo` con
+    lo que falta (o `+n`/`✓` al superar/cumplir), totales por fila, por columna y general.
+  - **Mapa de calor** — la misma tabla con cada celda coloreada por % de cumplimiento
+    (rojo → ámbar → verde; el verde final usa el token `success` del tema).
+  - **Barras** — gráfico Chart.js de barras agrupadas «hecho vs objetivo» por equipo.
+  - **Semáforo** — rejilla `equipo × valor` sin cifras: verde = cumplido, ámbar = en
+    ritmo, rojo = atrasado. «Atrasado» es **relativo al avance global del plan**
+    (celdas con objetivo, con el hecho acotado a su objetivo para que la sobre-muestra
+    de un equipo no haga parecer atrasados a los demás); leyenda con el umbral.
+  - **Resumen** — doughnut del **% del plan cumplido** (hecho acotado por celda vs lo
+    que falta, misma base que el semáforo) + lista compacta por equipo.
+- Las tablas van en contenedor con scroll horizontal en móvil; la cabecera, el total
+  general, los avisos y la distribución de campos secundarios se mantienen en todos los
+  modos (la proyección por equipo vive solo en el modo lineal).
+
 ## [1.32.0] - 2026-07-18
 
 Monitorización de **muestra por equipo**: compara lo *recibido* contra un *plan* de

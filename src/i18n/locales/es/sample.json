@@ -34,6 +34,20 @@
     "answered": "{n} respondidos",
     "others": "Otros",
     "noData": "Aún no hay envíos que contar con este criterio.",
-    "generatedAt": "Calculado: {date} UTC"
+    "generatedAt": "Calculado: {date} UTC",
+    "viewLabel": "Tipo de vista",
+    "viewLinear": "Lineal",
+    "viewTable": "Tabla",
+    "viewHeatmap": "Mapa de calor",
+    "viewBars": "Barras",
+    "viewTraffic": "Semáforo",
+    "viewSummary": "Resumen",
+    "cellRemaining": "faltan {n}",
+    "trafficMet": "Cumplido",
+    "trafficOnPace": "En ritmo",
+    "trafficBehind": "Atrasado",
+    "trafficNoTarget": "Sin objetivo",
+    "trafficLegendHint": "«Atrasado» = por debajo del avance global del plan ({pct}).",
+    "summaryMissing": "Falta"
   }
 }

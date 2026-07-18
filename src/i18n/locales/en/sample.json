@@ -34,6 +34,20 @@
     "answered": "{n} answered",
     "others": "Others",
     "noData": "No submissions to count under this criterion yet.",
-    "generatedAt": "Computed: {date} UTC"
+    "generatedAt": "Computed: {date} UTC",
+    "viewLabel": "View type",
+    "viewLinear": "Linear",
+    "viewTable": "Table",
+    "viewHeatmap": "Heat map",
+    "viewBars": "Bars",
+    "viewTraffic": "Traffic light",
+    "viewSummary": "Summary",
+    "cellRemaining": "{n} to go",
+    "trafficMet": "Met",
+    "trafficOnPace": "On pace",
+    "trafficBehind": "Behind",
+    "trafficNoTarget": "No target",
+    "trafficLegendHint": "\"Behind\" = below the plan's overall progress ({pct}).",
+    "summaryMissing": "To go"
   }
 }
