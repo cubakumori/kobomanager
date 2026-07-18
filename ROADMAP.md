@@ -237,6 +237,27 @@ Quedan como ideas reabribles si aparece una necesidad real.
       micro-caché en disco de `share_stats` y con el alcance fijo por equipo del enlace.
 - [ ] **Objetivos por celda para los campos secundarios** — hoy los secundarios (sexo, raza…)
       solo muestran distribución observada; una etapa 2 podría planificar también su cuota.
+- [ ] **Normalización del eje de miembro/equipo cuando es texto libre** *(de la conversación
+      jul-2026)* — un campo de miembro de **texto libre** (p. ej. iniciales) sufre variantes de
+      la misma persona («ABC» / «abc» / «Abc», o espacios), y hoy la clave de agrupación es el
+      **string crudo** (`(string) $valor` en `Stats`/`Quality`/`Risk`/`Sample`), así que se
+      parte en varios cubos en TODAS las vistas de desglose por miembro/equipo. Diseño acordado
+      = **ajuste por formulario con tres modos**:
+      1. **«Mantener tal cual»** — comportamiento actual, sensible a mayúsculas/espacios.
+      2. **«Normalizar al agrupar» (POR DEFECTO)** — `trim` + colapsar espacios internos +
+         `mb_strtolower` para la CLAVE; etiqueta mostrada = la **grafía original más frecuente**
+         entre las filas fusionadas (si escriben «ABC» la mayoría, se ve «ABC»).
+      3. **«Normalizar + alias»** — además, una **tabla de alias por formulario** que mapea
+         variantes/erratas a un canónico («A.B.C» → «ABC»). Capa más pesada (almacenamiento +
+         UI de gestión + mantenimiento manual); puede construirse **después** de los dos primeros.
+      Aplicar vía **helper compartido en las cuatro vistas** (Estadísticas, Control de calidad,
+      Índice de riesgo y Muestra) para que el mismo miembro cuente igual en todas. Matices:
+      (a) el ajuste **solo tiene efecto en campos de texto/metadatos** — un `select_one` ya tiene
+      códigos canónicos, ahí es no-op y la UI no debería ofrecerlo; (b) **un solo ajuste por
+      formulario** cubre ambos ejes (miembro y equipo); (c) **no muta datos** (normaliza en
+      lectura, reversible); (d) al cambiar el default a «Normalizar» en formularios existentes se
+      fusionan variantes de golpe al actualizar — casi siempre deseable, inocuo para
+      `_submitted_by` y `select_one`, pero mencionarlo en el CHANGELOG cuando toque.
 
 <details><summary>Plan original (histórico)</summary>
 
