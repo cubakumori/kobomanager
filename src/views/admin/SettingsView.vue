@@ -6,7 +6,7 @@ import api from '../../services/api'
 import { apiError } from '../../stores/auth'
 import { useAuthStore } from '../../stores/auth'
 import { setLocale } from '../../i18n'
-import { useTableFreeze, useTableHeaderLines, useDemoMode, usePctFormat } from '../../composables/appConfig'
+import { useTableFreeze, useTableHeaderLines, useDemoMode, usePctFormat, useSampleConfig } from '../../composables/appConfig'
 import Skeleton from '../../components/Skeleton.vue'
 
 const { t } = useI18n()
@@ -40,6 +40,7 @@ const landingCtaEnabled = ref(true)
 const { tableFreeze: appTableFreeze } = useTableFreeze()
 const { pctFormat: appPctFormat } = usePctFormat()
 const { tableHeaderLines: appHeaderLines } = useTableHeaderLines()
+const { sampleShowQuickFill: appSampleQuickFill, samplePalette: appSamplePalette, sampleMonoColor: appSampleMonoColor } = useSampleConfig()
 // En demo los ajustes globales son de solo lectura (PUT bloqueado).
 const { demoMode } = useDemoMode()
 const tableFreeze = ref('first')
@@ -57,6 +58,11 @@ const pctFormat = ref('integer')
 const validPctFormat = ref(['integer', 'decimals'])
 const qcAdmitBatch = ref('table')
 const validQcAdmitBatch = ref(['table', 'qc', 'both', 'off'])
+// Muestras: reparto rápido del editor + paleta de cumplimiento del panel.
+const sampleShowQuickFillSetting = ref(true)
+const samplePaletteSetting = ref('classic')
+const validSamplePalettes = ref(['classic', 'soft', 'accessible', 'mono'])
+const sampleMonoColorSetting = ref('') // '' = primario del tema
 const tableHeaderLines = ref(2)
 const validTableHeaderLines = ref([1, 2, 3])
 const mailConfigured = ref(false)
@@ -215,6 +221,10 @@ async function load() {
     validPctFormat.value = data.data.valid_pct_format ?? validPctFormat.value
     if (data.data.qc_admit_batch != null) qcAdmitBatch.value = data.data.qc_admit_batch
     validQcAdmitBatch.value = data.data.valid_qc_admit_batch ?? validQcAdmitBatch.value
+    if (data.data.sample_show_quick_fill != null) sampleShowQuickFillSetting.value = data.data.sample_show_quick_fill
+    if (data.data.sample_palette != null) samplePaletteSetting.value = data.data.sample_palette
+    validSamplePalettes.value = data.data.valid_sample_palettes ?? validSamplePalettes.value
+    if (data.data.sample_mono_color != null) sampleMonoColorSetting.value = data.data.sample_mono_color
     mailConfigured.value = data.data.mail_configured
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     sharePasswordPolicy.value = data.data.share_password_policy
@@ -271,6 +281,9 @@ async function save() {
       qc_scope: qcScope.value,
       pct_format: pctFormat.value,
       qc_admit_batch: qcAdmitBatch.value,
+      sample_show_quick_fill: sampleShowQuickFillSetting.value,
+      sample_palette: samplePaletteSetting.value,
+      sample_mono_color: sampleMonoColorSetting.value,
       viewer_actions: viewerActions.value,
       share_password_policy: sharePasswordPolicy.value,
       share_attachments_policy: shareAttachmentsPolicy.value,
@@ -321,6 +334,19 @@ async function save() {
       try { localStorage.setItem('km.cfg.pctFormat', data.data.pct_format) } catch { /* noop */ }
     }
     if (data.data.qc_admit_batch != null) qcAdmitBatch.value = data.data.qc_admit_batch
+    // Reflejar los ajustes de Muestras al instante en esta misma sesión.
+    if (data.data.sample_show_quick_fill != null) {
+      sampleShowQuickFillSetting.value = data.data.sample_show_quick_fill
+      appSampleQuickFill.value = data.data.sample_show_quick_fill
+    }
+    if (data.data.sample_palette != null) {
+      samplePaletteSetting.value = data.data.sample_palette
+      appSamplePalette.value = data.data.sample_palette
+    }
+    if (data.data.sample_mono_color != null) {
+      sampleMonoColorSetting.value = data.data.sample_mono_color
+      appSampleMonoColor.value = data.data.sample_mono_color
+    }
     if (data.data.viewer_actions) viewerActions.value = data.data.viewer_actions
     if (data.data.share_password_policy) sharePasswordPolicy.value = data.data.share_password_policy
     if (data.data.share_attachments_policy) shareAttachmentsPolicy.value = data.data.share_attachments_policy
@@ -592,6 +618,55 @@ onMounted(load)
           <option v-for="ab in validQcAdmitBatch" :key="ab" :value="ab">{{ $t('settings.qcAdmitBatch_' + ab) }}</option>
         </select>
         <p class="text-xs text-slate-400">{{ $t('settings.qcAdmitBatchWarn') }}</p>
+      </section>
+
+      <!-- Muestras: reparto rápido del editor + paleta de cumplimiento del panel -->
+      <section v-show="tab === 'tables'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.samples') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.samplesDesc') }}</p>
+        </div>
+
+        <label class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+          <input type="checkbox" v-model="sampleShowQuickFillSetting" class="mt-0.5" @change="saved = false" />
+          <span>
+            <span class="block text-sm font-medium text-slate-700">{{ $t('settings.sampleQuickFill') }}</span>
+            <span class="block text-xs text-slate-400">{{ $t('settings.sampleQuickFillHint') }}</span>
+          </span>
+        </label>
+
+        <div>
+          <span class="block text-sm font-medium text-slate-700">{{ $t('settings.samplePalette') }}</span>
+          <span class="mt-0.5 block text-xs text-slate-400">{{ $t('settings.samplePaletteHint') }}</span>
+          <select
+            v-model="samplePaletteSetting"
+            class="mt-2 w-full max-w-md rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+            @change="saved = false"
+          >
+            <option v-for="p in validSamplePalettes" :key="p" :value="p">{{ $t('settings.samplePalette_' + p) }}</option>
+          </select>
+          <!-- Color del preset monotonal: la opacidad codifica el cumplimiento -->
+          <div v-if="samplePaletteSetting === 'mono'" class="mt-3 flex flex-wrap items-center gap-3">
+            <label class="flex items-center gap-2 text-sm text-slate-700">
+              {{ $t('settings.sampleMonoColor') }}
+              <input
+                type="color"
+                :value="sampleMonoColorSetting || '#2563eb'"
+                class="h-8 w-12 cursor-pointer rounded border border-slate-300 bg-white p-0.5"
+                @input="sampleMonoColorSetting = $event.target.value; saved = false"
+              />
+            </label>
+            <button
+              v-if="sampleMonoColorSetting"
+              type="button"
+              class="rounded-md px-2 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50"
+              @click="sampleMonoColorSetting = ''; saved = false"
+            >
+              {{ $t('settings.sampleMonoColorReset') }}
+            </button>
+            <span v-else class="text-xs text-slate-400">{{ $t('settings.sampleMonoColorTheme') }}</span>
+          </div>
+        </div>
       </section>
 
       <!-- Líneas del encabezado de columna en tablas -->

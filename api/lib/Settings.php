@@ -413,6 +413,32 @@ class Settings {
         return (bool) self::get('show_view_submissions_link', self::DEFAULT_SHOW_VIEW_SUBMISSIONS_LINK);
     }
 
+    /**
+     * ---- Muestras ----
+     * `sample_show_quick_fill`: mostrar la columna «Reparto rápido» del editor del
+     * plan (los atajos de reparto son ayuda de escritura, no metodología; una
+     * organización cuyo diseño muestral viene 100 % de fuera puede ocultarlos).
+     * `sample_palette`: paleta de CUMPLIMIENTO del panel de muestra (mapa de calor,
+     * semáforo y doughnut de resumen). 'mono' = un solo color cuya opacidad codifica
+     * el cumplimiento; su color vive en `sample_mono_color` ('' = primario del tema).
+     */
+    public const VALID_SAMPLE_PALETTES = ['classic', 'soft', 'accessible', 'mono'];
+
+    public static function sampleShowQuickFill(): bool {
+        return (bool) self::get('sample_show_quick_fill', true);
+    }
+
+    public static function samplePalette(): string {
+        $v = (string) self::get('sample_palette', 'classic');
+        return in_array($v, self::VALID_SAMPLE_PALETTES, true) ? $v : 'classic';
+    }
+
+    /** Color del preset 'mono' (#rrggbb) o '' = usar el primario del tema. */
+    public static function sampleMonoColor(): string {
+        $v = (string) self::get('sample_mono_color', '');
+        return preg_match('/^#[0-9a-f]{6}$/i', $v) ? strtolower($v) : '';
+    }
+
     public const VIEWER_ACTION_KEYS = ['enketo', 'update', 'resync', 'login'];
 
     /**

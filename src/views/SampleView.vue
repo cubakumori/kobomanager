@@ -19,6 +19,7 @@ import { apiError, useAuthStore } from '../stores/auth'
 import { usePctFormat } from '../composables/appConfig'
 import Skeleton from '../components/Skeleton.vue'
 import StatsChart from '../components/StatsChart.vue'
+import { useSamplePalette } from '../composables/samplePalette'
 
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -106,16 +107,13 @@ const colTotals = computed(() =>
   }),
 )
 
-// Mapa de calor: color del chip por tramo de cumplimiento (rojo→ámbar→verde);
-// el verde final sigue el token `success` del tema (clases, no hex).
-function heatClass(cell) {
-  if (cell.target == null) return 'bg-amber-100 text-amber-800'
-  const p = cell.pct ?? 0
-  if (p >= 100) return 'bg-success-500 text-white'
-  if (p >= 75) return 'bg-lime-300 text-lime-950'
-  if (p >= 50) return 'bg-amber-300 text-amber-950'
-  if (p >= 25) return 'bg-orange-400 text-orange-950'
-  return 'bg-red-500 text-white'
+// Mapa de calor: chip coloreado por tramo de cumplimiento según la PALETA global
+// (Configuración → «Muestras»; ver composables/samplePalette). «Fuera de plan»
+// queda fuera de la paleta: ámbar fijo (otra semántica, no un grado).
+const { heatChip, trafficChip, doneColor } = useSamplePalette()
+function heatCell(cell) {
+  if (cell.target == null) return { class: 'bg-amber-100 text-amber-800', style: null }
+  return heatChip(cell.pct ?? 0)
 }
 
 // Avance REAL del plan: solo celdas con objetivo y con el hecho acotado a su
@@ -141,13 +139,14 @@ const globalPct = computed(() => {
   const { done, target } = plannedAgg.value
   return target > 0 ? (done * 100) / target : 0
 })
-function trafficClass(cell) {
-  if (!cell || cell.target == null) return 'bg-slate-200'
+function trafficState(cell) {
+  if (!cell || cell.target == null) return 'none'
   const p = cell.pct ?? 0
-  if (p >= 100) return 'bg-success-500'
-  if (p >= globalPct.value) return 'bg-amber-400'
-  return 'bg-red-500'
+  if (p >= 100) return 'met'
+  if (p >= globalPct.value) return 'onpace'
+  return 'behind'
 }
+const trafficCell = (cell) => trafficChip(trafficState(cell))
 function trafficTitle(cell, label) {
   if (!cell) return label
   const base = `${label}: ${num(cell.done)}${cell.target != null ? ' / ' + num(cell.target) : ''}`
@@ -156,10 +155,6 @@ function trafficTitle(cell, label) {
 
 // ---------- Gráficos (barras agrupadas y doughnut de resumen) ----------
 const PRIMARY = '#2563eb'
-// Lee un token de color del tema (variable CSS en :root); cae al hex si aún no
-// está resuelto. Mismo helper que en Estadísticas.
-const themeColor = (name, fallback) =>
-  getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
 
 const barsData = computed(() => {
   const teams = data.value?.teams ?? []
@@ -182,7 +177,7 @@ const summaryData = computed(() => {
   const { done, target } = plannedAgg.value
   return {
     labels: [t('sample.done'), t('sample.summaryMissing')],
-    datasets: [{ data: [done, Math.max(0, target - done)], backgroundColor: [themeColor('--color-success-600', '#16a34a'), '#e2e8f0'] }],
+    datasets: [{ data: [done, Math.max(0, target - done)], backgroundColor: [doneColor(), '#e2e8f0'] }],
   }
 })
 const summaryOptions = {
@@ -375,7 +370,7 @@ onMounted(load)
                         <span
                           v-if="view === 'heatmap'"
                           class="inline-block min-w-14 rounded-md px-2 py-1 text-center text-xs font-semibold"
-                          :class="heatClass(row.map[v.value])"
+                          v-bind="heatCell(row.map[v.value])"
                           :title="row.map[v.value].pct != null ? pct(row.map[v.value].pct) : $t('sample.trafficNoTarget')"
                         >
                           {{ num(row.map[v.value].done) }}<template v-if="row.map[v.value].target != null">/{{ num(row.map[v.value].target) }}</template>
@@ -441,14 +436,14 @@ onMounted(load)
                     <td v-for="v in tableValues" :key="v.value" class="py-2 pr-3">
                       <span
                         class="inline-block h-6 w-6 rounded-md"
-                        :class="trafficClass(row.map[v.value])"
+                        v-bind="trafficCell(row.map[v.value])"
                         :title="trafficTitle(row.map[v.value], v.label)"
                       ></span>
                     </td>
                     <td class="py-2">
                       <span
                         class="inline-block h-6 w-6 rounded-md"
-                        :class="trafficClass(row.team.target > 0 ? row.team : null)"
+                        v-bind="trafficCell(row.team.target > 0 ? row.team : null)"
                         :title="trafficTitle(row.team.target > 0 ? row.team : null, row.team.name)"
                       ></span>
                     </td>
@@ -456,12 +451,12 @@ onMounted(load)
                 </tbody>
               </table>
             </div>
-            <!-- Leyenda -->
+            <!-- Leyenda (sigue la paleta activa) -->
             <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-slate-100 pt-3 text-xs text-slate-500">
-              <span class="flex items-center gap-1.5"><span class="inline-block h-3 w-3 rounded bg-success-500"></span>{{ $t('sample.trafficMet') }}</span>
-              <span class="flex items-center gap-1.5"><span class="inline-block h-3 w-3 rounded bg-amber-400"></span>{{ $t('sample.trafficOnPace') }}</span>
-              <span class="flex items-center gap-1.5"><span class="inline-block h-3 w-3 rounded bg-red-500"></span>{{ $t('sample.trafficBehind') }}</span>
-              <span class="flex items-center gap-1.5"><span class="inline-block h-3 w-3 rounded bg-slate-200"></span>{{ $t('sample.trafficNoTarget') }}</span>
+              <span class="flex items-center gap-1.5"><span class="inline-block h-3 w-3 rounded" v-bind="trafficChip('met')"></span>{{ $t('sample.trafficMet') }}</span>
+              <span class="flex items-center gap-1.5"><span class="inline-block h-3 w-3 rounded" v-bind="trafficChip('onpace')"></span>{{ $t('sample.trafficOnPace') }}</span>
+              <span class="flex items-center gap-1.5"><span class="inline-block h-3 w-3 rounded" v-bind="trafficChip('behind')"></span>{{ $t('sample.trafficBehind') }}</span>
+              <span class="flex items-center gap-1.5"><span class="inline-block h-3 w-3 rounded" v-bind="trafficChip('none')"></span>{{ $t('sample.trafficNoTarget') }}</span>
             </div>
             <p class="mt-1 text-xs text-slate-400">{{ $t('sample.trafficLegendHint', { pct: pct(globalPct) }) }}</p>
           </section>

@@ -4,6 +4,37 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.35.0] - 2026-07-18
+
+Acápite **«Muestras»** en Configuración (reparto rápido ocultable + paleta de
+cumplimiento con 4 presets) y editor del plan en dos tarjetas. Sin cambio de esquema
+(los ajustes viven en la tabla `settings`).
+
+### Añadido
+
+- **Configuración → Tablas y paneles → «Muestras»** (ajustes globales de la instancia):
+  - **«Mostrar el reparto rápido en el editor del plan»** (checkbox, activado por
+    defecto): permite ocultar la columna de atajos Uniforme / Según lo recibido — son
+    ayuda de escritura, no metodología, y sobran donde el diseño muestral viene de fuera.
+  - **«Paleta de cumplimiento»** del panel de muestra (mapa de calor, semáforo y
+    doughnut de resumen; los demás modos comunican con cifras): **Clásica** (rojo→verde,
+    la actual), **Suave** (pastel), **Accesible** (azul↔naranja, apta para daltonismo) y
+    **Monotonal** (un solo color cuya *opacidad* codifica el cumplimiento; color
+    elegible, vacío = el primario del tema; texto de contraste por luminancia, también
+    en modo oscuro). Presets **curados** (pares fondo/texto fijos) en vez de selectores
+    libres, para no romper contraste ni legibilidad. «Fuera de plan» queda fuera de la
+    paleta (ámbar fijo): es otra semántica, no un grado. Nuevo
+    `composables/samplePalette.js`; la leyenda del semáforo sigue la paleta activa.
+
+### Cambiado
+
+- La página del plan de muestra separa en **dos tarjetas** la selección (campo de
+  muestreo, denominador, secundarios) y la matriz «Objetivo por equipo × valor», con el
+  guardado único abajo (config y celdas siguen viajando en el mismo PUT).
+- ROADMAP: los futuros objetivos por celda para campos secundarios se gobernarán con un
+  select global «Objetivos por equipo» (solo campo principal / todos los campos); el
+  select no se añade hasta que exista la funcionalidad.
+
 ## [1.34.0] - 2026-07-18
 
 Permiso **«Muestra»** por formulario (jerárquico sobre «Ajustes») y **página propia** para

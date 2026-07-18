@@ -54,6 +54,10 @@ if (Request::method() === 'GET') {
         'stats_team_cap'             => Settings::statsTeamCap(),
         'valid_stats_team_cap'       => Settings::VALID_STATS_TEAM_CAP,
         'show_view_submissions_link' => Settings::showViewSubmissionsLink(),
+        'sample_show_quick_fill'     => Settings::sampleShowQuickFill(),
+        'sample_palette'             => Settings::samplePalette(),
+        'valid_sample_palettes'      => Settings::VALID_SAMPLE_PALETTES,
+        'sample_mono_color'          => Settings::sampleMonoColor(),
         // Semilla de la demo (DEMO_SEED_PATH): la UI muestra la tarjeta solo si está configurada.
         'demo_seed'                  => DemoSeed::status(),
     ]);
@@ -220,6 +224,30 @@ if (Request::method() === 'PUT') {
     if (array_key_exists('show_view_submissions_link', $body)) {
         Settings::set('show_view_submissions_link', (bool) $body['show_view_submissions_link']);
         $out['show_view_submissions_link'] = (bool) $body['show_view_submissions_link'];
+    }
+
+    if (array_key_exists('sample_show_quick_fill', $body)) {
+        Settings::set('sample_show_quick_fill', (bool) $body['sample_show_quick_fill']);
+        $out['sample_show_quick_fill'] = (bool) $body['sample_show_quick_fill'];
+    }
+
+    if (array_key_exists('sample_palette', $body)) {
+        $pal = (string) $body['sample_palette'];
+        if (!in_array($pal, Settings::VALID_SAMPLE_PALETTES, true)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Paleta de cumplimiento no válida');
+        }
+        Settings::set('sample_palette', $pal);
+        $out['sample_palette'] = $pal;
+    }
+
+    // Color del preset 'mono': #rrggbb, o '' = usar el color primario del tema.
+    if (array_key_exists('sample_mono_color', $body)) {
+        $col = strtolower(trim((string) $body['sample_mono_color']));
+        if ($col !== '' && !preg_match('/^#[0-9a-f]{6}$/', $col)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Color no válido (usa #rrggbb o vacío)');
+        }
+        Settings::set('sample_mono_color', $col);
+        $out['sample_mono_color'] = $col;
     }
 
     if (array_key_exists('label_mode', $body)) {

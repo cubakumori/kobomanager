@@ -14,7 +14,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '../services/api'
 import { apiError } from '../stores/auth'
-import { useDemoMode } from '../composables/appConfig'
+import { useDemoMode, useSampleConfig } from '../composables/appConfig'
 import { confirmDialog } from '../composables/confirm'
 
 const props = defineProps({
@@ -25,6 +25,9 @@ const props = defineProps({
 
 const { t } = useI18n()
 const { demoMode } = useDemoMode()
+// Ajuste global: ocultar la columna «Reparto rápido» (para organizaciones cuyo
+// diseño muestral viene 100 % de fuera, los atajos de reparto son ruido).
+const { sampleShowQuickFill } = useSampleConfig()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -208,13 +211,16 @@ watch(() => props.formId, load)
 </script>
 
 <template>
-  <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-    <h2 class="font-semibold text-slate-900">{{ $t('formSettings.sampleSection') }}</h2>
-    <p class="mt-1 text-sm text-slate-500">{{ $t('formSettings.sampleSectionDesc') }}</p>
-
-    <div v-if="error" class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
+  <!-- Dos tarjetas: la SELECCIÓN (qué se muestrea y cómo se cuenta) y la MATRIZ de
+       objetivos. El guardado es único (config y celdas viajan en el mismo PUT). -->
+  <div class="space-y-6">
+    <div v-if="error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
       {{ error }}
     </div>
+
+    <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <h2 class="font-semibold text-slate-900">{{ $t('formSettings.sampleSection') }}</h2>
+      <p class="mt-1 text-sm text-slate-500">{{ $t('formSettings.sampleSectionDesc') }}</p>
 
     <template v-if="!loading">
       <!-- Selección de campos y denominador -->
@@ -257,22 +263,24 @@ watch(() => props.formId, load)
       <div v-if="fieldChangeWarning" class="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900">
         {{ $t('formSettings.sampleFieldChanged', { n: savedTargetCount }) }}
       </div>
+    </template>
+    </section>
 
-      <!-- Matriz equipo × valor -->
-      <template v-if="sampleField">
-        <div v-if="!teamField" class="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900">
+    <!-- Tarjeta 2: matriz equipo × valor -->
+    <section v-if="!loading && sampleField" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+        <div v-if="!teamField" class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900">
           {{ $t('formSettings.sampleNeedsTeam') }}
         </div>
-        <div v-else-if="!teamOptions.length" class="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900">
+        <div v-else-if="!teamOptions.length" class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900">
           {{ $t('formSettings.sampleNoTeamValues') }}
         </div>
 
-        <div v-else class="mt-5">
+        <div v-else>
           <div class="flex items-baseline justify-between">
-            <h3 class="text-sm font-medium text-slate-700">{{ $t('formSettings.sampleMatrix') }}</h3>
+            <h2 class="font-semibold text-slate-900">{{ $t('formSettings.sampleMatrix') }}</h2>
             <span class="text-xs text-slate-400">{{ $t('formSettings.sampleTotalHeader') }}: {{ grandTotal.toLocaleString() }}</span>
           </div>
-          <p class="mt-0.5 text-xs text-slate-400">{{ $t('formSettings.sampleMatrixHint') }}</p>
+          <p class="mt-1 text-sm text-slate-500">{{ $t('formSettings.sampleMatrixHint') }}</p>
           <!-- Cobertura viva del plan (celdas con objetivo · equipos con plan · total). -->
           <p class="mt-1 text-xs" :class="grandTotal > 0 ? 'text-slate-500' : 'text-amber-600 dark:text-amber-400'">
             {{ $t('formSettings.sampleCoverage', { cells: cellsWithTarget, teams: teamsCovered, teamsTotal: teamOptions.length, total: grandTotal.toLocaleString() }) }}
@@ -285,7 +293,7 @@ watch(() => props.formId, load)
                   <th class="sticky left-0 bg-white py-2 pr-3 font-medium">{{ $t('formSettings.sampleTeamHeader') }}</th>
                   <th v-for="c in sampleOptions" :key="c.value" class="px-2 py-2 font-medium">{{ c.label }}</th>
                   <th class="px-2 py-2 text-right font-medium">{{ $t('formSettings.sampleTotalHeader') }}</th>
-                  <th class="px-2 py-2 font-medium">{{ $t('formSettings.samplePerTeam') }}</th>
+                  <th v-if="sampleShowQuickFill" class="px-2 py-2 font-medium">{{ $t('formSettings.samplePerTeam') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -301,7 +309,8 @@ watch(() => props.formId, load)
                     <span v-if="received[key(tm.value, c.value)]" class="mt-0.5 block text-[0.65rem] text-slate-400">{{ $t('formSettings.sampleReceived', { n: received[key(tm.value, c.value)] }) }}</span>
                   </td>
                   <td class="px-2 py-1.5 text-right tabular-nums text-slate-500">{{ rowTotal(tm.value).toLocaleString() }}</td>
-                  <td class="px-2 py-1.5">
+                  <!-- Reparto rápido: ayuda de escritura, ocultable por ajuste global -->
+                  <td v-if="sampleShowQuickFill" class="px-2 py-1.5">
                     <div class="flex items-center gap-1">
                       <input
                         v-model="teamTotals[tm.value]"
@@ -319,9 +328,9 @@ watch(() => props.formId, load)
             </table>
           </div>
         </div>
-      </template>
+    </section>
 
-      <div class="mt-5 flex items-center justify-end gap-3">
+    <div v-if="!loading" class="flex items-center justify-end gap-3">
         <span v-if="flash" class="text-sm font-medium text-success-700 dark:text-success-400">✓ {{ flash }}</span>
         <button
           v-if="sampleField && teamField && teamOptions.length"
@@ -340,7 +349,6 @@ watch(() => props.formId, load)
         >
           {{ saving ? $t('formSettings.saving') : $t('formSettings.sampleSaveBtn') }}
         </button>
-      </div>
-    </template>
-  </section>
+    </div>
+  </div>
 </template>

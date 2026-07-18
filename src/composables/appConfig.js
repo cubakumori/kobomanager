@@ -61,6 +61,14 @@ const syncOnLogin = ref(false)
 // configurado en el servidor (el perfil ni ofrece la opción). Sin caché local.
 const pushPublicKey = ref('')
 
+// Muestras (ajustes globales): visibilidad del «reparto rápido» del editor del
+// plan y paleta de cumplimiento del panel ('mono' usa sampleMonoColor; '' =
+// primario del tema). Sin caché local: un parpadeo de color es irrelevante.
+const VALID_SAMPLE_PALETTES = ['classic', 'soft', 'accessible', 'mono']
+const sampleShowQuickFill = ref(true)
+const samplePalette = ref('classic')
+const sampleMonoColor = ref('')
+
 // Promesa de «config lista»: la usa el guard del router para decidir rutas
 // públicas (p. ej. /apoyar) sin depender del orden de carga.
 const configReady = publicApi
@@ -96,6 +104,9 @@ const configReady = publicApi
     if (data.data.show_view_submissions_link != null) showViewSubmissionsLink.value = !!data.data.show_view_submissions_link
     syncOnLogin.value = !!data.data.sync_on_login
     pushPublicKey.value = String(data.data.push_public_key || '')
+    if (data.data.sample_show_quick_fill != null) sampleShowQuickFill.value = !!data.data.sample_show_quick_fill
+    if (VALID_SAMPLE_PALETTES.includes(data.data.sample_palette)) samplePalette.value = data.data.sample_palette
+    sampleMonoColor.value = String(data.data.sample_mono_color || '')
   })
   .catch(() => { /* sin red: vale el valor cacheado o el default */ })
 
@@ -169,6 +180,11 @@ export function useSyncOnLogin() {
 /** Clave pública VAPID (reactivo). Vacía = Web Push no configurado en el servidor. */
 export function usePushConfig() {
   return { pushPublicKey }
+}
+
+/** Ajustes de Muestras (reactivo): reparto rápido + paleta de cumplimiento. */
+export function useSampleConfig() {
+  return { sampleShowQuickFill, samplePalette, sampleMonoColor }
 }
 
 /** Promesa que resuelve cuando /config se ha cargado (para el guard del router). */

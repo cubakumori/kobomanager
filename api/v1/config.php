@@ -16,6 +16,11 @@ ErrorResponse::ok([
     'pct_format'             => Settings::pctFormat(),
     'qc_admit_batch'         => Settings::qcAdmitBatch(),
     'show_view_submissions_link' => Settings::showViewSubmissionsLink(),
+    // Muestras: visibilidad del «reparto rápido» del editor y paleta de cumplimiento
+    // del panel (ajustes de presentación; nada sensible).
+    'sample_show_quick_fill' => Settings::sampleShowQuickFill(),
+    'sample_palette'         => Settings::samplePalette(),
+    'sample_mono_color'      => Settings::sampleMonoColor(),
     'sync_on_login'          => Settings::syncOnLogin(),
     // Web Push: la clave pública VAPID no es secreta (es la applicationServerKey
     // que el navegador necesita para suscribirse). Vacía = push no configurado.
