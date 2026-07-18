@@ -48,7 +48,9 @@ define('CONTACT_TO', 'contacto@tudominio.com');
 // Generar el par UNA vez con `php api/cli/vapid_keys.php` y pegar aquí. Vacías =
 // push desactivado (la app ni ofrece la opción). Cambiar las claves invalida las
 // suscripciones existentes (cada dispositivo tendría que re-suscribirse). Requiere
-// servir la app por HTTPS (los navegadores no permiten push en HTTP).
+// servir la app por HTTPS (los navegadores no permiten push en HTTP). El envío lo
+// hace el cron de sync (no al suscribirse) y solo para frecuencias «cada hora» /
+// «tras cada sincronización»; ver DEPLOY.md §8 «Web Push» para el flujo completo.
 define('VAPID_PUBLIC_KEY', '');
 define('VAPID_PRIVATE_KEY', '');                       // SECRETO
 define('VAPID_SUBJECT', '');                           // contacto del operador ('mailto:…'); vacío = APP_URL

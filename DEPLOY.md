@@ -364,17 +364,29 @@ Since 1.30.0 the near-immediate alerts can also arrive as **system notifications
 Push over the PWA) — no extra service or dependency: the protocol is implemented in
 `api/lib/WebPush.php` and delivery rides the same sync cron. To enable it:
 
-1. Generate the VAPID key pair **once**: `php api/cli/vapid_keys.php`.
-2. Paste the three constants it prints into `api/config.php` (`VAPID_PUBLIC_KEY`,
-   `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`).
-3. Each user opts in **per device** from their profile ("Push notifications").
+1. Generate the VAPID key pair **once**: `php api/cli/vapid_keys.php`. It only prints the
+   three constants (no file or DB is touched).
+2. Paste them into `api/config.php` (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`,
+   `VAPID_SUBJECT` — your `mailto:` contact; empty falls back to `APP_URL`). The private
+   key is a secret: don't version it.
+3. Serve the app over **HTTPS** — browsers refuse push on plain HTTP.
+4. **Make sure the sync cron (§7) is scheduled.** This is the step most easily missed:
+   push is **not** sent when a device subscribes — it's delivered by
+   `cron/sync_submissions.php` at the end of each pass, so with no cron running **nothing
+   is ever pushed**. The alert latency is your sync cadence.
+5. Each user opts in **per device** from their profile ("Push notifications"), granting the
+   browser permission.
+6. Each user also picks a **live frequency** for the form(s) they care about (the
+   *Notifications* page): push only fires for **"hourly"** or **"every sync"**. Subscribing
+   a device is necessary but **not sufficient** — with the frequency at "off" nothing
+   arrives, and **"daily summary" is email-only** (it rides a separate cron,
+   `daily_summary.php`, not Web Push).
 
-Requirements and caveats: the app must be served over **HTTPS** (browsers refuse push on
-plain HTTP); on iPhone/iPad the PWA must be **installed to the home screen** (iOS 16.4+);
-changing the VAPID keys later invalidates every existing subscription (each device must
-re-enable). With the constants empty the feature is simply absent from the UI. Works
-independently of Resend — push and email are separate channels sharing the same per-user
-frequency.
+Requirements and caveats: on iPhone/iPad the PWA must be **installed to the home screen**
+(iOS 16.4+); changing the VAPID keys later invalidates every existing subscription (each
+device must re-enable). With the constants empty the feature is simply absent from the UI.
+Works independently of Resend — push and email are separate channels sharing the same
+per-user frequency.
 
 ## 9. Post-deployment checks
 
