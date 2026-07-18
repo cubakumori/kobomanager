@@ -1,0 +1,269 @@
+<script setup>
+/**
+ * Editor del PLAN de muestra por equipo (sección de los ajustes del formulario).
+ * Elige el campo de muestreo (select_one) y los secundarios, el denominador de
+ * «hecho», y rellena la matriz equipo × valor → objetivo. Para no rellenar celda a
+ * celda: un total por equipo con reparto (uniforme o proporcional a lo recibido) y
+ * ajuste fino por celda. Guarda contra PUT /admin/forms/{id}/sample-plan, que
+ * reemplaza el plan vigente y archiva un snapshot.
+ *
+ * El eje de EQUIPO reutiliza `stats_team_field` (se configura en la sección de
+ * arriba); aquí solo se usan sus valores como filas.
+ */
+import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import api from '../services/api'
+import { apiError } from '../stores/auth'
+import { useDemoMode } from '../composables/appConfig'
+
+const props = defineProps({
+  formId: { type: Number, required: true },
+  fields: { type: Array, default: () => [] }, // [{ key, label, type, multi, options:[{value,label}] }]
+  teamField: { type: String, default: '' },   // stats_team_field vigente (reactivo desde el padre)
+})
+
+const { t } = useI18n()
+const { demoMode } = useDemoMode()
+
+const loading = ref(true)
+const saving = ref(false)
+const error = ref('')
+const flash = ref('')
+
+const sampleField = ref('')
+const sampleField2 = ref('')
+const sampleField3 = ref('')
+const denominator = ref('approved')
+// targets: mapa "teamCode|sampleCode" => cadena numérica; received: mapa igual => número.
+const targets = ref({})
+const received = ref({})
+// Total por equipo (ayuda de reparto): teamCode => cadena numérica.
+const teamTotals = ref({})
+
+// Campos elegibles como muestreo principal: opción única con valores conocidos.
+const singleFields = computed(() => props.fields.filter(f => (f.options?.length || 0) > 0 && !f.multi))
+// Secundarios: cualquier campo con opciones (single o multiple).
+const optionFields = computed(() => props.fields.filter(f => (f.options?.length || 0) > 0))
+
+const teamOptions = computed(() => {
+  const f = props.fields.find(x => x.key === props.teamField)
+  return f?.options || []
+})
+const sampleOptions = computed(() => {
+  const f = props.fields.find(x => x.key === sampleField.value)
+  return f?.options || []
+})
+
+const key = (tv, sv) => `${tv}|${sv}`
+
+async function load() {
+  loading.value = true
+  error.value = ''
+  try {
+    const { data } = await api.get(`/admin/forms/${props.formId}/sample-plan`)
+    const d = data.data
+    sampleField.value = d.sample_field || ''
+    sampleField2.value = d.sample_field2 || ''
+    sampleField3.value = d.sample_field3 || ''
+    denominator.value = d.denominator || 'approved'
+    const tgt = {}
+    for (const [k, v] of Object.entries(d.targets || {})) tgt[k] = String(v)
+    targets.value = tgt
+    received.value = d.received || {}
+  } catch (e) {
+    error.value = apiError(e, t('formSettings.sampleLoadError'))
+  } finally {
+    loading.value = false
+  }
+}
+
+// Al cambiar el campo de muestreo, conservamos los objetivos cuyos códigos sigan
+// existiendo (misma clave). No hace falta limpiar: las claves obsoletas se ignoran
+// al guardar porque solo se envían las celdas de la matriz visible.
+
+function distribute(teamValue, mode) {
+  const total = Number(teamTotals.value[teamValue] || 0)
+  const cols = sampleOptions.value
+  if (!cols.length || total <= 0) return
+  if (mode === 'proportional') {
+    const weights = cols.map(c => Number(received.value[key(teamValue, c.value)] || 0))
+    const sum = weights.reduce((a, b) => a + b, 0)
+    if (sum > 0) {
+      // Reparto proporcional con redondeo, cuadrando el resto en la última columna.
+      let assigned = 0
+      cols.forEach((c, i) => {
+        let v = i === cols.length - 1 ? total - assigned : Math.round((weights[i] / sum) * total)
+        if (v < 0) v = 0
+        assigned += v
+        targets.value[key(teamValue, c.value)] = String(v)
+      })
+      return
+    }
+    // Sin datos recibidos: cae a uniforme.
+  }
+  // Uniforme: base + reparto del resto en las primeras columnas.
+  const base = Math.floor(total / cols.length)
+  let rem = total - base * cols.length
+  cols.forEach((c) => {
+    const v = base + (rem-- > 0 ? 1 : 0)
+    targets.value[key(teamValue, c.value)] = String(v)
+  })
+}
+
+const rowTotal = (teamValue) =>
+  sampleOptions.value.reduce((s, c) => s + Number(targets.value[key(teamValue, c.value)] || 0), 0)
+
+const grandTotal = computed(() =>
+  teamOptions.value.reduce((s, tm) => s + rowTotal(tm.value), 0))
+
+async function save() {
+  saving.value = true
+  error.value = ''
+  flash.value = ''
+  try {
+    const cells = []
+    for (const tm of teamOptions.value) {
+      for (const c of sampleOptions.value) {
+        const v = Number(targets.value[key(tm.value, c.value)] || 0)
+        if (v > 0) cells.push({ team_value: tm.value, sample_value: c.value, target: v })
+      }
+    }
+    await api.put(`/admin/forms/${props.formId}/sample-plan`, {
+      sample_field: sampleField.value || null,
+      sample_field2: sampleField2.value || null,
+      sample_field3: sampleField3.value || null,
+      denominator: denominator.value,
+      cells,
+    })
+    flash.value = t('formSettings.sampleSaved')
+    await load()
+  } catch (e) {
+    error.value = apiError(e, t('formSettings.sampleSaveError'))
+  } finally {
+    saving.value = false
+  }
+}
+
+onMounted(load)
+watch(() => props.formId, load)
+</script>
+
+<template>
+  <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+    <h2 class="font-semibold text-slate-900">{{ $t('formSettings.sampleSection') }}</h2>
+    <p class="mt-1 text-sm text-slate-500">{{ $t('formSettings.sampleSectionDesc') }}</p>
+
+    <div v-if="error" class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
+      {{ error }}
+    </div>
+
+    <template v-if="!loading">
+      <!-- Selección de campos y denominador -->
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <label class="block">
+          <span class="text-sm font-medium text-slate-700">{{ $t('formSettings.sampleField') }}</span>
+          <select v-model="sampleField" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30">
+            <option value="">{{ $t('formSettings.sampleNone') }}</option>
+            <option v-for="f in singleFields" :key="f.key" :value="f.key">{{ f.label }}</option>
+          </select>
+          <span class="mt-1 block text-xs text-slate-400">{{ $t('formSettings.sampleFieldHint') }}</span>
+        </label>
+
+        <label class="block">
+          <span class="text-sm font-medium text-slate-700">{{ $t('formSettings.sampleDenominator') }}</span>
+          <select v-model="denominator" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30">
+            <option value="approved">{{ $t('formSettings.sampleDenomApproved') }}</option>
+            <option value="approved_pending">{{ $t('formSettings.sampleDenomApprovedPending') }}</option>
+          </select>
+          <span class="mt-1 block text-xs text-slate-400">{{ $t('formSettings.sampleDenominatorHint') }}</span>
+        </label>
+      </div>
+
+      <div v-if="sampleField" class="mt-4">
+        <span class="text-sm font-medium text-slate-700">{{ $t('formSettings.sampleSecondary') }}</span>
+        <span class="mt-0.5 block text-xs text-slate-400">{{ $t('formSettings.sampleSecondaryHint') }}</span>
+        <div class="mt-2 grid gap-4 sm:grid-cols-2">
+          <select v-model="sampleField2" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30">
+            <option value="">{{ $t('formSettings.sampleField2') }} —</option>
+            <option v-for="f in optionFields" :key="f.key" :value="f.key" :disabled="f.key === sampleField">{{ f.label }}</option>
+          </select>
+          <select v-model="sampleField3" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30">
+            <option value="">{{ $t('formSettings.sampleField3') }} —</option>
+            <option v-for="f in optionFields" :key="f.key" :value="f.key" :disabled="f.key === sampleField || f.key === sampleField2">{{ f.label }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Matriz equipo × valor -->
+      <template v-if="sampleField">
+        <div v-if="!teamField" class="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900">
+          {{ $t('formSettings.sampleNeedsTeam') }}
+        </div>
+        <div v-else-if="!teamOptions.length" class="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900">
+          {{ $t('formSettings.sampleNoTeamValues') }}
+        </div>
+
+        <div v-else class="mt-5">
+          <div class="flex items-baseline justify-between">
+            <h3 class="text-sm font-medium text-slate-700">{{ $t('formSettings.sampleMatrix') }}</h3>
+            <span class="text-xs text-slate-400">{{ $t('formSettings.sampleTotalHeader') }}: {{ grandTotal.toLocaleString() }}</span>
+          </div>
+          <p class="mt-0.5 text-xs text-slate-400">{{ $t('formSettings.sampleMatrixHint') }}</p>
+
+          <div class="mt-3 overflow-x-auto">
+            <table class="w-full border-collapse text-sm">
+              <thead>
+                <tr class="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-400">
+                  <th class="sticky left-0 bg-white py-2 pr-3 font-medium">{{ $t('formSettings.sampleTeamHeader') }}</th>
+                  <th v-for="c in sampleOptions" :key="c.value" class="px-2 py-2 font-medium">{{ c.label }}</th>
+                  <th class="px-2 py-2 text-right font-medium">{{ $t('formSettings.sampleTotalHeader') }}</th>
+                  <th class="px-2 py-2 font-medium">{{ $t('formSettings.samplePerTeam') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="tm in teamOptions" :key="tm.value" class="border-b border-slate-100">
+                  <td class="sticky left-0 bg-white py-2 pr-3 font-medium text-slate-700">{{ tm.label }}</td>
+                  <td v-for="c in sampleOptions" :key="c.value" class="px-1 py-1.5">
+                    <input
+                      v-model="targets[key(tm.value, c.value)]"
+                      type="number"
+                      min="0"
+                      class="w-16 rounded-md border border-slate-300 px-2 py-1 text-sm tabular-nums outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30"
+                    />
+                    <span v-if="received[key(tm.value, c.value)]" class="mt-0.5 block text-[0.65rem] text-slate-400">{{ $t('formSettings.sampleReceived', { n: received[key(tm.value, c.value)] }) }}</span>
+                  </td>
+                  <td class="px-2 py-1.5 text-right tabular-nums text-slate-500">{{ rowTotal(tm.value).toLocaleString() }}</td>
+                  <td class="px-2 py-1.5">
+                    <div class="flex items-center gap-1">
+                      <input
+                        v-model="teamTotals[tm.value]"
+                        type="number"
+                        min="0"
+                        class="w-16 rounded-md border border-slate-300 px-2 py-1 text-sm tabular-nums outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30"
+                        :placeholder="$t('formSettings.samplePerTeam')"
+                      />
+                      <button type="button" class="rounded-md px-1.5 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50" :title="$t('formSettings.sampleDistributeEven')" @click="distribute(tm.value, 'even')">{{ $t('formSettings.sampleDistributeEven') }}</button>
+                      <button type="button" class="rounded-md px-1.5 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50" :title="$t('formSettings.sampleDistributeProportional')" @click="distribute(tm.value, 'proportional')">{{ $t('formSettings.sampleDistributeProportional') }}</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </template>
+
+      <div class="mt-5 flex items-center justify-end gap-3">
+        <span v-if="flash" class="text-sm font-medium text-success-700 dark:text-success-400">✓ {{ flash }}</span>
+        <button
+          :disabled="demoMode || saving"
+          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+          :title="demoMode ? $t('common.demoDisabled') : undefined"
+          @click="save"
+        >
+          {{ saving ? $t('formSettings.saving') : $t('formSettings.sampleSaveBtn') }}
+        </button>
+      </div>
+    </template>
+  </section>
+</template>

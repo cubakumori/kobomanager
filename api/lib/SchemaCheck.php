@@ -57,6 +57,28 @@ class SchemaCheck {
     CONSTRAINT fk_push_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_push_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"],
+
+        ['table' => 'sample_targets', 'column' => null, 'since' => '1.32.0',
+         'fix' => "CREATE TABLE IF NOT EXISTS sample_targets (
+    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    form_id       INT UNSIGNED NOT NULL,
+    team_value    VARCHAR(255) NOT NULL,
+    sample_value  VARCHAR(255) NOT NULL,
+    target        INT UNSIGNED NOT NULL DEFAULT 0,
+    updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_sample_targets_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_sample_cell (form_id, team_value, sample_value)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"],
+
+        ['table' => 'sample_target_history', 'column' => null, 'since' => '1.32.0',
+         'fix' => "CREATE TABLE IF NOT EXISTS sample_target_history (
+    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    form_id       INT UNSIGNED NOT NULL,
+    snapshot_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    payload_json  JSON NOT NULL,
+    CONSTRAINT fk_sample_history_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
+    INDEX idx_sample_history_form (form_id, snapshot_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"],
     ];
 
     /**
@@ -168,6 +190,18 @@ class SchemaCheck {
          'backfill' => "UPDATE notification_config SET frequency = CASE WHEN daily_summary = 1 THEN 'daily' ELSE 'off' END"],
         ['table' => 'notification_config', 'column' => 'last_notified_at', 'since' => '1.29.0',
          'fix' => "ALTER TABLE notification_config ADD COLUMN last_notified_at DATETIME NULL AFTER frequency"],
+
+        // Monitorización de muestra por equipo. El select_one de muestreo (principal +
+        // dos secundarios) y el denominador de «hecho». NULL = apagado; el DEFAULT
+        // 'approved' del denominador es inocuo (solo importa con sample_field configurado).
+        ['table' => 'forms', 'column' => 'sample_field', 'since' => '1.32.0',
+         'fix' => "ALTER TABLE forms ADD COLUMN sample_field VARCHAR(255) NULL AFTER risk_min_n"],
+        ['table' => 'forms', 'column' => 'sample_field2', 'since' => '1.32.0',
+         'fix' => "ALTER TABLE forms ADD COLUMN sample_field2 VARCHAR(255) NULL AFTER sample_field"],
+        ['table' => 'forms', 'column' => 'sample_field3', 'since' => '1.32.0',
+         'fix' => "ALTER TABLE forms ADD COLUMN sample_field3 VARCHAR(255) NULL AFTER sample_field2"],
+        ['table' => 'forms', 'column' => 'sample_denominator', 'since' => '1.32.0',
+         'fix' => "ALTER TABLE forms ADD COLUMN sample_denominator VARCHAR(20) NOT NULL DEFAULT 'approved' AFTER sample_field3"],
     ];
 
     /** Columnas cuyo backfill requiere el recálculo PHP de migrate.php (no basta SQL). */

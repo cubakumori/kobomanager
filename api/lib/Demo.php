@@ -65,6 +65,8 @@ class Demo {
         // demo hasta el siguiente reset. (PUT no tiene handler hoy; se bloquea
         // por si se añade.) PATCH = ajustes de estadísticas por formulario.
         'admin/forms/:id'          => ['DELETE', 'PUT', 'PATCH'],
+        // Plan de muestra por equipo (editar el plan escribe sample_targets/history).
+        'admin/forms/:id/sample-plan' => ['PUT'],
         'admin/users/:id/sessions' => ['DELETE'],
         // Contraseña y sesiones propias (el usuario demo es compartido).
         'profile/password'         => ['POST'],

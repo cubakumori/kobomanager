@@ -10,6 +10,7 @@ import { useRoute, RouterLink } from 'vue-router'
 import api from '../../services/api'
 import { useAuthStore, apiError } from '../../stores/auth'
 import Skeleton from '../../components/Skeleton.vue'
+import SamplePlanEditor from '../../components/SamplePlanEditor.vue'
 import { useDemoMode } from '../../composables/appConfig'
 
 const { t, locale } = useI18n()
@@ -192,6 +193,9 @@ onMounted(load)
       </div>
 
     </section>
+
+    <!-- Plan de muestra por equipo (panel «Muestra» del formulario) -->
+    <SamplePlanEditor v-if="fields.length" :form-id="formId" :fields="fields" :team-field="teamField" />
 
     <!-- Umbrales del control de calidad (página «Control de calidad» del formulario) -->
     <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">

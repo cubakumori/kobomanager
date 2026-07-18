@@ -12,8 +12,9 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 
 > **Orden de prioridad acordado (jul-2026).** Partiendo de que los usuarios reales manejan
 > datos sensibles (instancia real = denuncias de DDHH): **(1) seguridad y privacidad**
-> (abajo, lo primero), **(2) monitorización de muestra por equipo** (abajo, PRÓXIMA feature
-> de producto a construir), **(3)** paneles/dashboards y escalabilidad como apuestas
+> (abajo, lo primero), **(2) monitorización de muestra por equipo** (**ENTREGADA en 1.32.0**,
+> ver `CHANGELOG.md`; el enlace público de solo lectura del panel queda como 2ª iteración),
+> **(3)** paneles/dashboards y escalabilidad como apuestas
 > posteriores. La **cadena de aprobación multi-nivel** se DESCARTA por ahora (ver «Frentes
 > mayores»): con un revisor profesional o un doble-check ligero basta para el tamaño típico
 > de una ONG. La estrategia de **adopción y servicio** (instalar + formar + supervisión
@@ -221,7 +222,23 @@ Quedan como ideas reabribles si aparece una necesidad real.
 
 ---
 
-## Monitorización de muestra por equipo — PRÓXIMA feature a construir (prioridad nº2, jul-2026)
+## Monitorización de muestra por equipo — ENTREGADA (1.32.0)
+
+> **Estado (jul-2026): ENTREGADA en 1.32.0** (ver `CHANGELOG.md`). Panel `/forms/{id}/sample`
+> (hecho/objetivo por celda equipo × valor, totales por equipo, «fuera de plan» y proyección
+> de cierre), editor de la matriz en los ajustes (con reparto por equipo uniforme/proporcional
+> e histórico por snapshots), denominador configurable y campos secundarios como distribución
+> observada. Construido sobre `lib/Sample` (gemelo de `Stats`), respeta el scoping por filas.
+
+### Pendiente (2ª iteración)
+
+- [ ] **Enlace público de solo lectura del panel de muestra** — un coordinador sigue el avance
+      sin cuenta, como el resumen de revisión de los enlaces compartidos. Encaja con la
+      micro-caché en disco de `share_stats` y con el alcance fijo por equipo del enlace.
+- [ ] **Objetivos por celda para los campos secundarios** — hoy los secundarios (sexo, raza…)
+      solo muestran distribución observada; una etapa 2 podría planificar también su cuota.
+
+<details><summary>Plan original (histórico)</summary>
 
 > Idea del usuario (jul-2026), aprobada para construir en una **sesión nueva**. En trabajo
 > de campo real cada **equipo** debe cumplir una **muestra planificada**: un nº de encuestas
@@ -285,6 +302,8 @@ Quedan como ideas reabribles si aparece una necesidad real.
   avance sin cuenta), como el resumen de revisión — dejarlo para una 2ª iteración.
 - Si algún día llegan los **dashboards configurables**, este panel fijo sería uno de sus
   widgets.
+
+</details>
 
 ---
 

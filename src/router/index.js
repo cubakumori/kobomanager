@@ -20,6 +20,7 @@ const routes = [
   { path: '/forms/:id/submissions', name: 'submissions', component: () => import('../views/SubmissionsView.vue'), meta: shell() },
   { path: '/forms/:id/submissions/:subId', name: 'submission-detail', component: () => import('../views/SubmissionDetailView.vue'), meta: shell() },
   { path: '/forms/:id/stats', name: 'stats', component: () => import('../views/StatsView.vue'), meta: shell() },
+  { path: '/forms/:id/sample', name: 'sample', component: () => import('../views/SampleView.vue'), meta: shell() },
   { path: '/forms/:id/quality', name: 'quality', component: () => import('../views/QualityView.vue'), meta: shell() },
   { path: '/forms/:id/risk', name: 'risk', component: () => import('../views/RiskView.vue'), meta: shell() },
   { path: '/forms/:id/comments', name: 'comments', component: () => import('../views/CommentsView.vue'), meta: shell() },

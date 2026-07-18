@@ -105,6 +105,22 @@ CREATE TABLE IF NOT EXISTS forms (
     -- numéricos, GPS solo con geo, percentmatch con ≥2 envíos). Lo pone un admin desde
     -- los ajustes del formulario; la sincronización no lo toca.
     risk_min_n          INT UNSIGNED NULL DEFAULT NULL,
+    -- MONITORIZACIÓN DE MUESTRA POR EQUIPO (panel forms/<id>/sample + editor del plan
+    -- en los ajustes). Reutiliza `stats_team_field` como EJE de equipo; estos campos
+    -- eligen el `select_one` de MUESTREO cuyos valores forman las columnas de la matriz.
+    -- `sample_field`: ruta del select_one principal (p. ej. rango de edad). NULL =
+    --   monitorización de muestra apagada.
+    -- `sample_field2`/`sample_field3`: campos secundarios opcionales; en la etapa 1 solo
+    --   se muestra su DISTRIBUCIÓN OBSERVADA (sin objetivos por celda).
+    -- `sample_denominator`: qué cuenta como «hecho» según el estado de revisión.
+    --   'approved' (default) = solo aprobados; 'approved_pending' = aprobados + pendientes
+    --   (excluye «en espera» y rechazados).
+    -- Los pone un admin (o permiso «Ajustes») desde los ajustes del formulario; la
+    -- sincronización no los toca.
+    sample_field        VARCHAR(255) NULL,
+    sample_field2       VARCHAR(255) NULL,
+    sample_field3       VARCHAR(255) NULL,
+    sample_denominator  VARCHAR(20) NOT NULL DEFAULT 'approved',
     sync_status         ENUM('pending', 'success', 'error') DEFAULT 'pending',
     last_sync_error     TEXT,
     active              TINYINT(1) DEFAULT 1,
@@ -337,6 +353,38 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
     last_used_at  DATETIME NULL,                        -- último push aceptado por el push service
     CONSTRAINT fk_push_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_push_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3.16 Plan de muestra VIGENTE (objetivo ya resuelto por celda equipo × valor del
+--      select_one de muestreo). `team_value` = código del valor de forms.stats_team_field
+--      ('__none__' = sin equipo); `sample_value` = código de la opción de forms.sample_field.
+--      El editor puede rellenar la matriz por «objetivo por equipo + reparto», pero aquí
+--      se guarda SIEMPRE el objetivo por celda ya calculado, para que Sample::compute solo
+--      lea. Un PUT del plan reemplaza estas filas y archiva un snapshot en
+--      sample_target_history. Ver api/v1/admin/sample_plan.php y lib/Sample.
+CREATE TABLE IF NOT EXISTS sample_targets (
+    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    form_id       INT UNSIGNED NOT NULL,
+    team_value    VARCHAR(255) NOT NULL,                 -- código del equipo ('__none__' = sin equipo)
+    sample_value  VARCHAR(255) NOT NULL,                 -- código de la opción del select_one de muestreo
+    target        INT UNSIGNED NOT NULL DEFAULT 0,       -- nº de encuestas planificado para esa celda
+    updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_sample_targets_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_sample_cell (form_id, team_value, sample_value)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3.17 Histórico del plan de muestra: al guardar el plan se INSERTA un snapshot
+--      completo (no se sobrescribe), de modo que una renegociación a mitad de campaña
+--      no borra lo planificado antes. `payload_json` = { field, denominator,
+--      cells: [{ team_value, sample_value, target }, ...] } tal como se guardó.
+--      Es para referencia/auditoría; el plan vigente vive en sample_targets.
+CREATE TABLE IF NOT EXISTS sample_target_history (
+    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    form_id       INT UNSIGNED NOT NULL,
+    snapshot_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    payload_json  JSON NOT NULL,
+    CONSTRAINT fk_sample_history_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
+    INDEX idx_sample_history_form (form_id, snapshot_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

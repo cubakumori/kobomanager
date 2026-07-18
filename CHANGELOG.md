@@ -4,6 +4,46 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.32.0] - 2026-07-18
+
+Monitorización de **muestra por equipo**: compara lo *recibido* contra un *plan* de
+campaña. Cada equipo debe reunir un número de encuestas por cada valor de un campo de
+muestreo (p. ej. rango de edad); el panel muestra hecho/objetivo por equipo × valor,
+con proyección de cierre al ritmo actual y distribución observada de campos secundarios.
+**Cambio de esquema** → requiere `php api/cli/migrate.php` al actualizar.
+
+### Añadido
+
+- **Panel «Muestra»** por formulario (`/forms/{id}/sample`, requiere `can_view`): barras
+  hecho/objetivo por celda `equipo × valor`, total y % por equipo, resaltado de déficit
+  y sobre-muestra, sección **«fuera de plan»** (equipos o valores presentes en los datos
+  sin objetivo definido, que se cuentan pero no tienen meta) y **proyección de cierre**
+  por equipo (ritmo medio desde el primer envío → fecha estimada, etiquetada como
+  estimación). Etiquetas legibles del `select_one`, no códigos. Respeta el scoping por
+  filas (un jefe de equipo ve el suyo) y el ocultado de columnas.
+- **Editor del plan** en los ajustes del formulario (`SamplePlanEditor`): elige el campo
+  de muestreo principal (+ dos secundarios opcionales) y el denominador, y rellena la
+  matriz **equipo × valor → objetivo**. Para no rellenar celda a celda: un **total por
+  equipo** con reparto **uniforme** o **proporcional a lo recibido**, más ajuste fino por
+  celda. El eje de equipo reutiliza el «Campo de equipo» del desglose de estadísticas.
+- **Denominador de «hecho»** configurable (`forms.sample_denominator`): *solo aprobados*
+  (por defecto) o *aprobados y pendientes* (excluye «en espera» y rechazados).
+- **Histórico del plan**: cada guardado archiva un snapshot completo en
+  `sample_target_history` en vez de sobrescribir sin rastro, para que una renegociación a
+  mitad de campaña no borre lo planificado antes.
+- Backend `lib/Sample::compute` (gemelo de `lib/Stats`), endpoints
+  `GET /forms/{id}/sample` y `GET|PUT /admin/forms/{id}/sample-plan`, y `SampleTest`
+  (9 casos: recuento por celda, denominador, fuera de plan, scoping, etiquetas, secundarios
+  y proyección).
+
+### Esquema
+
+- Nuevas columnas en `forms`: `sample_field`, `sample_field2`, `sample_field3`,
+  `sample_denominator` (default `approved`). Nuevas tablas `sample_targets` (plan vigente,
+  única por `form_id, team_value, sample_value`) y `sample_target_history` (snapshots).
+  Registradas en `SchemaCheck`; **ejecuta `php api/cli/migrate.php` al actualizar**.
+  El plan de muestra queda vacío por defecto (feature desactivada hasta configurarla).
+
 ## [1.31.1] - 2026-07-17
 
 Pulido móvil tras una pasada de verificación a 375 px. Sin cambio de esquema.

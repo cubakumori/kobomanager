@@ -5,6 +5,7 @@
     "total": "{n} submission(s) in total.",
     "totalFiltered": "{n} / {total} submission(s).",
     "stats": "Statistics",
+    "sample": "Sample",
     "quality": "Quality control",
     "map": "Map",
     "mapDisabled": "No submission has coordinates",

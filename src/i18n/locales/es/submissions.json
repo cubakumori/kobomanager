@@ -5,6 +5,7 @@
     "total": "{n} envío(s) en total.",
     "totalFiltered": "{n} / {total} envío(s).",
     "stats": "Estadísticas",
+    "sample": "Muestra",
     "quality": "Control de calidad",
     "map": "Mapa",
     "mapDisabled": "Ningún envío tiene coordenadas",

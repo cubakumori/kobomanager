@@ -73,7 +73,7 @@ const linkActive = 'bg-primary-600 text-white'
       </RouterLink>
       <RouterLink
         :to="{ name: 'forms' }"
-        :class="[linkBase, ['forms', 'submissions', 'submission-detail', 'stats', 'form-map'].includes($route.name) ? linkActive : linkInactive]"
+        :class="[linkBase, ['forms', 'submissions', 'submission-detail', 'stats', 'sample', 'form-map'].includes($route.name) ? linkActive : linkInactive]"
       >
         {{ $t('nav.myForms') }}
       </RouterLink>

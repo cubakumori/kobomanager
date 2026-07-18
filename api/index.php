@@ -31,6 +31,7 @@ require __DIR__ . '/lib/RowScope.php';
 require __DIR__ . '/lib/FieldScope.php';
 require __DIR__ . '/lib/SubmissionSearch.php';
 require __DIR__ . '/lib/Stats.php';
+require __DIR__ . '/lib/Sample.php';
 require __DIR__ . '/lib/Quality.php';
 require __DIR__ . '/lib/Risk.php';
 require __DIR__ . '/lib/Comments.php';
@@ -127,6 +128,7 @@ $routes = [
     'admin/forms/:id/enketo'    => 'admin/form_enketo.php',
     'admin/permissions'         => 'admin/permissions.php',
     'admin/forms/:id/scope-fields' => 'admin/scope_fields.php',
+    'admin/forms/:id/sample-plan'  => 'admin/sample_plan.php',
     'admin/settings'            => 'admin/settings.php',
     'admin/demo/seed'           => 'admin/demo_seed.php',
     'admin/db/export'           => 'admin/db_export.php',
@@ -149,6 +151,7 @@ $routes = [
     'forms/:id/sync'            => 'forms/sync.php',
     'forms/:id/submissions'     => 'forms/submissions.php',
     'forms/:id/stats'           => 'forms/stats.php',
+    'forms/:id/sample'          => 'forms/sample.php',
     'forms/:id/quality'         => 'forms/quality.php',
     'forms/:id/quality/suggest' => 'forms/quality_suggest.php',
     'forms/:id/quality/export'  => 'forms/quality_export.php',
