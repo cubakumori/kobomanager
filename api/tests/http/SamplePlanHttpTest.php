@@ -65,6 +65,22 @@ final class SamplePlanHttpTest extends HttpTestCase
         @unlink($jar);
     }
 
+    public function testPlanRejectsDuplicateFields(): void
+    {
+        $userId = $this->seedUser('admin', 'sp_dup@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $formId = $this->seedForm($accId, null, $this->schemaJson());
+        $jar = $this->login('sp_dup@test.local', 'Secret123!');
+
+        // Un campo no puede ser a la vez principal y secundario.
+        $res = $this->request('PUT', "admin/forms/$formId/sample-plan", ['sample_field' => 'age', 'sample_field2' => 'age', 'cells' => []], $jar);
+        $this->assertSame(422, $res['status'], $res['raw']);
+        // Un campo distinto como secundario sí se acepta.
+        $res = $this->request('PUT', "admin/forms/$formId/sample-plan", ['sample_field' => 'age', 'sample_field2' => 'team', 'cells' => []], $jar);
+        $this->assertSame(200, $res['status'], $res['raw']);
+        @unlink($jar);
+    }
+
     public function testPutReplacesPlanAndArchivesSnapshot(): void
     {
         $userId = $this->seedUser('admin', 'sp_admin2@test.local', 'Secret123!');

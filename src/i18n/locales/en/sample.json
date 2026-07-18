@@ -9,6 +9,7 @@
     "notConfiguredBody": "Pick a sampling field and set per-team targets in the form settings.",
     "configureLink": "Configure the sample",
     "needsTeam": "Set the team field in the settings first; the sample is planned per team.",
+    "noPlan": "The sample plan has no targets defined: the sample is not being monitored. Set the per-team targets in the form settings.",
     "denominatorApproved": "Counting: approved only",
     "denominatorApprovedPending": "Counting: approved and pending",
     "grandTotal": "Grand total",

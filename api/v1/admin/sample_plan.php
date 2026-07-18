@@ -110,6 +110,14 @@ $sampleField  = $cleanField($body['sample_field'] ?? null, true);
 $sampleField2 = $cleanField($body['sample_field2'] ?? null, false);
 $sampleField3 = $cleanField($body['sample_field3'] ?? null, false);
 
+// Los tres campos deben ser DISTINTOS (un campo no puede ser a la vez principal y
+// secundario, ni repetirse entre secundarios). El editor ya los excluye mutuamente;
+// esto cierra la vía API.
+$chosen = array_filter([$sampleField, $sampleField2, $sampleField3], fn($v) => $v !== null);
+if (count($chosen) !== count(array_unique($chosen))) {
+    ErrorResponse::send('VALIDATION_ERROR', 'Los campos de muestreo (principal y secundarios) deben ser distintos');
+}
+
 $denominator = (string) ($body['denominator'] ?? 'approved');
 if (!in_array($denominator, $DENOMINATORS, true)) {
     ErrorResponse::send('VALIDATION_ERROR', 'Denominador no válido');

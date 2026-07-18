@@ -9,6 +9,7 @@
     "notConfiguredBody": "Elige un campo de muestreo y define los objetivos por equipo en los ajustes del formulario.",
     "configureLink": "Configurar la muestra",
     "needsTeam": "Configura primero el campo de equipo en los ajustes; la muestra se planifica por equipo.",
+    "noPlan": "El plan de muestra no tiene objetivos definidos: no se está monitoreando la muestra. Define los objetivos por equipo en los ajustes del formulario.",
     "denominatorApproved": "Cuenta: solo aprobados",
     "denominatorApprovedPending": "Cuenta: aprobados y pendientes",
     "grandTotal": "Total general",

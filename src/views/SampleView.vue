@@ -94,6 +94,11 @@ onMounted(load)
           {{ $t('sample.needsTeam') }}
         </div>
 
+        <!-- Aviso: campo configurado pero SIN objetivos → no se monitorea la muestra -->
+        <div v-else-if="!data.has_plan" class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900">
+          {{ $t('sample.noPlan') }}
+        </div>
+
         <!-- Total general -->
         <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <div class="flex flex-wrap items-baseline justify-between gap-2">

@@ -15,6 +15,7 @@ import { useI18n } from 'vue-i18n'
 import api from '../services/api'
 import { apiError } from '../stores/auth'
 import { useDemoMode } from '../composables/appConfig'
+import { confirmDialog } from '../composables/confirm'
 
 const props = defineProps({
   formId: { type: Number, required: true },
@@ -39,11 +40,25 @@ const targets = ref({})
 const received = ref({})
 // Total por equipo (ayuda de reparto): teamCode => cadena numérica.
 const teamTotals = ref({})
+// Campo de muestreo GUARDADO y nº de objetivos guardados (para avisar de que cambiar
+// el campo descartará el plan del campo anterior, que queda en el histórico).
+const savedSampleField = ref('')
+const savedTargetCount = ref(0)
 
 // Campos elegibles como muestreo (principal y secundarios): opción única (`select_one`)
 // con valores conocidos. Se excluye `select_multiple` (una fila caería en varias celdas)
 // y los campos sin opciones (sin conjunto cerrado que forme las columnas/distribución).
 const singleFields = computed(() => props.fields.filter(f => (f.options?.length || 0) > 0 && !f.multi))
+
+// Exclusión mutua entre los tres selects: un campo elegido en uno deja de listarse en
+// los otros dos (el propio valor sigue en su lista porque no se excluye a sí mismo).
+const without = (...taken) => {
+  const set = new Set(taken.filter(Boolean))
+  return singleFields.value.filter(f => !set.has(f.key))
+}
+const principalFields = computed(() => without(sampleField2.value, sampleField3.value))
+const secondary2Fields = computed(() => without(sampleField.value, sampleField3.value))
+const secondary3Fields = computed(() => without(sampleField.value, sampleField2.value))
 
 const teamOptions = computed(() => {
   const f = props.fields.find(x => x.key === props.teamField)
@@ -70,6 +85,8 @@ async function load() {
     for (const [k, v] of Object.entries(d.targets || {})) tgt[k] = String(v)
     targets.value = tgt
     received.value = d.received || {}
+    savedSampleField.value = d.sample_field || ''
+    savedTargetCount.value = Object.keys(d.targets || {}).length
   } catch (e) {
     error.value = apiError(e, t('formSettings.sampleLoadError'))
   } finally {
@@ -116,7 +133,35 @@ const rowTotal = (teamValue) =>
 const grandTotal = computed(() =>
   teamOptions.value.reduce((s, tm) => s + rowTotal(tm.value), 0))
 
+// Cobertura viva del plan (en vez de un binario «completado», difuso para una matriz):
+// celdas con objetivo, equipos con al menos un objetivo, y total de equipos.
+const cellsWithTarget = computed(() => {
+  let n = 0
+  for (const tm of teamOptions.value) {
+    for (const c of sampleOptions.value) {
+      if (Number(targets.value[key(tm.value, c.value)] || 0) > 0) n++
+    }
+  }
+  return n
+})
+const teamsCovered = computed(() => teamOptions.value.filter(tm => rowTotal(tm.value) > 0).length)
+
+// Aviso: se cambió el campo de muestreo respecto al guardado y había objetivos → al
+// guardar, esos objetivos del campo anterior se descartan del plan vigente (quedan en
+// el histórico). Solo se muestra mientras el cambio esté pendiente de guardar.
+const fieldChangeWarning = computed(() =>
+  savedSampleField.value !== '' && sampleField.value !== savedSampleField.value && savedTargetCount.value > 0)
+
 async function save() {
+  // Guardar un plan SIN ningún objetivo equivale a no monitorear: se avisa antes.
+  if (sampleField.value && grandTotal.value === 0) {
+    const ok = await confirmDialog({
+      title: t('formSettings.sampleEmptyTitle'),
+      message: t('formSettings.sampleEmptyBody'),
+      confirmText: t('formSettings.sampleEmptyConfirm'),
+    })
+    if (!ok) return
+  }
   saving.value = true
   error.value = ''
   flash.value = ''
@@ -164,7 +209,7 @@ watch(() => props.formId, load)
           <span class="text-sm font-medium text-slate-700">{{ $t('formSettings.sampleField') }}</span>
           <select v-model="sampleField" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30">
             <option value="">{{ $t('formSettings.sampleNone') }}</option>
-            <option v-for="f in singleFields" :key="f.key" :value="f.key">{{ f.label }}</option>
+            <option v-for="f in principalFields" :key="f.key" :value="f.key">{{ f.label }}</option>
           </select>
           <span class="mt-1 block text-xs text-slate-400">{{ $t('formSettings.sampleFieldHint') }}</span>
         </label>
@@ -185,13 +230,18 @@ watch(() => props.formId, load)
         <div class="mt-2 grid gap-4 sm:grid-cols-2">
           <select v-model="sampleField2" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30">
             <option value="">{{ $t('formSettings.sampleField2') }} —</option>
-            <option v-for="f in singleFields" :key="f.key" :value="f.key" :disabled="f.key === sampleField">{{ f.label }}</option>
+            <option v-for="f in secondary2Fields" :key="f.key" :value="f.key">{{ f.label }}</option>
           </select>
           <select v-model="sampleField3" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30">
             <option value="">{{ $t('formSettings.sampleField3') }} —</option>
-            <option v-for="f in singleFields" :key="f.key" :value="f.key" :disabled="f.key === sampleField || f.key === sampleField2">{{ f.label }}</option>
+            <option v-for="f in secondary3Fields" :key="f.key" :value="f.key">{{ f.label }}</option>
           </select>
         </div>
+      </div>
+
+      <!-- Aviso: cambiar el campo descartará el plan del campo anterior (queda en histórico) -->
+      <div v-if="fieldChangeWarning" class="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900">
+        {{ $t('formSettings.sampleFieldChanged', { n: savedTargetCount }) }}
       </div>
 
       <!-- Matriz equipo × valor -->
@@ -209,6 +259,10 @@ watch(() => props.formId, load)
             <span class="text-xs text-slate-400">{{ $t('formSettings.sampleTotalHeader') }}: {{ grandTotal.toLocaleString() }}</span>
           </div>
           <p class="mt-0.5 text-xs text-slate-400">{{ $t('formSettings.sampleMatrixHint') }}</p>
+          <!-- Cobertura viva del plan (celdas con objetivo · equipos con plan · total). -->
+          <p class="mt-1 text-xs" :class="grandTotal > 0 ? 'text-slate-500' : 'text-amber-600 dark:text-amber-400'">
+            {{ $t('formSettings.sampleCoverage', { cells: cellsWithTarget, teams: teamsCovered, teamsTotal: teamOptions.length, total: grandTotal.toLocaleString() }) }}
+          </p>
 
           <div class="mt-3 overflow-x-auto">
             <table class="w-full border-collapse text-sm">
