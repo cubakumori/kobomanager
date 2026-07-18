@@ -4,6 +4,60 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.37.0] - 2026-07-18
+
+Tanda de ajustes pre-release: **corte de revisión y backlog en el panel de muestra**,
+**favoritos en «Mis formularios»** (con la vista persistida por usuario), nota del
+congelado en móvil y los administradores fuera del selector de Permisos.
+
+### Añadido
+
+- **Panel de muestra — contexto de revisión** (`forms/<id>/sample`): bajo el «Total
+  general» aparece el **corte** (fecha/hora de la **última acción de aprobar**, venga
+  de KoboManager o del pull de KoboToolbox — en ese caso, cuando el sync la registró;
+  se toma del historial `submission_reviews`, no del estado vigente) y el **backlog
+  actual**: nº de envíos **pendientes de revisión** y **en espera**. El backlog se
+  desglosa además **por equipo** (línea en cada tarjeta del modo lineal, solo si hay
+  algo esperando). Todo respeta el scoping por filas: un jefe de equipo ve su corte y
+  su backlog. Un equipo con *solo* envíos pendientes también aparece en el panel.
+  Matiz honesto: como no se revisa en orden cronológico estricto, «pendientes ahora»
+  no equivale exactamente a «llegados después del corte»; son dos datos complementarios.
+- **Tarjetas de equipo plegables** (panel de muestra, modo lineal): el encabezado
+  pliega/despliega el detalle (celdas, proyección, backlog) con un clic; el nombre,
+  el total y la barra de avance quedan siempre visibles. Estado efímero (se resetea
+  al recargar) y accesible por teclado.
+- **Favoritos en «Mis formularios»** (`/forms`): estrella en la esquina de cada
+  tarjeta para marcar el formulario como favorito (por usuario, guardado en servidor:
+  tabla nueva `user_form_favorites` + `PUT /forms/{id}/favorite`, exige `can_view`) y
+  botón «Favoritos» junto al filtro de tipo para ver solo los marcados (se ofrece en
+  cuanto existe algún favorito). Combina con los filtros de cuenta y tipo.
+- **La «vista» de «Mis formularios» se persiste por usuario**: la combinación de
+  cuenta + tipo + favoritos se guarda en el servidor (`users.ui_prefs`, vía
+  `PUT /profile/prefs` con lista blanca de claves; viaja en `/auth/me` y el login) y
+  se restaura al volver — sobrevive al cierre de sesión y sigue al usuario entre
+  dispositivos. Es ortogonal al ajuste global «Mis formularios: orden de las
+  tarjetas»: aquel ordena, los filtros seleccionan. Si la cuenta o el tipo guardados
+  ya no existen, se ignoran con gracia.
+
+### Cambiado
+
+- **Permisos (admin/permissions)**: los **administradores ya no aparecen** en el
+  selector de usuario — tienen acceso total y estos permisos no les aplican (misma
+  regla que el enlace «Permisos» de admin/usuarios, que ya se ocultaba para admins);
+  una nota bajo el selector lo explica. El deep-link `?user=<admin>` cae con gracia
+  al estado vacío.
+- **Configuración → «Tablas: columnas congeladas»**: nota nueva que documenta el
+  comportamiento deliberado en pantallas estrechas (<540 px, de la 2ª tanda
+  responsive): si la tabla de envíos incluye la casilla de selección, solo esta queda
+  fija, para que lo congelado nunca ocupe media pantalla.
+
+### Nota de actualización (esquema)
+
+- Tabla nueva `user_form_favorites` (favoritos por usuario: PK `user_id, form_id`,
+  FKs con `ON DELETE CASCADE`) y columna nueva `users.ui_prefs` (JSON NULL,
+  preferencias de interfaz por usuario). `php api/cli/migrate.php` aplica ambas; sin
+  backfill (empezar sin favoritos ni preferencias ya es el estado correcto).
+
 ## [1.36.0] - 2026-07-18
 
 La **paleta de cumplimiento gobierna todo el panel de muestra** y Configuración gana la

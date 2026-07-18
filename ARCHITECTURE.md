@@ -754,7 +754,9 @@ controller maps a `42S22`/`42S02` `PDOException` to a clear `DB_SCHEMA_OUTDATED`
 error — the real response reaches the app.
 
 Key tables: `kobo_accounts`, `users`, `user_sessions`, `forms`, `submissions_cache`,
-`submission_reviews`, `user_form_permissions`, `notification_config`, `audit_log`,
+`submission_reviews`, `user_form_permissions`, `user_form_favorites` (per‑user "My forms"
+stars; a pure preference — access still lives in `user_form_permissions`),
+`notification_config`, `audit_log`,
 `login_attempts`, `rate_hits`, `settings`, `password_resets`, `share_links`,
 `contact_messages` (messages from the public contact form on the «Apoyar» page; admins read
 and manage them from the `/admin/messages` inbox — statuses `new`/`read`/`archived`),

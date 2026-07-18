@@ -19,7 +19,7 @@ if (RateLimit::tooMany($ip, 5, 60)) {
 $in = Request::required(['email', 'password']);
 
 $user = DB::run(
-    'SELECT id, name, email, role, locale, password_hash, active FROM users WHERE email = ?',
+    'SELECT id, name, email, role, locale, ui_prefs, password_hash, active FROM users WHERE email = ?',
     [$in['email']]
 )->fetch();
 
@@ -45,5 +45,6 @@ ErrorResponse::ok([
     'role'        => $user['role'],
     'locale_pref' => $user['locale'] ?? null,
     'locale'      => ($user['locale'] ?? null) ?: Settings::defaultLocale(),
+    'ui_prefs'    => $user['ui_prefs'] ? (json_decode($user['ui_prefs'], true) ?: null) : null,
     'audit_self_view_enabled' => Settings::auditSelfViewEnabled(),
 ]);

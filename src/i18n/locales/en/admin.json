@@ -345,6 +345,7 @@
     "landingCtaHint": "The final \"it's free software: run your own instance\" band (links to the repository and to \"Support\"). When disabled, the homepage ends earlier.",
     "tableFreeze": "Tables: frozen columns",
     "tableFreezeDesc": "When a table scrolls sideways, the first column can stay pinned as a reference.",
+    "tableFreezeNote": "On narrow screens (under 540 px), if the submissions table includes the selection checkbox, only the checkbox stays pinned: frozen columns never take up half the screen.",
     "tableFreeze_first": "Freeze the first column",
     "tableFreeze_none": "Do not freeze",
     "formsOrder": "My Forms: card order",

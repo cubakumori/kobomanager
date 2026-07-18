@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import api from '../services/api'
@@ -38,13 +38,48 @@ const types = computed(() => {
 })
 const typeLabel = (tpe) => t('forms.type' + tpe.charAt(0).toUpperCase() + tpe.slice(1))
 
+// Filtro de FAVORITOS (estrella): solo los marcados por este usuario. El botón se
+// ofrece en cuanto hay algún favorito (o si el filtro quedó activo y ya no hay).
+const favOnly = ref(false)
+const anyFavorite = computed(() => forms.value.some((f) => f.favorite))
+
 const filteredForms = computed(() =>
   forms.value.filter(
     (f) =>
       (selectedAccount.value === '' || f.account_id === Number(selectedAccount.value)) &&
-      (selectedType.value === '' || f.deployment_status === selectedType.value),
+      (selectedType.value === '' || f.deployment_status === selectedType.value) &&
+      (!favOnly.value || f.favorite),
   ),
 )
+
+// ---------- Persistencia de la vista (cuenta + tipo + favoritos) ----------
+// Preferencia POR USUARIO en el servidor (users.ui_prefs.forms_view): sobrevive al
+// cierre de sesión y sigue al usuario entre dispositivos. Se restaura tras cargar
+// los formularios (solo si la cuenta/tipo guardados siguen existiendo) y se guarda
+// en cada cambio, sin bloquear la UI (fallo silencioso: es una preferencia).
+let prefsReady = false
+function restorePrefs() {
+  const fv = auth.user?.ui_prefs?.forms_view
+  if (fv) {
+    if (fv.account != null && accounts.value.some((a) => a.id === fv.account)) selectedAccount.value = fv.account
+    if (fv.type && types.value.includes(fv.type)) selectedType.value = fv.type
+    favOnly.value = !!fv.favorites && anyFavorite.value
+  }
+  prefsReady = true
+}
+watch([selectedAccount, selectedType, favOnly], () => {
+  if (!prefsReady) return
+  const payload = {
+    forms_view: {
+      account: selectedAccount.value === '' ? null : Number(selectedAccount.value),
+      type: selectedType.value,
+      favorites: favOnly.value,
+    },
+  }
+  api.put('/profile/prefs', payload)
+    .then(({ data }) => { if (auth.user) auth.user.ui_prefs = data.data.ui_prefs })
+    .catch(() => { /* preferencia: no molestar si falla */ })
+})
 
 // Color de fondo según el TIPO del formulario, siguiendo la columna «Tipo» de
 // admin/forms: desplegado = verde (el accent de marca actual), borrador = ámbar,
@@ -100,10 +135,28 @@ async function load() {
     const [formsRes, cfg] = await Promise.all([api.get('/forms'), api.get('/config')])
     forms.value = formsRes.data.data
     if (cfg.data.data.viewer_actions) actions.value = cfg.data.data.viewer_actions
+    if (!prefsReady) restorePrefs()
   } catch (e) {
     error.value = apiError(e, t('myForms.loadError'))
   } finally {
     loading.value = false
+  }
+}
+
+// Marcar/desmarcar favorito: actualización optimista con vuelta atrás si falla.
+const favBusy = ref(new Set())
+async function toggleFavorite(f) {
+  if (favBusy.value.has(f.id)) return
+  const next = !f.favorite
+  f.favorite = next
+  favBusy.value.add(f.id)
+  try {
+    await api.put(`/forms/${f.id}/favorite`, { favorite: next })
+  } catch (e) {
+    f.favorite = !next
+    actionError.value = `«${f.name}»: ${apiError(e, t('myForms.favoriteErr'))}`
+  } finally {
+    favBusy.value.delete(f.id)
   }
 }
 
@@ -200,7 +253,7 @@ onMounted(load)
     </div>
 
     <template v-else>
-      <div v-if="accounts.length > 1 || types.length > 1" class="flex flex-wrap items-center gap-4">
+      <div v-if="accounts.length > 1 || types.length > 1 || anyFavorite || favOnly" class="flex flex-wrap items-center gap-4">
         <label v-if="accounts.length > 1" class="flex items-center gap-2 text-sm text-slate-600">
           {{ $t('forms.accountFilter') }}
           <select
@@ -221,17 +274,47 @@ onMounted(load)
             <option v-for="tpe in types" :key="tpe" :value="tpe">{{ typeLabel(tpe) }}</option>
           </select>
         </label>
+        <!-- Solo favoritos (estrella) -->
+        <button
+          v-if="anyFavorite || favOnly"
+          type="button"
+          :aria-pressed="favOnly"
+          :title="$t('myForms.favoritesFilterTitle')"
+          class="flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm transition"
+          :class="favOnly
+            ? 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+            : 'border-slate-300 text-slate-600 hover:text-slate-800'"
+          @click="favOnly = !favOnly"
+        >
+          <svg viewBox="0 0 20 20" aria-hidden="true" class="h-4 w-4" :fill="favOnly ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="1.5">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 0 0 .95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 0 0-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 0 0-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 0 0-.363-1.118L2.098 10.1c-.783-.57-.38-1.81.588-1.81H7.6a1 1 0 0 0 .951-.69l1.519-4.674Z" />
+          </svg>
+          {{ $t('myForms.favoritesFilter') }}
+        </button>
       </div>
 
     <div class="grid gap-4 sm:grid-cols-2">
       <div
         v-for="f in filteredForms"
         :key="f.id"
-        class="flex flex-col rounded-xl p-5 shadow-sm ring-1 transition"
+        class="relative flex flex-col rounded-xl p-5 shadow-sm ring-1 transition"
         :class="tone(f).card"
       >
+        <!-- Estrella de favorito (hermana del enlace: no navega) -->
+        <button
+          type="button"
+          class="absolute right-3 top-3 rounded-md p-1 transition"
+          :class="f.favorite ? 'text-amber-400 hover:text-amber-500' : 'text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400'"
+          :aria-pressed="f.favorite"
+          :title="f.favorite ? $t('myForms.favoriteRemove') : $t('myForms.favoriteAdd')"
+          @click="toggleFavorite(f)"
+        >
+          <svg viewBox="0 0 20 20" aria-hidden="true" class="h-5 w-5" :fill="f.favorite ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="1.5">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 0 0 .95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 0 0-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 0 0-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 0 0-.363-1.118L2.098 10.1c-.783-.57-.38-1.81.588-1.81H7.6a1 1 0 0 0 .951-.69l1.519-4.674Z" />
+          </svg>
+        </button>
         <RouterLink :to="{ name: 'submissions', params: { id: f.id } }" class="block">
-          <p class="flex items-center gap-2 text-xs uppercase tracking-wider" :class="tone(f).eyebrow">
+          <p class="flex items-center gap-2 pr-8 text-xs uppercase tracking-wider" :class="tone(f).eyebrow">
             {{ f.account_label }}
             <span
               v-if="f.deployment_status && f.deployment_status !== 'deployed'"

@@ -108,7 +108,12 @@
     "loadError": "No se pudieron cargar los formularios",
     "viewSubmissions": "Ver envíos",
     "settings": "Ajustes",
-    "settingsTitle": "Ajustes del formulario (desglose por equipo y control de calidad)"
+    "settingsTitle": "Ajustes del formulario (desglose por equipo y control de calidad)",
+    "favoriteAdd": "Marcar como favorito",
+    "favoriteRemove": "Quitar de favoritos",
+    "favoriteErr": "No se pudo guardar el favorito",
+    "favoritesFilter": "Favoritos",
+    "favoritesFilterTitle": "Mostrar solo los formularios marcados como favoritos"
   },
   "about": {
     "title": "Acerca de KoboToolbox",

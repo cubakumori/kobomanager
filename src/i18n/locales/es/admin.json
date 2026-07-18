@@ -345,6 +345,7 @@
     "landingCtaHint": "La banda final «es software libre: monta tu propia instancia» (enlace al repositorio y a «Apoyar»). Si se desactiva, la portada termina antes.",
     "tableFreeze": "Tablas: columnas congeladas",
     "tableFreezeDesc": "Al desplazar una tabla lateralmente, la primera columna puede quedar fija como referencia.",
+    "tableFreezeNote": "En pantallas estrechas (menos de 540 px), si la tabla de envíos incluye la casilla de selección, solo esta queda fija: así lo congelado nunca ocupa media pantalla.",
     "tableFreeze_first": "Congelar la primera columna",
     "tableFreeze_none": "No congelar",
     "formsOrder": "Mis formularios: orden de las tarjetas",

@@ -32,6 +32,7 @@ abstract class HttpTestCase extends TestCase
     /** Tablas que cada test deja limpias antes de sembrar (orden irrelevante: FK checks off). */
     private const WORK_TABLES = [
         'audit_log', 'submission_reviews', 'submissions_cache', 'user_form_permissions',
+        'user_form_favorites',
         'share_links', 'user_sessions', 'login_attempts', 'rate_hits', 'password_resets',
         'notification_config', 'push_subscriptions', 'contact_messages',
         'sample_targets', 'sample_target_history', 'forms', 'kobo_accounts',

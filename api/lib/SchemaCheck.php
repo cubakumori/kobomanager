@@ -79,6 +79,16 @@ class SchemaCheck {
     CONSTRAINT fk_sample_history_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
     INDEX idx_sample_history_form (form_id, snapshot_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"],
+
+        ['table' => 'user_form_favorites', 'column' => null, 'since' => '1.37.0',
+         'fix' => "CREATE TABLE IF NOT EXISTS user_form_favorites (
+    user_id         INT UNSIGNED NOT NULL,
+    form_id         INT UNSIGNED NOT NULL,
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, form_id),
+    CONSTRAINT fk_fav_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_fav_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"],
     ];
 
     /**
@@ -210,6 +220,11 @@ class SchemaCheck {
         ['table' => 'user_form_permissions', 'column' => 'can_sample', 'since' => '1.34.0',
          'fix' => "ALTER TABLE user_form_permissions ADD COLUMN can_sample TINYINT(1) DEFAULT 0 AFTER can_settings",
          'backfill' => "UPDATE user_form_permissions SET can_sample = can_settings"],
+
+        // Preferencias de interfaz por usuario (hoy: filtros persistidos de «Mis
+        // formularios»). NULL = ninguna; sin backfill (empezar vacío ya es correcto).
+        ['table' => 'users', 'column' => 'ui_prefs', 'since' => '1.37.0',
+         'fix' => "ALTER TABLE users ADD COLUMN ui_prefs JSON NULL AFTER locale"],
     ];
 
     /** Columnas cuyo backfill requiere el recálculo PHP de migrate.php (no basta SQL). */

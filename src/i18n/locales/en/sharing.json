@@ -121,6 +121,7 @@
     "subtitle": "Assign which forms each user can view, edit or validate.",
     "userFilter": "User:",
     "selectUser": "— Select a user —",
+    "adminsHidden": "Administrators are not listed: they have full access and these permissions do not apply to them.",
     "accountFilter": "Account:",
     "allAccounts": "All accounts",
     "colForm": "Form",

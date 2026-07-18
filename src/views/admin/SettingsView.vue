@@ -505,6 +505,7 @@ onMounted(load)
         <div>
           <h2 class="font-semibold text-slate-900">{{ $t('settings.tableFreeze') }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.tableFreezeDesc') }}</p>
+          <p class="mt-1 text-xs text-slate-400">{{ $t('settings.tableFreezeNote') }}</p>
         </div>
         <select
           v-model="tableFreeze"

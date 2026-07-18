@@ -33,6 +33,11 @@ CREATE TABLE IF NOT EXISTS users (
     role            ENUM('admin', 'viewer') NOT NULL DEFAULT 'viewer',
     -- Idioma preferido del usuario (NULL = usar el idioma por defecto del sistema).
     locale          VARCHAR(5) NULL,
+    -- Preferencias de interfaz por usuario (NULL = ninguna). Objeto JSON con claves
+    -- de vista; hoy solo `forms_view` = filtros de «Mis formularios»:
+    --   { "forms_view": { "account": <id|null>, "type": "deployed|draft|archived|", "favorites": true|false } }
+    -- Las escribe PUT /profile/prefs (lista blanca de claves); viaja en /auth/me.
+    ui_prefs        JSON NULL,
     active          TINYINT(1) DEFAULT 1,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -215,7 +220,20 @@ CREATE TABLE IF NOT EXISTS user_form_permissions (
     UNIQUE KEY unique_user_form (user_id, form_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3.8 Configuración de notificaciones (una fila por usuario × formulario)
+-- 3.8 Formularios favoritos por usuario (estrella de «Mis formularios»). Solo
+--     marca la preferencia: no otorga acceso (el permiso vive en
+--     user_form_permissions) y el listado la expone únicamente sobre los
+--     formularios que el usuario ya puede ver.
+CREATE TABLE IF NOT EXISTS user_form_favorites (
+    user_id         INT UNSIGNED NOT NULL,
+    form_id         INT UNSIGNED NOT NULL,
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, form_id),
+    CONSTRAINT fk_fav_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_fav_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3.9 Configuración de notificaciones (una fila por usuario × formulario)
 CREATE TABLE IF NOT EXISTS notification_config (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id         INT UNSIGNED NOT NULL,
@@ -235,7 +253,7 @@ CREATE TABLE IF NOT EXISTS notification_config (
     CONSTRAINT fk_notif_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3.9 Registro de auditoría
+-- 3.10 Registro de auditoría
 CREATE TABLE IF NOT EXISTS audit_log (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id         INT UNSIGNED NOT NULL,
@@ -254,7 +272,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
     INDEX idx_audit_lineage (form_id, edit_new_uid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3.10 Rate limiting de login (por IP)
+-- 3.11 Rate limiting de login (por IP)
 CREATE TABLE IF NOT EXISTS login_attempts (
     id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     ip          VARCHAR(45) NOT NULL,
@@ -272,14 +290,14 @@ CREATE TABLE IF NOT EXISTS rate_hits (
     INDEX idx_bucket_ip_time (bucket, ip, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3.11 Configuración global clave/valor (los defaults se siembran en db/002_defaults.sql)
+-- 3.12 Configuración global clave/valor (los defaults se siembran en db/002_defaults.sql)
 CREATE TABLE IF NOT EXISTS settings (
     `key`       VARCHAR(64) PRIMARY KEY,
     `value`     TEXT,
     updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3.12 Recuperación de contraseña por email (tokens de un solo uso; solo se
+-- 3.13 Recuperación de contraseña por email (tokens de un solo uso; solo se
 --      guarda el HASH sha256 del token; gobernado por `password_reset_enabled`)
 CREATE TABLE IF NOT EXISTS password_resets (
     id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -294,7 +312,7 @@ CREATE TABLE IF NOT EXISTS password_resets (
     INDEX idx_expires (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3.13 Enlaces públicos de solo lectura (token en URL, contraseña opcional,
+-- 3.14 Enlaces públicos de solo lectura (token en URL, contraseña opcional,
 --      scoping por filas/columnas; ver lib/ShareLink y la cabecera histórica en git)
 CREATE TABLE IF NOT EXISTS share_links (
     id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -323,7 +341,7 @@ CREATE TABLE IF NOT EXISTS share_links (
     INDEX idx_form (form_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3.14 Mensajes del formulario de contacto público (/apoyar): fuente de verdad
+-- 3.15 Mensajes del formulario de contacto público (/apoyar): fuente de verdad
 --      aunque el email best-effort a CONTACT_TO falle (ver api/v1/public/contact.php)
 CREATE TABLE IF NOT EXISTS contact_messages (
     id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -340,7 +358,7 @@ CREATE TABLE IF NOT EXISTS contact_messages (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3.15 Suscripciones Web Push (una fila por dispositivo/navegador con opt-in del
+-- 3.16 Suscripciones Web Push (una fila por dispositivo/navegador con opt-in del
 --      usuario; ver api/v1/push_subscriptions.php y lib/WebPush). El endpoint del
 --      push service puede superar los 255 caracteres y no cabe en un índice único
 --      → la unicidad va sobre su sha256 (endpoint_hash).
@@ -359,7 +377,7 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
     INDEX idx_push_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3.16 Plan de muestra VIGENTE (objetivo ya resuelto por celda equipo × valor del
+-- 3.17 Plan de muestra VIGENTE (objetivo ya resuelto por celda equipo × valor del
 --      select_one de muestreo). `team_value` = código del valor de forms.stats_team_field
 --      ('__none__' = sin equipo); `sample_value` = código de la opción de forms.sample_field.
 --      El editor puede rellenar la matriz por «objetivo por equipo + reparto», pero aquí
@@ -377,7 +395,7 @@ CREATE TABLE IF NOT EXISTS sample_targets (
     UNIQUE KEY unique_sample_cell (form_id, team_value, sample_value)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3.17 Histórico del plan de muestra: al guardar el plan se INSERTA un snapshot
+-- 3.18 Histórico del plan de muestra: al guardar el plan se INSERTA un snapshot
 --      completo (no se sobrescribe), de modo que una renegociación a mitad de campaña
 --      no borra lo planificado antes. `payload_json` = { field, denominator,
 --      cells: [{ team_value, sample_value, target }, ...] } tal como se guardó.

@@ -15,6 +15,10 @@
  *
  * Las celdas SIN objetivo pero CON datos se marcan «fuera de plan» y NO se
  * descartan. Los campos secundarios (etapa 1) aportan solo distribución observada.
+ *
+ * Además del plan devuelve el CONTEXTO DE REVISIÓN: el corte (`last_approved_at`,
+ * última acción de aprobar según el historial submission_reviews) y el backlog
+ * actual (nº de pendientes y «en espera», global y por equipo).
  */
 class Sample {
 
@@ -120,12 +124,25 @@ class Sample {
         $secAnswered = []; // field => nº de envíos con respuesta
         $grandDone   = 0;
 
+        // Backlog de REVISIÓN actual (pendientes y «en espera»), global y por equipo:
+        // contextualiza el corte (lo llegado que aún no pasó revisión). Con denominador
+        // 'approved_pending' un envío pendiente cuenta a la vez como «hecho» y como
+        // backlog: es deliberado (está en la muestra pero sigue esperando revisión).
+        $teamPending = []; // team => nº pendientes
+        $teamOnHold  = []; // team => nº en espera
+        $grandPending = 0;
+        $grandOnHold  = 0;
+
         if (!$sampleHidden) {
+            // El stream trae el denominador MÁS el backlog (pending/on_hold) en una
+            // sola pasada; cada fila alimenta solo los acumuladores que le tocan.
+            $fetchStatuses = array_values(array_unique(array_merge($statuses, ['pending', 'on_hold'])));
+            $fetchSql = 'review_status IN (' . implode(',', array_fill(0, count($fetchStatuses), '?')) . ')';
             foreach (DB::stream(
                 "SELECT json_payload, submitted_at, review_status
                  FROM submissions_cache
-                 WHERE form_id = ? AND $scopeSql AND $statusSql",
-                array_merge([$formId], $scopeP, $statuses)
+                 WHERE form_id = ? AND $scopeSql AND $fetchSql",
+                array_merge([$formId], $scopeP, $fetchStatuses)
             ) as $r) {
                 $payload = FieldScope::apply($fieldScope, json_decode($r['json_payload'], true) ?: [], $schemaRaw);
 
@@ -133,6 +150,22 @@ class Sample {
                 $svRaw = $payload[$sampleField] ?? null;
                 $tKey  = ($tvRaw === null || $tvRaw === '' || is_array($tvRaw)) ? self::NONE : (string) $tvRaw;
                 $sKey  = ($svRaw === null || $svRaw === '' || is_array($svRaw)) ? self::NONE : (string) $svRaw;
+
+                // Backlog: por estado ACTUAL, sin importar el denominador. El equipo se
+                // registra en el eje aunque solo tenga backlog (llegó y espera revisión).
+                if ($r['review_status'] === 'pending') {
+                    $teamPending[$tKey] = ($teamPending[$tKey] ?? 0) + 1;
+                    $grandPending++;
+                    $teamsSeen[$tKey] = true;
+                } elseif ($r['review_status'] === 'on_hold') {
+                    $teamOnHold[$tKey] = ($teamOnHold[$tKey] ?? 0) + 1;
+                    $grandOnHold++;
+                    $teamsSeen[$tKey] = true;
+                }
+
+                if (!in_array($r['review_status'], $statuses, true)) {
+                    continue; // solo backlog: no cuenta como «hecho»
+                }
 
                 $cells[$tKey][$sKey] = ($cells[$tKey][$sKey] ?? 0) + 1;
                 $teamDone[$tKey]     = ($teamDone[$tKey] ?? 0) + 1;
@@ -159,6 +192,28 @@ class Sample {
                     $secAnswered[$sf] = ($secAnswered[$sf] ?? 0) + 1;
                 }
             }
+        }
+
+        // --- Corte de revisión: fecha/hora de la ÚLTIMA acción de APROBAR sobre un
+        // envío de este formulario (venga de la app o del pull de Kobo; en ese caso
+        // es cuando el sync la registró). Sobre el historial (submission_reviews),
+        // no sobre el estado vigente: una aprobación posterior revocada sigue siendo
+        // la última acción de aprobar. Respeta el mismo alcance por filas del panel.
+        $lastApprovedAt = null;
+        if (!$sampleHidden) {
+            [$cutScopeSql, $cutScopeP] = RowScope::sqlCondition($scope, 'sc.json_payload');
+            if ($extraScope !== null) {
+                [$cutExtraSql, $cutExtraP] = RowScope::sqlCondition($extraScope, 'sc.json_payload');
+                $cutScopeSql = "($cutScopeSql) AND ($cutExtraSql)";
+                $cutScopeP   = array_merge($cutScopeP, $cutExtraP);
+            }
+            $lastApprovedAt = DB::run(
+                "SELECT MAX(r.created_at) AS cut
+                 FROM submission_reviews r
+                 JOIN submissions_cache sc ON sc.submission_uid = r.submission_uid
+                 WHERE sc.form_id = ? AND $cutScopeSql AND r.status = 'approved'",
+                array_merge([$formId], $cutScopeP)
+            )->fetch()['cut'] ?? null;
         }
 
         // --- Eje de VALORES (columnas): opciones del esquema, luego códigos extra
@@ -244,6 +299,8 @@ class Sample {
                 'target'       => $targetTotal,
                 'pct'          => $targetTotal > 0 ? round($doneTotal * 100 / $targetTotal, 4) : null,
                 'out_of_plan'  => !isset($plannedTeams[$tKey]),
+                'pending'      => $teamPending[$tKey] ?? 0,
+                'on_hold'      => $teamOnHold[$tKey] ?? 0,
                 'cells'        => $rowCells,
                 'projection'   => $projection,
             ];
@@ -300,10 +357,14 @@ class Sample {
             'values'         => $valueMeta,
             'teams'          => $teams,
             'grand'          => [
-                'done'   => $grandDone,
-                'target' => $grandTarget,
-                'pct'    => $grandTarget > 0 ? round($grandDone * 100 / $grandTarget, 4) : null,
+                'done'    => $grandDone,
+                'target'  => $grandTarget,
+                'pct'     => $grandTarget > 0 ? round($grandDone * 100 / $grandTarget, 4) : null,
+                'pending' => $grandPending,
+                'on_hold' => $grandOnHold,
             ],
+            // Corte de revisión: última acción de aprobar (NULL = nada aprobado aún).
+            'last_approved_at' => $lastApprovedAt,
             'has_plan'       => !empty($plannedTeams),
             'secondary'      => $secondaryOut,
             'label_mode'     => Settings::labelMode(),

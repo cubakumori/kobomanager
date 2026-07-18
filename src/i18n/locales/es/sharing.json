@@ -121,6 +121,7 @@
     "subtitle": "Asigna qué formularios puede ver, editar o validar cada usuario.",
     "userFilter": "Usuario:",
     "selectUser": "— Selecciona un usuario —",
+    "adminsHidden": "Los administradores no aparecen: tienen acceso total y estos permisos no les aplican.",
     "accountFilter": "Cuenta:",
     "allAccounts": "Todas las cuentas",
     "colForm": "Formulario",

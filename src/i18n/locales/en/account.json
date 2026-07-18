@@ -108,7 +108,12 @@
     "loadError": "Could not load the forms",
     "viewSubmissions": "View submissions",
     "settings": "Settings",
-    "settingsTitle": "Form settings (team breakdown and quality control)"
+    "settingsTitle": "Form settings (team breakdown and quality control)",
+    "favoriteAdd": "Mark as favorite",
+    "favoriteRemove": "Remove from favorites",
+    "favoriteErr": "Could not save the favorite",
+    "favoritesFilter": "Favorites",
+    "favoritesFilterTitle": "Show only forms marked as favorites"
   },
   "about": {
     "title": "About KoboToolbox",

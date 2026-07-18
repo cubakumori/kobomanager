@@ -233,4 +233,77 @@ final class SampleTest extends DbTestCase
         $this->assertSame(0, $res['grand']['target']);
         $this->assertTrue($this->team($res, 't1')['out_of_plan']);
     }
+
+    public function testReviewBacklogAndCutoff(): void
+    {
+        $formId = $this->makeForm();
+        $this->target($formId, 't1', 'a1', 10);
+
+        // t1: 2 aprobados + 1 pendiente + 1 en espera. t2: SOLO 1 pendiente (sin plan
+        // ni aprobados: debe aparecer igualmente en el eje, con su backlog).
+        $this->review($this->addSubmission($formId, ['team' => 't1', 'age' => 'a1']), 'approved');
+        $this->review($this->addSubmission($formId, ['team' => 't1', 'age' => 'a1']), 'approved');
+        $this->addSubmission($formId, ['team' => 't1', 'age' => 'a1']); // pendiente
+        $this->review($this->addSubmission($formId, ['team' => 't1', 'age' => 'a2']), 'on_hold');
+        $this->addSubmission($formId, ['team' => 't2', 'age' => 'a1']); // pendiente
+
+        $res = Sample::compute($formId, $this->schema(), null, null, 'es', 'team', 'age', 'approved');
+
+        // Backlog global y por equipo (por estado ACTUAL, sin importar el denominador).
+        $this->assertSame(2, $res['grand']['pending']);
+        $this->assertSame(1, $res['grand']['on_hold']);
+        $t1 = $this->team($res, 't1');
+        $this->assertSame(1, $t1['pending']);
+        $this->assertSame(1, $t1['on_hold']);
+        $t2 = $this->team($res, 't2');
+        $this->assertNotNull($t2, 'un equipo con solo backlog aparece en el eje');
+        $this->assertSame(0, $t2['done']);
+        $this->assertSame(1, $t2['pending']);
+
+        // Corte: última acción de APROBAR registrada en submission_reviews.
+        $expected = DB::run(
+            "SELECT MAX(created_at) AS m FROM submission_reviews WHERE status = 'approved'"
+        )->fetch()['m'];
+        $this->assertNotNull($res['last_approved_at']);
+        $this->assertSame($expected, $res['last_approved_at']);
+
+        // Con denominador approved_pending el pendiente cuenta como hecho Y como backlog.
+        $res2 = Sample::compute($formId, $this->schema(), null, null, 'es', 'team', 'age', 'approved_pending');
+        $this->assertSame(3, $this->team($res2, 't1')['done']); // 2 aprobados + 1 pendiente
+        $this->assertSame(1, $this->team($res2, 't1')['pending']);
+    }
+
+    public function testCutoffNullWithoutApprovals(): void
+    {
+        $formId = $this->makeForm();
+        $this->target($formId, 't1', 'a1', 5);
+        $this->addSubmission($formId, ['team' => 't1', 'age' => 'a1']); // pendiente
+
+        $res = Sample::compute($formId, $this->schema(), null, null, 'es', 'team', 'age', 'approved');
+        $this->assertNull($res['last_approved_at']);
+        $this->assertSame(1, $res['grand']['pending']);
+        $this->assertSame(0, $res['grand']['on_hold']);
+    }
+
+    public function testCutoffRespectsRowScope(): void
+    {
+        $formId = $this->makeForm();
+        // Aprobado en t1 y en t2; con alcance restringido a t1, el corte y el backlog
+        // solo ven t1 (mismo alcance que el resto del panel).
+        $this->review($this->addSubmission($formId, ['team' => 't1', 'age' => 'a1']), 'approved');
+        $this->review($this->addSubmission($formId, ['team' => 't2', 'age' => 'a1']), 'approved');
+        $this->addSubmission($formId, ['team' => 't2', 'age' => 'a1']); // pendiente fuera del alcance
+
+        $scope = RowScope::normalize(['conditions' => [['field' => 'team', 'values' => ['t1']]]]);
+        $res = Sample::compute($formId, $this->schema(), $scope, null, 'es', 'team', 'age', 'approved');
+
+        $this->assertSame(1, $res['grand']['done']);
+        $this->assertSame(0, $res['grand']['pending']);
+        $expected = DB::run(
+            "SELECT MAX(r.created_at) AS m FROM submission_reviews r
+             JOIN submissions_cache sc ON sc.submission_uid = r.submission_uid
+             WHERE r.status = 'approved' AND JSON_UNQUOTE(JSON_EXTRACT(sc.json_payload, '$.team')) = 't1'"
+        )->fetch()['m'];
+        $this->assertSame($expected, $res['last_approved_at']);
+    }
 }

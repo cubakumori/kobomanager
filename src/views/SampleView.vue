@@ -75,6 +75,16 @@ function setView(key) {
   localStorage.setItem(VIEW_KEY, key)
 }
 
+// ---------- Plegado de tarjetas de equipo (modo lineal) ----------
+// Estado efímero (se resetea al recargar: es un panel de monitoreo, no una preferencia).
+const collapsedTeams = ref(new Set())
+function toggleTeam(key) {
+  const s = new Set(collapsedTeams.value)
+  if (s.has(key)) s.delete(key)
+  else s.add(key)
+  collapsedTeams.value = s
+}
+
 // ---------- Ejes de la tabla (tabla / mapa de calor / semáforo) ----------
 // El backend omite en `team.cells` las celdas vacías sin objetivo, así que la
 // tabla se arma sobre el eje canónico `data.values` mapeando cada fila por valor.
@@ -273,6 +283,21 @@ onMounted(load)
               ></div>
             </div>
           </div>
+          <!-- Corte de revisión (última aprobación) + backlog actual -->
+          <div class="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-slate-100 pt-3 text-xs text-slate-500">
+            <span>
+              <span class="font-medium text-slate-600">{{ $t('sample.cutoff') }}:</span>
+              <span class="ml-1 tabular-nums">{{ data.last_approved_at || $t('sample.cutoffNone') }}</span>
+            </span>
+            <span>
+              {{ $t('sample.pendingNow') }}:
+              <span class="font-semibold tabular-nums text-slate-700">{{ num(data.grand.pending) }}</span>
+            </span>
+            <span>
+              {{ $t('sample.onHoldNow') }}:
+              <span class="font-semibold tabular-nums text-slate-700">{{ num(data.grand.on_hold) }}</span>
+            </span>
+          </div>
         </section>
 
         <template v-if="data.teams.length">
@@ -283,10 +308,23 @@ onMounted(load)
               :key="team.key"
               class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200"
             >
-              <div class="flex flex-wrap items-baseline justify-between gap-2">
-                <h3 class="font-semibold text-slate-900">
-                  {{ team.name }}
-                  <span v-if="team.out_of_plan" class="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[0.65rem] font-medium uppercase tracking-wide text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">{{ $t('sample.outOfPlan') }}</span>
+              <!-- Header clicable: pliega/despliega el detalle de la tarjeta -->
+              <div
+                role="button"
+                tabindex="0"
+                :aria-expanded="!collapsedTeams.has(team.key)"
+                :title="$t('sample.toggleTeam')"
+                class="flex cursor-pointer flex-wrap items-baseline justify-between gap-2 rounded-md -m-1 p-1 hover:bg-slate-50"
+                @click="toggleTeam(team.key)"
+                @keydown.enter.prevent="toggleTeam(team.key)"
+                @keydown.space.prevent="toggleTeam(team.key)"
+              >
+                <h3 class="flex items-center gap-1.5 font-semibold text-slate-900">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="h-4 w-4 shrink-0 text-slate-400 transition-transform" :class="collapsedTeams.has(team.key) ? '-rotate-90' : ''">
+                    <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                  </svg>
+                  <span>{{ team.name }}</span>
+                  <span v-if="team.out_of_plan" class="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[0.65rem] font-medium uppercase tracking-wide text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">{{ $t('sample.outOfPlan') }}</span>
                 </h3>
                 <span class="text-sm text-slate-500">
                   <span class="font-semibold text-slate-900">{{ num(team.done) }} / {{ num(team.target) }}</span>
@@ -294,7 +332,7 @@ onMounted(load)
                 </span>
               </div>
 
-              <!-- Barra del total del equipo -->
+              <!-- Barra del total del equipo (visible también plegada: resumen de un vistazo) -->
               <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
                   class="h-full rounded-full transition-all"
@@ -302,47 +340,55 @@ onMounted(load)
                   :style="[barFill((team.pct ?? 0) >= 100).style, { width: barWidth(team.done, team.target) + '%' }]"
                 ></div>
               </div>
-              <p v-if="team.target > 0" class="mt-1 text-xs" v-bind="metOrMuted(team.done >= team.target)">
-                <template v-if="team.done >= team.target">{{ $t('sample.surplus', { n: num(team.done - team.target) }) }}</template>
-                <template v-else>{{ $t('sample.remaining', { n: num(team.target - team.done) }) }}</template>
-              </p>
 
-              <!-- Celdas equipo × valor -->
-              <div class="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2">
-                <div v-for="cell in team.cells" :key="cell.value">
-                  <div class="flex items-baseline justify-between text-sm">
-                    <span class="text-slate-700">
-                      {{ cell.label }}
-                      <span v-if="cell.out_of_plan" class="ml-1 text-[0.65rem] uppercase tracking-wide text-amber-600">{{ $t('sample.outOfPlan') }}</span>
-                    </span>
-                    <span class="tabular-nums text-slate-500">
-                      {{ num(cell.done) }}<template v-if="cell.target != null"> / {{ num(cell.target) }}</template>
-                    </span>
-                  </div>
-                  <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      class="h-full rounded-full"
-                      :class="cell.target == null ? 'bg-amber-400' : barFill((cell.pct ?? 0) >= 100).class"
-                      :style="[cell.target == null ? null : barFill((cell.pct ?? 0) >= 100).style, { width: (cell.target == null ? 100 : barWidth(cell.done, cell.target)) + '%' }]"
-                    ></div>
+              <div v-show="!collapsedTeams.has(team.key)">
+                <p v-if="team.target > 0" class="mt-1 text-xs" v-bind="metOrMuted(team.done >= team.target)">
+                  <template v-if="team.done >= team.target">{{ $t('sample.surplus', { n: num(team.done - team.target) }) }}</template>
+                  <template v-else>{{ $t('sample.remaining', { n: num(team.target - team.done) }) }}</template>
+                </p>
+                <!-- Backlog de revisión del equipo (solo si hay algo esperando) -->
+                <p v-if="team.pending + team.on_hold > 0" class="mt-1 text-xs text-slate-500">
+                  {{ $t('sample.pendingNow') }}: <span class="font-medium tabular-nums text-slate-700">{{ num(team.pending) }}</span>
+                  · {{ $t('sample.onHoldNow') }}: <span class="font-medium tabular-nums text-slate-700">{{ num(team.on_hold) }}</span>
+                </p>
+
+                <!-- Celdas equipo × valor -->
+                <div class="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                  <div v-for="cell in team.cells" :key="cell.value">
+                    <div class="flex items-baseline justify-between text-sm">
+                      <span class="text-slate-700">
+                        {{ cell.label }}
+                        <span v-if="cell.out_of_plan" class="ml-1 text-[0.65rem] uppercase tracking-wide text-amber-600">{{ $t('sample.outOfPlan') }}</span>
+                      </span>
+                      <span class="tabular-nums text-slate-500">
+                        {{ num(cell.done) }}<template v-if="cell.target != null"> / {{ num(cell.target) }}</template>
+                      </span>
+                    </div>
+                    <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        class="h-full rounded-full"
+                        :class="cell.target == null ? 'bg-amber-400' : barFill((cell.pct ?? 0) >= 100).class"
+                        :style="[cell.target == null ? null : barFill((cell.pct ?? 0) >= 100).style, { width: (cell.target == null ? 100 : barWidth(cell.done, cell.target)) + '%' }]"
+                      ></div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- Proyección -->
-              <div v-if="team.projection" class="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
-                <span class="font-medium text-slate-600">{{ $t('sample.projection') }}:</span>
-                <template v-if="team.projection.met">
-                  <span class="ml-1" v-bind="metText()">{{ $t('sample.projectionMet') }}</span>
-                </template>
-                <template v-else-if="team.projection.eta">
-                  <span class="ml-1">{{ $t('sample.projectionRate', { n: (team.projection.rate_per_day ?? 0).toLocaleString(locale, { maximumFractionDigits: 1 }) }) }}</span>
-                  · <span class="font-medium text-slate-700">{{ $t('sample.projectionEta', { date: team.projection.eta }) }}</span>
-                </template>
-                <template v-else>
-                  <span class="ml-1">{{ $t('sample.projectionNoData') }}</span>
-                </template>
-                <span v-if="team.projection.first_submission" class="ml-2 text-slate-400">· {{ $t('sample.firstSubmission', { date: (team.projection.first_submission || '').slice(0, 10) }) }}</span>
+                <!-- Proyección -->
+                <div v-if="team.projection" class="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
+                  <span class="font-medium text-slate-600">{{ $t('sample.projection') }}:</span>
+                  <template v-if="team.projection.met">
+                    <span class="ml-1" v-bind="metText()">{{ $t('sample.projectionMet') }}</span>
+                  </template>
+                  <template v-else-if="team.projection.eta">
+                    <span class="ml-1">{{ $t('sample.projectionRate', { n: (team.projection.rate_per_day ?? 0).toLocaleString(locale, { maximumFractionDigits: 1 }) }) }}</span>
+                    · <span class="font-medium text-slate-700">{{ $t('sample.projectionEta', { date: team.projection.eta }) }}</span>
+                  </template>
+                  <template v-else>
+                    <span class="ml-1">{{ $t('sample.projectionNoData') }}</span>
+                  </template>
+                  <span v-if="team.projection.first_submission" class="ml-2 text-slate-400">· {{ $t('sample.firstSubmission', { date: (team.projection.first_submission || '').slice(0, 10) }) }}</span>
+                </div>
               </div>
             </section>
           </template>

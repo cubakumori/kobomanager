@@ -38,7 +38,10 @@ const visiblePerms = computed(() =>
 async function loadUsers() {
   try {
     const { data } = await api.get('/admin/users')
-    users.value = data.data
+    // Los administradores no se listan: tienen acceso total y estos permisos no les
+    // aplican (misma regla que el enlace «Permisos» de admin/usuarios). Un deep-link
+    // ?user=<admin> tampoco encuentra el id, así que cae con gracia al estado vacío.
+    users.value = data.data.filter((u) => u.role !== 'admin')
   } catch (e) {
     error.value = apiError(e, t('permissions.loadUsersError'))
   }
@@ -224,6 +227,7 @@ onMounted(async () => {
         </select>
       </div>
     </div>
+    <p class="text-xs text-slate-400">{{ $t('permissions.adminsHidden') }}</p>
 
     <div
       v-if="selectedUserId"

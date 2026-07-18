@@ -121,7 +121,7 @@ class Auth {
         }
 
         $user = DB::run(
-            'SELECT id, name, email, role, locale, active FROM users WHERE id = ? AND active = 1',
+            'SELECT id, name, email, role, locale, ui_prefs, active FROM users WHERE id = ? AND active = 1',
             [$payload['sub']]
         )->fetch();
         if (!$user) return null;
@@ -135,6 +135,8 @@ class Auth {
         $user['id']          = (int) $user['id'];
         $user['locale_pref'] = $user['locale'];                                  // elección explícita (o null)
         $user['locale']      = $user['locale'] ?: Settings::defaultLocale();     // idioma efectivo
+        // Preferencias de interfaz (JSON o null); objeto decodificado para el frontend.
+        $user['ui_prefs']    = $user['ui_prefs'] ? (json_decode($user['ui_prefs'], true) ?: null) : null;
         return $user;
     }
 
