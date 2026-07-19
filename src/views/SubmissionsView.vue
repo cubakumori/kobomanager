@@ -486,28 +486,38 @@ onMounted(() => { loadAdvFilter(); load() })
           <button type="button" :class="actionBtn" @click="openExport">{{ $t('submissions.export') }}</button>
         </div>
 
-        <!-- Acciones en móvil/tablet: un único menú «Acciones» (los botones nunca parten en varias filas) -->
-        <div class="relative lg:hidden">
-          <button
-            :class="actionBtn"
-            class="inline-flex items-center gap-1"
-            @click="actionsOpen = !actionsOpen"
-          >
-            {{ $t('submissions.actions') }}
-            <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
-          </button>
-          <template v-if="actionsOpen">
-            <div class="fixed inset-0 z-30" @click="actionsOpen = false"></div>
-            <div ref="actionsMenuEl" role="menu" class="absolute left-0 z-40 mt-1 w-56 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
-              <button :class="menuItem" @click="actionsOpen = false; colMenuOpen = true">{{ $t('submissions.columns') }}</button>
-              <RouterLink v-if="hasGeo" :to="{ name: 'form-map', params: { id: formId } }" :class="menuItem" @click="actionsOpen = false">{{ $t('submissions.map') }}</RouterLink>
-              <span v-else :class="[menuItem, 'cursor-not-allowed text-slate-300 hover:bg-transparent']">{{ $t('submissions.map') }}</span>
-              <RouterLink :to="{ name: 'stats', params: { id: formId } }" :class="menuItem" @click="actionsOpen = false">{{ $t('submissions.stats') }}</RouterLink>
-              <RouterLink :to="{ name: 'sample', params: { id: formId } }" :class="menuItem" @click="actionsOpen = false">{{ $t('submissions.sample') }}</RouterLink>
-              <RouterLink :to="{ name: 'quality', params: { id: formId } }" :class="menuItem" @click="actionsOpen = false">{{ $t('submissions.quality') }}</RouterLink>
-              <button type="button" :class="menuItem" @click="actionsOpen = false; openExport()">{{ $t('submissions.export') }}</button>
-            </div>
-          </template>
+        <!-- Móvil/tablet: el menú «Acciones» + el buscador en la MISMA fila (aprovecha el
+             hueco a la derecha del menú). En escritorio el buscador vive en la barra de
+             herramientas de abajo; aquí solo se muestra hasta `lg`. -->
+        <div class="flex items-center gap-2 lg:hidden">
+          <div class="relative shrink-0">
+            <button
+              :class="actionBtn"
+              class="inline-flex items-center gap-1"
+              @click="actionsOpen = !actionsOpen"
+            >
+              {{ $t('submissions.actions') }}
+              <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+            </button>
+            <template v-if="actionsOpen">
+              <div class="fixed inset-0 z-30" @click="actionsOpen = false"></div>
+              <div ref="actionsMenuEl" role="menu" class="absolute left-0 z-40 mt-1 w-56 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+                <button :class="menuItem" @click="actionsOpen = false; colMenuOpen = true">{{ $t('submissions.columns') }}</button>
+                <RouterLink v-if="hasGeo" :to="{ name: 'form-map', params: { id: formId } }" :class="menuItem" @click="actionsOpen = false">{{ $t('submissions.map') }}</RouterLink>
+                <span v-else :class="[menuItem, 'cursor-not-allowed text-slate-300 hover:bg-transparent']">{{ $t('submissions.map') }}</span>
+                <RouterLink :to="{ name: 'stats', params: { id: formId } }" :class="menuItem" @click="actionsOpen = false">{{ $t('submissions.stats') }}</RouterLink>
+                <RouterLink :to="{ name: 'sample', params: { id: formId } }" :class="menuItem" @click="actionsOpen = false">{{ $t('submissions.sample') }}</RouterLink>
+                <RouterLink :to="{ name: 'quality', params: { id: formId } }" :class="menuItem" @click="actionsOpen = false">{{ $t('submissions.quality') }}</RouterLink>
+                <button type="button" :class="menuItem" @click="actionsOpen = false; openExport()">{{ $t('submissions.export') }}</button>
+              </div>
+            </template>
+          </div>
+          <input
+            v-model="search"
+            type="search"
+            :placeholder="$t('submissions.search')"
+            class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          />
         </div>
       </div>
       <p class="mt-1 text-sm text-slate-500">{{ totalLabel }}</p>
@@ -563,14 +573,15 @@ onMounted(() => { loadAdvFilter(); load() })
       {{ $t('submissions.archivedReadonly') }}
     </div>
 
-    <!-- Una sola fila: búsqueda a mano; revisión/orden/por página en el modal «Vista»;
-         condiciones avanzadas en el modal «Filtros». -->
+    <!-- Barra de herramientas. En escritorio incluye el buscador a la izquierda; en
+         móvil/tablet el buscador va arriba, junto al menú «Acciones» (por espacio), así
+         que aquí quedan solo «Vista», «Filtros» y «Sólo admisibles». -->
     <div class="flex items-center gap-2">
       <input
         v-model="search"
         type="search"
         :placeholder="$t('submissions.search')"
-        class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 sm:max-w-xs"
+        class="hidden min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 lg:block lg:max-w-xs"
       />
       <button
         type="button"
