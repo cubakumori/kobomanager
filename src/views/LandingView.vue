@@ -128,7 +128,7 @@ const showCta = computed(() => landingCtaEnabled.value && (!!links.value.repo ||
       <div class="mx-auto mt-8 grid max-w-5xl gap-4 sm:grid-cols-2">
         <!-- Tarjeta ancha de apertura: avisos de envíos nuevos (email + push), con una
              maqueta decorativa de la notificación del sistema. -->
-        <div class="rounded-2xl bg-accent-50 p-6 ring-1 ring-accent-200 dark:bg-accent-900/25 dark:ring-accent-800 sm:col-span-2">
+        <div class="min-w-0 rounded-2xl bg-accent-50 p-6 ring-1 ring-accent-200 dark:bg-accent-900/25 dark:ring-accent-800 sm:col-span-2">
           <div class="grid items-center gap-6 sm:grid-cols-2">
             <div>
               <h3 class="flex items-center gap-2 font-semibold text-accent-800 dark:text-accent-300">
@@ -147,7 +147,7 @@ const showCta = computed(() => landingCtaEnabled.value && (!!links.value.repo ||
                  muestra el sistema; el pie ancla la promesa «con la app cerrada». -->
             <!-- Los neutros (white/slate) se invierten solos bajo `.dark` vía variables
                  CSS (ver style.css): aquí no van variantes dark:, salvo en accent. -->
-            <div aria-hidden="true" class="select-none">
+            <div aria-hidden="true" class="min-w-0 select-none">
               <div class="mx-auto max-w-xs rounded-xl bg-white p-3 shadow-lg ring-1 ring-slate-200">
                 <div class="flex items-start gap-2.5">
                   <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-600 text-xs font-bold text-white">K</span>
@@ -168,7 +168,7 @@ const showCta = computed(() => landingCtaEnabled.value && (!!links.value.repo ||
         <div
           v-for="h in highlights"
           :key="h"
-          class="rounded-2xl bg-accent-50 p-6 ring-1 ring-accent-200 dark:bg-accent-900/25 dark:ring-accent-800"
+          class="min-w-0 rounded-2xl bg-accent-50 p-6 ring-1 ring-accent-200 dark:bg-accent-900/25 dark:ring-accent-800"
         >
           <h3 class="flex items-center gap-2 font-semibold text-accent-800 dark:text-accent-300">
             <span class="h-1.5 w-1.5 rounded-full bg-accent-500"></span>
