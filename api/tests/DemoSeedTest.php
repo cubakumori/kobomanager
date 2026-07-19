@@ -14,6 +14,7 @@ final class DemoSeedTest extends TestCase
 {
     private const WORK_TABLES = [
         'audit_log', 'submission_reviews', 'submissions_cache', 'user_form_permissions',
+        'user_form_favorites', 'sample_targets', 'sample_target_history',
         'share_links', 'user_sessions', 'login_attempts', 'rate_hits', 'password_resets',
         'notification_config', 'contact_messages', 'forms', 'kobo_accounts', 'users', 'settings',
     ];

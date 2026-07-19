@@ -62,6 +62,19 @@ congelado en móvil y los administradores fuera del selector de Permisos.
   contexto de revisión del panel de muestra; README suma favoritos/vista persistida
   al bloque «Operation»; DEMO añade el panel de muestra al tour de la demo.
 
+### Corregido
+
+- **La copia de seguridad completa omitía los planes de muestra y los favoritos.** La
+  lista de tablas del backup «full» (`DemoSeed::SEEDED_TABLES`, compartida con la semilla
+  de la demo) no incluía `sample_targets`, `sample_target_history` (muestreo, desde 1.32)
+  ni `user_form_favorites` (favoritos, 1.37), así que un backup/migración de servidor las
+  perdía en silencio. Añadidas a la lista; las columnas nuevas ya iban cubiertas (el
+  volcado hace `SELECT *`). CONTRIBUTING documenta ahora la regla para no repetirlo.
+- **Mensaje de sincronización más claro**: «{n} envío(s) actualizados» pasa a «{n}
+  envío(s) sincronizados» (es un *upsert*, no solo cambios) y la nota de bajas «· {n}
+  eliminado(s)» a «· {n} retirado(s) (ya no están en KoboToolbox)» — «eliminado» sonaba
+  a un borrado propio cuando en realidad son envíos que ya no existen en KoboToolbox.
+
 ### Nota de actualización (esquema)
 
 - Tabla nueva `user_form_favorites` (favoritos por usuario: PK `user_id, form_id`,

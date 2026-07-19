@@ -15,10 +15,15 @@
 class DemoSeed {
 
     /** Tablas que viajan en la semilla y se restauran en cada reset (orden padre→hijo,
-     *  por si alguien importa el archivo a mano con FK checks activos). */
+     *  por si alguien importa el archivo a mano con FK checks activos). También es la
+     *  lista del backup COMPLETO (lib/DbBackup añade audit_log + contact_messages), así
+     *  que toda tabla de DATOS duraderos debe estar aquí o se omite en silencio del
+     *  backup. `sample_targets`/`sample_target_history` (plan de muestra e histórico) y
+     *  `user_form_favorites` (favoritos por usuario) van después de `forms`/`users`. */
     public const SEEDED_TABLES = [
         'kobo_accounts', 'users', 'forms', 'submissions_cache', 'submission_reviews',
         'user_form_permissions', 'notification_config', 'settings', 'share_links',
+        'sample_targets', 'sample_target_history', 'user_form_favorites',
     ];
 
     /** Tablas efímeras: nunca se exportan y el reset las vacía (rastro de visitantes). */

@@ -14,6 +14,7 @@ final class DbBackupTest extends TestCase
 {
     private const WORK_TABLES = [
         'audit_log', 'submission_reviews', 'submissions_cache', 'user_form_permissions',
+        'user_form_favorites', 'sample_targets', 'sample_target_history',
         'share_links', 'user_sessions', 'login_attempts', 'rate_hits', 'password_resets',
         'notification_config', 'contact_messages', 'forms', 'kobo_accounts', 'users', 'settings',
     ];
@@ -44,6 +45,16 @@ final class DbBackupTest extends TestCase
             ['Admin', 'admin@bk.test', password_hash('x', PASSWORD_DEFAULT), 'admin']
         );
         $adminId = (int) DB::conn()->lastInsertId();
+        // Un formulario con plan de muestra (+ histórico) y un favorito: datos duraderos
+        // que el backup COMPLETO debe llevar (tablas añadidas a SEEDED_TABLES).
+        DB::run(
+            'INSERT INTO forms (kobo_account_id, kobo_asset_uid, name, server_url) VALUES (?, ?, ?, ?)',
+            [$accId, 'aBK1', 'Form BK', 'https://eu.kobotoolbox.org']
+        );
+        $formId = (int) DB::conn()->lastInsertId();
+        DB::run('INSERT INTO sample_targets (form_id, team_value, sample_value, target) VALUES (?, ?, ?, ?)', [$formId, 't1', 'a1', 10]);
+        DB::run('INSERT INTO sample_target_history (form_id, payload_json) VALUES (?, ?)', [$formId, '{"t1":{"a1":10}}']);
+        DB::run('INSERT INTO user_form_favorites (user_id, form_id) VALUES (?, ?)', [$adminId, $formId]);
         // Lo que un backup COMPLETO sí incluye (a diferencia de la semilla):
         DB::run('INSERT INTO audit_log (user_id, action) VALUES (?, ?)', [$adminId, 'login']);
         DB::run(
@@ -63,7 +74,7 @@ final class DbBackupTest extends TestCase
         Settings::set('default_locale', 'es');
         Settings::recordCronRun('sync_submissions', ['ok' => true]);
 
-        return ['accId' => $accId, 'adminId' => $adminId];
+        return ['accId' => $accId, 'adminId' => $adminId, 'formId' => $formId];
     }
 
     private function export(string $scope): string
@@ -117,6 +128,26 @@ final class DbBackupTest extends TestCase
         $this->assertSame(1, $this->rowCount('password_resets'));
         // La telemetría de crons sobrevive al restore (clave volátil preservada).
         $this->assertArrayHasKey('sync_submissions', Settings::cronRuns());
+    }
+
+    public function testFullBackupCoversSamplePlanAndFavorites(): void
+    {
+        $this->seedFixture();
+        $sql = $this->export('full');
+        // Regresión: estas tablas se añadieron con el muestreo (1.32) y los favoritos
+        // (1.37); antes quedaban fuera de SEEDED_TABLES y el backup las omitía en silencio.
+        $this->assertStringContainsString('INSERT INTO `sample_targets`', $sql);
+        $this->assertStringContainsString('INSERT INTO `sample_target_history`', $sql);
+        $this->assertStringContainsString('INSERT INTO `user_form_favorites`', $sql);
+
+        // Ida y vuelta: se vandaliza y el restore las recupera.
+        DB::run('DELETE FROM user_form_favorites');
+        DB::run('DELETE FROM sample_targets');
+        DB::run('DELETE FROM sample_target_history');
+        DbBackup::import($sql);
+        $this->assertSame(1, $this->rowCount('sample_targets'), 'el plan de muestra vuelve');
+        $this->assertSame(1, $this->rowCount('sample_target_history'));
+        $this->assertSame(1, $this->rowCount('user_form_favorites'), 'los favoritos vuelven');
     }
 
     public function testFullImportPurgesSessionsOfUsersNotInBackup(): void

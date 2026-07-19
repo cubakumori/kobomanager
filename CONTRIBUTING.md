@@ -55,6 +55,12 @@ overview read [`ARCHITECTURE.md`](./ARCHITECTURE.md); for setup read [`README.md
     (plus the CHANGELOG note). `migrate.php` creates missing tables the same way it adds
     missing columns; `SchemaCheckTest` asserts the copy stays in sync with the canonical
     schema, column by column.
+  - **If the new table holds durable data, also add it to `DemoSeed::SEEDED_TABLES`**
+    (parent→child order, after its FK parents). That one list drives BOTH the demo seed
+    AND the full **database backup** (`lib/DbBackup`), so a durable table left out is
+    silently omitted from backups — data lost on a restore/migration. New *columns* need
+    nothing here (`DbSnapshot` dumps `SELECT *`). Skip only genuinely ephemeral tables
+    (`EPHEMERAL_TABLES`: sessions, rate-limit windows, push subscriptions).
 
 ### Backend
 - One class per file in `lib/`, no namespaces (autoloaded by classmap for tests).
