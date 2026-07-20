@@ -278,10 +278,15 @@ auth/permissions and the JWT session lifecycle (including the sliding session an
 cap, and rejection of non-HS256 tokens), rate limiting (per-IP and bucketed), settings,
 token encryption **and key rotation**, the geo parser, derived metrics, attachment
 classification, the submission-search projection/clause (incl. the visible-fields variant),
-row scoping, column-level permissions (`FieldScope`), and share-link
-resolution/tickets/attachment access. The HTTP layer adds end-to-end coverage of
+row scoping, column-level permissions (`FieldScope`), share-link
+resolution/tickets/attachment access, the stats/quality/risk computations, sample
+monitoring (plan compliance, review context and the meta-team roll-up) and the
+meta-team detection heuristics, plus notifications/Web Push, backup/demo-seed and the
+schema self-check. The HTTP layer adds end-to-end coverage of
 login/JWT/logout/rate-limit, CSRF, password reset, single + batch review, list/detail/
-export with scoping and field hiding, and submission editing (against the Kobo stub).
+export with scoping and field hiding, submission editing (against the Kobo stub),
+per-form settings validation, the sample-plan editor, favorites/preferences,
+notifications and the demo-mode lockdown.
 **Continuous integration** (GitHub Actions, no Docker) runs lint + frontend build + the
 full PHPUnit suite against MariaDB — see `.github/workflows/ci.yml`.
 

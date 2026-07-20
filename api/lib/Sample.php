@@ -19,6 +19,11 @@
  * Además del plan devuelve el CONTEXTO DE REVISIÓN: el corte (`last_approved_at`,
  * última acción de aprobar según el historial submission_reviews) y el backlog
  * actual (nº de pendientes y «en espera», global y por equipo).
+ *
+ * Con `forms.team_group_field` configurado (meta-equipo, 1.38.0) añade el roll-up
+ * de presentación: cada fila de `teams[]` lleva su `group` (valor dominante
+ * observado; sin votos → `__none__` = «Sin agrupar») y la respuesta expone
+ * `group_field` + `groups`; la agregación por grupo la hace el frontend.
  */
 class Sample {
 

@@ -40,10 +40,14 @@ campo de agrupación.
   dominante y los **conflictos** (envíos repartidos entre >1 valor) como aviso de
   calidad de dato. Con datos insuficientes informan, no bloquean.
 
-### Esquema
+### Nota de actualización (esquema)
 
-- Columna nueva `forms.team_group_field` (registrada en `SchemaCheck`; en instalaciones
-  existentes la aplica `php api/cli/migrate.php`).
+- Columna nueva `forms.team_group_field` (VARCHAR(255) NULL; registrada en
+  `SchemaCheck`, sin backfill). `php api/cli/migrate.php` la aplica; a mano:
+
+  ```sql
+  ALTER TABLE forms ADD COLUMN team_group_field VARCHAR(255) NULL AFTER stats_enumerator_field;
+  ```
 
 ## [1.37.0] - 2026-07-18
 
@@ -121,7 +125,19 @@ congelado en móvil y los administradores fuera del selector de Permisos.
 - Tabla nueva `user_form_favorites` (favoritos por usuario: PK `user_id, form_id`,
   FKs con `ON DELETE CASCADE`) y columna nueva `users.ui_prefs` (JSON NULL,
   preferencias de interfaz por usuario). `php api/cli/migrate.php` aplica ambas; sin
-  backfill (empezar sin favoritos ni preferencias ya es el estado correcto).
+  backfill (empezar sin favoritos ni preferencias ya es el estado correcto). A mano:
+
+  ```sql
+  ALTER TABLE users ADD COLUMN ui_prefs JSON NULL AFTER locale;
+  CREATE TABLE IF NOT EXISTS user_form_favorites (
+      user_id         INT UNSIGNED NOT NULL,
+      form_id         INT UNSIGNED NOT NULL,
+      created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (user_id, form_id),
+      CONSTRAINT fk_fav_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      CONSTRAINT fk_fav_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  ```
 
 ## [1.36.0] - 2026-07-18
 

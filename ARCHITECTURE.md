@@ -816,7 +816,12 @@ Coverage: auth/permissions + JWT session lifecycle, rate limiting, settings, tok
 encryption, geo parsing, derived metrics, attachment classification (`Attachments`), search
 projection/clause (`SubmissionSearch`, incl. the visible‑fields clause), row scoping,
 column‑level permissions (`FieldScope`: payload/attachment/geo stripping and schema
-redaction) and share‑link resolution/tickets/attachment access.
+redaction), share‑link resolution/tickets/attachment access, the stats/quality/risk
+computations (`Stats`/`Quality`/`Risk`), sample monitoring (`Sample`: plan compliance,
+denominators, review context/backlog and the meta‑team roll‑up) and its detection
+heuristics (`TeamGroups`), notifications (`Notifier`/`WebPush`), backup/demo seeding
+(`DbBackup`/`DemoSeed`), the SQL splitter (`SqlScript`) and the schema self‑check
+(`SchemaCheck`).
 
 **HTTP integration tests** (`api/tests/http/`, extend `HttpTestCase`): a base class boots the
 real front controller in an ephemeral `php -S` server once per run (config isolated via the
@@ -829,8 +834,11 @@ each test truncates the working tables and seeds what it needs (`setUp`/`tearDow
 login/`/auth/me`/logout/login rate‑limit, CSRF enforcement, password reset (forgot → seeded
 token → reset), single + batch review (incl. `can_validate` gating and RowScope 404), list/
 detail/export with RowScope + FieldScope, submission editing (uuid migration, review
-migration, `KOBO_EDIT_FAILED` on a forced bulk failure), and the sync flows (the anti‑wipe
-confirmation and the login‑triggered stale pass). CI runs both layers (see below).
+migration, `KOBO_EDIT_FAILED` on a forced bulk failure), the sync flows (the anti‑wipe
+confirmation and the login‑triggered stale pass), per‑form settings (`can_settings` gating,
+field‑type guards incl. the meta‑team ones, the detection endpoint), the sample‑plan editor,
+favorites + persisted UI preferences, quality scope/suggest/export, notifications + push
+subscriptions, backups and the demo‑mode lockdown. CI runs both layers (see below).
 
 ### CI
 `.github/workflows/ci.yml` (GitHub Actions, **no Docker**) runs three jobs on push/PR:
