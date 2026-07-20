@@ -4,6 +4,46 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.40.0] - 2026-07-20
+
+**Retención y borrado de envíos en la caché local** (minimización de datos), por
+formulario. Cierra el frente de seguridad interno junto al 2FA (el cifrado de campos
+sensibles queda pospuesto en el ROADMAP).
+
+### Añadido
+
+- **Ventana de retención por formulario** (Ajustes → «Retención de envíos»): con N
+  días configurados (vacío = conservar para siempre, el comportamiento de siempre),
+  cada sincronización **purga de verdad** de la caché local los envíos más viejos que
+  la ventana (`submitted_at`), junto con su historial de revisión y comentarios, y el
+  import **deja de re-importarlos**. Pensado para datos de riesgo: reduce lo que una
+  incautación del servidor se llevaría.
+- **KoboToolbox no se toca nunca**: sigue siendo la fuente de verdad y el archivo
+  completo. Al ampliar (o quitar) la ventana, una **sincronización completa** del
+  formulario re-importa los datos purgados; el historial local purgado no vuelve (el
+  envío re-importado recupera el estado de validación que tenga en Kobo). Lo que el
+  import salta por estar fuera de ventana **no** cuenta como «retirado» y la guardia
+  anti-vaciado queda intacta.
+- **Avisos honestos en la interfaz**: si hay un plan de muestra vigente, Ajustes
+  avisa de que la purga descuenta la cuota (la retención encaja con recogida
+  continua, no con campañas acotadas); Estadísticas y el panel de Muestra indican
+  que sus métricas cubren solo la ventana retenida.
+- **CLI `php api/cli/purge_submissions.php [form_id]`** para aplicar la retención al
+  momento sin esperar al siguiente ciclo (en operación normal no hace falta).
+- La ejecución automática de la purga no se audita (política mecánica, como la purga
+  del propio registro de auditoría); lo auditado es **quién fijó la retención** (el
+  guardado de Ajustes ya se registra).
+
+### Nota de actualización (esquema)
+
+- Columna nueva `forms.retention_days` (INT UNSIGNED NULL = conservar para siempre;
+  registrada en `SchemaCheck`, sin backfill). `php api/cli/migrate.php` la aplica; a
+  mano:
+
+  ```sql
+  ALTER TABLE forms ADD COLUMN retention_days INT UNSIGNED NULL AFTER sample_denominator;
+  ```
+
 ## [1.39.0] - 2026-07-20
 
 **Segundo factor (2FA) con TOTP** — primer hito del frente de seguridad: app

@@ -154,6 +154,7 @@
     "byTeamTitleGrouped": "Por meta-equipo → equipo",
     "byTeamGroup": "Agrupación: {field}",
     "groupToggle": "Agrupar equipos",
-    "colTeam": "Equipo"
+    "colTeam": "Equipo",
+    "retentionNote": "Retención activa: estas métricas cubren solo los envíos de los últimos {n} días (lo anterior se purgó de la caché; sigue en KoboToolbox)."
   }
 }

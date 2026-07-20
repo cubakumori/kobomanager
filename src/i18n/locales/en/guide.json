@@ -97,6 +97,8 @@
     "offlineTitle": "Install the app and work with poor connectivity",
     "offlineBody": "KoboManager is a progressive web app (PWA): from the browser you can “Install app” and open it like a native one. The interface is stored on the device (it opens instantly even when the network fails) and anything you already viewed (lists, details, statistics) can be re-read offline. Editing, reviewing or syncing do require a connection — a notice tells you when there is none. Logging out wipes the data stored on the device.",
     "secTotp": "Second factor (2FA)",
-    "secTotpBody": "Any user can protect their account with a one-time code from an authenticator app (TOTP), with recovery codes in case they lose their phone. The administrator can also require it for admins or for everyone (Settings → Security) and reset a user's 2FA from the Users page."
+    "secTotpBody": "Any user can protect their account with a one-time code from an authenticator app (TOTP), with recovery codes in case they lose their phone. The administrator can also require it for admins or for everyone (Settings → Security) and reset a user's 2FA from the Users page.",
+    "secRetention": "Submission retention",
+    "secRetentionBody": "Each form can set a retention window: KoboManager purges older submissions (with their review history) from its local cache on every sync, minimizing what a server seizure would take. KoboToolbox always keeps the full archive."
   }
 }

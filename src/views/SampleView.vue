@@ -348,6 +348,11 @@ onMounted(load)
           {{ $t('sample.noPlan') }}
         </div>
 
+        <!-- Retención activa: el panel solo cuenta la ventana retenida en caché -->
+        <div v-if="data.retention_days" class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900">
+          {{ $t('sample.retentionNote', { n: data.retention_days }) }}
+        </div>
+
         <!-- Selector de tipo de vista + toggle «Agrupar equipos» (meta-equipo) -->
         <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <div role="group" :aria-label="$t('sample.viewLabel')" class="inline-flex flex-wrap gap-1 rounded-lg bg-slate-100 p-1">

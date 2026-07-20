@@ -238,7 +238,12 @@
     "groupSuggestHint": "The algorithm proposes; picking and saving stay your call (click a candidate to put it in the selector).",
     "groupCheckClean": "No conflicts: each of the {teams} team(s) resolves to a single value.",
     "groupCheckConflictsIntro": "{n} team(s) with submissions split across more than one value — a data-quality warning (the panel will use the dominant value):",
-    "groupCheckUnassigned": "{n} team(s) with no value for the field (they would fall under “Ungrouped”): {teams}"
+    "groupCheckUnassigned": "{n} team(s) with no value for the field (they would fall under “Ungrouped”): {teams}",
+    "retentionSection": "Submission retention (data minimization)",
+    "retentionSectionDesc": "How long KoboManager keeps submissions in its local cache. With an N-day window, every sync truly deletes anything older (including its review history and comments) and stops re-importing it. KoboToolbox is never touched: if you widen the window, a FULL sync of the form brings the data back (purged local history does not return). Meant for high-risk data: it reduces what a server seizure would take.",
+    "retentionDays": "Retention window (days)",
+    "retentionDaysHint": "Empty or 0 = keep forever (normal behavior). Max 3650.",
+    "retentionSampleWarning": "This form has an active sample plan ({n} target(s)): as old approved submissions get purged, the sample panel will subtract them from the quota. Retention suits continuous collection, not bounded campaigns monitoring a sample."
   },
   "settings": {
     "title": "Settings",

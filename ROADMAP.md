@@ -35,7 +35,9 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       `require_2fa` (off | admins | todos, con corte de API y guardarraíl anti-cierre) y
       reset por admin. Método adicional (WebAuthn/passkeys) queda como ampliación futura
       si hay demanda.
-- [ ] **Cifrado en reposo de los datos SENSIBLES marcados por formulario** — hoy el token de
+- [ ] **Cifrado en reposo de los datos SENSIBLES marcados por formulario** *(POSPUESTO
+      jul-2026 por decisión de diseño: se retomará más adelante, con las tensiones de
+      abajo resueltas primero)* — hoy el token de
       Kobo se cifra (TokenVault), pero los envíos en `submissions_cache.json_payload` están
       en claro. Diseño acordado (jul-2026): **no cifrar todo** (no todos los formularios
       tienen datos sensibles y el cifrado total rompe búsqueda/orden/stats), sino permitir
@@ -50,10 +52,13 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       - Interacción con FieldScope (oculto) y con los enlaces públicos (un campo sensible
         nunca debería exponerse en un enlace, ni siquiera cifrado→descifrado).
       - Backfill al marcar un campo como sensible (cifrar lo ya cacheado) y al desmarcarlo.
-- [ ] **Borrado seguro, minimización y retención de envíos** — hoy la retención existe para
-      el `audit_log` (`audit_retention_days`); extender esa idea a los datos: ¿cuánto vive un
-      envío en caché?, ¿purga real (no solo marcado)?, ¿retención configurable por formulario?
-      Relevante para minimizar la superficie ante una incautación del servidor.
+- [x] **Borrado seguro, minimización y retención de envíos** — **entregado en 1.40.0**:
+      ventana de retención POR FORMULARIO (`forms.retention_days`, NULL = para siempre),
+      purga real en cada sync (envíos + historial de revisión local) + import que salta lo
+      fuera de ventana, CLI `purge_submissions.php`, avisos en Ajustes (plan de muestra) y
+      en Estadísticas/Muestra. KoboToolbox nunca se toca (ampliar la ventana re-importa con
+      un sync completo). La remanencia a nivel de disco/backups sigue siendo dominio del
+      operador (SECURITY.md).
 - [ ] **Auditoría de seguridad formal antes de crecer en adopción** — el repo es público
       (AGPL); conviene una revisión de terceros antes de que más organizaciones sensibles
       confíen en él. Vías posibles: programas de auditoría para OSS (p. ej. OSTIF /

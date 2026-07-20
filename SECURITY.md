@@ -103,9 +103,13 @@ current boundaries honestly:
   stored in the database in cleartext** (`submissions_cache.json_payload`); only the
   Kobo API token is encrypted (`TokenVault`). So the confidentiality of survey data
   at rest depends on the operator's own controls: database access restrictions,
-  full-disk/volume encryption, and protected backups. **Per-form encryption of
-  fields marked as sensitive is on the roadmap** but not yet shipped — plan
-  accordingly if your data is high-risk.
+  full-disk/volume encryption, and protected backups. Since 1.40.0 you can also
+  **minimize** what a seizure would take: a per-form **retention window** truly
+  purges older submissions (and their local review history) from the cache on every
+  sync — KoboToolbox keeps the full archive. Note the limits: deletion is a real SQL
+  `DELETE`, not forensic erasure (disk-level remanence and old backups remain the
+  operator's domain). **Per-form encryption of fields marked as sensitive is on the
+  roadmap** (postponed, not abandoned) — plan accordingly if your data is high-risk.
 - **Admin account.** Admins are **trusted** and bypass scoping by design; protecting
   the admin credential is the operator's responsibility. Since 1.39.0 accounts can be
   protected with a **second factor (TOTP)** — any user can enable it from their

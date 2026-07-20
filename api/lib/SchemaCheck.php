@@ -231,6 +231,11 @@ class SchemaCheck {
         ['table' => 'forms', 'column' => 'team_group_field', 'since' => '1.38.0',
          'fix' => "ALTER TABLE forms ADD COLUMN team_group_field VARCHAR(255) NULL AFTER stats_enumerator_field"],
 
+        // Retención de envíos en caché por formulario (días sobre submitted_at;
+        // NULL = conservar para siempre). Sin backfill.
+        ['table' => 'forms', 'column' => 'retention_days', 'since' => '1.40.0',
+         'fix' => "ALTER TABLE forms ADD COLUMN retention_days INT UNSIGNED NULL AFTER sample_denominator"],
+
         // Segundo factor TOTP (secreto cifrado con TokenVault, marca de activación,
         // hashes de códigos de recuperación y anti-replay). NULL = sin 2FA; sin backfill.
         ['table' => 'users', 'column' => 'totp_secret', 'since' => '1.39.0',

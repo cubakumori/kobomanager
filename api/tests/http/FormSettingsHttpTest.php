@@ -139,6 +139,33 @@ final class FormSettingsHttpTest extends HttpTestCase
         @unlink($jar2);
     }
 
+    public function testRetentionDaysValidation(): void
+    {
+        $userId = $this->seedUser('viewer', 'keeper@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $formId = $this->seedForm($accId);
+        $this->grant($userId, $formId, settings: true);
+        $jar = $this->login('keeper@test.local', 'Secret123!');
+
+        // Default: sin retención (conservar para siempre).
+        $res = $this->request('GET', "admin/forms/$formId", null, $jar);
+        $this->assertNull($res['json']['data']['retention_days']);
+
+        // Se fija, viaja en la respuesta y persiste.
+        $res = $this->request('PATCH', "admin/forms/$formId", ['retention_days' => 90], $jar);
+        $this->assertSame(200, $res['status'], $res['raw']);
+        $this->assertSame(90, $res['json']['data']['retention_days']);
+        $row = DB::run('SELECT retention_days FROM forms WHERE id = ?', [$formId])->fetch();
+        $this->assertSame(90, (int) $row['retention_days']);
+
+        // 0 o vacío = conservar para siempre (NULL); fuera de rango → 422.
+        $res = $this->request('PATCH', "admin/forms/$formId", ['retention_days' => 0], $jar);
+        $this->assertNull($res['json']['data']['retention_days']);
+        $res = $this->request('PATCH', "admin/forms/$formId", ['retention_days' => 9999], $jar);
+        $this->assertSame(422, $res['status']);
+        @unlink($jar);
+    }
+
     public function testViewerWithoutSettingsPermissionGets403(): void
     {
         $userId = $this->seedUser('viewer', 'viewer@test.local', 'Secret123!');

@@ -61,6 +61,7 @@
     "toggleGroup": "Plegar/desplegar el grupo",
     "groupTeamCount": "{n} equipo(s)",
     "ungrouped": "Sin agrupar",
-    "ungroupedHint": "La pertenencia al grupo se infiere de los envíos: un equipo sin envíos (o sin valor del campo de agrupación) queda en «Sin agrupar» hasta su primer envío."
+    "ungroupedHint": "La pertenencia al grupo se infiere de los envíos: un equipo sin envíos (o sin valor del campo de agrupación) queda en «Sin agrupar» hasta su primer envío.",
+    "retentionNote": "Retención activa ({n} días): el panel solo cuenta los envíos retenidos en caché — lo purgado descuenta la cuota aunque siga en KoboToolbox."
   }
 }

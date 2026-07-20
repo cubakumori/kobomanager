@@ -7,7 +7,7 @@
  *            de calidad.
  *   PATCH  { stats_team_field?, stats_enumerator_field?, team_group_field?,
  *            qc_min_duration?, qc_max_duration?, qc_min_gap?, qc_dup_min_answers?,
- *            risk_min_n? } →
+ *            risk_min_n?, retention_days? } →
  *            guarda esa config. Clave AUSENTE = no tocar; presente (aunque sea null) =
  *            fijar. Los campos de equipo son rutas del esquema o null
  *            (`stats_enumerator_field` null = usar `_submitted_by`;
@@ -16,7 +16,9 @@
  *            son minutos (entero ≥ 1) o null = comprobación desactivada.
  *            `qc_dup_min_answers` es nº de respuestas (1–50) o null = señal de
  *            duplicados desactivada. `risk_min_n` es el N mínimo del índice de riesgo
- *            (1–100000) o null = índice desactivado (opt-in).
+ *            (1–100000) o null = índice desactivado (opt-in). `retention_days` es la
+ *            ventana de retención de envíos en caché (días, 1–3650) o null =
+ *            conservar para siempre; la purga corre en cada sincronización.
  *   DELETE → SOLO admin: elimina el formulario de KoboManager y su caché (no toca
  *            Kobo). Si sigue cumpliendo el filtro de sincronización, una nueva
  *            sincronización de la cuenta volverá a traerlo.
@@ -39,7 +41,8 @@ if ($method === 'DELETE') {
 
 $form = DB::run(
     'SELECT id, name, schema_json, stats_team_field, stats_enumerator_field, team_group_field,
-            qc_min_duration, qc_max_duration, qc_min_gap, qc_dup_min_answers, risk_min_n
+            qc_min_duration, qc_max_duration, qc_min_gap, qc_dup_min_answers, risk_min_n,
+            retention_days
      FROM forms WHERE id = ?',
     [$formId]
 )->fetch();
@@ -60,6 +63,9 @@ $dupOut = fn(array $f): ?int => $f['qc_dup_min_answers'] !== null ? (int) $f['qc
 // N mínimo del índice de riesgo (opt-in): nº de encuestas o null = desactivado.
 $riskOut = fn(array $f): ?int => $f['risk_min_n'] !== null ? (int) $f['risk_min_n'] : null;
 
+// Retención de envíos en caché: días o null = conservar para siempre.
+$retOut = fn(array $f): ?int => $f['retention_days'] !== null ? (int) $f['retention_days'] : null;
+
 if ($method === 'GET') {
     // Para la página de Ajustes: si el usuario puede abrir el editor del plan de
     // muestra (permiso jerárquico «Muestra») y cuántos objetivos tiene el plan
@@ -75,6 +81,7 @@ if ($method === 'GET') {
         'team_group_field'       => $form['team_group_field'],
         'qc_dup_min_answers'     => $dupOut($form),
         'risk_min_n'             => $riskOut($form),
+        'retention_days'         => $retOut($form),
         'can_sample'             => Auth::canForm($user, $formId, 'sample'),
         'sample_target_count'    => $targetCount,
     ] + $qcOut($form));
@@ -167,12 +174,27 @@ if ($method === 'PATCH') {
         }
     }
 
+    // Retención de envíos: días (1–3650, mismo tope que la retención de auditoría),
+    // 0 o vacío = conservar para siempre. La purga es de la CACHÉ local (KoboToolbox
+    // no se toca) y corre en cada sincronización.
+    $ret = $retOut($form);
+    if (array_key_exists('retention_days', $body)) {
+        $v = $body['retention_days'];
+        if ($v === null || $v === '') {
+            $ret = null;
+        } elseif (!is_numeric($v) || (int) $v != $v || (int) $v < 0 || (int) $v > 3650) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Retención no válida: días entre 1 y 3650, 0 o vacío');
+        } else {
+            $ret = (int) $v === 0 ? null : (int) $v;
+        }
+    }
+
     DB::run(
         'UPDATE forms SET stats_team_field = ?, stats_enumerator_field = ?, team_group_field = ?,
                 qc_min_duration = ?, qc_max_duration = ?, qc_min_gap = ?, qc_dup_min_answers = ?,
-                risk_min_n = ?
+                risk_min_n = ?, retention_days = ?
          WHERE id = ?',
-        [$team, $enum, $group, $qc['qc_min_duration'], $qc['qc_max_duration'], $qc['qc_min_gap'], $dup, $risk, $formId]
+        [$team, $enum, $group, $qc['qc_min_duration'], $qc['qc_max_duration'], $qc['qc_min_gap'], $dup, $risk, $ret, $formId]
     );
     $out = [
         'stats_team_field'       => $team,
@@ -180,6 +202,7 @@ if ($method === 'PATCH') {
         'team_group_field'       => $group,
         'qc_dup_min_answers'     => $dup,
         'risk_min_n'             => $risk,
+        'retention_days'         => $ret,
     ] + $qc;
     Audit::log($user['id'], 'update_form_stats', $formId, null, $out);
     ErrorResponse::ok($out);

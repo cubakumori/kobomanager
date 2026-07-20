@@ -41,6 +41,8 @@ const qcMinGap = ref('')
 const qcDupMinAnswers = ref('')
 // Índice de riesgo: N mínimo de encuestas por encuestador/equipo ('' = índice desactivado, opt-in).
 const riskMinN = ref('')
+// Retención de envíos en caché (días; '' = conservar para siempre).
+const retentionDays = ref('')
 // Plan de muestra (página propia): permiso jerárquico «Muestra» del usuario, nº de
 // objetivos del plan vigente y el campo de equipo GUARDADO (para avisar de que
 // cambiarlo desalinea el plan: los objetivos están clavados a los códigos de equipo).
@@ -71,6 +73,7 @@ async function load() {
     qcMinGap.value = cfg.data.data.qc_min_gap ?? ''
     qcDupMinAnswers.value = cfg.data.data.qc_dup_min_answers ?? ''
     riskMinN.value = cfg.data.data.risk_min_n ?? ''
+    retentionDays.value = cfg.data.data.retention_days ?? ''
     canSample.value = !!cfg.data.data.can_sample
     sampleTargetCount.value = cfg.data.data.sample_target_count ?? 0
     savedTeamField.value = teamField.value
@@ -210,6 +213,7 @@ async function save() {
       qc_min_gap: minutes(qcMinGap.value),
       qc_dup_min_answers: minutes(qcDupMinAnswers.value),
       risk_min_n: minutes(riskMinN.value),
+      retention_days: minutes(retentionDays.value),
     })
     flash.value = t('formSettings.saved')
     savedTeamField.value = teamField.value
@@ -493,6 +497,29 @@ onMounted(load)
           <span class="mt-1 block text-xs text-slate-400">{{ $t('formSettings.riskMinNHint') }}</span>
         </label>
         <p v-if="riskHint" class="mt-2 text-xs text-slate-500">{{ riskHint }}</p>
+      </div>
+    </section>
+
+    <!-- Retención de envíos en caché (minimización de datos) -->
+    <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <h2 class="font-semibold text-slate-900">{{ $t('formSettings.retentionSection') }}</h2>
+      <p class="mt-1 text-sm text-slate-500">{{ $t('formSettings.retentionSectionDesc') }}</p>
+      <div class="mt-4 max-w-xs">
+        <label class="block">
+          <span class="text-sm font-medium text-slate-700">{{ $t('formSettings.retentionDays') }}</span>
+          <input
+            v-model="retentionDays"
+            type="number"
+            min="0"
+            max="3650"
+            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          />
+          <span class="mt-1 block text-xs text-slate-400">{{ $t('formSettings.retentionDaysHint') }}</span>
+        </label>
+      </div>
+      <!-- Con un plan de muestra vigente, purgar aprobados viejos descuenta la cuota -->
+      <div v-if="retentionDays && sampleTargetCount > 0" class="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900">
+        {{ $t('formSettings.retentionSampleWarning', { n: sampleTargetCount }) }}
       </div>
     </section>
 

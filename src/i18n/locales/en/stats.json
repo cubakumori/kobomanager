@@ -154,6 +154,7 @@
     "byTeamTitleGrouped": "By meta-team → team",
     "byTeamGroup": "Grouping: {field}",
     "groupToggle": "Group teams",
-    "colTeam": "Team"
+    "colTeam": "Team",
+    "retentionNote": "Retention active: these metrics cover only the submissions from the last {n} days (older ones were purged from the cache; they remain in KoboToolbox)."
   }
 }

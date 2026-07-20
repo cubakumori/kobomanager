@@ -13,7 +13,7 @@ if (Request::method() !== 'GET') {
     ErrorResponse::send('VALIDATION_ERROR', 'Método no permitido', 405);
 }
 
-$form = DB::run('SELECT id, name, schema_json, deployment_status, stats_team_field, stats_enumerator_field, team_group_field FROM forms WHERE id = ? AND active = 1', [$formId])->fetch();
+$form = DB::run('SELECT id, name, schema_json, deployment_status, stats_team_field, stats_enumerator_field, team_group_field, retention_days FROM forms WHERE id = ? AND active = 1', [$formId])->fetch();
 if (!$form) {
     ErrorResponse::send('NOT_FOUND', 'Formulario no encontrado');
 }
@@ -68,4 +68,7 @@ ErrorResponse::ok(array_merge([
     'deployment_status' => $form['deployment_status'] ?? null,
     'team_group_configured' => $groupable,
     'team_grouped'      => $grouped,
+    // Retención configurada (días o null): la vista avisa de que las métricas
+    // cubren solo la ventana retenida en caché.
+    'retention_days'    => $form['retention_days'] !== null ? (int) $form['retention_days'] : null,
 ], $stats));

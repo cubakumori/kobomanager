@@ -348,6 +348,23 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   ("empty and sync"); confirming repeats the sync with `confirm_wipe: true`, which re‑checks
   against Kobo in that same pass before emptying (audited as `cache_wipe`). The cron never
   confirms. Review comments/history are kept, as with partial deletions.
+  - **Retention** (1.40.0, `forms.retention_days`, NULL = keep forever): every sync starts
+    with a **purge** (`SubmissionSync::purgeExpired`, before talking to Kobo, so it applies
+    even when Kobo is down) that truly deletes cached submissions older than the window
+    (`submitted_at` < UTC cutoff; undated rows are kept out of prudence) **together with
+    their local review history/comments** (`submission_reviews` has no FK to the cache — the
+    purge deletes by uid), and refreshes `forms.submission_count`. The import then **skips**
+    anything older than the cutoff — without that filter a full sync would re‑import what was
+    just purged. Skipped submissions are still recorded in `seenUids` *before* the filter, so
+    the reconciliation sweep never counts them as "removed", and the anti‑wipe guard is
+    untouched. **KoboToolbox is never written to**: widening the window re‑imports the data
+    on a **full** sync (the incremental cursor only looks forward); purged local history does
+    not return (a re‑imported row picks up whatever validation status Kobo holds). The
+    automated purge is not audit‑logged (mechanical policy, like the audit‑log purge itself);
+    *setting* the retention is (the settings PATCH is audited). Manual catch‑up:
+    `php api/cli/purge_submissions.php [form_id]`. The settings screen warns when enabling
+    retention on a form with an active sample plan (purged approvals subtract from the
+    quota), and the Stats/Sample views show a "window only" note.
 - **Sync on login** (`v1/forms/sync_stale.php`, global `sync_on_login` setting, OFF by
   default): after a successful login the SPA fires a background `POST /forms/sync-stale`
   that syncs the user's visible forms whose submissions are >10 min old — a staleness safety

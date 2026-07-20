@@ -46,6 +46,12 @@ class SubmissionSync {
 
     /** Cuerpo de la sincronización; se ejecuta con el lock del formulario ya adquirido. */
     private static function syncFormLocked(int $formId, string $assetUid, KoboClient $client, bool $full, bool $confirmWipe = false): array {
+        // RETENCIÓN: purga ANTES de hablar con Kobo (aplica aunque Kobo esté caído)
+        // y calcula el corte que el import usará para saltar lo fuera de ventana
+        // (sin el filtro, un sync completo re-importaría lo recién purgado).
+        $retention = DB::run('SELECT retention_days FROM forms WHERE id = ?', [$formId])->fetch()['retention_days'] ?? null;
+        $purged    = self::purgeExpired($formId, $retention !== null ? (int) $retention : null);
+        $cutoff    = self::retentionCutoff($retention !== null ? (int) $retention : null);
         try {
             // Refrescar el esquema legible (labels) junto con los envíos. Es a prueba
             // de fallos: no interrumpe la sincronización si el contenido no se puede leer.
@@ -101,6 +107,9 @@ class SubmissionSync {
                     foreach ($pageRows as $sub) {
                         $uid = $sub['_uuid'] ?? (isset($sub['_id']) ? (string) $sub['_id'] : null);
                         if (!$uid) continue;
+                        // `seenUids` registra «vivo en Kobo» ANTES del filtro de retención:
+                        // un envío fuera de ventana no se importa, pero tampoco es una baja
+                        // (el barrido de reconciliación no debe contarlo como «retirado»).
                         $seenUids[$uid] = true;
 
                         // `_submission_time` viene de Kobo en UTC; lo proyectamos a la columna
@@ -116,6 +125,12 @@ class SubmissionSync {
                             } catch (Exception $e) {
                                 $submittedAt = null;
                             }
+                        }
+
+                        // Retención: lo más viejo que el corte no entra en la caché. Un envío
+                        // sin fecha (raro, payload malformado) se conserva por prudencia.
+                        if ($cutoff !== null && $submittedAt !== null && $submittedAt < $cutoff) {
+                            continue;
                         }
 
                         $cc = Derived::cacheColumns($sub, $schemaRaw);
@@ -151,7 +166,7 @@ class SubmissionSync {
                  WHERE id = ?',
                 [$formId]
             );
-            return ['upserted' => $count] + $rec;
+            return ['upserted' => $count, 'purged' => $purged] + $rec;
         } catch (KoboException $e) {
             DB::run(
                 'UPDATE forms SET sync_status = \'error\', last_sync_error = ? WHERE id = ?',
@@ -316,6 +331,55 @@ class SubmissionSync {
             $lastId = (int) end($rows)['id'];
         } while (count($rows) === 500);
         return $done;
+    }
+
+    // ---------- Retención de envíos (forms.retention_days) ----------
+
+    /** Corte UTC de la ventana de retención ('Y-m-d H:i:s'), o null = sin retención. */
+    public static function retentionCutoff(?int $retentionDays): ?string {
+        if ($retentionDays === null || $retentionDays <= 0) return null;
+        return gmdate('Y-m-d H:i:s', time() - $retentionDays * 86400);
+    }
+
+    /**
+     * PURGA de retención: elimina de la caché los envíos del formulario más viejos
+     * que la ventana (`submitted_at` < corte; un envío sin fecha se conserva por
+     * prudencia) junto con sus productos locales (historial de revisión, que incluye
+     * los comentarios). KoboToolbox no se toca: al AMPLIAR la ventana, un sync
+     * COMPLETO re-importa los DATOS (el incremental no: su cursor solo mira hacia
+     * delante); el historial local purgado no vuelve (al re-entrar, el envío recupera
+     * el estado de validación que tenga en Kobo).
+     *
+     * La ejecución automática no se audita (es política mecánica, como la purga del
+     * propio audit_log); lo auditado es quién FIJÓ la retención (PATCH de ajustes).
+     * Devuelve cuántos envíos se purgaron.
+     */
+    public static function purgeExpired(int $formId, ?int $retentionDays): int {
+        $cutoff = self::retentionCutoff($retentionDays);
+        if ($cutoff === null) return 0;
+
+        $rows = DB::run(
+            'SELECT id, submission_uid FROM submissions_cache
+             WHERE form_id = ? AND submitted_at IS NOT NULL AND submitted_at < ?',
+            [$formId, $cutoff]
+        )->fetchAll();
+        if (!$rows) return 0;
+
+        // Primero el historial de revisión (sin FK a la caché: se borra por uid),
+        // después las filas de la caché, y el contador cacheado queda al día aunque
+        // esta purga corra sin un sync completo detrás (p. ej. desde el CLI).
+        foreach (array_chunk(array_column($rows, 'submission_uid'), 500) as $chunk) {
+            $ph = implode(',', array_fill(0, count($chunk), '?'));
+            DB::run("DELETE FROM submission_reviews WHERE submission_uid IN ($ph)", $chunk);
+        }
+        $removed = self::deleteByIds(array_map(fn($r) => (int) $r['id'], $rows));
+        DB::run(
+            'UPDATE forms SET submission_count =
+                (SELECT COUNT(*) FROM submissions_cache sc WHERE sc.form_id = forms.id)
+             WHERE id = ?',
+            [$formId]
+        );
+        return $removed;
     }
 
     /** Borra filas de submissions_cache por su PK, en lotes. */

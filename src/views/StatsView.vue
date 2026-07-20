@@ -132,6 +132,10 @@ onMounted(load)
       <p v-if="stats?.last_submission" class="mt-1 text-sm text-slate-500">
         {{ $t('stats.lastSubmission', { date: stats.last_submission }) }}
       </p>
+      <!-- Retención activa: las métricas cubren solo la ventana retenida en caché -->
+      <p v-if="stats?.retention_days" class="mt-1 text-xs text-amber-600 dark:text-amber-400">
+        {{ $t('stats.retentionNote', { n: stats.retention_days }) }}
+      </p>
     </header>
 
     <!-- Selector de periodo (acota las métricas; el encabezado y la tendencia 7/30d

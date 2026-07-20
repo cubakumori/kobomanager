@@ -144,6 +144,14 @@ CREATE TABLE IF NOT EXISTS forms (
     sample_field2       VARCHAR(255) NULL,
     sample_field3       VARCHAR(255) NULL,
     sample_denominator  VARCHAR(20) NOT NULL DEFAULT 'approved',
+    -- RETENCIÓN de envíos en la caché local, en DÍAS sobre `submitted_at`.
+    -- NULL = conservar para siempre (default). Con N días: la purga del ciclo de
+    -- sincronización ELIMINA de verdad los envíos más viejos (y sus derivados
+    -- locales: historial de revisión, comentarios) y el import salta lo que quede
+    -- fuera de la ventana. KoboToolbox NO se toca nunca: al ampliar la ventana, una
+    -- sincronización COMPLETA re-importa de Kobo lo purgado (el cron es incremental
+    -- y no re-trae lo viejo); los productos locales purgados sí se pierden.
+    retention_days      INT UNSIGNED NULL,
     sync_status         ENUM('pending', 'success', 'error') DEFAULT 'pending',
     last_sync_error     TEXT,
     active              TINYINT(1) DEFAULT 1,

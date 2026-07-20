@@ -28,6 +28,10 @@ native validation status.
   authenticator app (with single-use recovery codes), and a global policy can
   **require** it for admins or for everyone; admins can reset a user's 2FA from the
   Users page (lost phone).
+- **Per-form submission retention** (data minimization): keep only the last N days in
+  KoboManager's local cache — older submissions (and their local review history) are
+  truly purged on every sync, reducing what a server seizure would take. KoboToolbox
+  keeps the full archive, so widening the window brings the data back with a full sync.
 - Per-form permissions (view / edit / validate / settings / sample). *Settings* lets a
   trusted user tune that form's team-breakdown fields and quality-control thresholds
   without being an admin; *Sample* additionally opens the sample-plan editor and is

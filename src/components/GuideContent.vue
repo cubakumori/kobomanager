@@ -155,6 +155,7 @@ const flowSteps = [1, 2, 3, 4]
         <li><strong>{{ $t('guide.secToken') }}:</strong> {{ $t('guide.secTokenBody') }}</li>
         <li><strong>{{ $t('guide.secSessions') }}:</strong> {{ $t('guide.secSessionsBody') }}</li>
         <li><strong>{{ $t('guide.secTotp') }}:</strong> {{ $t('guide.secTotpBody') }}</li>
+        <li><strong>{{ $t('guide.secRetention') }}:</strong> {{ $t('guide.secRetentionBody') }}</li>
         <li><strong>{{ $t('guide.secScope') }}:</strong> {{ $t('guide.secScopeBody') }}</li>
       </ul>
     </section>

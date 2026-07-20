@@ -21,7 +21,7 @@ if (Request::method() !== 'GET') {
 
 $form = DB::run(
     'SELECT id, name, schema_json, deployment_status, stats_team_field, team_group_field,
-            sample_field, sample_field2, sample_field3, sample_denominator
+            sample_field, sample_field2, sample_field3, sample_denominator, retention_days
      FROM forms WHERE id = ? AND active = 1',
     [$formId]
 )->fetch();
@@ -38,6 +38,9 @@ $base = [
     // Para el enlace «Configurar la muestra» del panel: editar el plan pide el
     // permiso jerárquico «Muestra», no basta «Ajustes».
     'can_sample'           => Auth::canForm($user, $formId, 'sample'),
+    // Retención configurada (días o null): con retención, el panel avisa de que
+    // solo cuenta la ventana retenida (lo purgado descuenta la cuota).
+    'retention_days'       => $form['retention_days'] !== null ? (int) $form['retention_days'] : null,
 ];
 
 // Sin campo de muestreo configurado: el panel muestra el aviso de «configúralo».
