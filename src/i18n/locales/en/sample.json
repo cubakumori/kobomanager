@@ -55,6 +55,12 @@
     "trafficBehind": "Behind",
     "trafficNoTarget": "No target",
     "trafficLegendHint": "\"Behind\" = below the plan's overall progress ({pct}).",
-    "summaryMissing": "To go"
+    "summaryMissing": "To go",
+    "groupToggle": "Group teams",
+    "groupToggleTitle": "Group by {field}",
+    "toggleGroup": "Collapse/expand the group",
+    "groupTeamCount": "{n} team(s)",
+    "ungrouped": "Ungrouped",
+    "ungroupedHint": "Group membership is inferred from submissions: a team with no submissions (or no value for the grouping field) stays under “Ungrouped” until its first submission."
   }
 }

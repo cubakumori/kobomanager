@@ -29,7 +29,7 @@ const props = defineProps({
   // Equipos marcados (null = todos). Controla qué equipos suman a los agregados.
   selectedTeams: { type: Array, default: null },
 })
-const emit = defineEmits(['select', 'select-teams'])
+const emit = defineEmits(['select', 'select-teams', 'toggle-group'])
 const stats = computed(() => props.stats)
 
 // ---- Filtro por equipos (checkboxes del desglose) ----
@@ -256,6 +256,10 @@ const attByKindText = computed(() => {
 // `_submitted_by`, que llega con label null).
 const teamFieldLabel = computed(() => stats.value?.team_field?.label || stats.value?.team_field?.key || '')
 const enumFieldLabel = computed(() => stats.value?.enumerator_field?.label || t('stats.enumSubmittedBy'))
+// «Agrupar equipos» (meta-equipo): con el toggle activo el backend desplaza los ejes
+// un nivel (meta-equipo → equipos) y aquí solo cambian título, etiquetas y cabecera.
+const teamGrouped = computed(() => !!stats.value?.team_grouped)
+const groupToggleVisible = computed(() => props.interactive && !!stats.value?.team_group_configured)
 
 // Se muestra solo si aporta algo: ≥2 equipos, ≥2 encuestadores en el primero, o hay
 // equipos en «otros». Con un único equipo y un único encuestador sería ruido.
@@ -424,9 +428,14 @@ const reviewPills = (st) =>
     <section v-if="showTeam" class="space-y-3">
       <div class="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
         <div>
-          <h2 class="font-semibold text-slate-900">{{ $t('stats.byTeamTitle') }}</h2>
+          <h2 class="font-semibold text-slate-900">{{ teamGrouped ? $t('stats.byTeamTitleGrouped') : $t('stats.byTeamTitle') }}</h2>
           <p class="text-xs text-slate-400">
-            {{ $t('stats.byTeamTeam', { field: teamFieldLabel }) }} · {{ $t('stats.byTeamEnum', { field: enumFieldLabel }) }}
+            <template v-if="teamGrouped">
+              {{ $t('stats.byTeamGroup', { field: teamFieldLabel }) }} · {{ $t('stats.byTeamTeam', { field: enumFieldLabel }) }}
+            </template>
+            <template v-else>
+              {{ $t('stats.byTeamTeam', { field: teamFieldLabel }) }} · {{ $t('stats.byTeamEnum', { field: enumFieldLabel }) }}
+            </template>
           </p>
           <p v-if="interactive" class="mt-0.5 text-xs text-slate-400">{{ $t('stats.teamToggleHint') }}</p>
         </div>
@@ -437,6 +446,24 @@ const reviewPills = (st) =>
               {{ $t('stats.teamsShowAll') }}
             </button>
           </div>
+          <!-- Toggle «Agrupar equipos» (solo si hay campo de agrupación configurado) -->
+          <label v-if="groupToggleVisible" class="flex cursor-pointer items-center gap-2 text-xs font-medium text-slate-600">
+            <button
+              type="button"
+              role="switch"
+              :aria-checked="String(teamGrouped)"
+              :disabled="reloading"
+              class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/30 disabled:cursor-wait disabled:opacity-60"
+              :class="teamGrouped ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-600'"
+              @click="$emit('toggle-group')"
+            >
+              <span
+                class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                :class="teamGrouped ? 'translate-x-4' : 'translate-x-0.5'"
+              />
+            </button>
+            <span @click="$emit('toggle-group')">{{ $t('stats.groupToggle') }}</span>
+          </label>
           <!-- Control de calidad: solo en la vista interna (los enlaces públicos no lo exponen) -->
           <RouterLink
             v-if="interactive && stats.form"
@@ -495,7 +522,7 @@ const reviewPills = (st) =>
             <table class="w-full whitespace-nowrap text-left text-sm">
               <thead class="text-xs uppercase tracking-wider text-slate-400">
                 <tr>
-                  <th class="py-1 pr-3">{{ $t('stats.colEnumerator') }}</th>
+                  <th class="py-1 pr-3">{{ teamGrouped ? $t('stats.colTeam') : $t('stats.colEnumerator') }}</th>
                   <th class="py-1 pr-3 text-right">{{ $t('stats.colVolume') }}</th>
                   <th class="py-1 pr-3 text-right">{{ $t('stats.colDuration') }}</th>
                   <th class="py-1 pr-3 text-right">{{ $t('stats.colCompleteness') }}</th>

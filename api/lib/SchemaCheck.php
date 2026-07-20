@@ -225,6 +225,11 @@ class SchemaCheck {
         // formularios»). NULL = ninguna; sin backfill (empezar vacío ya es correcto).
         ['table' => 'users', 'column' => 'ui_prefs', 'since' => '1.37.0',
          'fix' => "ALTER TABLE users ADD COLUMN ui_prefs JSON NULL AFTER locale"],
+
+        // Agrupación de equipos bajo un «meta-equipo» (roll-up de presentación en
+        // Muestra y Estadísticas). NULL = sin agrupación; sin backfill.
+        ['table' => 'forms', 'column' => 'team_group_field', 'since' => '1.38.0',
+         'fix' => "ALTER TABLE forms ADD COLUMN team_group_field VARCHAR(255) NULL AFTER stats_enumerator_field"],
     ];
 
     /** Columnas cuyo backfill requiere el recálculo PHP de migrate.php (no basta SQL). */

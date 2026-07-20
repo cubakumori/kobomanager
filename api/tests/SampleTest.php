@@ -306,4 +306,116 @@ final class SampleTest extends DbTestCase
         )->fetch()['m'];
         $this->assertSame($expected, $res['last_approved_at']);
     }
+
+    // ------------------------------------------------------------------
+    // Agrupación por meta-equipo (team_group_field): roll-up de presentación.
+    // ------------------------------------------------------------------
+
+    /** Esquema con un campo de agrupación `prov` (provincia) por encima del equipo. */
+    private function schemaWithProv(): array
+    {
+        $s = $this->schema();
+        $s['fields']['prov'] = ['leaf' => 'prov', 'type' => 'select_one provs', 'list' => 'provs', 'label' => ['' => 'Provincia']];
+        $s['choices']['provs'] = ['p1' => ['' => 'Norte'], 'p2' => ['' => 'Sur']];
+        return $s;
+    }
+
+    public function testGroupRollupAssignsDominantValuePerTeam(): void
+    {
+        $formId = $this->makeForm();
+        $this->target($formId, 't1', 'a1', 5);
+        $this->target($formId, 't2', 'a1', 5);
+
+        // t1: 2 envíos, ambos p1 → grupo p1. t2: 1 envío p1 y 2 p2 → dominante p2
+        // (los conflictos no rompen: son aviso de calidad, gana el dominante).
+        $this->review($this->addSubmission($formId, ['team' => 't1', 'age' => 'a1', 'prov' => 'p1']), 'approved');
+        $this->review($this->addSubmission($formId, ['team' => 't1', 'age' => 'a1', 'prov' => 'p1']), 'approved');
+        $this->review($this->addSubmission($formId, ['team' => 't2', 'age' => 'a1', 'prov' => 'p1']), 'approved');
+        $this->review($this->addSubmission($formId, ['team' => 't2', 'age' => 'a1', 'prov' => 'p2']), 'approved');
+        $this->review($this->addSubmission($formId, ['team' => 't2', 'age' => 'a1', 'prov' => 'p2']), 'approved');
+
+        $res = Sample::compute(
+            $formId, $this->schemaWithProv(), null, null, 'es', 'team', 'age', 'approved',
+            [], null, null, 'prov'
+        );
+
+        $this->assertSame('prov', $res['group_field']['key']);
+        $this->assertSame('Provincia', $res['group_field']['label']);
+        $this->assertSame('p1', $this->team($res, 't1')['group']);
+        $this->assertSame('p2', $this->team($res, 't2')['group']);
+        // Eje de grupos en el orden del esquema, solo los asignados.
+        $this->assertSame(['p1', 'p2'], array_column($res['groups'], 'key'));
+        $this->assertSame('Norte', $res['groups'][0]['label']);
+    }
+
+    public function testGroupTeamWithoutVotesFallsToUngroupedBucket(): void
+    {
+        $formId = $this->makeForm();
+        $this->target($formId, 't1', 'a1', 5);
+        $this->target($formId, 't2', 'a1', 5); // planificado, SIN envíos
+
+        // t1 con envíos pero SIN valor de prov: tampoco tiene votos → «Sin agrupar».
+        $this->review($this->addSubmission($formId, ['team' => 't1', 'age' => 'a1']), 'approved');
+
+        $res = Sample::compute(
+            $formId, $this->schemaWithProv(), null, null, 'es', 'team', 'age', 'approved',
+            [], null, null, 'prov'
+        );
+
+        $this->assertSame(Sample::NONE, $this->team($res, 't1')['group']);
+        $this->assertSame(Sample::NONE, $this->team($res, 't2')['group']);
+        // El cubo «Sin agrupar» cierra el eje, con label null (lo traduce la UI).
+        $this->assertSame([Sample::NONE], array_column($res['groups'], 'key'));
+        $this->assertNull($res['groups'][0]['label']);
+    }
+
+    public function testGroupBacklogVotesToo(): void
+    {
+        $formId = $this->makeForm();
+        $this->target($formId, 't1', 'a1', 5);
+        // Solo backlog (pendiente): no cuenta como hecho pero SÍ vota para el grupo.
+        $this->addSubmission($formId, ['team' => 't1', 'age' => 'a1', 'prov' => 'p2']);
+
+        $res = Sample::compute(
+            $formId, $this->schemaWithProv(), null, null, 'es', 'team', 'age', 'approved',
+            [], null, null, 'prov'
+        );
+
+        $t1 = $this->team($res, 't1');
+        $this->assertSame(0, $t1['done']);
+        $this->assertSame(1, $t1['pending']);
+        $this->assertSame('p2', $t1['group']);
+    }
+
+    public function testGroupFieldHiddenByFieldScopeDisablesGrouping(): void
+    {
+        $formId = $this->makeForm();
+        $this->target($formId, 't1', 'a1', 5);
+        $this->review($this->addSubmission($formId, ['team' => 't1', 'age' => 'a1', 'prov' => 'p1']), 'approved');
+
+        $fieldScope = FieldScope::normalize(['hidden' => ['prov']]);
+        $res = Sample::compute(
+            $formId, $this->schemaWithProv(), null, $fieldScope, 'es', 'team', 'age', 'approved',
+            [], null, null, 'prov'
+        );
+
+        $this->assertNull($res['group_field']);
+        $this->assertSame([], $res['groups']);
+        $this->assertNull($this->team($res, 't1')['group']);
+    }
+
+    public function testGroupWithoutTeamFieldDisablesGrouping(): void
+    {
+        $formId = $this->makeForm();
+        $this->review($this->addSubmission($formId, ['team' => 't1', 'age' => 'a1', 'prov' => 'p1']), 'approved');
+
+        // Sin eje de equipo no hay nada que agrupar (agrupa EQUIPOS, no envíos).
+        $res = Sample::compute(
+            $formId, $this->schemaWithProv(), null, null, 'es', null, 'age', 'approved',
+            [], null, null, 'prov'
+        );
+
+        $this->assertNull($res['group_field']);
+        $this->assertSame([], $res['groups']);
+    }
 }

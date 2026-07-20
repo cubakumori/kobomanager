@@ -21,6 +21,10 @@ const selectedStatus = ref(null)
 // Equipos seleccionados (null = todos; array = subconjunto marcado). Persiste al
 // cambiar de estado: ambos filtros se componen.
 const selectedTeams = ref(null)
+// «Agrupar equipos» (meta-equipo): el backend desplaza los ejes del desglose un
+// nivel (meta-equipo → equipos). Preferencia por dispositivo, como en Muestra.
+const GROUP_KEY = 'km.sample.group'
+const grouped = ref(localStorage.getItem(GROUP_KEY) === '1')
 
 // Rango de fechas (días naturales UTC, inclusive). Presets: 'all' (sin rango),
 // '7'|'30'|'90' (from = hoy−N, to abierto = hasta hoy) o 'custom' (dos inputs).
@@ -39,6 +43,7 @@ async function load() {
     if (selectedTeams.value) params.teams = selectedTeams.value.join(',')
     if (dateFrom.value) params.from = dateFrom.value
     if (dateTo.value) params.to = dateTo.value
+    if (grouped.value) params.group = 1
     const { data } = await api.get(`/forms/${formId.value}/stats`, { params })
     stats.value = data.data
     selectedStatus.value = data.data.filter // refleja la tarjeta activa
@@ -58,6 +63,14 @@ function selectStatus(status) {
 
 function selectTeams(keys) {
   selectedTeams.value = keys // null = todos; array = subconjunto (puede ser vacío)
+  load()
+}
+
+function toggleGroup() {
+  grouped.value = !grouped.value
+  localStorage.setItem(GROUP_KEY, grouped.value ? '1' : '0')
+  // Las claves del filtro cambian de semántica (equipos ⇄ meta-equipos): se resetea.
+  selectedTeams.value = null
   load()
 }
 
@@ -192,6 +205,7 @@ onMounted(load)
       :selected-teams="selectedTeams"
       @select="selectStatus"
       @select-teams="selectTeams"
+      @toggle-group="toggleGroup"
     />
   </div>
 </template>

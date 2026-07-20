@@ -13,7 +13,7 @@ if (Request::method() !== 'GET') {
     ErrorResponse::send('VALIDATION_ERROR', 'Método no permitido', 405);
 }
 
-$form = DB::run('SELECT id, name, schema_json, deployment_status, stats_team_field, stats_enumerator_field FROM forms WHERE id = ? AND active = 1', [$formId])->fetch();
+$form = DB::run('SELECT id, name, schema_json, deployment_status, stats_team_field, stats_enumerator_field, team_group_field FROM forms WHERE id = ? AND active = 1', [$formId])->fetch();
 if (!$form) {
     ErrorResponse::send('NOT_FOUND', 'Formulario no encontrado');
 }
@@ -42,13 +42,30 @@ $teamSel = array_key_exists('teams', $_GET)
 $dateFrom = ($_GET['from'] ?? '') !== '' ? (string) $_GET['from'] : null;
 $dateTo   = ($_GET['to'] ?? '') !== '' ? (string) $_GET['to'] : null;
 
+// Agrupación por meta-equipo (`?group=1`, toggle «Agrupar equipos»): desplaza los
+// ejes del desglose UN nivel — meta-equipo → equipos — reutilizando la estructura de
+// dos niveles existente (aquí cada envío se agrega por SU PROPIO valor del campo de
+// grupo, sin inferir dominantes: no hay plan por medio). Solo si el campo está
+// configurado y es visible para este usuario; el filtro `?teams=` pasa a operar
+// sobre claves de meta-equipo.
+$groupField = $form['team_group_field'] ?: null;
+$groupable  = $groupField !== null && ($form['stats_team_field'] ?: null) !== null
+    && !FieldScope::isHidden($fieldScope, $groupField);
+$grouped    = $groupable && (string) ($_GET['group'] ?? '') === '1';
+
+[$axisTeam, $axisEnum] = $grouped
+    ? [$groupField, $form['stats_team_field']]
+    : [$form['stats_team_field'] ?: null, $form['stats_enumerator_field'] ?: null];
+
 $stats = Stats::compute(
     $formId, $schemaRaw, $scope, $fieldScope, $user['locale'], true,
-    $form['stats_team_field'] ?: null, $form['stats_enumerator_field'] ?: null,
+    $axisTeam, $axisEnum,
     $filter, $teamSel, null, $dateFrom, $dateTo
 );
 
 ErrorResponse::ok(array_merge([
     'form'              => ['id' => (int) $form['id'], 'name' => $form['name']],
     'deployment_status' => $form['deployment_status'] ?? null,
+    'team_group_configured' => $groupable,
+    'team_grouped'      => $grouped,
 ], $stats));

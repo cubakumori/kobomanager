@@ -20,7 +20,7 @@ if (Request::method() !== 'GET') {
 }
 
 $form = DB::run(
-    'SELECT id, name, schema_json, deployment_status, stats_team_field,
+    'SELECT id, name, schema_json, deployment_status, stats_team_field, team_group_field,
             sample_field, sample_field2, sample_field3, sample_denominator
      FROM forms WHERE id = ? AND active = 1',
     [$formId]
@@ -55,7 +55,9 @@ $sample = Sample::compute(
     $form['stats_team_field'] ?: null,
     (string) $form['sample_field'],
     (string) $form['sample_denominator'],
-    $secondary
+    $secondary,
+    null, null,
+    $form['team_group_field'] ?: null
 );
 
 ErrorResponse::ok($base + ['configured' => true] + $sample);

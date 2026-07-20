@@ -4,6 +4,47 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.38.0] - 2026-07-20
+
+**Agrupación de equipos bajo un «meta-equipo»** (nivel padre opcional: región,
+provincia…) en los paneles de Muestra y Estadísticas, con detección asistida del
+campo de agrupación.
+
+### Añadido
+
+- **Campo de agrupación de equipos** (`forms.team_group_field`, opcional): un campo del
+  envío un nivel POR ENCIMA del equipo (cadena `encuestador → equipo → meta-equipo`,
+  cada eslabón muchos-a-uno). Se configura en los ajustes del formulario, debajo del
+  desglose por equipo; debe ser monovaluado y **distinto** del campo de equipo y del de
+  encuestador (guards mutuamente excluyentes), y se anula solo al quitar el campo de
+  equipo. El selector lo llenan **todos** los candidatos de tipo válido: el algoritmo
+  propone, no dicta.
+- **Toggle «Agrupar equipos» en el panel de Muestra** (preferencia por dispositivo):
+  roll-up de **solo presentación** — el plan sigue por equipo (`sample_targets`
+  intacto); el objetivo/hecho del meta-equipo es la Σ de sus equipos. Cada equipo se
+  asigna al valor **dominante** observado en sus envíos; un equipo sin envíos (o sin
+  valor del campo) queda en el cubo **«Sin agrupar»** hasta su primer envío (la
+  pertenencia se infiere de los datos, avisado en la propia UI). El modo lineal se
+  vuelve un **árbol de dos niveles** (tarjeta de meta-equipo plegable → sus equipos; la
+  pleca global colapsa a la vista-resumen de meta-equipos) y los modos tabla / mapa de
+  calor / semáforo / barras / resumen conmutan sus filas equipo ⇄ meta-equipo.
+- **Toggle «Agrupar equipos» en Estadísticas** (`forms/{id}/stats?group=1`): el desglose
+  de dos niveles pasa a **meta-equipo → equipos** con su drill-down (aquí cada envío
+  agrega por su propio valor del campo, sin inferencia); el filtro interactivo de
+  equipos opera sobre claves de meta-equipo (la selección se resetea al conmutar).
+- **Botones de detección** en los ajustes (`GET /admin/forms/{id}/team-group`, permiso
+  «Ajustes», solo lectura; lib nueva `TeamGroups`): **«Detectar meta-equipos»** rankea
+  los `select_one` visibles por dependencia funcional `equipo → F` (equipos que
+  resuelven a un único valor) y grosor (menos valores que equipos) — clic en un
+  candidato lo pone en el selector; **«Detectar problemas»** lista por equipo el valor
+  dominante y los **conflictos** (envíos repartidos entre >1 valor) como aviso de
+  calidad de dato. Con datos insuficientes informan, no bloquean.
+
+### Esquema
+
+- Columna nueva `forms.team_group_field` (registrada en `SchemaCheck`; en instalaciones
+  existentes la aplica `php api/cli/migrate.php`).
+
 ## [1.37.0] - 2026-07-18
 
 Tanda de ajustes pre-release: **corte de revisión y backlog en el panel de muestra**,

@@ -150,6 +150,10 @@
     "qualityScopeToggleHint": "Cambio temporal: solo afecta a esta vista, no al ajuste global",
     "qualityExport": "Exportar",
     "qualityExportTitle": "Exportar infracciones",
-    "qualityExportHint": "Se exporta una fila por envío marcado (equipo, encuestador, tiempos, banderas y estado), respetando el alcance activo."
+    "qualityExportHint": "Se exporta una fila por envío marcado (equipo, encuestador, tiempos, banderas y estado), respetando el alcance activo.",
+    "byTeamTitleGrouped": "Por meta-equipo → equipo",
+    "byTeamGroup": "Agrupación: {field}",
+    "groupToggle": "Agrupar equipos",
+    "colTeam": "Equipo"
   }
 }

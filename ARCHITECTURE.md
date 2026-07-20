@@ -443,6 +443,23 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   is gated by `$includeReview` (so public links get the volume/quality but not the review mix,
   mirroring `by_status`). The two fields are configured from a per‑form **settings screen**
   (`admin/forms/{id}` `GET`/`PATCH`, view `FormSettingsView.vue`, route `admin-form-settings`).
+  - **Meta‑team grouping** (1.38.0, optional): `forms.team_group_field` names a submission field
+    one level **above** the team (region, province…; chain `enumerator → team → meta‑team`, each
+    link many‑to‑one). Must be single‑valued and **distinct** from the team and enumerator fields
+    (mutually‑exclusive guards in `admin/forms/{id}`; clearing the team field also clears it).
+    With it set, Stats gains a **"Group teams" toggle**: `forms/{id}/stats?group=1` simply
+    **shifts the axes one level** (`team := group field`, `enumerator := team field`), so the
+    existing two‑level breakdown renders *meta‑team → teams* with the drill‑down for free — here
+    each submission aggregates by its **own** group value (exact, no inference) and the
+    interactive `?teams=` filter operates on meta‑team keys (the front resets the selection when
+    toggling). The settings screen offers two **advisory buttons** backed by
+    `lib/TeamGroups.php` via `GET /admin/forms/{id}/team-group` (settings permission, read‑only):
+    *Detect meta‑teams* (no `?field=`) ranks visible `select_one` candidates by the functional
+    dependency `team → F` (share of teams resolving to a single value) plus coarseness (fewer
+    distinct values than teams), and *Detect issues* (`?field=X`) lists per‑team conflicts
+    (dominant value + strays) as a data‑quality warning. The algorithm **proposes/validates,
+    never dictates**: the SELECT lists every valid‑type candidate, and insufficient data reports
+    itself instead of blocking.
 - **Quality control** (`lib/Quality.php`, `v1/forms/quality.php`, view `QualityView.vue` at
   `forms/{id}/quality`): flags submissions outside the form's admissible thresholds — four
   per‑form columns edited from the same settings screen (`forms.qc_min_duration` /
@@ -586,6 +603,16 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   a team with only backlog still appears on the axis). The same streaming pass covers the
   denominator *and* the backlog statuses. In linear mode the team cards **collapse/expand**
   (clickable header, plus a collapse‑all toggle on the grand‑total card; ephemeral state).
+  With `forms.team_group_field` set (1.38.0) the panel gains a **"Group teams" toggle**
+  (per‑device preference, `km.sample.group`): a **presentation‑only roll‑up** — the plan stays
+  per team (`sample_targets` untouched); a parent's target/done is the Σ of its teams'. The same
+  streaming pass counts group‑field votes per team and each team is assigned its **dominant**
+  value (ties break alphabetically; teams with no votes fall into the `__none__` "Ungrouped"
+  bucket until their first submission — membership is *inferred*, documented in the UI). The
+  response adds `group` per team plus `group_field`/`groups`; the **frontend aggregates**
+  (linear mode becomes a two‑level tree of collapsible meta‑team → team cards, the grand‑total
+  collapse‑all folds to the meta‑team summary, and table/heatmap/traffic/bars/summary swap their
+  rows team ⇄ meta‑team). A group field hidden by `FieldScope` disables grouping for that user.
 - **Search** (`lib/SubmissionSearch.php`, M4a): submission‑table search no longer does a `LIKE`
   over the whole JSON. `textFor()` builds a plain‑text projection of the answer **values**
   (skipping `_*` metadata keys) into the indexed `submissions_cache.search_text` column,

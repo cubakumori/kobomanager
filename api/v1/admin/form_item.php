@@ -5,11 +5,14 @@
  *   GET    → datos editables del formulario: la config del desglose de
  *            estadísticas por equipo → encuestador y los umbrales del control
  *            de calidad.
- *   PATCH  { stats_team_field?, stats_enumerator_field?, qc_min_duration?,
- *            qc_max_duration?, qc_min_gap?, qc_dup_min_answers?, risk_min_n? } →
+ *   PATCH  { stats_team_field?, stats_enumerator_field?, team_group_field?,
+ *            qc_min_duration?, qc_max_duration?, qc_min_gap?, qc_dup_min_answers?,
+ *            risk_min_n? } →
  *            guarda esa config. Clave AUSENTE = no tocar; presente (aunque sea null) =
  *            fijar. Los campos de equipo son rutas del esquema o null
- *            (`stats_enumerator_field` null = usar `_submitted_by`). Los umbrales
+ *            (`stats_enumerator_field` null = usar `_submitted_by`;
+ *            `team_group_field` = meta-equipo opcional, exige campo de equipo y debe
+ *            ser distinto de equipo y encuestador). Los umbrales
  *            son minutos (entero ≥ 1) o null = comprobación desactivada.
  *            `qc_dup_min_answers` es nº de respuestas (1–50) o null = señal de
  *            duplicados desactivada. `risk_min_n` es el N mínimo del índice de riesgo
@@ -35,7 +38,7 @@ if ($method === 'DELETE') {
 }
 
 $form = DB::run(
-    'SELECT id, name, schema_json, stats_team_field, stats_enumerator_field,
+    'SELECT id, name, schema_json, stats_team_field, stats_enumerator_field, team_group_field,
             qc_min_duration, qc_max_duration, qc_min_gap, qc_dup_min_answers, risk_min_n
      FROM forms WHERE id = ?',
     [$formId]
@@ -69,6 +72,7 @@ if ($method === 'GET') {
         'name'                   => $form['name'],
         'stats_team_field'       => $form['stats_team_field'],
         'stats_enumerator_field' => $form['stats_enumerator_field'],
+        'team_group_field'       => $form['team_group_field'],
         'qc_dup_min_answers'     => $dupOut($form),
         'risk_min_n'             => $riskOut($form),
         'can_sample'             => Auth::canForm($user, $formId, 'sample'),
@@ -113,8 +117,19 @@ if ($method === 'PATCH') {
     };
 
     // Clave ausente = conservar el valor actual (permite PATCH parciales).
-    $team = array_key_exists('stats_team_field', $body) ? $clean($body['stats_team_field']) : $form['stats_team_field'];
-    $enum = array_key_exists('stats_enumerator_field', $body) ? $clean($body['stats_enumerator_field']) : $form['stats_enumerator_field'];
+    $team  = array_key_exists('stats_team_field', $body) ? $clean($body['stats_team_field']) : $form['stats_team_field'];
+    $enum  = array_key_exists('stats_enumerator_field', $body) ? $clean($body['stats_enumerator_field']) : $form['stats_enumerator_field'];
+    $group = array_key_exists('team_group_field', $body) ? $clean($body['team_group_field']) : $form['team_group_field'];
+
+    // Meta-equipo: un nivel POR ENCIMA del equipo (encuestador → equipo → meta-equipo),
+    // así que sin campo de equipo no hay agrupación (se anula, espejo de la UI). Los
+    // tres ejes deben ser campos DISTINTOS: son eslabones de la misma cadena.
+    if ($team === null) {
+        $group = null;
+    }
+    if ($group !== null && ($group === $team || $group === $enum)) {
+        ErrorResponse::send('VALIDATION_ERROR', 'El campo de agrupación debe ser distinto del de equipo y del de encuestador');
+    }
     $qc   = $qcOut($form);
     foreach (array_keys($qc) as $k) {
         if (array_key_exists($k, $body)) $qc[$k] = $cleanMin($body[$k], $k);
@@ -153,15 +168,16 @@ if ($method === 'PATCH') {
     }
 
     DB::run(
-        'UPDATE forms SET stats_team_field = ?, stats_enumerator_field = ?,
+        'UPDATE forms SET stats_team_field = ?, stats_enumerator_field = ?, team_group_field = ?,
                 qc_min_duration = ?, qc_max_duration = ?, qc_min_gap = ?, qc_dup_min_answers = ?,
                 risk_min_n = ?
          WHERE id = ?',
-        [$team, $enum, $qc['qc_min_duration'], $qc['qc_max_duration'], $qc['qc_min_gap'], $dup, $risk, $formId]
+        [$team, $enum, $group, $qc['qc_min_duration'], $qc['qc_max_duration'], $qc['qc_min_gap'], $dup, $risk, $formId]
     );
     $out = [
         'stats_team_field'       => $team,
         'stats_enumerator_field' => $enum,
+        'team_group_field'       => $group,
         'qc_dup_min_answers'     => $dup,
         'risk_min_n'             => $risk,
     ] + $qc;

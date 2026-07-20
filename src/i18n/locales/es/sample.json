@@ -55,6 +55,12 @@
     "trafficBehind": "Atrasado",
     "trafficNoTarget": "Sin objetivo",
     "trafficLegendHint": "«Atrasado» = por debajo del avance global del plan ({pct}).",
-    "summaryMissing": "Falta"
+    "summaryMissing": "Falta",
+    "groupToggle": "Agrupar equipos",
+    "groupToggleTitle": "Agrupar por {field}",
+    "toggleGroup": "Plegar/desplegar el grupo",
+    "groupTeamCount": "{n} equipo(s)",
+    "ungrouped": "Sin agrupar",
+    "ungroupedHint": "La pertenencia al grupo se infiere de los envíos: un equipo sin envíos (o sin valor del campo de agrupación) queda en «Sin agrupar» hasta su primer envío."
   }
 }

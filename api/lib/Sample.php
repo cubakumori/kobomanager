@@ -49,6 +49,11 @@ class Sample {
      * @param array|null  $extraScope  Restricción de filas ADICIONAL (AND), como en Stats.
      * @param string|null $nowUtc      Marca «ahora» UTC (Y-m-d H:i:s) para la proyección;
      *                                 null = time() real (parámetro para tests deterministas).
+     * @param string|null $groupField  Ruta del campo de AGRUPACIÓN de equipos (meta-equipo,
+     *                                 forms.team_group_field). Roll-up de solo presentación:
+     *                                 cada equipo se asigna al valor DOMINANTE observado en
+     *                                 sus envíos; sin envíos (o sin valor) → `__none__`
+     *                                 («Sin agrupar»). NULL = sin agrupación.
      */
     public static function compute(
         int $formId,
@@ -61,7 +66,8 @@ class Sample {
         string $denominator = 'approved',
         array $secondary = [],
         ?array $extraScope = null,
-        ?string $nowUtc = null
+        ?string $nowUtc = null,
+        ?string $groupField = null
     ): array {
         [$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'json_payload');
         if ($extraScope !== null) {
@@ -78,6 +84,11 @@ class Sample {
         // Campo de equipo efectivo: configurado y NO oculto por FieldScope en este alcance.
         $teamField = ($teamField !== null && $teamField !== '' && !FieldScope::isHidden($fieldScope, $teamField))
             ? $teamField : null;
+        // Campo de agrupación (meta-equipo) efectivo: mismas reglas, y además exige eje
+        // de equipo (agrupa EQUIPOS, no envíos sueltos).
+        $groupField = ($teamField !== null && $groupField !== null && $groupField !== ''
+                && $groupField !== $teamField && !FieldScope::isHidden($fieldScope, $groupField))
+            ? $groupField : null;
         // El campo de muestreo oculto para este usuario = sin panel (no se agrupa por una
         // columna que no ve). Se devuelve una respuesta vacía coherente.
         $sampleHidden = FieldScope::isHidden($fieldScope, $sampleField);
@@ -89,6 +100,7 @@ class Sample {
 
         $sampleOpts = $options[$sampleField] ?? [];   // código => etiqueta (orden del esquema)
         $teamOpts   = $teamField !== null ? ($options[$teamField] ?? []) : [];
+        $groupOpts  = $groupField !== null ? ($options[$groupField] ?? []) : [];
 
         // Campos secundarios: solo los visibles y con opciones (select_one/_multiple).
         $secondary = array_values(array_filter(
@@ -133,6 +145,10 @@ class Sample {
         $grandPending = 0;
         $grandOnHold  = 0;
 
+        // Votos del meta-equipo: team => [ valorGrupo => nº de envíos ]. Votan TODAS las
+        // filas del stream (hecho + backlog): más datos, mejor inferencia del dominante.
+        $groupVotes = [];
+
         if (!$sampleHidden) {
             // El stream trae el denominador MÁS el backlog (pending/on_hold) en una
             // sola pasada; cada fila alimenta solo los acumuladores que le tocan.
@@ -150,6 +166,14 @@ class Sample {
                 $svRaw = $payload[$sampleField] ?? null;
                 $tKey  = ($tvRaw === null || $tvRaw === '' || is_array($tvRaw)) ? self::NONE : (string) $tvRaw;
                 $sKey  = ($svRaw === null || $svRaw === '' || is_array($svRaw)) ? self::NONE : (string) $svRaw;
+
+                if ($groupField !== null) {
+                    $gvRaw = $payload[$groupField] ?? null;
+                    if ($gvRaw !== null && $gvRaw !== '' && !is_array($gvRaw)) {
+                        $gKey = (string) $gvRaw;
+                        $groupVotes[$tKey][$gKey] = ($groupVotes[$tKey][$gKey] ?? 0) + 1;
+                    }
+                }
 
                 // Backlog: por estado ACTUAL, sin importar el denominador. El equipo se
                 // registra en el eje aunque solo tenga backlog (llegó y espera revisión).
@@ -246,6 +270,21 @@ class Sample {
             ? strtotime($nowUtc . ' UTC')
             : time();
 
+        // --- Meta-equipo: cada equipo se asigna a su valor DOMINANTE (empate → orden
+        // alfabético, determinista). Equipos sin votos (planificados sin envíos, o sin
+        // valor en el campo) caen en `__none__` = «Sin agrupar»: el caveat honesto del
+        // modelo (la pertenencia se INFIERE de los envíos, no de un diccionario). ---
+        $teamGroup = []; // team => clave de grupo
+        if ($groupField !== null) {
+            foreach ($teamKeys as $tKey) {
+                $votes = $groupVotes[$tKey] ?? [];
+                if (!$votes) { $teamGroup[$tKey] = self::NONE; continue; }
+                ksort($votes, SORT_STRING);
+                arsort($votes);
+                $teamGroup[$tKey] = (string) array_key_first($votes);
+            }
+        }
+
         $teams = [];
         foreach ($teamKeys as $tKey) {
             $doneTotal   = $teamDone[$tKey] ?? 0;
@@ -295,6 +334,7 @@ class Sample {
             $teams[] = [
                 'key'          => $tKey,
                 'name'         => $tKey === self::NONE ? '—' : (($labelsOn && isset($teamOpts[$tKey])) ? $teamOpts[$tKey] : $tKey),
+                'group'        => $groupField !== null ? $teamGroup[$tKey] : null,
                 'done'         => $doneTotal,
                 'target'       => $targetTotal,
                 'pct'          => $targetTotal > 0 ? round($doneTotal * 100 / $targetTotal, 4) : null,
@@ -344,6 +384,28 @@ class Sample {
 
         $grandTarget = array_sum($teamTarget);
 
+        // --- Eje de META-EQUIPOS: opciones del esquema con algún equipo asignado (en su
+        // orden), luego valores extra observados, y «Sin agrupar» al final si hay huérfanos.
+        // La AGREGACIÓN (Σ hecho/objetivo/backlog por grupo) la hace el frontend sobre
+        // `teams[].group`: el roll-up es pura presentación y los datos ya viajan.
+        $groupsOut = [];
+        if ($groupField !== null) {
+            $assigned = [];
+            foreach ($teamGroup as $gKey) $assigned[$gKey] = true;
+            $ordered = [];
+            foreach (array_keys($groupOpts) as $code) {
+                $code = (string) $code;
+                if (isset($assigned[$code])) { $ordered[] = $code; unset($assigned[$code]); }
+            }
+            unset($assigned[self::NONE]);
+            foreach (array_keys($assigned) as $code) $ordered[] = (string) $code;
+            if (in_array(self::NONE, $teamGroup, true)) $ordered[] = self::NONE;
+            $groupsOut = array_map(fn($code) => [
+                'key'   => $code,
+                'label' => $code === self::NONE ? null : (($labelsOn && isset($groupOpts[$code])) ? $groupOpts[$code] : $code),
+            ], $ordered);
+        }
+
         return [
             'sample_field'   => [
                 'key'   => $sampleField,
@@ -353,6 +415,13 @@ class Sample {
                 'key'   => $teamField,
                 'label' => $labelsOn ? ($labels[$teamField] ?? $teamField) : $teamField,
             ] : null,
+            // Agrupación por meta-equipo (NULL = sin agrupación configurada o campo
+            // oculto para este usuario → la UI no ofrece el toggle).
+            'group_field'    => $groupField !== null ? [
+                'key'   => $groupField,
+                'label' => $labelsOn ? ($labels[$groupField] ?? $groupField) : $groupField,
+            ] : null,
+            'groups'         => $groupsOut,
             'denominator'    => in_array($denominator, ['approved', 'approved_pending'], true) ? $denominator : 'approved',
             'values'         => $valueMeta,
             'teams'          => $teams,

@@ -75,6 +75,76 @@ function setView(key) {
   localStorage.setItem(VIEW_KEY, key)
 }
 
+// ---------- Toggle «Agrupar equipos» (meta-equipo) ----------
+// Solo aparece si el formulario tiene campo de agrupación configurado (y visible
+// para este usuario: el backend lo omite si FieldScope lo oculta). Preferencia por
+// dispositivo, como el tipo de vista. El roll-up es de SOLO PRESENTACIÓN: el plan
+// sigue por equipo y aquí solo se agrega lo que ya viaja en `teams[]`.
+const GROUP_KEY = 'km.sample.group'
+const grouped = ref(localStorage.getItem(GROUP_KEY) === '1')
+const groupable = computed(() => !!data.value?.group_field)
+const groupOn = computed(() => groupable.value && grouped.value)
+function toggleGrouped() {
+  grouped.value = !grouped.value
+  localStorage.setItem(GROUP_KEY, grouped.value ? '1' : '0')
+}
+
+// Filas agregadas por meta-equipo, con la MISMA forma que una fila de equipo (name,
+// done, target, pct, backlog, cells) para que tabla/mapa de calor/semáforo/barras/
+// resumen conmuten sin rama propia; añaden `teams` (sus equipos, para el árbol del
+// modo lineal). El orden de grupos lo da el backend (esquema → extras → «Sin agrupar»).
+const groupRows = computed(() => {
+  if (!groupable.value) return []
+  const byKey = new Map()
+  for (const g of data.value.groups ?? []) {
+    byKey.set(g.key, {
+      key: g.key,
+      name: g.key === '__none__' ? t('sample.ungrouped') : g.label,
+      ungrouped: g.key === '__none__',
+      done: 0, target: 0, pending: 0, on_hold: 0,
+      out_of_plan: false, projection: null,
+      teams: [], _cells: new Map(),
+    })
+  }
+  for (const team of data.value.teams ?? []) {
+    const g = byKey.get(team.group ?? '__none__')
+    if (!g) continue
+    g.done += team.done
+    g.target += team.target
+    g.pending += team.pending
+    g.on_hold += team.on_hold
+    g.teams.push(team)
+    for (const c of team.cells) {
+      const acc = g._cells.get(c.value) ?? { value: c.value, label: c.label, done: 0, target: 0, hasTarget: false }
+      acc.done += c.done
+      if (c.target != null) { acc.target += c.target; acc.hasTarget = true }
+      g._cells.set(c.value, acc)
+    }
+  }
+  const rows = []
+  for (const g of byKey.values()) {
+    if (!g.teams.length) continue
+    g.cells = (data.value.values ?? [])
+      .map((v) => g._cells.get(v.value))
+      .filter(Boolean)
+      .map((c) => ({
+        value: c.value,
+        label: c.label,
+        done: c.done,
+        target: c.hasTarget ? c.target : null,
+        pct: c.hasTarget && c.target > 0 ? (c.done * 100) / c.target : null,
+        out_of_plan: !c.hasTarget,
+      }))
+    delete g._cells
+    g.pct = g.target > 0 ? (g.done * 100) / g.target : null
+    rows.push(g)
+  }
+  return rows
+})
+
+// Filas efectivas de los modos tabulares y de gráficos: equipo ⇄ meta-equipo.
+const displayTeams = computed(() => (groupOn.value ? groupRows.value : data.value?.teams ?? []))
+
 // ---------- Plegado de tarjetas de equipo (modo lineal) ----------
 // Estado efímero (se resetea al recargar: es un panel de monitoreo, no una preferencia).
 const collapsedTeams = ref(new Set())
@@ -84,13 +154,32 @@ function toggleTeam(key) {
   else s.add(key)
   collapsedTeams.value = s
 }
-// Pleca global del «Total general»: pliega todos los equipos, o los despliega si
-// ya están todos plegados.
+// Plegado de tarjetas de META-EQUIPO (árbol de dos niveles del modo lineal agrupado):
+// plegar un grupo oculta sus equipos y deja su tarjeta como resumen.
+const collapsedGroups = ref(new Set())
+function toggleGroup(key) {
+  const s = new Set(collapsedGroups.value)
+  if (s.has(key)) s.delete(key)
+  else s.add(key)
+  collapsedGroups.value = s
+}
+// Pleca global del «Total general»: pliega todos los equipos — o, agrupado, todos
+// los meta-equipos (colapsa a la vista-resumen de grupos) — y viceversa.
 const allCollapsed = computed(() => {
+  if (groupOn.value) {
+    const groups = groupRows.value
+    return groups.length > 0 && groups.every((g) => collapsedGroups.value.has(g.key))
+  }
   const teams = data.value?.teams ?? []
   return teams.length > 0 && teams.every((tm) => collapsedTeams.value.has(tm.key))
 })
 function toggleAllTeams() {
+  if (groupOn.value) {
+    collapsedGroups.value = allCollapsed.value
+      ? new Set()
+      : new Set(groupRows.value.map((g) => g.key))
+    return
+  }
   collapsedTeams.value = allCollapsed.value
     ? new Set()
     : new Set((data.value?.teams ?? []).map((tm) => tm.key))
@@ -99,8 +188,9 @@ function toggleAllTeams() {
 // ---------- Ejes de la tabla (tabla / mapa de calor / semáforo) ----------
 // El backend omite en `team.cells` las celdas vacías sin objetivo, así que la
 // tabla se arma sobre el eje canónico `data.values` mapeando cada fila por valor.
+// Con «Agrupar equipos» las filas son los meta-equipos (misma forma agregada).
 const tableRows = computed(() =>
-  (data.value?.teams ?? []).map((team) => ({
+  displayTeams.value.map((team) => ({
     team,
     map: Object.fromEntries(team.cells.map((c) => [c.value, c])),
   })),
@@ -178,7 +268,7 @@ function trafficTitle(cell, label) {
 
 // ---------- Gráficos (barras agrupadas y doughnut de resumen) ----------
 const barsData = computed(() => {
-  const teams = data.value?.teams ?? []
+  const teams = displayTeams.value
   return {
     labels: teams.map((tm) => tm.name),
     datasets: [
@@ -258,20 +348,47 @@ onMounted(load)
           {{ $t('sample.noPlan') }}
         </div>
 
-        <!-- Selector de tipo de vista -->
-        <div role="group" :aria-label="$t('sample.viewLabel')" class="inline-flex flex-wrap gap-1 rounded-lg bg-slate-100 p-1">
-          <button
-            v-for="v in VIEWS"
-            :key="v.key"
-            type="button"
-            :aria-pressed="view === v.key"
-            class="rounded-md px-2.5 py-1 text-xs font-medium transition"
-            :class="view === v.key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
-            @click="setView(v.key)"
+        <!-- Selector de tipo de vista + toggle «Agrupar equipos» (meta-equipo) -->
+        <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <div role="group" :aria-label="$t('sample.viewLabel')" class="inline-flex flex-wrap gap-1 rounded-lg bg-slate-100 p-1">
+            <button
+              v-for="v in VIEWS"
+              :key="v.key"
+              type="button"
+              :aria-pressed="view === v.key"
+              class="rounded-md px-2.5 py-1 text-xs font-medium transition"
+              :class="view === v.key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+              @click="setView(v.key)"
+            >
+              {{ $t(v.label) }}
+            </button>
+          </div>
+          <label
+            v-if="groupable"
+            class="flex cursor-pointer items-center gap-2 text-xs font-medium text-slate-600"
+            :title="$t('sample.groupToggleTitle', { field: data.group_field.label })"
           >
-            {{ $t(v.label) }}
-          </button>
+            <button
+              type="button"
+              role="switch"
+              :aria-checked="String(groupOn)"
+              class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+              :class="groupOn ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-600'"
+              @click="toggleGrouped"
+            >
+              <span
+                class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                :class="groupOn ? 'translate-x-4' : 'translate-x-0.5'"
+              />
+            </button>
+            <span @click="toggleGrouped">{{ $t('sample.groupToggle', { field: data.group_field.label }) }}</span>
+          </label>
         </div>
+
+        <!-- Caveat del roll-up: la pertenencia se infiere de los envíos -->
+        <p v-if="groupOn && groupRows.some((g) => g.ungrouped)" class="text-xs text-slate-400">
+          {{ $t('sample.ungroupedHint') }}
+        </p>
 
         <!-- Total general -->
         <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
@@ -325,12 +442,56 @@ onMounted(load)
         </section>
 
         <template v-if="data.teams.length">
-          <!-- ===== Modo LINEAL: tarjeta por equipo con barras y proyección ===== -->
+          <!-- ===== Modo LINEAL: tarjeta por equipo con barras y proyección; agrupado,
+               árbol de dos niveles (tarjeta de meta-equipo → sus equipos) ===== -->
           <template v-if="view === 'linear'">
+          <template v-for="grp in groupOn ? groupRows : [null]" :key="grp?.key ?? '__flat__'">
+            <!-- Tarjeta de meta-equipo (agregados; clic = plegar/desplegar sus equipos) -->
+            <section v-if="grp" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+              <div
+                role="button"
+                tabindex="0"
+                :aria-expanded="!collapsedGroups.has(grp.key)"
+                :title="$t('sample.toggleGroup')"
+                class="flex cursor-pointer flex-wrap items-baseline justify-between gap-2 rounded-md -m-1 p-1 hover:bg-slate-50"
+                @click="toggleGroup(grp.key)"
+                @keydown.enter.prevent="toggleGroup(grp.key)"
+                @keydown.space.prevent="toggleGroup(grp.key)"
+              >
+                <h3 class="flex items-center gap-1.5 font-semibold text-slate-900">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="h-4 w-4 shrink-0 text-slate-400 transition-transform" :class="collapsedGroups.has(grp.key) ? '-rotate-90' : ''">
+                    <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                  </svg>
+                  <span>{{ grp.name }}</span>
+                  <span class="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-[0.65rem] font-medium uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                    {{ $t('sample.groupTeamCount', { n: grp.teams.length }) }}
+                  </span>
+                </h3>
+                <span class="text-sm text-slate-500">
+                  <span class="font-semibold text-slate-900">{{ num(grp.done) }} / {{ num(grp.target) }}</span>
+                  · {{ pct(grp.pct) }}
+                </span>
+              </div>
+              <div class="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                <div
+                  class="h-full rounded-full transition-all"
+                  :class="barFill((grp.pct ?? 0) >= 100).class"
+                  :style="[barFill((grp.pct ?? 0) >= 100).style, { width: barWidth(grp.done, grp.target) + '%' }]"
+                ></div>
+              </div>
+              <p v-if="grp.pending + grp.on_hold > 0" class="mt-1 text-xs text-slate-500">
+                {{ $t('sample.pendingNow') }}: <span class="font-medium tabular-nums text-slate-700">{{ num(grp.pending) }}</span>
+                · {{ $t('sample.onHoldNow') }}: <span class="font-medium tabular-nums text-slate-700">{{ num(grp.on_hold) }}</span>
+              </p>
+              <p v-if="grp.ungrouped" class="mt-1 text-xs text-slate-400">{{ $t('sample.ungroupedHint') }}</p>
+            </section>
+
+            <template v-if="!grp || !collapsedGroups.has(grp.key)">
             <section
-              v-for="team in data.teams"
+              v-for="team in grp ? grp.teams : data.teams"
               :key="team.key"
               class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200"
+              :class="grp ? 'ml-4 sm:ml-8' : ''"
             >
               <!-- Header clicable: pliega/despliega el detalle de la tarjeta -->
               <div
@@ -415,15 +576,17 @@ onMounted(load)
                 </div>
               </div>
             </section>
+            </template>
+          </template>
           </template>
 
-          <!-- ===== Modos TABLA y MAPA DE CALOR: filas=equipos, columnas=valores ===== -->
+          <!-- ===== Modos TABLA y MAPA DE CALOR: filas=equipos o meta-equipos, columnas=valores ===== -->
           <section v-else-if="view === 'table' || view === 'heatmap'" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
             <div class="overflow-x-auto">
               <table class="w-full whitespace-nowrap text-left text-sm">
                 <thead class="text-xs uppercase tracking-wider text-slate-400">
                   <tr>
-                    <th class="py-1.5 pr-4">{{ $t('sample.teamHeader') }}</th>
+                    <th class="py-1.5 pr-4">{{ groupOn ? data.group_field.label : $t('sample.teamHeader') }}</th>
                     <th v-for="v in tableValues" :key="v.value" class="py-1.5 pr-4">{{ v.label }}</th>
                     <th class="py-1.5">{{ $t('sample.totalHeader') }}</th>
                   </tr>
@@ -492,7 +655,7 @@ onMounted(load)
               <table class="whitespace-nowrap text-left text-sm">
                 <thead class="text-xs uppercase tracking-wider text-slate-400">
                   <tr>
-                    <th class="py-1.5 pr-4">{{ $t('sample.teamHeader') }}</th>
+                    <th class="py-1.5 pr-4">{{ groupOn ? data.group_field.label : $t('sample.teamHeader') }}</th>
                     <th v-for="v in tableValues" :key="v.value" class="py-1.5 pr-3 font-medium">{{ v.label }}</th>
                     <th class="py-1.5">{{ $t('sample.totalHeader') }}</th>
                   </tr>
@@ -536,7 +699,7 @@ onMounted(load)
             <div class="grid items-center gap-6 sm:grid-cols-2">
               <div class="h-64"><StatsChart type="doughnut" :data="summaryData" :options="summaryOptions" /></div>
               <div class="space-y-2">
-                <div v-for="team in data.teams" :key="team.key" class="flex items-baseline justify-between gap-3 text-sm">
+                <div v-for="team in displayTeams" :key="team.key" class="flex items-baseline justify-between gap-3 text-sm">
                   <span class="min-w-0 truncate text-slate-700">
                     {{ team.name }}
                     <span v-if="team.out_of_plan" class="ml-1 text-[0.65rem] uppercase tracking-wide text-amber-600">{{ $t('sample.outOfPlan') }}</span>

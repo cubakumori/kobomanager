@@ -86,6 +86,12 @@ CREATE TABLE IF NOT EXISTS forms (
     -- no los toca (actualiza columnas concretas).
     stats_team_field      VARCHAR(255) NULL,
     stats_enumerator_field VARCHAR(255) NULL,
+    -- `team_group_field`: ruta del campo del envío que AGRUPA equipos bajo un nivel
+    --   padre («meta-equipo»: región, provincia…). Cadena encuestador → equipo →
+    --   meta-equipo, cada eslabón muchos-a-uno. Es un roll-up de SOLO PRESENTACIÓN
+    --   en Muestra y Estadísticas (el plan de muestra sigue por equipo); cada equipo
+    --   se asigna al valor DOMINANTE observado en sus envíos. NULL = sin agrupación.
+    team_group_field      VARCHAR(255) NULL,
     -- Umbrales del CONTROL DE CALIDAD por equipo/encuestador (página forms/<id>/quality).
     -- En MINUTOS; NULL = comprobación desactivada. Los pone un admin desde los ajustes
     -- del formulario; la sincronización no los toca.

@@ -150,6 +150,10 @@
     "qualityScopeToggleHint": "Temporary change: affects this view only, not the global setting",
     "qualityExport": "Export",
     "qualityExportTitle": "Export flagged submissions",
-    "qualityExportHint": "Exports one row per flagged submission (team, enumerator, times, flags and status), respecting the active scope."
+    "qualityExportHint": "Exports one row per flagged submission (team, enumerator, times, flags and status), respecting the active scope.",
+    "byTeamTitleGrouped": "By meta-team → team",
+    "byTeamGroup": "Grouping: {field}",
+    "groupToggle": "Group teams",
+    "colTeam": "Team"
   }
 }

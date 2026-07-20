@@ -62,7 +62,9 @@ native validation status.
   status (header cards) and by team (toggles on the team breakdown); the default review
   scope on open is configurable in *Settings* (all submissions or approved only). A
   **team → enumerator breakdown** (you pick the form's team and enumerator fields) adds
-  volume, review mix, duration and completeness per team and per enumerator.
+  volume, review mix, duration and completeness per team and per enumerator; an optional
+  **team-grouping field** (a "meta-team": region, province…) adds a *Group teams* toggle
+  that lifts the breakdown one level to **meta-team → teams**.
 - **Sample by team**: compares what's *received* against a *planned sample* — how many
   surveys each team must collect per value of a sampling `select_one` (e.g. age range).
   A panel shows done/target and % per team × value, highlights shortfall and over-sample,
@@ -76,7 +78,12 @@ native validation status.
   quick fill with even/proportional distribution (hideable: shortcuts are typing aids,
   not methodology — the sampling design is made outside the app), a clear-targets button —
   and keeps a history of changes across the campaign. Respects each user's row scoping
-  (a team lead sees their own team).
+  (a team lead sees their own team). With a team-grouping field set, a **Group teams**
+  toggle rolls the whole panel up by **meta-team** (presentation only — the plan stays per
+  team; each team is assigned to the dominant value seen in its submissions), and the
+  settings screen offers assisted detection: **Detect meta-teams** ranks candidate fields
+  by how consistently each team maps to a single value, and **Detect issues** lists the
+  teams split across several values as a data-quality warning.
 - **Quality control**: flags interviews outside the form's admissible thresholds — too
   **short** or too **long**, per enumerator **overlapping** in time (a fabrication signal)
   or with a suspiciously **short gap** between consecutive interviews, **duplicate** answers
