@@ -20,6 +20,12 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 > de una ONG. La estrategia de **adopción y servicio** (instalar + formar + supervisión
 > técnica; la organización asume la responsabilidad y el hosting) vive en
 > `my.docs/MONETIZE.md`, no aquí.
+>
+> **Nota (jul-2026): próxima sesión = agrupación por meta-equipo.** Como paso corto e
+> intermedio antes de abrir el frente de seguridad, lo siguiente que se hará es la
+> **agrupación de equipos bajo un nivel padre (meta-equipo)** en Muestra y Estadísticas
+> — ver el primer ítem de «Muestra por equipo — pendientes», acordado con el detalle de
+> diseño completo.
 
 ---
 
@@ -230,6 +236,53 @@ Quedan como ideas reabribles si aparece una necesidad real.
 > Configuración con paleta de cumplimiento para todo el panel) — ver `CHANGELOG.md`.
 > Aquí quedan solo las extensiones pendientes.
 
+- [ ] **Agrupación de equipos bajo un «meta-equipo» (nivel padre)** — **PRÓXIMO, acordado
+      para la siguiente sesión** *(diseño convergido en la conversación jul-2026)*. Los
+      equipos encuestan, cada equipo tiene encuestadores, y un grupo de equipos puede
+      agruparse bajo un **meta-equipo** (región, provincia…): un nivel POR ENCIMA del equipo,
+      igual que el encuestador es el nivel por debajo. Cadena `encuestador → equipo →
+      meta-equipo`, los tres «campos del formulario», cada eslabón muchos-a-uno.
+      - **Modelo = opción B (campo del envío), roll-up de SOLO PRESENTACIÓN.** El plan sigue
+        a nivel de equipo (`sample_targets` intacto); el meta-equipo agrega para mostrar:
+        objetivo del padre = Σ objetivos de sus equipos, hecho = Σ hecho. Sin planificación
+        a nivel padre, sin nuevas semánticas de plan. Scoping por filas compone solo (agrega
+        sobre lo ya filtrado; un jefe ve solo su meta-equipo).
+      - **Config**: en `admin/forms/{id}/settings`, **debajo de «Desglose por equipo
+        (estadísticas)»**, un **«Campo de agrupación de equipos» (opcional)**. Si se elige,
+        aparece un **toggle «Agrupar equipos»** tanto en **Muestra** como en **Estadísticas**
+        (nivel meta-equipo agregado ⇄ equipo, el actual).
+      - **Validación de tipo**: `select_one` (o monovaluado), y **distinto** del campo de
+        equipo y del de encuestador (selectores mutuamente excluyentes), como los guards que
+        ya existen.
+      - **El SELECT se llena con TODOS los candidatos de tipo válido** — NO lo filtra ningún
+        algoritmo (el admin sabe la intención; el algoritmo *propone/valida*, no dicta).
+      - **Algoritmo detrás de botones** (nunca condiciona el SELECT):
+        - **«Detectar meta-equipos»**: rankea los `select_one` por el test de **dependencia
+          funcional** `equipo → F` (muchos-a-uno: casi todos los equipos resuelven a un único
+          valor de F) **y más grueso que el equipo** (menos valores distintos que equipos).
+          El encuestador y campos más finos se descartan solos.
+        - **«Detectar problemas en el meta-equipo escogido»**: para el campo elegido, toma el
+          valor **dominante** por equipo y **lista los conflictos** (equipos que caen en >1
+          valor: p. ej. «3 envíos de PR#1 dicen Guantánamo») como **aviso de calidad de dato**
+          (sinergia con el Control de calidad), sin romper ni bloquear.
+        - **Con datos insuficientes / sin datos**: los botones informan «datos insuficientes»
+          en vez de bloquear; el campo se puede elegir igual.
+      - **UX del nivel padre**: reutiliza las **tarjetas plegables** como **árbol de dos
+        niveles** — tarjeta de meta-equipo (barra hecho/objetivo, %, backlog agregados) que
+        al desplegar muestra sus equipos; la pleca global colapsa a la vista-resumen de
+        meta-equipos. Los modos tabla/mapa de calor/semáforo cambian sus filas equipo⇄
+        meta-equipo según el toggle. En Estadísticas, métricas por meta-equipo con drill-down.
+      - **Caveat honesto de B** (documentar, no bloquea): la provincia de un equipo se INFIERE
+        de sus envíos (valor dominante); un equipo **sin envíos todavía** no tiene grupo aún →
+        sus objetivos quedan en un cubo «Sin agrupar» hasta el primer envío. Se resuelve solo
+        en campaña; solo visible al arrancar de cero. *(La opción A —diccionario explícito
+        equipo→grupo— lo evita pero cuesta configuración; queda como alternativa diferida.)*
+      - **Alcance / disciplina**: **un solo nivel padre opcional**, NO jerarquía de N niveles
+        (la cadena multinivel sigue aparcada en «Frentes mayores»). Roll-up de solo lectura.
+        Sin cambio de esquema grande: la ruta del campo va en `forms` junto a
+        `sample_field`/`stats_team_field` (columna nueva → registrar en `SchemaCheck` +
+        `migrate` + nota de CHANGELOG). El mismo test de dependencia funcional podría, más
+        adelante y aparte, reforzar también el eslabón `encuestador → equipo` (hoy sin validar).
 - [ ] **Enlace público de solo lectura del panel de muestra** — un coordinador sigue el avance
       sin cuenta, como el resumen de revisión de los enlaces compartidos. Encaja con la
       micro-caché en disco de `share_stats` y con el alcance fijo por equipo del enlace.
