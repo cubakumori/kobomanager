@@ -12,9 +12,11 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 
 > **Orden de prioridad acordado (jul-2026).** Partiendo de que los usuarios reales manejan
 > datos sensibles (instancia real = denuncias de DDHH): **(1) seguridad y privacidad**
-> (abajo, lo primero), **(2) monitorización de muestra por equipo** (**ENTREGADA en 1.32.0**,
-> ver `CHANGELOG.md`; el enlace público de solo lectura del panel queda como 2ª iteración),
-> **(3)** paneles/dashboards y escalabilidad como apuestas
+> (la tanda interna está **ENTREGADA**: 2FA TOTP en 1.39.0 y retención de envíos en
+> 1.40.0 — ver `CHANGELOG.md`; abajo quedan solo el cifrado de campos sensibles,
+> pospuesto, y la auditoría externa), **(2) monitorización de muestra por equipo**
+> (**ENTREGADA en 1.32.0–1.38.0**; el enlace público de solo lectura del panel queda como
+> 2ª iteración), **(3)** paneles/dashboards y escalabilidad como apuestas
 > posteriores. La **cadena de aprobación multi-nivel** se DESCARTA por ahora (ver «Frentes
 > mayores»): con un revisor profesional o un doble-check ligero basta para el tamaño típico
 > de una ONG. La estrategia de **adopción y servicio** (instalar + formar + supervisión
@@ -23,18 +25,14 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 
 ---
 
-## Seguridad y privacidad — PRIORIDAD (jul-2026)
+## Seguridad y privacidad — pendientes
 
 > Los usuarios reales de KoboManager manejan datos que en el contexto equivocado ponen a
-> personas en riesgo. Antes de crecer en adopción, la postura de seguridad debe estar a la
-> altura de ese modelo de amenaza. Este bloque va **por delante** del resto del roadmap.
+> personas en riesgo. La tanda interna de este bloque se **entregó** (2FA TOTP con política
+> de obligatoriedad en **1.39.0**; retención y purga real de envíos por formulario en
+> **1.40.0** — ver `CHANGELOG.md` y `SECURITY.md`); quedan estas dos piezas. Un método 2FA
+> adicional (WebAuthn/passkeys) es ampliación futura si hay demanda.
 
-- [x] **2FA (segundo factor)** — **entregado en 1.39.0**: TOTP (RFC 6238, lib propia sin
-      dependencias, secreto cifrado con TokenVault), login en dos pasos con anti-replay y
-      rate-limit propio, códigos de recuperación de un solo uso, política global
-      `require_2fa` (off | admins | todos, con corte de API y guardarraíl anti-cierre) y
-      reset por admin. Método adicional (WebAuthn/passkeys) queda como ampliación futura
-      si hay demanda.
 - [ ] **Cifrado en reposo de los datos SENSIBLES marcados por formulario** *(POSPUESTO
       jul-2026 por decisión de diseño: se retomará más adelante, con las tensiones de
       abajo resueltas primero)* — hoy el token de
@@ -52,13 +50,6 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       - Interacción con FieldScope (oculto) y con los enlaces públicos (un campo sensible
         nunca debería exponerse en un enlace, ni siquiera cifrado→descifrado).
       - Backfill al marcar un campo como sensible (cifrar lo ya cacheado) y al desmarcarlo.
-- [x] **Borrado seguro, minimización y retención de envíos** — **entregado en 1.40.0**:
-      ventana de retención POR FORMULARIO (`forms.retention_days`, NULL = para siempre),
-      purga real en cada sync (envíos + historial de revisión local) + import que salta lo
-      fuera de ventana, CLI `purge_submissions.php`, avisos en Ajustes (plan de muestra) y
-      en Estadísticas/Muestra. KoboToolbox nunca se toca (ampliar la ventana re-importa con
-      un sync completo). La remanencia a nivel de disco/backups sigue siendo dominio del
-      operador (SECURITY.md).
 - [ ] **Auditoría de seguridad formal antes de crecer en adopción** — el repo es público
       (AGPL); conviene una revisión de terceros antes de que más organizaciones sensibles
       confíen en él. Vías posibles: programas de auditoría para OSS (p. ej. OSTIF /
