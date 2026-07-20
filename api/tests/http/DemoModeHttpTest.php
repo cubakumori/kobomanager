@@ -49,6 +49,10 @@ final class DemoModeHttpTest extends HttpTestCase
             ['DELETE', 'admin/forms/1'],
             ['POST',   'profile/password'],
             ['DELETE', 'profile/sessions'],
+            // 2FA propio (el usuario demo es compartido)
+            ['POST',   'profile/totp/init'],
+            ['POST',   'profile/totp/confirm'],
+            ['DELETE', 'profile/totp'],
             ['POST',   'auth/forgot-password'],
             ['POST',   'auth/reset-password'],
             // Ajustes globales

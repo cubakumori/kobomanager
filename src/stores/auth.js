@@ -32,7 +32,20 @@ export const useAuthStore = defineStore('auth', {
       // no debe sacar al usuario del formulario (modal de la portada o /login);
       // el propio formulario muestra el error.
       const { data } = await api.post('/auth/login', { email, password }, { skipAuthRedirect: true })
-      this.user = data.data
+      // Con 2FA activo el backend NO abre sesión todavía: devuelve un reto para
+      // el segundo paso (loginTotp). El formulario muestra el campo del código.
+      if (data.data?.totp_required) {
+        return { totp_required: true, challenge: data.data.challenge }
+      }
+      return this._completeLogin(data.data)
+    },
+    // Segundo paso del login con 2FA: reto + código TOTP (o de recuperación).
+    async loginTotp(challenge, code) {
+      const { data } = await api.post('/auth/login/totp', { challenge, code }, { skipAuthRedirect: true })
+      return this._completeLogin(data.data)
+    },
+    _completeLogin(userData) {
+      this.user = userData
       this.checked = true
       setLocale(this.user?.locale)
       // Ajuste global «sincronizar al iniciar sesión»: dispara EN SEGUNDO PLANO la

@@ -72,6 +72,28 @@ to HTTP statuses in one table; the frontend maps codes → localized messages (`
 - **Self‑service session control.** `GET/DELETE /profile/sessions`: list my active sessions
   (the current one flagged via `Auth::currentTokenId()`) / close all but the current. Mirrors
   the admin remote‑revoke at `/admin/users/{id}/sessions`.
+- **Second factor — TOTP** (1.39.0, `lib/Totp.php`): hand‑rolled RFC 6238/4226 (HMAC‑SHA1,
+  30 s step, 6 digits, ±1‑step window; unit‑tested against both RFCs' official vectors), no
+  dependencies — same criterion as the JWT and WebPush. The secret is stored **encrypted with
+  `TokenVault`** in `users.totp_secret`; `totp_enabled_at` NULL with a secret = enrolment
+  *pending*. Enrolment: `POST /profile/totp/init` (secret + `otpauth://` URI, QR rendered
+  client‑side with the `qrcode` npm package) → `POST /profile/totp/confirm` (a valid code
+  activates it and returns **8 single‑use recovery codes shown exactly once** — only bcrypt
+  hashes persist in `totp_recovery_codes`). Login becomes **two‑step**: with 2FA on,
+  `auth/login` returns a short‑lived challenge (5‑min JWT, claim `p='totp'`, **no `jti`** — it
+  can never act as a session, and `currentUser()` rejects jti‑less tokens) instead of a cookie;
+  `POST /auth/login/totp` exchanges challenge + TOTP **or recovery code** for the real session.
+  Defenses: its own rate‑limit bucket (`'totp'`, 5/min per IP), **anti‑replay** via
+  `users.totp_last_step` (an accepted code's timestep must strictly advance), and failed‑login
+  hits are only cleared after the second step. Disable requires a live code and is refused when
+  the policy mandates 2FA for that user. **Policy** (`require_2fa` setting: `off|admins|all`):
+  opt‑in always; when required, `Auth::require()` cuts the API with `TOTP_ENROLL_REQUIRED`
+  except the enrolment allowlist (own profile/totp, `auth/me`, logout), the SPA intercepts the
+  code and routes to the profile card, and the settings endpoint refuses to enable the policy
+  unless the saving admin already has 2FA (anti‑lockout guardrail). Admins reset a user's 2FA
+  from the Users page (`totp_reset` on `PUT /admin/users/{id}`); everything is audit‑logged
+  (`totp_enable`/`totp_disable`/`totp_recovery_used`/`edit_user`). Demo mode blocks
+  init/confirm/disable (shared demo account).
 - **Per‑user UI preferences** (1.37.0). `users.ui_prefs` (JSON, NULL = none) stores
   interface preferences that must survive logout and follow the user across devices — today
   the persisted "My forms" view (`forms_view` = account + type + favorites filters). Written

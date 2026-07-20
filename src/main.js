@@ -4,7 +4,7 @@ import './style.css'
 import App from './App.vue'
 import router from './router'
 import i18n from './i18n'
-import { setUnauthorizedHandler } from './services/api'
+import { setUnauthorizedHandler, setTotpEnrollHandler } from './services/api'
 import { useAuthStore } from './stores/auth'
 import './composables/darkMode' // aplica la clase `dark` (preferencia/sistema) desde el arranque
 
@@ -21,6 +21,14 @@ setUnauthorizedHandler(() => {
   auth.clear()
   if (router.currentRoute.value.name !== 'login') {
     router.push({ name: 'login' })
+  }
+})
+
+// Política de 2FA obligatorio: la API responde TOTP_ENROLL_REQUIRED a quien está
+// obligado y aún no lo activó → a su perfil, directo a la tarjeta del 2FA.
+setTotpEnrollHandler(() => {
+  if (router.currentRoute.value.name !== 'profile') {
+    router.push({ name: 'profile', query: { totp: 'required' } })
   }
 })
 

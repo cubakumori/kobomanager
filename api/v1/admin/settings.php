@@ -17,6 +17,8 @@ if (Request::method() === 'GET') {
         'valid_label_modes'        => Settings::VALID_LABEL_MODES,
         'password_reset_enabled'   => Settings::passwordResetEnabled(),
         'audit_self_view_enabled'  => Settings::auditSelfViewEnabled(),
+        'require_2fa'              => Settings::require2fa(),
+        'valid_require_2fa'        => Settings::VALID_REQUIRE_2FA,
         'audit_retention_days'     => Settings::auditRetentionDays(),
         'audit_retention_max'      => Settings::AUDIT_RETENTION_MAX,
         'mail_configured'          => Settings::mailConfigured(),
@@ -269,6 +271,21 @@ if (Request::method() === 'PUT') {
         $enabled = (bool) $body['audit_self_view_enabled'];
         Settings::set('audit_self_view_enabled', $enabled);
         $out['audit_self_view_enabled'] = $enabled;
+    }
+
+    // Política de 2FA obligatorio. Guardarraíl anti-cierre: para exigirlo, el
+    // PROPIO admin que guarda debe tener ya su 2FA activo (si no, el siguiente
+    // request se lo cortaría a él mismo con TOTP_ENROLL_REQUIRED).
+    if (array_key_exists('require_2fa', $body)) {
+        $v = (string) $body['require_2fa'];
+        if (!in_array($v, Settings::VALID_REQUIRE_2FA, true)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Política de 2FA no válida');
+        }
+        if ($v !== 'off' && empty($admin['totp_enabled'])) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Activa primero tu propio 2FA (Perfil) antes de exigirlo al resto');
+        }
+        Settings::set('require_2fa', $v);
+        $out['require_2fa'] = $v;
     }
 
     if (array_key_exists('audit_retention_days', $body)) {

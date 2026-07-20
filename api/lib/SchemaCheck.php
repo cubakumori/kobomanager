@@ -230,6 +230,17 @@ class SchemaCheck {
         // Muestra y Estadísticas). NULL = sin agrupación; sin backfill.
         ['table' => 'forms', 'column' => 'team_group_field', 'since' => '1.38.0',
          'fix' => "ALTER TABLE forms ADD COLUMN team_group_field VARCHAR(255) NULL AFTER stats_enumerator_field"],
+
+        // Segundo factor TOTP (secreto cifrado con TokenVault, marca de activación,
+        // hashes de códigos de recuperación y anti-replay). NULL = sin 2FA; sin backfill.
+        ['table' => 'users', 'column' => 'totp_secret', 'since' => '1.39.0',
+         'fix' => "ALTER TABLE users ADD COLUMN totp_secret TEXT NULL AFTER ui_prefs"],
+        ['table' => 'users', 'column' => 'totp_enabled_at', 'since' => '1.39.0',
+         'fix' => "ALTER TABLE users ADD COLUMN totp_enabled_at DATETIME NULL AFTER totp_secret"],
+        ['table' => 'users', 'column' => 'totp_recovery_codes', 'since' => '1.39.0',
+         'fix' => "ALTER TABLE users ADD COLUMN totp_recovery_codes JSON NULL AFTER totp_enabled_at"],
+        ['table' => 'users', 'column' => 'totp_last_step', 'since' => '1.39.0',
+         'fix' => "ALTER TABLE users ADD COLUMN totp_last_step BIGINT UNSIGNED NULL AFTER totp_recovery_codes"],
     ];
 
     /** Columnas cuyo backfill requiere el recálculo PHP de migrate.php (no basta SQL). */

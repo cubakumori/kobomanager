@@ -29,10 +29,12 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 > personas en riesgo. Antes de crecer en adopción, la postura de seguridad debe estar a la
 > altura de ese modelo de amenaza. Este bloque va **por delante** del resto del roadmap.
 
-- [ ] **2FA (segundo factor)** *(subido desde «Ampliaciones futuras»)* — una sola contraseña
-      protegiendo el acceso a datos sensibles es poco. TOTP (app autenticadora) como primer
-      método; la tabla `user_sessions` ya está pensada para soportarlo. Decidir: obligatorio
-      por instancia o por usuario/rol; códigos de recuperación; reset por admin.
+- [x] **2FA (segundo factor)** — **entregado en 1.39.0**: TOTP (RFC 6238, lib propia sin
+      dependencias, secreto cifrado con TokenVault), login en dos pasos con anti-replay y
+      rate-limit propio, códigos de recuperación de un solo uso, política global
+      `require_2fa` (off | admins | todos, con corte de API y guardarraíl anti-cierre) y
+      reset por admin. Método adicional (WebAuthn/passkeys) queda como ampliación futura
+      si hay demanda.
 - [ ] **Cifrado en reposo de los datos SENSIBLES marcados por formulario** — hoy el token de
       Kobo se cifra (TokenVault), pero los envíos en `submissions_cache.json_payload` están
       en claro. Diseño acordado (jul-2026): **no cifrar todo** (no todos los formularios

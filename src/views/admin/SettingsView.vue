@@ -23,6 +23,9 @@ const labelMode = ref('labels')
 const validLabelModes = ref(['labels', 'raw'])
 const passwordResetEnabled = ref(false)
 const auditSelfViewEnabled = ref(false)
+// Política de 2FA obligatorio ('off' | 'admins' | 'all'). Para exigirlo, el propio
+// admin debe tener ya su 2FA activo (el backend lo valida al guardar).
+const require2fa = ref('off')
 const auditRetentionDays = ref(0)
 const auditRetentionMax = ref(3650)
 const notificationsDefaultFrequency = ref('off')
@@ -189,6 +192,7 @@ async function load() {
     validLabelModes.value = data.data.valid_label_modes
     passwordResetEnabled.value = data.data.password_reset_enabled
     auditSelfViewEnabled.value = data.data.audit_self_view_enabled
+    require2fa.value = data.data.require_2fa || 'off'
     if (data.data.audit_retention_days != null) auditRetentionDays.value = data.data.audit_retention_days
     if (data.data.audit_retention_max != null) auditRetentionMax.value = data.data.audit_retention_max
     if (data.data.notifications_default_frequency != null) notificationsDefaultFrequency.value = data.data.notifications_default_frequency
@@ -264,6 +268,7 @@ async function save() {
       label_mode: labelMode.value,
       password_reset_enabled: passwordResetEnabled.value,
       audit_self_view_enabled: auditSelfViewEnabled.value,
+      require_2fa: require2fa.value,
       audit_retention_days: Math.max(0, Number(auditRetentionDays.value) || 0),
       notifications_default_frequency: notificationsDefaultFrequency.value,
       notifications_quiet: quietEnabled.value ? { start: quietStart.value, end: quietEnd.value } : null,
@@ -297,6 +302,7 @@ async function save() {
     labelMode.value = data.data.label_mode
     passwordResetEnabled.value = data.data.password_reset_enabled
     if (data.data.audit_self_view_enabled != null) auditSelfViewEnabled.value = data.data.audit_self_view_enabled
+    if (data.data.require_2fa != null) require2fa.value = data.data.require_2fa
     if (data.data.audit_retention_days != null) auditRetentionDays.value = data.data.audit_retention_days
     if (data.data.notifications_default_frequency != null) notificationsDefaultFrequency.value = data.data.notifications_default_frequency
     if ('notifications_quiet' in data.data) {
@@ -742,6 +748,30 @@ onMounted(load)
           />
           <span class="text-xs text-slate-400">{{ $t('settings.fieldTruncateRange', { min: fieldTruncateMin, max: fieldTruncateMax }) }}</span>
         </label>
+      </section>
+
+      <!-- Segundo factor (2FA) obligatorio -->
+      <section v-show="tab === 'security'" class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 space-y-4">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('settings.require2fa') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('settings.require2faDesc') }}</p>
+        </div>
+        <select
+          v-model="require2fa"
+          class="w-full max-w-md rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          @change="saved = false"
+        >
+          <option value="off">{{ $t('settings.require2faOff') }}</option>
+          <option value="admins">{{ $t('settings.require2faAdmins') }}</option>
+          <option value="all">{{ $t('settings.require2faAll') }}</option>
+        </select>
+        <p class="text-xs text-slate-400">{{ $t('settings.require2faHint') }}</p>
+        <p
+          v-if="require2fa !== 'off' && auth.user && !auth.user.totp_enabled"
+          class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900"
+        >
+          {{ $t('settings.require2faSelfFirst') }}
+        </p>
       </section>
 
       <!-- Recuperación de contraseña -->

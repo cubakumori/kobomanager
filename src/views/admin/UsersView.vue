@@ -70,7 +70,7 @@ async function onCreate() {
 function startEdit(u) {
   editError.value = ''
   editing.value = u
-  editForm.value = { name: u.name, email: u.email, role: u.role, password: '' }
+  editForm.value = { name: u.name, email: u.email, role: u.role, password: '', totp_reset: false }
 }
 
 async function saveEdit() {
@@ -84,6 +84,7 @@ async function saveEdit() {
       active: editing.value.active,
     }
     if (editForm.value.password) payload.password = editForm.value.password
+    if (editForm.value.totp_reset) payload.totp_reset = true
     await api.put(`/admin/users/${editing.value.id}`, payload)
     editing.value = null
     await load()
@@ -237,6 +238,12 @@ onMounted(load)
               <span :class="u.active ? 'text-success-600 dark:text-success-400' : 'text-slate-400'">
                 {{ u.active ? $t('users.active') : $t('users.inactive') }}
               </span>
+              <!-- Chip 2FA: quién tiene el segundo factor activo -->
+              <span
+                v-if="u.totp_enabled"
+                class="ml-1.5 rounded-full bg-success-50 px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-success-700 ring-1 ring-success-200 dark:bg-success-900/30 dark:text-success-300 dark:ring-success-800"
+                :title="$t('users.totpOnTitle')"
+              >2FA</span>
             </td>
             <td class="px-4 py-3 text-slate-600">
               <span v-if="u.active_sessions">{{ u.active_sessions }}</span>
@@ -322,6 +329,14 @@ onMounted(load)
             class="km-input"
           />
           <span class="text-xs text-slate-400">{{ $t('users.newPasswordHint') }}</span>
+        </label>
+        <!-- Reset del 2FA («perdí el móvil»): borra secreto y códigos de recuperación -->
+        <label v-if="editing.totp_enabled" class="flex items-start gap-2">
+          <input v-model="editForm.totp_reset" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500/30" />
+          <span class="text-sm text-slate-700">
+            {{ $t('users.totpReset') }}
+            <span class="block text-xs text-slate-400">{{ $t('users.totpResetHint') }}</span>
+          </span>
         </label>
         <div class="flex items-center gap-3 pt-1">
           <button

@@ -31,7 +31,10 @@
     "createError": "Could not create the user",
     "loadError": "Could not load the users",
     "saveError": "Could not save",
-    "toggleError": "Could not change the status"
+    "toggleError": "Could not change the status",
+    "totpOnTitle": "This user has the second factor (2FA) enabled",
+    "totpReset": "Reset 2FA (lost phone)",
+    "totpResetHint": "Deletes their secret and recovery codes; they will sign in with the password alone and can re-enable it from their profile."
   },
   "accounts": {
     "title": "Kobo accounts",
@@ -417,7 +420,14 @@
     "headerLinesDesc": "Long questions can wrap to several lines (with a capped width) instead of stretching the column to one long line. More lines show more text but make headers taller.",
     "headerLines_1": "One line (no wrap)",
     "headerLines_2": "Up to 2 lines",
-    "headerLines_3": "Up to 3 lines"
+    "headerLines_3": "Up to 3 lines",
+    "require2fa": "Mandatory second factor (2FA)",
+    "require2faDesc": "2FA can always be enabled per user from their profile; this policy additionally REQUIRES it: whoever is required and lacks it can only enable it (the rest of the app stays blocked until then).",
+    "require2faOff": "Do not require (each user decides)",
+    "require2faAdmins": "Required for administrators",
+    "require2faAll": "Required for all users",
+    "require2faHint": "An administrator can reset the 2FA of a user who loses their phone from the Users page.",
+    "require2faSelfFirst": "Enable your own 2FA first (Profile): the server will refuse to require it if you do not have it."
   },
   "audit": {
     "title": "Audit log",

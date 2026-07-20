@@ -1,8 +1,11 @@
 <?php
 /**
  * PUT /api/v1/admin/users/{id}   (solo admin)
- * Edita un usuario: { name, role, active, password? }.
+ * Edita un usuario: { name, role, active, password?, totp_reset? }.
  *   - password es opcional (solo se cambia si llega y tiene >= 8 caracteres).
+ *   - totp_reset (truthy) borra el 2FA del usuario (secreto, códigos de
+ *     recuperación y anti-replay): el «perdí el móvil». El usuario re-enrola
+ *     desde su perfil (y si la política se lo exige, en su próximo login).
  * Protecciones anti-bloqueo:
  *   - No puedes desactivarte ni quitarte el rol admin a ti mismo.
  *   - No se puede dejar el sistema sin ningún admin activo.
@@ -76,11 +79,22 @@ if ($active === 0) {
     DB::run('DELETE FROM user_sessions WHERE user_id = ?', [$id]);
 }
 
+// Reset del 2FA («perdí el móvil»): borra secreto, recuperación y anti-replay.
+$totpReset = !empty($body['totp_reset']);
+if ($totpReset) {
+    DB::run(
+        'UPDATE users SET totp_secret = NULL, totp_enabled_at = NULL,
+                totp_recovery_codes = NULL, totp_last_step = NULL WHERE id = ?',
+        [$id]
+    );
+}
+
 Audit::log($admin['id'], 'edit_user', null, null, [
     'user_id'         => $id,
     'role'            => $role,
     'active'          => $active,
     'password_changed' => $pass !== '',
+    'totp_reset'      => $totpReset,
 ]);
 
 ErrorResponse::ok([

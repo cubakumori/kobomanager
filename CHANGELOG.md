@@ -4,6 +4,51 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.39.0] - 2026-07-20
+
+**Segundo factor (2FA) con TOTP** — primer hito del frente de seguridad: app
+autenticadora + códigos de recuperación, login en dos pasos y política global de
+obligatoriedad.
+
+### Añadido
+
+- **2FA por usuario (TOTP, RFC 6238)**: cada usuario puede activar el segundo factor
+  desde su perfil — código QR (o secreto manual), confirmación con un código válido y
+  **8 códigos de recuperación de un solo uso** que se muestran una única vez (en BD
+  solo quedan sus hashes). El secreto TOTP se guarda **cifrado con TokenVault** (como
+  el token de Kobo); implementación propia sin dependencias (`lib/Totp.php`),
+  verificada contra los vectores oficiales de los RFC 4226/6238.
+- **Login en dos pasos**: con 2FA activo, las credenciales solas no abren sesión — el
+  servidor responde un reto de corta vida (5 min) y un segundo paso
+  (`POST /auth/login/totp`) lo canjea junto al código TOTP o un código de
+  recuperación. Defensas: rate-limit propio por IP, **anti-replay** (un mismo código
+  no vale dos veces) y los intentos fallidos de credenciales solo se limpian al
+  completar los dos pasos.
+- **Política global «2FA obligatorio»** (Configuración → Seguridad): desactivada
+  (cada usuario decide), obligatoria para administradores u obligatoria para todos.
+  A quien está obligado y no lo tiene, la API se le corta (403 `TOTP_ENROLL_REQUIRED`)
+  salvo para activar su propio 2FA, y la interfaz lo lleva directo a la tarjeta del
+  perfil. Guardarraíl anti-cierre: exigirlo requiere que el propio admin que guarda ya
+  tenga su 2FA activo.
+- **Reset por admin** («perdió el móvil»): en Usuarios, la edición permite restablecer
+  el 2FA de una cuenta (borra secreto y códigos; el usuario re-enrola). El listado
+  marca con un chip quién tiene 2FA activo. Todo queda en el registro de auditoría
+  (activación, desactivación, uso de código de recuperación, reset).
+- En el **modo demo**, activar/desactivar el 2FA queda bloqueado (la cuenta demo es
+  compartida).
+
+### Nota de actualización (esquema)
+
+- Cuatro columnas nuevas en `users` (NULL = sin 2FA; sin backfill; registradas en
+  `SchemaCheck`). `php api/cli/migrate.php` las aplica; a mano:
+
+  ```sql
+  ALTER TABLE users ADD COLUMN totp_secret TEXT NULL AFTER ui_prefs;
+  ALTER TABLE users ADD COLUMN totp_enabled_at DATETIME NULL AFTER totp_secret;
+  ALTER TABLE users ADD COLUMN totp_recovery_codes JSON NULL AFTER totp_enabled_at;
+  ALTER TABLE users ADD COLUMN totp_last_step BIGINT UNSIGNED NULL AFTER totp_recovery_codes;
+  ```
+
 ## [1.38.0] - 2026-07-20
 
 **Agrupación de equipos bajo un «meta-equipo»** (nivel padre opcional: región,

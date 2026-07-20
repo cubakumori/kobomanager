@@ -38,6 +38,18 @@ CREATE TABLE IF NOT EXISTS users (
     --   { "forms_view": { "account": <id|null>, "type": "deployed|draft|archived|", "favorites": true|false } }
     -- Las escribe PUT /profile/prefs (lista blanca de claves); viaja en /auth/me.
     ui_prefs        JSON NULL,
+    -- SEGUNDO FACTOR (TOTP, RFC 6238). `totp_secret` = secreto base32 CIFRADO con
+    -- TokenVault (nunca en claro en BD); con `totp_enabled_at` NULL el enrolamiento
+    -- está PENDIENTE (secreto generado pero aún sin confirmar con un código válido).
+    -- `totp_recovery_codes` = array JSON de HASHES bcrypt de los códigos de
+    -- recuperación (de un solo uso: al usarse se elimina su hash).
+    -- `totp_last_step` = último paso de tiempo TOTP aceptado (anti-replay: un mismo
+    -- código no vale dos veces). La política de obligatoriedad vive en settings
+    -- (`require_2fa`: off|admins|all), no aquí.
+    totp_secret         TEXT NULL,
+    totp_enabled_at     DATETIME NULL,
+    totp_recovery_codes JSON NULL,
+    totp_last_step      BIGINT UNSIGNED NULL,
     active          TINYINT(1) DEFAULT 1,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

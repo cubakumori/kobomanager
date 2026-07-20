@@ -15,6 +15,13 @@ export function setUnauthorizedHandler(fn) {
   onUnauthorized = fn
 }
 
+// Política de 2FA obligatorio: el backend corta la API con TOTP_ENROLL_REQUIRED
+// a quien esté obligado y no lo tenga → se le lleva a su perfil a activarlo.
+let onTotpEnrollRequired = null
+export function setTotpEnrollHandler(fn) {
+  onTotpEnrollRequired = fn
+}
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -24,6 +31,9 @@ api.interceptors.response.use(
     // un redirect global a /login cuando el 401 es esperado (visitante anónimo).
     if (is401 && !error?.config?.skipAuthRedirect) {
       if (onUnauthorized) onUnauthorized()
+    }
+    if (code === 'TOTP_ENROLL_REQUIRED' && onTotpEnrollRequired) {
+      onTotpEnrollRequired()
     }
     return Promise.reject(error)
   },

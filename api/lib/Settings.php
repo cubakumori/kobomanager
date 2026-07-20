@@ -102,6 +102,18 @@ class Settings {
         return (bool) self::get('audit_self_view_enabled', self::DEFAULT_AUDIT_SELF_VIEW);
     }
 
+    // Política de obligatoriedad del segundo factor (TOTP). El 2FA siempre puede
+    // activarse por usuario (opt-in); esta palanca además lo EXIGE: 'admins' o 'all'
+    // cortan la API (TOTP_ENROLL_REQUIRED) a quien esté obligado y no lo tenga.
+    public const VALID_REQUIRE_2FA = ['off', 'admins', 'all'];
+    private const DEFAULT_REQUIRE_2FA = 'off';
+
+    /** Política de 2FA obligatorio ('off'|'admins'|'all'). */
+    public static function require2fa(): string {
+        $v = self::get('require_2fa', self::DEFAULT_REQUIRE_2FA);
+        return in_array($v, self::VALID_REQUIRE_2FA, true) ? $v : self::DEFAULT_REQUIRE_2FA;
+    }
+
     // Retención del registro de auditoría, en DÍAS. 0 = conservar para siempre
     // (comportamiento histórico). La purga es oportunista en Audit::log.
     private const DEFAULT_AUDIT_RETENTION_DAYS = 0;

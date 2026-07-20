@@ -2,7 +2,10 @@
 /**
  * POST /api/v1/auth/login
  * Body: { email, password }
- * Verifica credenciales, crea sesión + JWT en cookie HttpOnly y devuelve el usuario.
+ * Verifica credenciales y crea sesión + JWT en cookie HttpOnly… salvo que el
+ * usuario tenga 2FA activo: entonces NO emite cookie y responde
+ * { totp_required: true, challenge } — el reto (5 min) se canjea junto al código
+ * TOTP en POST auth/login/totp, que es quien emite la sesión.
  */
 
 if (Request::method() !== 'POST') {
@@ -19,7 +22,8 @@ if (RateLimit::tooMany($ip, 5, 60)) {
 $in = Request::required(['email', 'password']);
 
 $user = DB::run(
-    'SELECT id, name, email, role, locale, ui_prefs, password_hash, active FROM users WHERE email = ?',
+    'SELECT id, name, email, role, locale, ui_prefs, password_hash, totp_enabled_at, active
+     FROM users WHERE email = ?',
     [$in['email']]
 )->fetch();
 
@@ -32,6 +36,16 @@ $passOk    = password_verify($in['password'], $knownUser ? $user['password_hash'
 if (!$knownUser || !$passOk) {
     RateLimit::hit($ip);
     ErrorResponse::send('VALIDATION_ERROR', 'Credenciales incorrectas', 401);
+}
+
+// Con 2FA activo las credenciales solas NO abren sesión: se responde un reto de
+// corta vida y el segundo paso (auth/login/totp) emite la cookie. Los intentos
+// fallidos de esta IP no se limpian todavía (el login aún no está completo).
+if ($user['totp_enabled_at'] !== null) {
+    ErrorResponse::ok([
+        'totp_required' => true,
+        'challenge'     => Auth::totpChallenge((int) $user['id']),
+    ]);
 }
 
 // Login correcto: limpia los intentos de esta IP y emite la sesión.
@@ -47,4 +61,8 @@ ErrorResponse::ok([
     'locale'      => ($user['locale'] ?? null) ?: Settings::defaultLocale(),
     'ui_prefs'    => $user['ui_prefs'] ? (json_decode($user['ui_prefs'], true) ?: null) : null,
     'audit_self_view_enabled' => Settings::auditSelfViewEnabled(),
+    'totp_enabled' => false,
+    // Si la política global exige 2FA a este usuario y no lo tiene, el frontend
+    // lo lleva directo a la pantalla de activación (la API ya está cortada).
+    'totp_enroll_required' => Auth::totpPolicyApplies(['role' => $user['role']]),
 ]);

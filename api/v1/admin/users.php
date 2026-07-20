@@ -10,6 +10,7 @@ $admin = Auth::requireAdmin();
 if (Request::method() === 'GET') {
     $rows = DB::run(
         'SELECT u.id, u.name, u.email, u.role, u.active, u.created_at,
+                u.totp_enabled_at IS NOT NULL AS totp_enabled,
                 (SELECT COUNT(*) FROM user_sessions s
                  WHERE s.user_id = u.id AND s.expires_at > NOW()) AS active_sessions
          FROM users u ORDER BY u.created_at DESC'
@@ -17,6 +18,7 @@ if (Request::method() === 'GET') {
     foreach ($rows as &$r) {
         $r['id']              = (int) $r['id'];
         $r['active']          = (bool) $r['active'];
+        $r['totp_enabled']    = (bool) $r['totp_enabled'];
         $r['active_sessions'] = (int) $r['active_sessions'];
     }
     ErrorResponse::ok($rows);

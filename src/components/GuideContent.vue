@@ -154,6 +154,7 @@ const flowSteps = [1, 2, 3, 4]
       <ul class="list-disc space-y-1 pl-5 text-sm text-slate-600">
         <li><strong>{{ $t('guide.secToken') }}:</strong> {{ $t('guide.secTokenBody') }}</li>
         <li><strong>{{ $t('guide.secSessions') }}:</strong> {{ $t('guide.secSessionsBody') }}</li>
+        <li><strong>{{ $t('guide.secTotp') }}:</strong> {{ $t('guide.secTotpBody') }}</li>
         <li><strong>{{ $t('guide.secScope') }}:</strong> {{ $t('guide.secScopeBody') }}</li>
       </ul>
     </section>

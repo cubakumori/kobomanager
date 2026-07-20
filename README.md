@@ -24,6 +24,10 @@ native validation status.
 
 - Your team signs in with app users — **no KoboToolbox account needed**, and the API
   token is never exposed to the browser (stored encrypted on the server).
+- **Two-factor authentication (TOTP)**: any user can protect their account with an
+  authenticator app (with single-use recovery codes), and a global policy can
+  **require** it for admins or for everyone; admins can reset a user's 2FA from the
+  Users page (lost phone).
 - Per-form permissions (view / edit / validate / settings / sample). *Settings* lets a
   trusted user tune that form's team-breakdown fields and quality-control thresholds
   without being an admin; *Sample* additionally opens the sample-plan editor and is

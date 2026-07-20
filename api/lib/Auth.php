@@ -103,7 +103,9 @@ class Auth {
         if ($jwt === '') return null;
 
         $payload = self::jwtDecode($jwt);
-        if ($payload === null) return null;
+        // Solo tokens de SESIÓN (con jti): un reto 2FA (claim p='totp', sin jti)
+        // jamás vale como sesión.
+        if ($payload === null || !isset($payload['jti'])) return null;
 
         $session = DB::run(
             'SELECT id, UNIX_TIMESTAMP(created_at) AS created_ts
@@ -121,7 +123,8 @@ class Auth {
         }
 
         $user = DB::run(
-            'SELECT id, name, email, role, locale, ui_prefs, active FROM users WHERE id = ? AND active = 1',
+            'SELECT id, name, email, role, locale, ui_prefs, totp_enabled_at, active
+             FROM users WHERE id = ? AND active = 1',
             [$payload['sub']]
         )->fetch();
         if (!$user) return null;
@@ -137,7 +140,59 @@ class Auth {
         $user['locale']      = $user['locale'] ?: Settings::defaultLocale();     // idioma efectivo
         // Preferencias de interfaz (JSON o null); objeto decodificado para el frontend.
         $user['ui_prefs']    = $user['ui_prefs'] ? (json_decode($user['ui_prefs'], true) ?: null) : null;
+        // Segundo factor: flag booleano (la marca de activación no viaja al frontend).
+        $user['totp_enabled'] = $user['totp_enabled_at'] !== null;
+        unset($user['totp_enabled_at']);
         return $user;
+    }
+
+    // ---------- Segundo factor (TOTP) ----------
+
+    /** Vida del reto 2FA entre el paso de credenciales y el del código. */
+    private const TOTP_CHALLENGE_TTL = 300;
+
+    /**
+     * Reto de login en dos pasos: JWT de corta vida SIN jti (no es una sesión)
+     * con claim p='totp'. Viaja en el body, no en cookie.
+     */
+    public static function totpChallenge(int $userId): string {
+        $now = time();
+        return self::jwtEncode(['sub' => $userId, 'p' => 'totp', 'iat' => $now, 'exp' => $now + self::TOTP_CHALLENGE_TTL]);
+    }
+
+    /** Id de usuario de un reto 2FA válido y no caducado; null en otro caso. */
+    public static function totpChallengeUserId(string $token): ?int {
+        $payload = self::jwtDecode($token);
+        if ($payload === null || ($payload['p'] ?? null) !== 'totp' || isset($payload['jti'])) return null;
+        return isset($payload['sub']) ? (int) $payload['sub'] : null;
+    }
+
+    /**
+     * ¿La política global de 2FA obligatorio (`require_2fa`) alcanza a este usuario?
+     */
+    public static function totpPolicyApplies(array $user): bool {
+        $policy = Settings::require2fa();
+        return $policy === 'all' || ($policy === 'admins' && ($user['role'] ?? '') === 'admin');
+    }
+
+    /**
+     * Corte de la API cuando la política exige 2FA y el usuario no lo tiene:
+     * 403 TOTP_ENROLL_REQUIRED en todo salvo lo imprescindible para ENROLARSE
+     * y salir (su propio perfil/2FA, auth/me y logout). El frontend, al ver el
+     * código, lleva al usuario a la pantalla de activación.
+     */
+    private static function enforceTotpPolicy(array $user): void {
+        if (!empty($user['totp_enabled']) || !self::totpPolicyApplies($user)) {
+            return;
+        }
+        $path  = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+        $route = trim(preg_replace('#^.*/api/v1/?#', '', $path), '/');
+        $allowed = ['auth/me', 'auth/logout', 'profile',
+                    'profile/totp', 'profile/totp/init', 'profile/totp/confirm'];
+        if (in_array($route, $allowed, true)) {
+            return;
+        }
+        ErrorResponse::send('TOTP_ENROLL_REQUIRED');
     }
 
     /**
@@ -197,6 +252,7 @@ class Auth {
         if ($user === null) {
             ErrorResponse::send('AUTH_INVALID_TOKEN');
         }
+        self::enforceTotpPolicy($user);
         return $user;
     }
 

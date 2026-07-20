@@ -15,6 +15,7 @@ require __DIR__ . '/lib/DB.php';
 require __DIR__ . '/lib/ErrorResponse.php';
 require __DIR__ . '/lib/Request.php';
 require __DIR__ . '/lib/TokenVault.php';
+require __DIR__ . '/lib/Totp.php';
 require __DIR__ . '/lib/Auth.php';
 require __DIR__ . '/lib/Audit.php';
 require __DIR__ . '/lib/RateLimit.php';
@@ -113,6 +114,7 @@ $routes = [
     'health'                    => 'health.php',
     'config'                    => 'config.php',
     'auth/login'                => 'auth/login.php',
+    'auth/login/totp'           => 'auth/login_totp.php',
     'auth/logout'               => 'auth/logout.php',
     'auth/me'                   => 'auth/me.php',
     'auth/forgot-password'      => 'auth/forgot_password.php',
@@ -148,6 +150,9 @@ $routes = [
     'profile/password'          => 'profile_password.php',
     'profile/prefs'             => 'profile_prefs.php',
     'profile/sessions'          => 'profile_sessions.php',
+    'profile/totp'              => 'profile_totp.php',
+    'profile/totp/init'         => 'profile_totp_init.php',
+    'profile/totp/confirm'      => 'profile_totp_confirm.php',
     'forms'                     => 'forms/index.php',
     'forms/sync-stale'          => 'forms/sync_stale.php',
     'forms/:id/enketo'          => 'forms/enketo.php',

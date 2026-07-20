@@ -31,7 +31,10 @@
     "createError": "No se pudo crear el usuario",
     "loadError": "No se pudieron cargar los usuarios",
     "saveError": "No se pudo guardar",
-    "toggleError": "No se pudo cambiar el estado"
+    "toggleError": "No se pudo cambiar el estado",
+    "totpOnTitle": "Este usuario tiene el segundo factor (2FA) activo",
+    "totpReset": "Restablecer el 2FA (perdió el móvil)",
+    "totpResetHint": "Borra su secreto y sus códigos de recuperación; podrá entrar solo con la contraseña y volver a activarlo desde su perfil."
   },
   "accounts": {
     "title": "Cuentas Kobo",
@@ -417,7 +420,14 @@
     "headerLinesDesc": "Las preguntas largas pueden ajustarse a varias líneas (con ancho acotado) en lugar de estirar la columna a una sola línea. Más líneas muestran más texto pero suben la altura del encabezado.",
     "headerLines_1": "Una línea (sin ajustar)",
     "headerLines_2": "Hasta 2 líneas",
-    "headerLines_3": "Hasta 3 líneas"
+    "headerLines_3": "Hasta 3 líneas",
+    "require2fa": "Segundo factor (2FA) obligatorio",
+    "require2faDesc": "El 2FA siempre puede activarse por usuario desde su perfil; esta política además lo EXIGE: quien esté obligado y no lo tenga solo podrá activarlo (el resto de la aplicación queda bloqueada hasta entonces).",
+    "require2faOff": "No exigir (cada usuario decide)",
+    "require2faAdmins": "Obligatorio para administradores",
+    "require2faAll": "Obligatorio para todos los usuarios",
+    "require2faHint": "Un administrador puede restablecer el 2FA de un usuario que pierda el móvil desde la página Usuarios.",
+    "require2faSelfFirst": "Activa primero tu propio 2FA (Perfil): el servidor rechazará exigirlo si tú no lo tienes."
   },
   "audit": {
     "title": "Auditoría",

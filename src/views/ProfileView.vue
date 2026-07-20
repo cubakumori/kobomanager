@@ -1,6 +1,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
+import QRCode from 'qrcode'
 import api from '../services/api'
 import { useAuthStore, apiError } from '../stores/auth'
 import { setLocale } from '../i18n'
@@ -251,9 +253,103 @@ async function removePushDevice(id) {
   }
 }
 
+// ── Segundo factor (TOTP) ──
+// Estado del GET /profile/totp + máquina de enrolamiento: init (QR + secreto
+// manual) → confirm (código) → códigos de recuperación mostrados UNA sola vez.
+const route = useRoute()
+const totp = ref(null)              // { enabled, pending, recovery_left, required_by_policy }
+const totpError = ref('')
+const totpBusy = ref(false)
+const totpSecret = ref('')          // enrolamiento en curso (secreto manual)
+const totpQr = ref('')              // dataURL del QR
+const totpConfirmCode = ref('')
+const recoveryCodes = ref([])       // en claro solo tras confirmar; luego jamás
+const totpDisableCode = ref('')
+// Llegada forzada por la política (?totp=required): aviso destacado en la tarjeta.
+const totpForced = computed(() => route.query.totp === 'required' || !!(totp.value?.required_by_policy && !totp.value?.enabled))
+
+async function loadTotp() {
+  try {
+    const { data } = await api.get('/profile/totp')
+    totp.value = data.data
+  } catch (e) {
+    totpError.value = apiError(e, t('profile.totpError'))
+  }
+}
+
+async function totpStart() {
+  totpBusy.value = true
+  totpError.value = ''
+  recoveryCodes.value = []
+  try {
+    const { data } = await api.post('/profile/totp/init')
+    totpSecret.value = data.data.secret
+    totpQr.value = await QRCode.toDataURL(data.data.otpauth_uri, { width: 220, margin: 1 })
+    totpConfirmCode.value = ''
+  } catch (e) {
+    totpError.value = apiError(e, t('profile.totpError'))
+  } finally {
+    totpBusy.value = false
+  }
+}
+
+async function totpConfirm() {
+  totpBusy.value = true
+  totpError.value = ''
+  try {
+    const { data } = await api.post('/profile/totp/confirm', { code: totpConfirmCode.value })
+    recoveryCodes.value = data.data.recovery_codes
+    totpSecret.value = ''
+    totpQr.value = ''
+    totpConfirmCode.value = ''
+    if (auth.user) auth.user.totp_enabled = true
+    await loadTotp()
+  } catch (e) {
+    totpError.value = apiError(e, t('profile.totpBadCode'))
+  } finally {
+    totpBusy.value = false
+  }
+}
+
+async function totpCancel() {
+  totpError.value = ''
+  try {
+    await api.delete('/profile/totp') // pendiente: se cancela sin código
+    totpSecret.value = ''
+    totpQr.value = ''
+    await loadTotp()
+  } catch (e) {
+    totpError.value = apiError(e, t('profile.totpError'))
+  }
+}
+
+async function totpDisable() {
+  const ok = await confirmDialog({
+    title: t('profile.totpDisable'),
+    message: t('profile.totpDisableConfirm'),
+    confirmText: t('profile.totpDisable'),
+    danger: true,
+  })
+  if (!ok) return
+  totpBusy.value = true
+  totpError.value = ''
+  try {
+    await api.delete('/profile/totp', { data: { code: totpDisableCode.value } })
+    totpDisableCode.value = ''
+    recoveryCodes.value = []
+    if (auth.user) auth.user.totp_enabled = false
+    await loadTotp()
+  } catch (e) {
+    totpError.value = apiError(e, t('profile.totpBadCode'))
+  } finally {
+    totpBusy.value = false
+  }
+}
+
 onMounted(() => {
   load()
   loadSessions()
+  loadTotp()
   // El push depende de la clave pública de /config: esperar a que esté cargada.
   configReady.then(loadPush)
 })
@@ -426,6 +522,115 @@ onMounted(() => {
           <span v-if="pwSaved" class="text-sm text-success-600 dark:text-success-400">{{ $t('profile.pwChanged') }}</span>
         </div>
       </form>
+    </section>
+
+    <!-- Segundo factor (TOTP) -->
+    <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ $t('profile.totp') }}</h2>
+          <p class="mt-0.5 text-sm text-slate-500">{{ $t('profile.totpDesc') }}</p>
+        </div>
+        <span
+          v-if="totp"
+          class="rounded-full px-2.5 py-0.5 text-xs font-medium"
+          :class="totp.enabled
+            ? 'bg-success-50 text-success-700 ring-1 ring-success-200 dark:bg-success-900/30 dark:text-success-300 dark:ring-success-800'
+            : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'"
+        >
+          {{ totp.enabled ? $t('profile.totpOn') : $t('profile.totpOff') }}
+        </span>
+      </div>
+
+      <!-- La política de la instancia exige 2FA a esta cuenta -->
+      <div v-if="totpForced && totp && !totp.enabled" class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900">
+        {{ $t('profile.totpRequiredByPolicy') }}
+      </div>
+
+      <div v-if="totpError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
+        {{ totpError }}
+      </div>
+
+      <!-- Códigos de recuperación: SE MUESTRAN UNA SOLA VEZ tras activar -->
+      <div v-if="recoveryCodes.length" class="rounded-lg bg-amber-50 p-4 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:ring-amber-900">
+        <p class="text-sm font-semibold text-amber-800 dark:text-amber-300">{{ $t('profile.totpRecoveryTitle') }}</p>
+        <p class="mt-1 text-xs text-amber-700 dark:text-amber-400">{{ $t('profile.totpRecoveryHint') }}</p>
+        <div class="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 font-mono text-sm text-slate-800 dark:text-slate-200 sm:grid-cols-4">
+          <span v-for="c in recoveryCodes" :key="c">{{ c }}</span>
+        </div>
+      </div>
+
+      <template v-if="totp">
+        <!-- Sin 2FA y sin enrolamiento en curso: botón de arranque -->
+        <div v-if="!totp.enabled && !totpQr" class="flex items-center gap-3">
+          <button
+            type="button"
+            :disabled="demoMode || totpBusy"
+            class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+            :title="demoMode ? $t('common.demoDisabled') : undefined"
+            @click="totpStart"
+          >
+            {{ totpBusy ? $t('common.saving') : $t('profile.totpEnable') }}
+          </button>
+        </div>
+
+        <!-- Enrolamiento en curso: QR + secreto manual + confirmación -->
+        <div v-else-if="!totp.enabled && totpQr" class="space-y-3">
+          <p class="text-sm text-slate-600">{{ $t('profile.totpScanHint') }}</p>
+          <div class="flex flex-wrap items-start gap-5">
+            <img :src="totpQr" alt="QR" class="h-44 w-44 rounded-lg ring-1 ring-slate-200" />
+            <div class="space-y-2 text-sm">
+              <p class="text-slate-500">{{ $t('profile.totpManual') }}</p>
+              <code class="block w-fit rounded bg-slate-100 px-2 py-1 font-mono text-xs tracking-wider text-slate-800 dark:bg-slate-800 dark:text-slate-200">{{ totpSecret }}</code>
+            </div>
+          </div>
+          <form class="flex flex-wrap items-center gap-3" @submit.prevent="totpConfirm">
+            <input
+              v-model="totpConfirmCode"
+              type="text"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              required
+              :placeholder="$t('profile.totpCodePlaceholder')"
+              class="w-40 rounded-lg border border-slate-300 px-3 py-2 text-center text-sm tracking-widest outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+            />
+            <button
+              type="submit"
+              :disabled="totpBusy || !totpConfirmCode"
+              class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+            >
+              {{ totpBusy ? $t('common.saving') : $t('profile.totpConfirm') }}
+            </button>
+            <button type="button" class="text-sm font-medium text-slate-500 hover:underline" @click="totpCancel">
+              {{ $t('common.cancel') }}
+            </button>
+          </form>
+        </div>
+
+        <!-- 2FA activo: recovery restantes + desactivar (si la política lo permite) -->
+        <div v-else class="space-y-3">
+          <p class="text-sm text-slate-500">{{ $t('profile.totpRecoveryLeft', { n: totp.recovery_left }) }}</p>
+          <p v-if="totp.required_by_policy" class="text-sm text-slate-400">{{ $t('profile.totpCannotDisable') }}</p>
+          <form v-else class="flex flex-wrap items-center gap-3" @submit.prevent="totpDisable">
+            <input
+              v-model="totpDisableCode"
+              type="text"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              :placeholder="$t('profile.totpCodePlaceholder')"
+              class="w-40 rounded-lg border border-slate-300 px-3 py-2 text-center text-sm tracking-widest outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+            />
+            <button
+              type="submit"
+              :disabled="demoMode || totpBusy || !totpDisableCode"
+              class="rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60 dark:border-red-800 dark:text-red-400"
+              :title="demoMode ? $t('common.demoDisabled') : undefined"
+            >
+              {{ totpBusy ? $t('common.saving') : $t('profile.totpDisable') }}
+            </button>
+          </form>
+        </div>
+      </template>
     </section>
 
     <!-- Sesiones activas -->

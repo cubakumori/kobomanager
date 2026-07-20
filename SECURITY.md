@@ -107,7 +107,9 @@ current boundaries honestly:
   fields marked as sensitive is on the roadmap** but not yet shipped — plan
   accordingly if your data is high-risk.
 - **Admin account.** Admins are **trusted** and bypass scoping by design; protecting
-  the admin credential is the operator's responsibility (2FA is planned). A
+  the admin credential is the operator's responsibility. Since 1.39.0 accounts can be
+  protected with a **second factor (TOTP)** — any user can enable it from their
+  profile, and a global policy can require it for admins or for everyone. A
   compromised admin is out of scope as a *vulnerability*, but see hardening below.
 
 ## Deploying securely

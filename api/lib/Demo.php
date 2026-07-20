@@ -71,6 +71,11 @@ class Demo {
         // Contraseña y sesiones propias (el usuario demo es compartido).
         'profile/password'         => ['POST'],
         'profile/sessions'         => ['DELETE'],
+        // 2FA propio: activarlo en el usuario demo compartido dejaría fuera al
+        // resto de visitantes (y desactivarlo tocaría una cuenta compartida).
+        'profile/totp'             => ['DELETE'],
+        'profile/totp/init'        => ['POST'],
+        'profile/totp/confirm'     => ['POST'],
         // Recuperación de contraseña (otra vía de cambiarla).
         'auth/forgot-password'     => ['POST'],
         'auth/reset-password'      => ['POST'],
