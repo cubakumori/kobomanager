@@ -77,11 +77,12 @@ native validation status.
   surveys each team must collect per value of a sampling `select_one` (e.g. age range).
   A panel shows done/target and % per team × value, highlights shortfall and over-sample,
   flags cells "out of plan", and projects a completion date per team at the current pace —
-  with a **view-type selector** (linear bars, table, heat map, grouped bars, traffic light,
+  with a **view-type selector** (linear bars, table, heat map, traffic light, grouped bars,
   summary doughnut; remembered per device) and an instance-wide **compliance palette**
   (classic, soft, colorblind-safe, or single-color where opacity encodes progress).
-  You count either approved-only or approved-and-pending submissions, and secondary fields
-  (sex, race…) show their observed distribution. The plan is edited on its own page
+  You count either approved-only or approved-and-pending submissions — switchable on the
+  fly from the panel itself (a transient toggle that never touches the plan setting) — and
+  secondary fields (sex, race…) show their observed distribution. The plan is edited on its own page
   (gated by the hierarchical *Sample* permission) as a team × value matrix — per-team
   quick fill with even/proportional distribution (hideable: shortcuts are typing aids,
   not methodology — the sampling design is made outside the app), a clear-targets button —
@@ -102,12 +103,13 @@ native validation status.
   durations), a configurable review-status scope (by default only pending / on-hold
   submissions are reported; a toggle on the page — and its export — switches to *all*
   on the fly without touching the global setting), and a one-click batch **"put the N
-  non-admissible on hold"** over the normal review flow. Its symmetric counterpart, **"approve the N
+  non-admissible on hold"** over the normal review flow — like its symmetric counterpart,
+  it only ever touches **pending** submissions: already-reviewed offenders (visible under
+  the *all* scope) are never bulk-reverted. That counterpart, **"approve the N
   admissible"** (the pending submissions that pass *every* automatic threshold), is an
   opt-in shortcut (a global *"approve admissible in bulk"* setting places it on the
-  submissions table, the QC page, both, or nowhere): approving is terminal, so it only
-  touches pending submissions and, when the risk index is active, excludes high-risk
-  enumerators. A companion **review-status summary** breaks down
+  submissions table, the QC page, both, or nowhere): approving is terminal, so it
+  additionally excludes high-risk enumerators when the risk index is active. A companion **review-status summary** breaks down
   approved / pending / on-hold / rejected counts (and %) by team and enumerator. The
   flagged drill-down is **downloadable** (CSV or `.xlsx`) to take to the field-team meeting.
 - **Risk index** (fabrication / "curbstoning" detection, opt-in per form): a heuristic
@@ -289,9 +291,11 @@ classification, the submission-search projection/clause (incl. the visible-field
 row scoping, column-level permissions (`FieldScope`), share-link
 resolution/tickets/attachment access, the stats/quality/risk computations, sample
 monitoring (plan compliance, review context and the meta-team roll-up) and the
-meta-team detection heuristics, plus notifications/Web Push, backup/demo-seed and the
-schema self-check. The HTTP layer adds end-to-end coverage of
-login/JWT/logout/rate-limit, CSRF, password reset, single + batch review, list/detail/
+meta-team detection heuristics, TOTP against the official RFC vectors, submission
+retention (purge + window-aware reconciliation), plus notifications/Web Push,
+backup/demo-seed and the schema self-check. The HTTP layer adds end-to-end coverage of
+login/JWT/logout/rate-limit, the two-step TOTP login (enrolment, recovery codes, policy
+and admin reset), CSRF, password reset, single + batch review, list/detail/
 export with scoping and field hiding, submission editing (against the Kobo stub),
 per-form settings validation, the sample-plan editor, favorites/preferences,
 notifications and the demo-mode lockdown.

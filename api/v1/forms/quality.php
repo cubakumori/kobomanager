@@ -2,9 +2,10 @@
 /**
  * GET /api/v1/forms/{id}/quality   (requiere can_view)
  * Control de calidad por equipo/encuestador: envíos fuera de los umbrales
- * admisibles del formulario (duración mín/máx y consecutividad mínima), con
- * drill-down a las encuestas infractoras. El cálculo vive en lib/Quality y
- * respeta el scoping por filas y el ocultado de columnas del usuario.
+ * admisibles del formulario (duración mín/máx, consecutividad mínima, respuestas
+ * duplicadas y punto GPS clavado), con drill-down a las encuestas infractoras.
+ * El cálculo vive en lib/Quality y respeta el scoping por filas y el ocultado
+ * de columnas del usuario.
  *
  * Es solo lectura: el marcado en lote «en espera» lo hace el flujo de revisión
  * existente (POST forms/{id}/review). `can_validate` viaja en la respuesta para

@@ -25,6 +25,10 @@ class SubmissionSync {
      * MANUAL pueda ofrecer la confirmación. Con `$confirmWipe = true` (solo lo mandan
      * los endpoints manuales tras confirmar el humano; el cron jamás) esa guardia se
      * levanta y la caché se vacía — el resultado lleva `wiped: true`.
+     *
+     * Retención (forms.retention_days, 1.40.0): cada sync ARRANCA purgando lo más viejo
+     * que la ventana (purgeExpired, antes de hablar con Kobo) y el import SALTA lo
+     * anterior al corte; el resultado lleva `purged: n`. Ver purgeExpired().
      */
     public static function syncForm(int $formId, string $assetUid, KoboClient $client, bool $full = false, bool $confirmWipe = false): array {
         // Lock por formulario (GET_LOCK de MySQL, sin espera): dos sincronizaciones

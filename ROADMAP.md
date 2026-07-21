@@ -403,7 +403,7 @@ Sin pendientes en esta sección.
 - [ ] **Notificaciones por otros canales** (Telegram, Slack, WhatsApp).
 - [ ] **Permiso `can_delete`** cuando exista la funcionalidad de borrado de envíos.
 - [ ] **Permisos por período de tiempo** (acceso a envíos de un rango de fechas).
-- *(2FA subido a la sección «Seguridad y privacidad — PRIORIDAD» al inicio del roadmap.)*
+- *(2FA: entregado en 1.39.0 — ver `CHANGELOG.md`.)*
 
 ---
 

@@ -1,8 +1,11 @@
 <?php
 /**
  * /api/v1/admin/settings   (solo admin)
- *   GET → ajustes globales actuales.
- *   PUT → { sync_deployment_statuses: ["deployed","draft","archived"] }
+ *   GET → ajustes globales actuales (la lista completa, con sus valores válidos).
+ *   PUT → ajustes a cambiar (todas las claves son OPCIONALES: solo se toca lo que
+ *         llega; las claves y valores válidos son los que devuelve el GET). Algunas
+ *         llevan guardarraíl propio — p. ej. `require_2fa` exige que el admin que
+ *         guarda tenga ya su propio 2FA activo antes de poder exigirlo al resto.
  */
 
 $admin = Auth::requireAdmin();

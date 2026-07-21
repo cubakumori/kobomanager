@@ -542,7 +542,11 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   approved one just isn't listed. The analysis is
   **read‑only**: the *"put the N non‑admissible on hold"* button rides the existing batch review
   endpoint (`forms/{id}/review`, attribution = the admin who clicks, normal Kobo push, chunks of
-  1000, already‑on‑hold ones excluded), so `submission_reviews` needs no schema change. Respects
+  1000), so `submission_reviews` needs no schema change. Since 1.43.0 the batch **only targets
+  flagged submissions whose current status is `pending`** — with the transient `all` scope,
+  already‑reviewed (approved/rejected) offenders appear on the page but a bulk click must not
+  revert human decisions (the same guardrail as *approve the admissible*); the hint says how many
+  are skipped, and changing a reviewed one stays possible individually from the drill‑down. Respects
   `RowScope`/`FieldScope` like `lib/Stats` (a hidden team field drops the team level); the page
   requires `can_view`, the batch button `can_validate` on a non‑archived form.
 - **Approve the admissible in bulk** (symmetric to "put on hold", but with more care because
@@ -621,7 +625,10 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   `sample_field2/3`, **observed distribution only** in stage 1), all **required to be `select_one`**
   (closed value set; enforced in `admin/sample_plan.php` and in the editor). "Done" is scoped by
   `forms.sample_denominator` (`approved` default | `approved_pending`) over the denormalised
-  `review_status`. Cells with data but **no target** are flagged *out of plan* (kept, not dropped);
+  `review_status`; since 1.41.0 `?denominator=` **overrides it for that request only** (the
+  "Cuenta: …" chip‑button on the grand‑total card — the transient‑view twin of quality control's
+  `?scope=`; nothing is written and the response always carries the *effective* denominator).
+  Cells with data but **no target** are flagged *out of plan* (kept, not dropped);
   the empty team/value bucket is `Sample::NONE` (`__none__`). The **current plan** lives in
   `sample_targets` (one target row per `(form_id, team_value, sample_value)`, target > 0 only); each
   save **archives** a full snapshot in `sample_target_history` (the plan changes mid‑campaign, so
@@ -632,8 +639,12 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   even/proportional distribution, mutually‑exclusive field selectors, a live coverage line, a
   clear‑targets button and an empty‑plan confirmation; the settings screen links to it and warns
   when changing the team field would strand an existing plan's targets. The read‑only panel has a
-  **view‑type selector** (linear/table/heatmap/grouped bars/traffic light/summary doughnut,
-  per‑device preference in `localStorage`). A public read‑only link is deferred (see ROADMAP).
+  **view‑type selector** (linear/table/heatmap/traffic light/grouped bars/summary doughnut —
+  the traffic light sits next to the heat map since 1.42.0, same grid with three states, and
+  shows each row's completion % — per‑device preference in `localStorage`). The grand‑total bar
+  compares **planned teams only** (Σ done vs Σ target, over‑sample uncapped; out‑of‑plan volume
+  shown apart as a note — fixed in 1.42.0, it used to mix all received into the numerator).
+  A public read‑only link is deferred (see ROADMAP).
   Not cached (per‑user scope + review‑status‑dependent denominator, like `forms/stats.php`).
   The panel also returns **review context** (1.37.0): `last_approved_at` — the *cutoff*, i.e.
   the latest **approve action** from the `submission_reviews` history (whether made in the app
@@ -679,9 +690,11 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   global quiet‑hours window (`notifications_quiet_start`/`notifications_quiet_end`), the login‑triggered
   background sync (`sync_on_login`, served by the public `GET /config` — see *Sync on login*),
   table display
-  (`table_freeze`, `table_header_lines`), stats/QC display (`stats_default_scope` —
+  (`table_freeze`, `table_header_lines`), the mandatory‑2FA policy (`require_2fa` —
+  `off`|`admins`|`all`; see *Auth*), stats/QC display (`stats_default_scope` —
   default review‑status scope on opening stats; `qc_scope` — which submissions quality
-  control reports on; `stats_team_cap` — team‑breakdown cap, `20`|`50`|`all`; `pct_format`
+  control reports on; `qc_admit_batch` — where the approve‑admissible shortcut is offered,
+  table|QC|both|none; `stats_team_cap` — team‑breakdown cap, `20`|`50`|`all`; `pct_format`
   — app‑wide percent rendering, integer or two decimals, served by the public `GET /config`
   so public share views honor it too), the `show_view_submissions_link` toggle (also on
   `GET /config`), the **Samples** block (`sample_show_quick_fill` — show/hide the plan
@@ -858,7 +871,9 @@ column‑level permissions (`FieldScope`: payload/attachment/geo stripping and s
 redaction), share‑link resolution/tickets/attachment access, the stats/quality/risk
 computations (`Stats`/`Quality`/`Risk`), sample monitoring (`Sample`: plan compliance,
 denominators, review context/backlog and the meta‑team roll‑up) and its detection
-heuristics (`TeamGroups`), notifications (`Notifier`/`WebPush`), backup/demo seeding
+heuristics (`TeamGroups`), TOTP against the official RFC 4226/6238 vectors (`Totp`),
+submission retention (`SyncRetentionTest`: cutoff, purge with local history, window‑skip
+reconciliation), notifications (`Notifier`/`WebPush`), backup/demo seeding
 (`DbBackup`/`DemoSeed`), the SQL splitter (`SqlScript`) and the schema self‑check
 (`SchemaCheck`).
 
@@ -875,7 +890,9 @@ token → reset), single + batch review (incl. `can_validate` gating and RowScop
 detail/export with RowScope + FieldScope, submission editing (uuid migration, review
 migration, `KOBO_EDIT_FAILED` on a forced bulk failure), the sync flows (the anti‑wipe
 confirmation and the login‑triggered stale pass), per‑form settings (`can_settings` gating,
-field‑type guards incl. the meta‑team ones, the detection endpoint), the sample‑plan editor,
+field‑type guards incl. the meta‑team ones, the detection endpoint, retention‑days
+validation), the sample‑plan editor (incl. the transient denominator override), the
+two‑step TOTP login (enrolment, challenge, recovery codes, policy cut and admin reset),
 favorites + persisted UI preferences, quality scope/suggest/export, notifications + push
 subscriptions, backups and the demo‑mode lockdown. CI runs both layers (see below).
 
