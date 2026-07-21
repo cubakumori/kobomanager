@@ -4,6 +4,24 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.44.0] - 2026-07-21
+
+### Añadido
+
+- **Lotes POR EQUIPO en el Control de calidad**: cada bloque de equipo gana dos
+  botones —**«Marcar en espera (n)»** y **«Rechazar (n)»**— que aplican la decisión
+  a las no admitidas de ESE equipo (con nivel de equipo configurado; sin él, el lote
+  global existente ya cubre la página). Mismo guardarraíl que los lotes globales:
+  las aprobadas/rechazadas no se tocan nunca. El matiz está en el rechazo: además de
+  las pendientes incluye las **«En espera»** del equipo —aparcarlas para revisarlas
+  con calma y después despacharlas en bloque es justamente el flujo previsto—,
+  mientras que «marcar en espera» solo toca pendientes. Rechazar es terminal y se
+  sincroniza con Kobo: su confirmación (en rojo) nombra al equipo, desglosa cuántas
+  vienen de «en espera» y recuerda que las banderas son señales automáticas, no una
+  verificación una a una. El comentario del lote deja rastro del equipo en el
+  historial de revisión y en la auditoría. Reutiliza el endpoint de revisión en lote
+  (validación de pertenencia y alcance en servidor); sin cambios de backend.
+
 ## [1.43.2] - 2026-07-21
 
 ### Corregido

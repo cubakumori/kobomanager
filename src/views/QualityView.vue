@@ -97,6 +97,21 @@ const heldCount = computed(() => (q.value?.flagged ?? 0) - pendingHold.value.len
 const { formatRatio, formatPctNumber } = usePctFormat()
 const fmtRate = (n, d) => formatRatio(n, d, locale.value)
 
+// El endpoint de revisión en lote admite 1000 uids por petición: se trocea.
+// Devuelve el total aplicado (los fuera de alcance/scope los omite el backend).
+async function postReviewBatch(uids, status, comment) {
+  let applied = 0
+  for (let i = 0; i < uids.length; i += 1000) {
+    const { data } = await api.post(`/forms/${formId.value}/review`, {
+      uids: uids.slice(i, i + 1000),
+      status,
+      comment,
+    })
+    applied += data.data.applied
+  }
+  return applied
+}
+
 async function holdAll() {
   const uids = pendingHold.value
   if (!uids.length) return
@@ -110,16 +125,7 @@ async function holdAll() {
   flash.value = ''
   error.value = ''
   try {
-    // El endpoint de revisión en lote admite 1000 uids por petición: se trocea.
-    let applied = 0
-    for (let i = 0; i < uids.length; i += 1000) {
-      const { data } = await api.post(`/forms/${formId.value}/review`, {
-        uids: uids.slice(i, i + 1000),
-        status: 'on_hold',
-        comment: t('stats.qualityBatchComment'),
-      })
-      applied += data.data.applied
-    }
+    const applied = await postReviewBatch(uids, 'on_hold', t('stats.qualityBatchComment'))
     flash.value = t('stats.qualityBatchDone', { n: applied })
     await load()
   } catch (e) {
@@ -127,6 +133,67 @@ async function holdAll() {
   } finally {
     batchBusy.value = false
   }
+}
+
+// ---- Lote POR EQUIPO: «en espera» y «rechazar» las no admitidas del equipo ----
+// Mismo guardarraíl que el lote global: las aprobadas/rechazadas no se tocan nunca.
+// El matiz está en el rechazo: SÍ incluye las «en espera» además de las pendientes
+// —aparcarlas para revisarlas y después despacharlas en bloque es justamente el
+// flujo previsto—, mientras que «en espera» solo toca pendientes (re-marcar las ya
+// aparcadas sería un no-op y el orden espera→pendiente sería un retroceso).
+// Rechazar es terminal y se empuja a Kobo: la confirmación lo advierte y va en rojo.
+const teamBusy = ref(null) // nombre del equipo con un lote en curso
+
+function teamUidsByStatus(team, statuses) {
+  const uids = []
+  for (const e of team.enumerators)
+    for (const v of e.violations) if (statuses.includes(v.review_status)) uids.push(v.uid)
+  return uids
+}
+const teamHoldUids = (team) => teamUidsByStatus(team, ['pending'])
+const teamRejectUids = (team) => teamUidsByStatus(team, ['pending', 'on_hold'])
+
+async function runTeamBatch(team, uids, status, doneKey) {
+  teamBusy.value = team.name
+  flash.value = ''
+  error.value = ''
+  try {
+    const applied = await postReviewBatch(uids, status, t('stats.qualityTeamComment', { team: team.name }))
+    flash.value = t(doneKey, { n: applied })
+    await load()
+  } catch (e) {
+    error.value = apiError(e, t('stats.qualityBatchError'))
+  } finally {
+    teamBusy.value = null
+  }
+}
+
+async function holdTeam(team) {
+  const uids = teamHoldUids(team)
+  if (!uids.length || teamBusy.value) return
+  const ok = await confirmDialog({
+    title: t('stats.qualityBatchTitle'),
+    message: t('stats.qualityTeamHoldConfirm', { n: uids.length, team: team.name }),
+    confirmText: t('stats.qualityBatchTitle'),
+  })
+  if (!ok) return
+  await runTeamBatch(team, uids, 'on_hold', 'stats.qualityBatchDone')
+}
+
+async function rejectTeam(team) {
+  const uids = teamRejectUids(team)
+  if (!uids.length || teamBusy.value) return
+  const held = uids.length - teamHoldUids(team).length
+  const ok = await confirmDialog({
+    title: t('stats.qualityTeamRejectTitle'),
+    message: held
+      ? t('stats.qualityTeamRejectConfirmHeld', { n: uids.length, held, team: team.name })
+      : t('stats.qualityTeamRejectConfirm', { n: uids.length, team: team.name }),
+    confirmText: t('stats.qualityTeamRejectBtnConfirm'),
+    danger: true,
+  })
+  if (!ok) return
+  await runTeamBatch(team, uids, 'rejected', 'stats.qualityTeamRejectDone')
 }
 
 // ---- Atajo: aprobar en lote los ADMISIBLES pendientes ----------------------
@@ -154,16 +221,7 @@ async function approveAdmissible() {
   flash.value = ''
   error.value = ''
   try {
-    // Reutiliza el endpoint de revisión en lote (1000 uids/petición): se trocea.
-    let applied = 0
-    for (let i = 0; i < uids.length; i += 1000) {
-      const { data } = await api.post(`/forms/${formId.value}/review`, {
-        uids: uids.slice(i, i + 1000),
-        status: 'approved',
-        comment: t('stats.qualityApproveComment'),
-      })
-      applied += data.data.applied
-    }
+    const applied = await postReviewBatch(uids, 'approved', t('stats.qualityApproveComment'))
     flash.value = t('stats.qualityApproveDone', { n: applied })
     await load()
   } catch (e) {
@@ -525,6 +583,32 @@ onMounted(load)
               <span v-if="!team.flagged" class="text-slate-300">—</span>
             </span>
           </summary>
+
+          <!-- Lote POR EQUIPO: las mismas acciones, acotadas al equipo. Solo con nivel
+               de equipo configurado (sin él, el lote global de arriba ya cubre todo).
+               «En espera» cuenta solo pendientes; «Rechazar» también las en espera. -->
+          <div
+            v-if="hasTeams && canReview && teamRejectUids(team).length"
+            class="flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 bg-slate-50/60 px-5 py-2 dark:bg-slate-800/30"
+          >
+            <button
+              v-if="teamHoldUids(team).length"
+              type="button"
+              :disabled="!!teamBusy"
+              class="rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
+              @click="holdTeam(team)"
+            >
+              {{ $t('stats.qualityTeamHoldBtn', { n: teamHoldUids(team).length }) }}
+            </button>
+            <button
+              type="button"
+              :disabled="!!teamBusy"
+              class="rounded-lg px-3 py-1.5 text-xs font-semibold text-red-700 ring-1 ring-red-300 hover:bg-red-50 disabled:opacity-60 dark:text-red-300 dark:ring-red-800 dark:hover:bg-red-950/40"
+              @click="rejectTeam(team)"
+            >
+              {{ $t('stats.qualityTeamRejectBtn', { n: teamRejectUids(team).length }) }}
+            </button>
+          </div>
 
           <!-- Un bloque por encuestador, con SU PROPIO encabezado repetido (con muchas
                infractoras del anterior, una fila suelta quedaba «en el aire»).

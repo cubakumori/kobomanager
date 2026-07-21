@@ -105,7 +105,11 @@ native validation status.
   on the fly without touching the global setting), and a one-click batch **"put the N
   non-admissible on hold"** over the normal review flow — like its symmetric counterpart,
   it only ever touches **pending** submissions: already-reviewed offenders (visible under
-  the *all* scope) are never bulk-reverted. That counterpart, **"approve the N
+  the *all* scope) are never bulk-reverted. The same decisions also exist **per team**
+  (two small buttons on each team block): *put on hold* keeps the pending-only rule,
+  while *reject* additionally includes the team's **on-hold** offenders — parking them
+  for calm review and then dispatching the batch is the intended flow — and still never
+  touches approved/rejected ones. That counterpart, **"approve the N
   admissible"** (the pending submissions that pass *every* automatic threshold), is an
   opt-in shortcut (a global *"approve admissible in bulk"* setting places it on the
   submissions table, the QC page, both, or nowhere): approving is terminal, so it
