@@ -4,7 +4,7 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
-## [1.46.1] - 2026-07-22
+## [1.46.1] - 2026-07-21
 
 ### Corregido
 

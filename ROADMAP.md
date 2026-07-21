@@ -82,8 +82,11 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 > pendientes; exclusión de encuestadores de alto riesgo con el Índice de riesgo activo), y
 > banderas **derivadas, no persistidas** (`Quality::admissiblePendingUids`, fuente de verdad
 > única para tabla y QC — ver la nota del «marcado on-hold automático» abajo). En
-> **1.27.0**: **toggle transitorio del alcance** en la propia página (y su export):
-> `?scope=all|pending_hold` sustituye el ajuste global `qc_scope` solo para esa petición.
+> **1.27.0**: **toggle del alcance** en la propia página (y su export):
+> `?scope=all|pending_hold` sustituye el ajuste global `qc_scope` solo para esa petición
+> (desde **1.46.1** la elección se recuerda por dispositivo). Además, **1.44.0** añadió
+> los lotes POR EQUIPO («marcar en espera» y «rechazar» las no admitidas del equipo) y
+> **1.46.0** la normalización del eje encuestador/equipo de texto libre.
 > Quedan estas extensiones, para cuando haya demanda:
 
 - [ ] **Marcado on-hold totalmente automático al sincronizar** *(el checkbox original)*:
