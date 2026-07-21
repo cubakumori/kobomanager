@@ -338,7 +338,7 @@ onMounted(load)
             type="button"
             :aria-pressed="String(q.scope === 'all')"
             :title="$t('stats.qualityScopeToggleHint')"
-            class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+            class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 dark:hover:bg-slate-800 dark:hover:text-slate-300"
             @click="setScope(q.scope === 'all' ? 'pending_hold' : 'all')"
           >
             {{ $t('stats.qualityScopeLabel') }}:

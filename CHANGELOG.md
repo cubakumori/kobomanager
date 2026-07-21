@@ -15,6 +15,14 @@ Tanda de ajustes pre-release.
   en modo oscuro) — es el trabajo diario, no una tarjeta más. Y ahora la ven **todos
   los roles**: hasta ahora el administrador ni siquiera la tenía (solo veía las
   tarjetas de administración).
+- **Anillo de foco visible** en los chip-botones nuevos («Cuenta: …» del panel de
+  muestra y «Alcance: …» del control de calidad): navegables con teclado como el
+  resto de controles.
+- **El catálogo de la Guía se carga bajo demanda**: era el catálogo i18n más pesado
+  del bundle inicial y solo lo usa `/guide`; ahora viaja en su propio chunk (~6,5 kB
+  gzip por idioma) que se descarga al abrir la Guía (con skeleton mientras llega, y
+  también al cambiar de idioma con la Guía abierta). El arranque del resto de la
+  aplicación se aligera en la misma medida.
 
 ### Corregido
 

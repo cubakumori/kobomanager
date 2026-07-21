@@ -22,6 +22,13 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 > de una ONG. La estrategia de **adopción y servicio** (instalar + formar + supervisión
 > técnica; la organización asume la responsabilidad y el hosting) vive en
 > `my.docs/MONETIZE.md`, no aquí.
+>
+> **Próxima tanda (acordada jul-2026, tras el release 1.43.0):** (1) **enlace público de
+> solo lectura del panel de muestra** (ver «Muestra por equipo — pendientes»); (2)
+> **normalización del eje miembro/equipo de texto libre** (misma sección); (3) retomar el
+> **cifrado de campos sensibles** empezando por su sesión de diseño (sección de seguridad);
+> (4) redactar el **borrador de solicitud a OTF/OSTIF** para la auditoría externa (a partir
+> de `SECURITY.md` y las notas privadas).
 
 ---
 
@@ -234,7 +241,7 @@ Quedan como ideas reabribles si aparece una necesidad real.
       sin envíos, a costa de configuración manual; (b) el mismo test de dependencia funcional
       de «Detectar meta-equipos» podría reforzar también el eslabón `encuestador → equipo`
       (hoy sin validar). La jerarquía de N niveles sigue aparcada en «Frentes mayores».
-- [ ] **Enlace público de solo lectura del panel de muestra** — un coordinador sigue el avance
+- [ ] **Enlace público de solo lectura del panel de muestra** *(PRÓXIMA TANDA, nº1)* — un coordinador sigue el avance
       sin cuenta, como el resumen de revisión de los enlaces compartidos. Encaja con la
       micro-caché en disco de `share_stats` y con el alcance fijo por equipo del enlace.
 - [ ] **Objetivos por celda para los campos secundarios** — hoy los secundarios (sexo, raza…)
@@ -247,7 +254,8 @@ Quedan como ideas reabribles si aparece una necesidad real.
       la «Distribución observada» de los secundarios CON objetivo pasa de reparto neutro a
       cumplimiento → la **paleta** debe aplicarles la semántica completa (tramos por %,
       como al campo principal), no solo el tono de la familia como hoy (nota jul-2026).
-- [ ] **Normalización del eje de miembro/equipo cuando es texto libre** *(de la conversación
+- [ ] **Normalización del eje de miembro/equipo cuando es texto libre** *(PRÓXIMA TANDA,
+      nº2; de la conversación
       jul-2026)* — un campo de miembro de **texto libre** (p. ej. iniciales) sufre variantes de
       la misma persona («ABC» / «abc» / «Abc», o espacios), y hoy la clave de agrupación es el
       **string crudo** (`(string) $valor` en `Stats`/`Quality`/`Risk`/`Sample`), así que se
@@ -335,10 +343,6 @@ Sin pendientes en esta sección.
       «mujeres, de La Habana, desempleadas»). `Stats::compute` ya admite un `$scope`
       arbitrario, así que el grueso es UX. El filtro por equipo de hoy sería un caso
       particular de este mecanismo general.
-- [ ] **Carga diferida del catálogo i18n de la Guía** — cargar `guide.json` bajo demanda por
-      ruta (vue-i18n `setLocaleMessage` + import dinámico). Solo merece la pena con un
-      3.er idioma o si la Guía crece a documentación larga; adaptar entonces el check de
-      paridad.
 - [ ] **Acciones en lote en las vistas de admin** *(de la revisión de jul-2026)* — la
       revisión de envíos ya tiene selección múltiple, pero Usuarios / Formularios /
       Cuentas no: cambiar el rol o activar/desactivar a varios usuarios, o archivar

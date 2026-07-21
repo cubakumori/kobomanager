@@ -438,7 +438,7 @@ onMounted(load)
               :disabled="loading"
               :aria-pressed="String(data.denominator === 'approved_pending')"
               :title="$t('sample.denominatorToggleTitle')"
-              class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs uppercase tracking-wider text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:cursor-wait dark:hover:bg-slate-800"
+              class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs uppercase tracking-wider text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 disabled:cursor-wait dark:hover:bg-slate-800"
               @click="toggleDenominator"
             >
               {{ data.denominator === 'approved_pending' ? $t('sample.denominatorApprovedPending') : $t('sample.denominatorApproved') }}

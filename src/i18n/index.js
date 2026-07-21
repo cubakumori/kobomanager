@@ -12,10 +12,15 @@ export const DEFAULT_LOCALE = 'es'
 // bajo demanda en setLocale() (chunks aparte, ~15-20 KB gz menos al arrancar).
 // El cambio de idioma solo se aplica DESPUÉS de registrar los mensajes, así que
 // nunca se ven claves sin traducir.
-const eagerModules = import.meta.glob('./locales/es/*.json', { eager: true })
+//
+// EXCEPCIÓN: guide.json (el catálogo más pesado, solo lo usa /guide) queda FUERA
+// de ambos globs y se carga bajo demanda con loadGuideMessages() desde GuideView,
+// que espera a tenerlo antes de renderizar (no se ven claves crudas).
+const eagerModules = import.meta.glob(['./locales/es/*.json', '!./locales/es/guide.json'], { eager: true })
 const lazyModules = {
-  en: import.meta.glob('./locales/en/*.json'),
+  en: import.meta.glob(['./locales/en/*.json', '!./locales/en/guide.json']),
 }
+const guideModules = import.meta.glob('./locales/*/guide.json')
 
 // Une los ficheros de un locale en un único árbol { namespace: {...} }.
 function buildMessages(mods) {
@@ -37,6 +42,25 @@ export const i18n = createI18n({
   fallbackLocale: 'es',
   messages: { [DEFAULT_LOCALE]: buildMessages(Object.values(eagerModules)) },
 })
+
+// Carga diferida del catálogo de la Guía para un locale (idempotente). Si la
+// descarga falla (sin red y sin caché), no marca el locale como cargado: el
+// próximo intento reintenta y, mientras, GuideView mantiene su estado de carga.
+const loadedGuide = new Set()
+export async function loadGuideMessages(locale) {
+  const l = SUPPORTED_LOCALES.includes(locale) ? locale : DEFAULT_LOCALE
+  if (loadedGuide.has(l)) return true
+  const load = guideModules[`./locales/${l}/guide.json`]
+  if (!load) return false
+  try {
+    const mod = await load()
+    i18n.global.mergeLocaleMessage(l, mod.default ?? mod)
+    loadedGuide.add(l)
+    return true
+  } catch {
+    return false
+  }
+}
 
 /** Cambia el idioma activo de la interfaz (y el atributo lang del documento).
  *  Si el locale aún no está cargado, lo descarga antes de aplicarlo; si la
