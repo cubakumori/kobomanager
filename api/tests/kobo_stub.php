@@ -27,6 +27,32 @@ function uuid4(): string {
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($b), 4));
 }
 
+// GET /api/v2/assets/aPage{N}/data/ — dataset de N envíos con TOPE DE PÁGINA DEL
+// SERVIDOR: 10 filas por página aunque el cliente pida limit=10000, con `next`
+// apuntando a la siguiente. Reproduce el contrato REAL de los servidores de Kobo
+// (verificado: pedir 10000 devuelve 1000 + next) que rompía la paginación del
+// cliente («menos filas que el limit pedido» NO significa última página).
+// Ignora `query`/`fields`/`sort`: filas deterministas ordenadas por índice.
+if ($method === 'GET' && preg_match('#/api/v2/assets/aPage(\d+)/data/?$#', $path, $m)) {
+    $total = (int) $m[1];
+    $cap   = 10; // tope del servidor, independiente del limit pedido
+    $start = max(0, (int) ($_GET['start'] ?? 0));
+    $limit = min($cap, max(1, (int) ($_GET['limit'] ?? $cap)));
+    $rows  = [];
+    for ($i = $start; $i < min($total, $start + $limit); $i++) {
+        $rows[] = [
+            '_id'              => 1000 + $i,
+            '_uuid'            => sprintf('page-uuid-%04d', $i),
+            '_submission_time' => gmdate('Y-m-d\TH:i:s', 1700000000 + $i * 60),
+        ];
+    }
+    $next = ($start + count($rows) < $total)
+        ? '/api/v2/assets/aPage' . $total . '/data/?start=' . ($start + count($rows))
+        : null;
+    echo json_encode(['count' => $total, 'next' => $next, 'previous' => null, 'results' => $rows]);
+    exit;
+}
+
 // GET /api/v2/assets/{uid}/data/ — lista de envíos VACÍA (suficiente para que un
 // sync completo contra el stub termine limpio: 0 upserts, reconcile sin vivos).
 if ($method === 'GET' && preg_match('#/api/v2/assets/[^/]+/data/?$#', $path)) {

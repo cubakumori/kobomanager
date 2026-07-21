@@ -82,6 +82,14 @@ class KoboClient {
      * resultados se lanza KoboException: un histórico truncado NO es un éxito
      * (el barrido de bajas interpretaría lo no traído como envíos borrados).
      *
+     * FIN DE LISTA: lo dice la API (`next` = null), NUNCA «llegaron menos filas
+     * que el limit pedido» — el servidor de Kobo TOPA la página por debajo del
+     * limit (verificado: pide 10000 y responde 1000 con `next`), y esa heurística
+     * cortaba tras la primera página sin disparar el guard de truncado (la caché
+     * quedaba clavada en el tope y el barrido de bajas «retiraba» lo no traído).
+     * El avance usa lo realmente recibido, no el limit. Mismo contrato en
+     * getAllSubmissionIds y getValidationStatuses.
+     *
      * @return \Generator<array[]>
      */
     public function getSubmissionsSince(
@@ -103,14 +111,14 @@ class KoboClient {
                 yield $results;
             }
 
-            $count = (int) ($data['count'] ?? 0);
-            if (count($results) < $pageSize) return;
-            $start += $pageSize;
-            if ($start >= $count) return;
+            // Última página según la API; la página vacía es el cinturón anti-bucle
+            // por si una respuesta anómala trajera `next` sin resultados.
+            if (!$results || ($data['next'] ?? null) === null) return;
+            $start += count($results);
         }
         throw new KoboException(
             'KOBO_BAD_RESPONSE',
-            "El formulario excede el tope de paginación ($maxPages páginas × $pageSize envíos); sincronización incompleta abortada"
+            "El formulario excede el tope de paginación ($maxPages páginas); sincronización incompleta abortada"
         );
     }
 
@@ -130,15 +138,15 @@ class KoboClient {
             foreach ($results as $r) {
                 if (isset($r['_id'])) $ids[] = (int) $r['_id'];
             }
-            $count = (int) ($data['count'] ?? 0);
-            if (count($results) < $pageSize) return $ids;
-            $start += $pageSize;
-            if ($start >= $count) return $ids;
+            // Fin de lista = `next` null (el servidor puede topar la página por debajo
+            // del limit pedido; ver getSubmissionsSince). Avance por lo recibido.
+            if (!$results || ($data['next'] ?? null) === null) return $ids;
+            $start += count($results);
         }
         // Lista truncada = referencia inválida para el barrido de bajas: abortar.
         throw new KoboException(
             'KOBO_BAD_RESPONSE',
-            "El formulario excede el tope de paginación del barrido de bajas ($maxPages páginas × $pageSize)"
+            "El formulario excede el tope de paginación del barrido de bajas ($maxPages páginas)"
         );
     }
 
@@ -254,16 +262,16 @@ class KoboClient {
                 if ($uid === null) continue;
                 $map[$uid] = ValidationStatus::uidFromPayload($r);
             }
-            $count = (int) ($data['count'] ?? 0);
-            if (count($results) < $pageSize) return $map;
-            $start += $pageSize;
-            if ($start >= $count) return $map;
+            // Fin de lista = `next` null (el servidor puede topar la página por debajo
+            // del limit pedido; ver getSubmissionsSince). Avance por lo recibido.
+            if (!$results || ($data['next'] ?? null) === null) return $map;
+            $start += count($results);
         }
         // Mapa truncado: reconciliar validación con una foto parcial insertaría
         // revisiones sintéticas erróneas para lo no traído en syncs futuros.
         throw new KoboException(
             'KOBO_BAD_RESPONSE',
-            "El formulario excede el tope de paginación del pull de validación ($maxPages páginas × $pageSize)"
+            "El formulario excede el tope de paginación del pull de validación ($maxPages páginas)"
         );
     }
 

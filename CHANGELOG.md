@@ -4,6 +4,27 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.45.1] - 2026-07-21
+
+### Corregido
+
+- **CRÍTICO — la caché dejaba de crecer (y «retiraba» envíos) al superar el tope de
+  página del servidor de Kobo**: los servidores de KoboToolbox devuelven como mucho
+  **1000 filas por página** aunque se les pida `limit=10000` (verificado contra un
+  formulario real: 1239 envíos → páginas de 1000 con `next`), y el cliente
+  interpretaba «llegaron menos filas que el limit pedido» como última página. En un
+  formulario con más de 1000 envíos: el sync completo importaba solo los 1000 más
+  antiguos y, peor, el barrido de bajas comparaba contra una lista de `_id` truncada
+  y **borraba de la caché los envíos más nuevos en cada sync** («N sincronizados ·
+  N retirados», con la caché clavada en 1000). El pull del estado de validación
+  sufría el mismo truncado (benigno: dejaba de reconciliar los envíos no listados).
+  Los tres lectores paginados usan ahora la señal canónica de la API (`next` nulo =
+  última página) y avanzan por las filas realmente recibidas. **Se cura solo**: el
+  siguiente sync (incremental o completo) recupera los envíos que faltaban — nada
+  se perdió en Kobo, y el historial local de revisión de los envíos re-entrantes se
+  conserva (el barrido solo tocaba la caché). Regresión cubierta con un dataset
+  paginado con tope de servidor en el stub de Kobo (`SyncPaginationHttpTest`).
+
 ## [1.45.0] - 2026-07-21
 
 ### Añadido
