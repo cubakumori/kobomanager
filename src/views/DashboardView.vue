@@ -66,6 +66,16 @@ onMounted(async () => {
     </section>
 
     <section class="grid gap-4 sm:grid-cols-2">
+      <!-- «Mis formularios» ES el trabajo diario: primera tarjeta, a lo ancho y con
+           fondo pastel del tema, para TODOS los roles (antes el admin ni la tenía). -->
+      <RouterLink
+        :to="{ name: 'forms' }"
+        class="rounded-xl bg-primary-50 p-5 ring-1 ring-primary-200 transition hover:ring-primary-400 dark:bg-primary-900/20 dark:ring-primary-800 sm:col-span-2"
+      >
+        <h2 class="font-semibold text-primary-900 dark:text-primary-200">{{ $t('dashboard.myForms') }}</h2>
+        <p class="mt-1 text-sm text-primary-800/80 dark:text-primary-300/90">{{ $t('dashboard.myFormsDesc') }}</p>
+      </RouterLink>
+
       <template v-if="auth.isAdmin">
         <RouterLink
           :to="{ name: 'admin-users' }"
@@ -109,15 +119,6 @@ onMounted(async () => {
           <p class="mt-1 text-sm text-slate-500">{{ $t('dashboard.settingsDesc') }}</p>
         </RouterLink>
       </template>
-
-      <RouterLink
-        v-else
-        :to="{ name: 'forms' }"
-        class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:ring-primary-300"
-      >
-        <h2 class="font-semibold text-slate-900">{{ $t('dashboard.myForms') }}</h2>
-        <p class="mt-1 text-sm text-slate-500">{{ $t('dashboard.myFormsDesc') }}</p>
-      </RouterLink>
 
       <RouterLink
         :to="{ name: 'about-kobo' }"

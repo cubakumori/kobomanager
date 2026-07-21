@@ -8,6 +8,14 @@ Todos los cambios notables de KoboManager. El formato sigue
 
 Tanda de ajustes pre-release.
 
+### Mejorado
+
+- **«Mis formularios» preside el Dashboard**: la tarjeta pasa a ser la primera, a
+  todo lo ancho y con fondo pastel del tema (sigue al tema de la instancia, también
+  en modo oscuro) — es el trabajo diario, no una tarjeta más. Y ahora la ven **todos
+  los roles**: hasta ahora el administrador ni siquiera la tenía (solo veía las
+  tarjetas de administración).
+
 ### Corregido
 
 - **El lote «Marcar en espera las N no admitidas» ya no puede revertir revisiones
