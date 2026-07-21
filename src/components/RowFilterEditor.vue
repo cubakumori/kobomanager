@@ -150,11 +150,13 @@ function onFieldChange(cond) {
   const ops = availableOps(cond.field)
   cond.op = ops[0] || 'in'
   cond.values = []
+  cond._text = undefined
   if (cond.field) loadSuggestions(cond.field)
 }
 function onOpChange(cond) {
   // Al cambiar de tipo de operador, reinicia valores (el widget cambia).
   cond.values = []
+  cond._text = undefined
 }
 
 // Opciones (select_one / select_multiple) del campo, o null si es texto libre.
@@ -183,10 +185,16 @@ function toggleValue(cond, value) {
   if (i === -1) cond.values.push(value)
   else cond.values.splice(i, 1)
 }
+// El textarea de texto libre NO puede re-renderizarse desde los valores parseados
+// (trim + sin líneas vacías): el espacio o el Enter recién tecleados están siempre
+// «al final» y el round-trip se los comería al instante (no se podía escribir ni
+// «A B C» ni una segunda línea). El texto CRUDO (cond._text) es la fuente de verdad
+// mientras se edita; los valores se derivan de él. cleanLeaf() no lo emite.
 function valuesText(cond) {
-  return cond.values.join('\n')
+  return cond._text ?? cond.values.join('\n')
 }
 function setValuesText(cond, text) {
+  cond._text = text
   cond.values = text.split('\n').map((v) => v.trim()).filter((v) => v !== '')
 }
 function rangeValue(cond) {
@@ -206,7 +214,9 @@ async function loadSuggestions(field) {
   }
 }
 function addSuggestion(cond, value) {
-  if (!cond.values.includes(value)) cond.values.push(value)
+  if (cond.values.includes(value)) return
+  cond.values.push(value)
+  cond._text = cond.values.join('\n') // mantiene el borrador crudo en sincronía
 }
 
 // ---------- salida ----------

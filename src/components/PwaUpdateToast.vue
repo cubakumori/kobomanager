@@ -11,8 +11,18 @@ const { needRefresh, updateServiceWorker } = useRegisterSW()
 
 const reloading = ref(false)
 async function reload() {
+  if (reloading.value) return
   reloading.value = true
-  await updateServiceWorker() // envía SKIP_WAITING y recarga la página
+  // El plugin solo recarga por su cuenta cuando el update se descubrió DURANTE esta
+  // carga de página (su listener exige `event.isUpdate`); si el SW nuevo ya estaba
+  // EN ESPERA al abrir la app —el caso normal tras un deploy—, el relevo ocurre pero
+  // nadie recarga y el aviso se queda. Escuchamos el relevo nosotros y recargamos
+  // siempre; el timeout es la red de seguridad si el relevo no llega.
+  navigator.serviceWorker?.addEventListener('controllerchange', () => window.location.reload(), {
+    once: true,
+  })
+  await updateServiceWorker() // envía SKIP_WAITING al SW en espera
+  setTimeout(() => window.location.reload(), 3000)
 }
 function dismiss() {
   needRefresh.value = false

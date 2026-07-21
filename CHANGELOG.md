@@ -4,6 +4,26 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.43.2] - 2026-07-21
+
+### Corregido
+
+- **El botón «Recargar» del aviso «Hay una versión nueva» ya recarga siempre**: el
+  cliente PWA solo recargaba por su cuenta cuando la versión nueva se descubría con
+  la página ya abierta; si el service worker nuevo **ya estaba en espera al abrir la
+  app** (el caso normal tras publicar una versión), el relevo se producía pero la
+  página no se recargaba y el aviso se quedaba clavado. Ahora el toast escucha el
+  relevo (`controllerchange`) y recarga él mismo, con un timeout de seguridad si el
+  relevo no llega. Verificado con dos builds encadenados en `vite preview`.
+- **El editor de filtros avanzados vuelve a admitir espacios y varias líneas** en el
+  cuadro «un valor por línea» de «es uno de» / «no es ninguno de» (campos de texto):
+  el textarea se re-renderizaba en cada tecla desde los valores ya parseados (con
+  `trim` y sin líneas vacías), así que el espacio o el Enter recién tecleados —siempre
+  al final del texto— se borraban al instante (no se podía escribir «A B C» ni añadir
+  una segunda línea). El texto crudo es ahora la fuente de verdad mientras se edita
+  y los valores se derivan de él; las sugerencias «+ valor» siguen sincronizadas.
+  Afecta al mismo editor en Permisos y en Enlaces compartidos.
+
 ## [1.43.1] - 2026-07-21
 
 ### Corregido
