@@ -89,6 +89,19 @@ class SchemaCheck {
     CONSTRAINT fk_fav_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_fav_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"],
+
+        // Alias de miembro/equipo (modo 'alias' de forms.member_normalize, 1.46.0).
+        ['table' => 'member_aliases', 'column' => null, 'since' => '1.46.0',
+         'fix' => "CREATE TABLE IF NOT EXISTS member_aliases (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    form_id     INT UNSIGNED NOT NULL,
+    axis        VARCHAR(10) NOT NULL,
+    from_key    VARCHAR(255) NOT NULL,
+    to_value    VARCHAR(255) NOT NULL,
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_member_aliases_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_alias (form_id, axis, from_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"],
     ];
 
     /**
@@ -253,6 +266,13 @@ class SchemaCheck {
         // así que los enlaces existentes no deben empezar a exponerlo solos.
         ['table' => 'share_links', 'column' => 'expose_sample', 'since' => '1.45.0',
          'fix' => "ALTER TABLE share_links ADD COLUMN expose_sample TINYINT(1) NOT NULL DEFAULT 0 AFTER expose_review_summary"],
+
+        // Normalización de los ejes miembro/equipo de texto libre (ver lib/MemberNorm).
+        // DEFAULT 'normalize' A PROPÓSITO también para formularios existentes: fusionar
+        // «ABC»/«abc»/«A.B.C» al actualizar es casi siempre lo deseado (inocuo para
+        // select_one y _submitted_by); el CHANGELOG lo anuncia y 'raw' restaura lo clásico.
+        ['table' => 'forms', 'column' => 'member_normalize', 'since' => '1.46.0',
+         'fix' => "ALTER TABLE forms ADD COLUMN member_normalize VARCHAR(16) NOT NULL DEFAULT 'normalize' AFTER retention_days"],
     ];
 
     /** Columnas cuyo backfill requiere el recálculo PHP de migrate.php (no basta SQL). */

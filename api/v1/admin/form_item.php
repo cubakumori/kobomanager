@@ -42,7 +42,7 @@ if ($method === 'DELETE') {
 $form = DB::run(
     'SELECT id, name, schema_json, stats_team_field, stats_enumerator_field, team_group_field,
             qc_min_duration, qc_max_duration, qc_min_gap, qc_dup_min_answers, risk_min_n,
-            retention_days
+            retention_days, member_normalize
      FROM forms WHERE id = ?',
     [$formId]
 )->fetch();
@@ -82,6 +82,7 @@ if ($method === 'GET') {
         'qc_dup_min_answers'     => $dupOut($form),
         'risk_min_n'             => $riskOut($form),
         'retention_days'         => $retOut($form),
+        'member_normalize'       => MemberNorm::mode($form['member_normalize'] ?? null),
         'can_sample'             => Auth::canForm($user, $formId, 'sample'),
         'sample_target_count'    => $targetCount,
     ] + $qcOut($form));
@@ -174,6 +175,17 @@ if ($method === 'PATCH') {
         }
     }
 
+    // Normalización de miembro/equipo de texto libre ('raw'|'normalize'|'alias';
+    // ver lib/MemberNorm). Solo agrupación en lectura — cambiarlo no muta datos.
+    $norm = MemberNorm::mode($form['member_normalize'] ?? null);
+    if (array_key_exists('member_normalize', $body)) {
+        $v = (string) $body['member_normalize'];
+        if (!in_array($v, MemberNorm::MODES, true)) {
+            ErrorResponse::send('VALIDATION_ERROR', 'Modo de normalización no válido');
+        }
+        $norm = $v;
+    }
+
     // Retención de envíos: días (1–3650, mismo tope que la retención de auditoría),
     // 0 o vacío = conservar para siempre. La purga es de la CACHÉ local (KoboToolbox
     // no se toca) y corre en cada sincronización.
@@ -192,9 +204,9 @@ if ($method === 'PATCH') {
     DB::run(
         'UPDATE forms SET stats_team_field = ?, stats_enumerator_field = ?, team_group_field = ?,
                 qc_min_duration = ?, qc_max_duration = ?, qc_min_gap = ?, qc_dup_min_answers = ?,
-                risk_min_n = ?, retention_days = ?
+                risk_min_n = ?, retention_days = ?, member_normalize = ?
          WHERE id = ?',
-        [$team, $enum, $group, $qc['qc_min_duration'], $qc['qc_max_duration'], $qc['qc_min_gap'], $dup, $risk, $ret, $formId]
+        [$team, $enum, $group, $qc['qc_min_duration'], $qc['qc_max_duration'], $qc['qc_min_gap'], $dup, $risk, $ret, $norm, $formId]
     );
     $out = [
         'stats_team_field'       => $team,
@@ -203,6 +215,7 @@ if ($method === 'PATCH') {
         'qc_dup_min_answers'     => $dup,
         'risk_min_n'             => $risk,
         'retention_days'         => $ret,
+        'member_normalize'       => $norm,
     ] + $qc;
     Audit::log($user['id'], 'update_form_stats', $formId, null, $out);
     ErrorResponse::ok($out);

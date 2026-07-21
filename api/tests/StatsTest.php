@@ -218,9 +218,12 @@ final class StatsTest extends DbTestCase
         $stats = Stats::compute($formId, null, null, null, 'es', true, 'team', null, null, null, $extra);
         $this->assertSame(2, $stats['base']);
         $this->assertSame(2, $stats['total']); // total respeta el alcance fijo (scope+extra)
-        // Solo el equipo A entra en el desglose (alcance fijo, no toggles).
+        // Solo el equipo A entra en el desglose (alcance fijo, no toggles). La `key`
+        // del cubo va PLEGADA (member_normalize por defecto); la etiqueta conserva
+        // la grafía original.
         $this->assertCount(1, $stats['by_team']);
-        $this->assertSame('A', $stats['by_team'][0]['key']);
+        $this->assertSame('a', $stats['by_team'][0]['key']);
+        $this->assertSame('A', $stats['by_team'][0]['name']);
     }
 
     // ---- Filtro por equipos (checkboxes del desglose) ----
@@ -240,13 +243,15 @@ final class StatsTest extends DbTestCase
         // El total del encabezado no cambia; las métricas agregadas sí (base = 3 de A).
         $this->assertSame(4, $stats['total']);
         $this->assertSame(3, $stats['base']);
-        // Las barras por equipo se mantienen COMPLETAS (A y B) con sus claves.
+        // Las barras por equipo se mantienen COMPLETAS (A y B) con sus claves
+        // (plegadas por la normalización por defecto; la selección cruda 'A' cae
+        // en el cubo 'a' vía el mismo resolutor).
         $this->assertCount(2, $stats['by_team']);
         $keys = array_column($stats['by_team'], 'key');
         sort($keys);
-        $this->assertSame(['A', 'B'], $keys);
+        $this->assertSame(['a', 'b'], $keys);
         // La cuota de cada equipo es estable (sobre los 4, no sobre la selección).
-        $a = array_values(array_filter($stats['by_team'], fn($t) => $t['key'] === 'A'))[0];
+        $a = array_values(array_filter($stats['by_team'], fn($t) => $t['key'] === 'a'))[0];
         $this->assertSame(3, $a['count']);
         $this->assertSame(75.0, $a['pct']); // 3/4, no 3/3
         // Eco de la selección activa.

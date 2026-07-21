@@ -107,6 +107,22 @@ class Sample {
         $teamOpts   = $teamField !== null ? ($options[$teamField] ?? []) : [];
         $groupOpts  = $groupField !== null ? ($options[$groupField] ?? []) : [];
 
+        // Normalización del eje de EQUIPO (y del meta-equipo) cuando es TEXTO LIBRE
+        // (forms.member_normalize; ver el bloque homólogo de lib/Quality): clave
+        // plegada, etiqueta = grafía más frecuente (o canónico del alias); con
+        // opciones de esquema (select_one) = no-op. El campo de MUESTREO no se toca:
+        // es select_one por diseño (lo valida el editor del plan). Los objetivos del
+        // plan (sample_targets.team_value) se resuelven con la MISMA clave, así el
+        // plan casa con los datos aunque difieran en mayúsculas/espacios.
+        $normMode = MemberNorm::mode(
+            DB::run('SELECT member_normalize FROM forms WHERE id = ?', [$formId])->fetch()['member_normalize'] ?? null
+        );
+        $normResolver = MemberNorm::resolver($normMode, $formId);
+        $normTeam  = $normMode !== 'raw' && $teamField !== null && !$teamOpts;
+        $normGroup = $normMode !== 'raw' && $groupField !== null && !$groupOpts;
+        $teamSpell = []; $teamCanon = [];
+        $groupSpell = [];
+
         // Campos secundarios: solo los visibles y con opciones (select_one/_multiple).
         $secondary = array_values(array_filter(
             $secondary,
@@ -124,6 +140,14 @@ class Sample {
         )->fetchAll() as $r) {
             $tv = (string) $r['team_value'];
             $sv = (string) $r['sample_value'];
+            if ($normTeam && $tv !== self::NONE) {
+                $rt = $normResolver('team', $tv);
+                // La grafía del plan siembra la etiqueta del cubo (peso 1): si el
+                // equipo aún no tiene envíos, se muestra tal como lo escribió el admin.
+                $teamSpell[$rt['key']][$tv] = ($teamSpell[$rt['key']][$tv] ?? 0) + 1;
+                if ($rt['canon'] !== null) $teamCanon[$rt['key']] = $rt['canon'];
+                $tv = $rt['key'];
+            }
             $tg = (int) $r['target'];
             $targetMap[$tv][$sv] = $tg;
             $teamTarget[$tv] = ($teamTarget[$tv] ?? 0) + $tg;
@@ -171,11 +195,24 @@ class Sample {
                 $svRaw = $payload[$sampleField] ?? null;
                 $tKey  = ($tvRaw === null || $tvRaw === '' || is_array($tvRaw)) ? self::NONE : (string) $tvRaw;
                 $sKey  = ($svRaw === null || $svRaw === '' || is_array($svRaw)) ? self::NONE : (string) $svRaw;
+                if ($normTeam && $tKey !== self::NONE) {
+                    $rt = $normResolver('team', $tKey);
+                    $teamSpell[$rt['key']][$tKey] = ($teamSpell[$rt['key']][$tKey] ?? 0) + 1;
+                    if ($rt['canon'] !== null) $teamCanon[$rt['key']] = $rt['canon'];
+                    $tKey = $rt['key'];
+                }
 
                 if ($groupField !== null) {
                     $gvRaw = $payload[$groupField] ?? null;
                     if ($gvRaw !== null && $gvRaw !== '' && !is_array($gvRaw)) {
                         $gKey = (string) $gvRaw;
+                        if ($normGroup) {
+                            // Meta-equipo de texto libre: misma normalización (sin alias
+                            // propio: eje 'group' no existe en member_aliases a propósito).
+                            $rg = $normResolver('group', $gKey);
+                            $groupSpell[$rg['key']][$gKey] = ($groupSpell[$rg['key']][$gKey] ?? 0) + 1;
+                            $gKey = $rg['key'];
+                        }
                         $groupVotes[$tKey][$gKey] = ($groupVotes[$tKey][$gKey] ?? 0) + 1;
                     }
                 }
@@ -338,7 +375,10 @@ class Sample {
 
             $teams[] = [
                 'key'          => $tKey,
-                'name'         => $tKey === self::NONE ? '—' : (($labelsOn && isset($teamOpts[$tKey])) ? $teamOpts[$tKey] : $tKey),
+                'name'         => $tKey === self::NONE ? '—'
+                    : ($normTeam
+                        ? (MemberNorm::pickLabel($teamSpell[$tKey] ?? [], $teamCanon[$tKey] ?? null) ?: $tKey)
+                        : (($labelsOn && isset($teamOpts[$tKey])) ? $teamOpts[$tKey] : $tKey)),
                 'group'        => $groupField !== null ? $teamGroup[$tKey] : null,
                 'done'         => $doneTotal,
                 'target'       => $targetTotal,
@@ -407,7 +447,10 @@ class Sample {
             if (in_array(self::NONE, $teamGroup, true)) $ordered[] = self::NONE;
             $groupsOut = array_map(fn($code) => [
                 'key'   => $code,
-                'label' => $code === self::NONE ? null : (($labelsOn && isset($groupOpts[$code])) ? $groupOpts[$code] : $code),
+                'label' => $code === self::NONE ? null
+                    : ($normGroup
+                        ? (MemberNorm::pickLabel($groupSpell[$code] ?? []) ?: $code)
+                        : (($labelsOn && isset($groupOpts[$code])) ? $groupOpts[$code] : $code)),
             ], $ordered);
         }
 

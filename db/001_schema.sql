@@ -152,6 +152,15 @@ CREATE TABLE IF NOT EXISTS forms (
     -- sincronización COMPLETA re-importa de Kobo lo purgado (el cron es incremental
     -- y no re-trae lo viejo); los productos locales purgados sí se pierden.
     retention_days      INT UNSIGNED NULL,
+    -- NORMALIZACIÓN de los ejes miembro/equipo cuando son TEXTO LIBRE (iniciales):
+    -- gobierna la CLAVE de agrupación de las vistas de desglose (Estadísticas,
+    -- Control de calidad, Índice de riesgo, Muestra) — ver lib/MemberNorm.
+    --   'raw'       = clave cruda (comportamiento clásico, sensible a mayúsculas/espacios)
+    --   'normalize' = (default) pliega mayúsculas/espacios/puntuación; etiqueta = grafía
+    --                 más frecuente; el miembro se fusiona DENTRO de su equipo
+    --   'alias'     = además re-mapea variantes vía member_aliases («jlvh» → «JLHV»)
+    -- No muta datos (solo agrupación en lectura, reversible); en select_one es un no-op.
+    member_normalize    VARCHAR(16) NOT NULL DEFAULT 'normalize',
     sync_status         ENUM('pending', 'success', 'error') DEFAULT 'pending',
     last_sync_error     TEXT,
     active              TINYINT(1) DEFAULT 1,
@@ -434,6 +443,24 @@ CREATE TABLE IF NOT EXISTS sample_target_history (
     payload_json  JSON NOT NULL,
     CONSTRAINT fk_sample_history_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
     INDEX idx_sample_history_form (form_id, snapshot_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3.19 Alias de miembro/equipo (modo 'alias' de forms.member_normalize): re-mapea
+--      variantes que la normalización no une («jlvh» → «JLHV») a una grafía
+--      canónica. `from_key` se guarda YA NORMALIZADA (lib/MemberNorm::normKey);
+--      `to_value` es la grafía canónica visible (su clave normalizada define el
+--      cubo). `axis` = a qué eje aplica ('member' = encuestador, 'team' = equipo).
+--      Solo agrupación en lectura: los envíos no se tocan. Editor en los ajustes
+--      del formulario; PUT de reemplazo completo (como el plan de muestra).
+CREATE TABLE IF NOT EXISTS member_aliases (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    form_id     INT UNSIGNED NOT NULL,
+    axis        VARCHAR(10) NOT NULL,                  -- 'member' | 'team'
+    from_key    VARCHAR(255) NOT NULL,                 -- clave normalizada de la variante
+    to_value    VARCHAR(255) NOT NULL,                 -- grafía canónica
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_member_aliases_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_alias (form_id, axis, from_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

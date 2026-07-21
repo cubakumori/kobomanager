@@ -100,12 +100,62 @@ class Stats {
         $teamField = ($teamField !== null && $teamField !== '' && !FieldScope::isHidden($fieldScope, $teamField))
             ? $teamField : null;
 
+        // Etiquetas/opciones del esquema: se resuelven AQUÍ (y no junto a las métricas
+        // enriquecidas) porque el filtro por equipos necesita saber si el campo de
+        // equipo es select_one antes de construir su regla.
+        $resolved  = FormSchema::resolve($schemaRaw, $locale);
+        $labelsOn  = Settings::labelMode() === 'labels';
+        $labels    = $resolved['labels'] ?? [];
+        $options   = $resolved['options'] ?? [];
+
+        // Normalización de ejes de TEXTO LIBRE (forms.member_normalize; ver el bloque
+        // homólogo de lib/Quality): clave de cubo plegada, etiqueta = grafía más
+        // frecuente (o canónico del alias); select_one (con opciones) = no-op; el
+        // encuestador se fusiona DENTRO de su equipo (clave compuesta tKey→eKey).
+        $normMode = MemberNorm::mode(
+            DB::run('SELECT member_normalize FROM forms WHERE id = ?', [$formId])->fetch()['member_normalize'] ?? null
+        );
+        $normResolver = MemberNorm::resolver($normMode, $formId);
+        $teamOptMap = $teamField !== null ? ($options[$teamField] ?? []) : [];
+        $normTeam   = $normMode !== 'raw' && $teamField !== null && !$teamOptMap;
+        $teamSpell  = []; $teamCanon = [];
+
         // Filtro INTERACTIVO por equipos (checkboxes del desglose). `$teamSel` = lista de
         // claves seleccionadas; '__none__' = bucket «sin equipo». null = todos. Restringe
         // las series, la tendencia y los agregados, PERO no el desglose por equipo (sus
         // barras se mantienen completas para poder marcar/desmarcar). Misma semántica en
         // SQL (by_day/tendencia) y en PHP (gate del bucle, vía RowScope::matches).
-        $teamRule = RowScope::teamRule($teamField, $teamSel);
+        //
+        // Con normalización activa, $teamSel llega con CLAVES DE CUBO (plegadas): se
+        // expanden a las grafías CRUDAS presentes en los datos, de modo que el SQL y el
+        // matches() PHP sigan comparando valores crudos (RowScope no conoce el plegado).
+        $teamSelEffective = $teamSel;
+        if ($normTeam && $teamSel) {
+            $wanted   = [];
+            $withNone = false;
+            foreach ($teamSel as $s) {
+                if ((string) $s === '__none__') { $withNone = true; continue; }
+                // La selección se pliega con el MISMO resolutor: así una clave de cubo
+                // se selecciona a sí misma y una grafía cruda cae en su cubo (idempotente).
+                $wanted[$normResolver('team', (string) $s)['key']] = true;
+            }
+            $variants = [];
+            foreach (DB::run(
+                "SELECT DISTINCT JSON_UNQUOTE(JSON_EXTRACT(json_payload, ?)) AS v
+                 FROM submissions_cache WHERE form_id = ? AND $scopeSql",
+                array_merge([RowScope::jsonPath($teamField)], [$formId], $scopeP)
+            )->fetchAll() as $row) {
+                $v = $row['v'];
+                if ($v === null || $v === '') continue;
+                if (isset($wanted[$normResolver('team', (string) $v)['key']])) $variants[] = (string) $v;
+            }
+            if ($variants || $withNone) {
+                $teamSelEffective = array_merge($variants, $withNone ? ['__none__'] : []);
+            }
+            // Claves pedidas sin variante viva: se conserva la selección original (no
+            // casará nada) — nunca degradar a «sin filtro».
+        }
+        $teamRule = RowScope::teamRule($teamField, $teamSelEffective);
         [$teamSql, $teamP] = RowScope::sqlCondition($teamRule, 'json_payload');
 
         // Total COMPLETO en alcance (para la tarjeta «Total» del encabezado; nunca filtrado).
@@ -198,11 +248,9 @@ class Stats {
 
         // -----------------------------------------------------------------------
         // Métricas enriquecidas: una sola pasada en PHP sobre los payloads en alcance.
+        // ($resolved/$labels/$options/$teamOptMap vienen resueltos arriba, junto al
+        // filtro por equipos.)
         // -----------------------------------------------------------------------
-        $resolved  = FormSchema::resolve($schemaRaw, $locale);
-        $labelsOn  = Settings::labelMode() === 'labels';
-        $labels    = $resolved['labels'] ?? [];
-        $options   = $resolved['options'] ?? [];
 
         // --- Config del desglose por equipo (opcional). ---
         // `$teamField` ya está resuelto arriba (configurado y visible). El encuestador usa
@@ -210,8 +258,9 @@ class Stats {
         $enumIsField = $enumField !== null && $enumField !== '' && $enumField !== '_submitted_by'
             && !FieldScope::isHidden($fieldScope, $enumField);
         $enumPath   = $enumIsField ? $enumField : '_submitted_by';
-        $teamOptMap = $teamField !== null ? ($options[$teamField] ?? []) : [];
         $enumOptMap = $enumIsField ? ($options[$enumPath] ?? []) : [];
+        $normEnum   = $normMode !== 'raw' && !$enumOptMap;
+        $enumSpell  = []; $enumCanon = [];
 
         // Preguntas de opción (select_one y select_multiple), numéricas y el conjunto
         // completo de preguntas contestables (para el ranking de no-respuesta; el
@@ -295,6 +344,18 @@ class Stats {
                 $ev = $payload[$enumPath] ?? null;
                 $tKey = ($tv === null || $tv === '' || is_array($tv)) ? '—' : (string) $tv;
                 $eKey = ($ev === null || $ev === '' || is_array($ev)) ? '—' : (string) $ev;
+                if ($normTeam && $tKey !== '—') {
+                    $rt = $normResolver('team', $tKey);
+                    $teamSpell[$rt['key']][$tKey] = ($teamSpell[$rt['key']][$tKey] ?? 0) + 1;
+                    if ($rt['canon'] !== null) $teamCanon[$rt['key']] = $rt['canon'];
+                    $tKey = $rt['key'];
+                }
+                if ($normEnum && $eKey !== '—') {
+                    $re = $normResolver('member', $eKey);
+                    $enumSpell[$tKey][$re['key']][$eKey] = ($enumSpell[$tKey][$re['key']][$eKey] ?? 0) + 1;
+                    if ($re['canon'] !== null) $enumCanon[$tKey][$re['key']] = $re['canon'];
+                    $eKey = $re['key'];
+                }
                 $st = in_array($r['review_status'], ValidationStatus::STATUSES, true) ? $r['review_status'] : 'pending';
                 if (!isset($teamAcc[$tKey])) $teamAcc[$tKey] = ['leaf' => $newLeaf(), 'enums' => []];
                 if (!isset($teamAcc[$tKey]['enums'][$eKey])) $teamAcc[$tKey]['enums'][$eKey] = $newLeaf();
@@ -546,11 +607,17 @@ class Stats {
                 $erank = 0;
                 foreach ($enums as $eKey => $leaf) {
                     if ($erank++ >= $teamCap) { $eOthers += $leaf['count']; continue; }
-                    $eName = $eKey === '—' ? '—' : (($labelsOn && isset($enumOptMap[$eKey])) ? $enumOptMap[$eKey] : $eKey);
+                    $eName = $eKey === '—' ? '—'
+                        : ($normEnum
+                            ? (MemberNorm::pickLabel($enumSpell[$tKey][$eKey] ?? [], $enumCanon[$tKey][$eKey] ?? null) ?: $eKey)
+                            : (($labelsOn && isset($enumOptMap[$eKey])) ? $enumOptMap[$eKey] : $eKey));
                     $eList[] = ['name' => $eName] + $finalize($leaf, $teamCount);
                 }
 
-                $tName = $tKey === '—' ? '—' : (($labelsOn && isset($teamOptMap[$tKey])) ? $teamOptMap[$tKey] : $tKey);
+                $tName = $tKey === '—' ? '—'
+                    : ($normTeam
+                        ? (MemberNorm::pickLabel($teamSpell[$tKey] ?? [], $teamCanon[$tKey] ?? null) ?: $tKey)
+                        : (($labelsOn && isset($teamOptMap[$tKey])) ? $teamOptMap[$tKey] : $tKey));
                 // `key`: identificador URL-seguro para los checkboxes de filtro (código del
                 // equipo o el centinela '__none__' del bucket «sin equipo»). El % del equipo
                 // se mide sobre `$teamBase` (todos los equipos) para que sea estable al filtrar.

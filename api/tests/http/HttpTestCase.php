@@ -35,7 +35,7 @@ abstract class HttpTestCase extends TestCase
         'user_form_favorites',
         'share_links', 'user_sessions', 'login_attempts', 'rate_hits', 'password_resets',
         'notification_config', 'push_subscriptions', 'contact_messages',
-        'sample_targets', 'sample_target_history', 'forms', 'kobo_accounts',
+        'sample_targets', 'sample_target_history', 'member_aliases', 'forms', 'kobo_accounts',
         'users', 'settings',
     ];
 

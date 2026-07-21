@@ -31,6 +31,7 @@ require __DIR__ . '/lib/Derived.php';
 require __DIR__ . '/lib/RowScope.php';
 require __DIR__ . '/lib/FieldScope.php';
 require __DIR__ . '/lib/SubmissionSearch.php';
+require __DIR__ . '/lib/MemberNorm.php';
 require __DIR__ . '/lib/Stats.php';
 require __DIR__ . '/lib/Sample.php';
 require __DIR__ . '/lib/TeamGroups.php';
@@ -133,6 +134,7 @@ $routes = [
     'admin/forms/:id/scope-fields' => 'admin/scope_fields.php',
     'admin/forms/:id/sample-plan'  => 'admin/sample_plan.php',
     'admin/forms/:id/team-group'   => 'admin/team_group.php',
+    'admin/forms/:id/member-aliases' => 'admin/member_aliases.php',
     'admin/settings'            => 'admin/settings.php',
     'admin/demo/seed'           => 'admin/demo_seed.php',
     'admin/db/export'           => 'admin/db_export.php',

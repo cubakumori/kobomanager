@@ -43,6 +43,16 @@ const qcDupMinAnswers = ref('')
 const riskMinN = ref('')
 // Retención de envíos en caché (días; '' = conservar para siempre).
 const retentionDays = ref('')
+// Normalización de miembro/equipo de TEXTO LIBRE ('raw'|'normalize'|'alias'):
+// gobierna la clave de agrupación de las vistas (solo lectura, reversible). Solo
+// se ofrece si algún eje elegido es texto/metadato (en select_one es un no-op).
+const memberNormalize = ref('normalize')
+// Tabla de alias (modo 'alias'): filas {axis:'member'|'team', from, to}.
+const aliases = ref([])
+const savingAliases = ref(false)
+const aliasFlash = ref('')
+// Valores observados por eje (datalist de ayuda del editor de alias).
+const aliasValues = ref({ member: [], team: [] })
 // Plan de muestra (página propia): permiso jerárquico «Muestra» del usuario, nº de
 // objetivos del plan vigente y el campo de equipo GUARDADO (para avisar de que
 // cambiarlo desalinea el plan: los objetivos están clavados a los códigos de equipo).
@@ -74,6 +84,7 @@ async function load() {
     qcDupMinAnswers.value = cfg.data.data.qc_dup_min_answers ?? ''
     riskMinN.value = cfg.data.data.risk_min_n ?? ''
     retentionDays.value = cfg.data.data.retention_days ?? ''
+    memberNormalize.value = cfg.data.data.member_normalize || 'normalize'
     canSample.value = !!cfg.data.data.can_sample
     sampleTargetCount.value = cfg.data.data.sample_target_count ?? 0
     savedTeamField.value = teamField.value
@@ -199,6 +210,67 @@ async function suggest() {
   }
 }
 
+// ---- Normalización de miembro/equipo + editor de alias ----
+// Se ofrece solo si algún eje ELEGIDO es texto/metadato (los select_one ya tienen
+// códigos canónicos y el ajuste sería un no-op que solo confunde). El encuestador
+// por defecto (_submitted_by, usuario Kobo) es canónico: no cuenta como texto libre.
+const fieldType = (key) => fields.value.find((f) => f.key === key)?.type || ''
+const freeTextAxis = computed(() => {
+  const teamFree = teamField.value && !fieldType(teamField.value).startsWith('select_one')
+  const enumFree = enumField.value && !fieldType(enumField.value).startsWith('select_one')
+  return !!(teamFree || enumFree)
+})
+
+async function loadAliases() {
+  try {
+    const { data } = await api.get(`/admin/forms/${formId.value}/member-aliases`)
+    aliases.value = data.data.items || []
+  } catch {
+    aliases.value = []
+  }
+  // Datalist de ayuda: los valores OBSERVADOS de cada eje elegido (mismo endpoint
+  // de sugerencias que usan los filtros). Best-effort: sin valores no pasa nada.
+  for (const [axis, field] of [['member', enumField.value], ['team', teamField.value]]) {
+    if (!field) continue
+    try {
+      const { data } = await api.get(`/admin/forms/${formId.value}/scope-fields`, { params: { values: field } })
+      aliasValues.value = { ...aliasValues.value, [axis]: data.data.values || [] }
+    } catch {
+      /* sin sugerencias */
+    }
+  }
+}
+// El editor solo se carga cuando el modo alias está activo (y una vez).
+let aliasesLoaded = false
+watch([memberNormalize, loading], () => {
+  if (memberNormalize.value === 'alias' && !loading.value && !aliasesLoaded) {
+    aliasesLoaded = true
+    loadAliases()
+  }
+})
+
+function addAlias() {
+  aliases.value = [...aliases.value, { axis: 'member', from: '', to: '' }]
+}
+function removeAlias(i) {
+  aliases.value = aliases.value.filter((_, j) => j !== i)
+}
+async function saveAliases() {
+  savingAliases.value = true
+  aliasFlash.value = ''
+  error.value = ''
+  try {
+    const items = aliases.value.filter((a) => a.from.trim() && a.to.trim())
+    const { data } = await api.put(`/admin/forms/${formId.value}/member-aliases`, { items })
+    aliasFlash.value = t('formSettings.aliasSaved', { n: data.data.count })
+    await loadAliases()
+  } catch (e) {
+    error.value = apiError(e, t('formSettings.aliasSaveError'))
+  } finally {
+    savingAliases.value = false
+  }
+}
+
 async function save() {
   saving.value = true
   error.value = ''
@@ -214,6 +286,7 @@ async function save() {
       qc_dup_min_answers: minutes(qcDupMinAnswers.value),
       risk_min_n: minutes(riskMinN.value),
       retention_days: minutes(retentionDays.value),
+      member_normalize: memberNormalize.value,
     })
     flash.value = t('formSettings.saved')
     savedTeamField.value = teamField.value
@@ -376,6 +449,91 @@ onMounted(load)
               {{ $t('formSettings.groupCheckUnassigned', { n: checkResult.unassigned.length, teams: checkResult.unassigned.map(u => u.name).join(', ') }) }}
             </p>
           </template>
+        </div>
+      </div>
+
+      <!-- Normalización de miembro/equipo de TEXTO LIBRE: solo se ofrece si algún
+           eje elegido es texto/metadato (en select_one sería un no-op confuso) -->
+      <div v-if="freeTextAxis" class="mt-6 border-t border-slate-100 pt-4">
+        <h3 class="text-sm font-semibold text-slate-900">{{ $t('formSettings.normSection') }}</h3>
+        <p class="mt-1 text-sm text-slate-500">{{ $t('formSettings.normSectionDesc') }}</p>
+
+        <label class="mt-3 block sm:max-w-sm">
+          <span class="text-sm font-medium text-slate-700">{{ $t('formSettings.normMode') }}</span>
+          <select
+            v-model="memberNormalize"
+            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          >
+            <option value="raw">{{ $t('formSettings.normRaw') }}</option>
+            <option value="normalize">{{ $t('formSettings.normNormalize') }}</option>
+            <option value="alias">{{ $t('formSettings.normAlias') }}</option>
+          </select>
+          <span class="mt-1 block text-xs text-slate-400">
+            {{ memberNormalize === 'raw'
+              ? $t('formSettings.normRawHint')
+              : memberNormalize === 'alias'
+                ? $t('formSettings.normAliasHint')
+                : $t('formSettings.normNormalizeHint') }}
+          </span>
+        </label>
+
+        <!-- Editor de alias (modo 'alias'): variante → canónico, por eje. Guardado
+             propio (PUT de reemplazo completo, como el plan de muestra). -->
+        <div v-if="memberNormalize === 'alias'" class="mt-4 rounded-lg bg-slate-50 p-3 ring-1 ring-slate-200 dark:bg-slate-800/40 dark:ring-slate-700">
+          <p class="text-xs text-slate-500">{{ $t('formSettings.aliasIntro') }}</p>
+          <datalist id="km-alias-member-values">
+            <option v-for="v in aliasValues.member" :key="v" :value="v" />
+          </datalist>
+          <datalist id="km-alias-team-values">
+            <option v-for="v in aliasValues.team" :key="v" :value="v" />
+          </datalist>
+
+          <div v-for="(a, i) in aliases" :key="i" class="mt-2 flex flex-wrap items-center gap-2">
+            <select
+              v-model="a.axis"
+              class="rounded-lg border border-slate-300 px-2 py-1.5 text-xs outline-none focus:border-primary-500"
+            >
+              <option value="member">{{ $t('formSettings.aliasAxisMember') }}</option>
+              <option value="team">{{ $t('formSettings.aliasAxisTeam') }}</option>
+            </select>
+            <input
+              v-model="a.from"
+              :list="a.axis === 'member' ? 'km-alias-member-values' : 'km-alias-team-values'"
+              :placeholder="$t('formSettings.aliasFrom')"
+              class="w-36 flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-xs outline-none focus:border-primary-500 sm:flex-none"
+            />
+            <span class="text-xs text-slate-400" aria-hidden="true">→</span>
+            <input
+              v-model="a.to"
+              :placeholder="$t('formSettings.aliasTo')"
+              class="w-36 flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-xs outline-none focus:border-primary-500 sm:flex-none"
+            />
+            <button
+              type="button"
+              :aria-label="$t('formSettings.aliasRemove')"
+              class="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700"
+              @click="removeAlias(i)"
+            >✕</button>
+          </div>
+
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              class="rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-xs text-slate-600 hover:bg-white dark:hover:bg-slate-800"
+              @click="addAlias"
+            >
+              + {{ $t('formSettings.aliasAdd') }}
+            </button>
+            <button
+              type="button"
+              :disabled="savingAliases"
+              class="rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+              @click="saveAliases"
+            >
+              {{ savingAliases ? $t('formSettings.aliasSaving') : $t('formSettings.aliasSave') }}
+            </button>
+            <span v-if="aliasFlash" class="text-xs text-success-700 dark:text-success-400">{{ aliasFlash }}</span>
+          </div>
         </div>
       </div>
 

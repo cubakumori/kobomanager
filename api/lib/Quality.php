@@ -126,6 +126,21 @@ class Quality {
         $teamOptMap = $teamField !== null ? ($options[$teamField] ?? []) : [];
         $enumOptMap = $enumIsField ? ($options[$enumPath] ?? []) : [];
 
+        // Normalización de ejes de TEXTO LIBRE (forms.member_normalize; lib/MemberNorm):
+        // la clave del cubo pliega variantes de la misma persona/equipo y la etiqueta
+        // será la grafía más frecuente (o el canónico del alias). Un select_one (con
+        // opciones en el esquema) ya es canónico → clave cruda (no-op garantizado).
+        // El miembro se fusiona DENTRO de su equipo: la clave del cubo es compuesta
+        // (tKey→eKey), así que dos «abc» de equipos distintos nunca se mezclan.
+        $normMode = MemberNorm::mode(
+            DB::run('SELECT member_normalize FROM forms WHERE id = ?', [$formId])->fetch()['member_normalize'] ?? null
+        );
+        $resolver = MemberNorm::resolver($normMode, $formId);
+        $normTeam = $normMode !== 'raw' && $teamField !== null && !$teamOptMap;
+        $normEnum = $normMode !== 'raw' && !$enumOptMap;
+        $teamSpell = []; $teamCanon = []; // tKey => [grafía => n] ; tKey => canónico
+        $enumSpell = []; $enumCanon = []; // tKey => eKey => …
+
         // Claves meta start/end del esquema (con respaldo de convención), como el orden
         // por duración de la tabla de envíos.
         $startKey = $schemaRaw['meta']['start'] ?? 'start';
@@ -203,6 +218,18 @@ class Quality {
             $ev = $payload[$enumPath] ?? null;
             $tKey = ($tv === null || $tv === '' || is_array($tv)) ? '—' : (string) $tv;
             $eKey = ($ev === null || $ev === '' || is_array($ev)) ? '—' : (string) $ev;
+            if ($normTeam && $tKey !== '—') {
+                $rt = $resolver('team', $tKey);
+                $teamSpell[$rt['key']][$tKey] = ($teamSpell[$rt['key']][$tKey] ?? 0) + 1;
+                if ($rt['canon'] !== null) $teamCanon[$rt['key']] = $rt['canon'];
+                $tKey = $rt['key'];
+            }
+            if ($normEnum && $eKey !== '—') {
+                $re = $resolver('member', $eKey);
+                $enumSpell[$tKey][$re['key']][$eKey] = ($enumSpell[$tKey][$re['key']][$eKey] ?? 0) + 1;
+                if ($re['canon'] !== null) $enumCanon[$tKey][$re['key']] = $re['canon'];
+                $eKey = $re['key'];
+            }
 
             // Señales de fabricación: firma de respuestas (duplicados) y punto GPS
             // exacto (clavado). Los envíos sin respuestas / sin coordenadas no
@@ -247,11 +274,21 @@ class Quality {
         // aquí (Quality es solo lectura).
         $admissiblePending = [];
 
+        // Etiquetas de cubo: con normalización activa, la grafía original más
+        // frecuente (o el canónico del alias); si no, el mapa de opciones clásico.
+        $teamName = fn(string $tKey): string => $tKey === '—' ? '—'
+            : ($normTeam
+                ? (MemberNorm::pickLabel($teamSpell[$tKey] ?? [], $teamCanon[$tKey] ?? null) ?: $tKey)
+                : (($labelsOn && isset($teamOptMap[$tKey])) ? $teamOptMap[$tKey] : $tKey));
+        $enumName = fn(string $tKey, string $eKey): string => $eKey === '—' ? '—'
+            : ($normEnum
+                ? (MemberNorm::pickLabel($enumSpell[$tKey][$eKey] ?? [], $enumCanon[$tKey][$eKey] ?? null) ?: $eKey)
+                : (($labelsOn && isset($enumOptMap[$eKey])) ? $enumOptMap[$eKey] : $eKey));
+
         $teams = [];
         foreach ($groups as $tKey => $enums) {
             $teamOut = [
-                'name'        => $tKey === '—' ? '—'
-                    : (($labelsOn && isset($teamOptMap[$tKey])) ? $teamOptMap[$tKey] : $tKey),
+                'name'        => $teamName($tKey),
                 'count'       => 0,  // envíos EN ALCANCE
                 'total'       => 0,  // TODOS los envíos recibidos del equipo (contexto del alcance)
                 'flagged'     => 0,
@@ -308,8 +345,7 @@ class Quality {
                 if ($inCount === 0) continue;
 
                 $enumOut = [
-                    'name'       => $eKey === '—' ? '—'
-                        : (($labelsOn && isset($enumOptMap[$eKey])) ? $enumOptMap[$eKey] : $eKey),
+                    'name'       => $enumName($tKey, $eKey),
                     'count'      => $inCount,        // en alcance
                     'total'      => count($entries), // todos los recibidos del encuestador
                     'flagged'    => 0,
@@ -384,8 +420,7 @@ class Quality {
         $reviewSummary = [];
         foreach ($groups as $tKey => $enums) {
             $teamRow = [
-                'name'        => $tKey === '—' ? '—'
-                    : (($labelsOn && isset($teamOptMap[$tKey])) ? $teamOptMap[$tKey] : $tKey),
+                'name'        => $teamName($tKey),
                 'total'       => 0,
                 'status'      => $zeroStatus = array_fill_keys(ValidationStatus::STATUSES, 0),
                 'enumerators' => [],
@@ -397,8 +432,7 @@ class Quality {
                 $teamRow['total'] += $n;
                 foreach (ValidationStatus::STATUSES as $s) $teamRow['status'][$s] += $st[$s];
                 $teamRow['enumerators'][] = [
-                    'name'   => $eKey === '—' ? '—'
-                        : (($labelsOn && isset($enumOptMap[$eKey])) ? $enumOptMap[$eKey] : $eKey),
+                    'name'   => $enumName($tKey, $eKey),
                     'total'  => $n,
                     'status' => $st,
                 ];
@@ -460,6 +494,11 @@ class Quality {
      * su índice compuesto alcanza el corte de sospecha (Risk::SUSPICION_Z); el cruce
      * se hace por el par de nombres RESUELTOS (equipo, encuestador), que Quality y Risk
      * derivan de forma idéntica (mismo par de campos, misma resolución de etiquetas).
+     * El par se pliega con MemberNorm::normKey a ambos lados: con la normalización
+     * activa, la etiqueta elegida (grafía más frecuente) podría diferir entre módulos
+     * si empatara distinto — la clave plegada es estable. En modo raw el plegado solo
+     * puede fusionar de más, y fusionar de más aquí es CONSERVADOR (excluye más
+     * candidatos del atajo de aprobación, nunca aprueba de más).
      *
      * @param array      $qualityResult Salida de Quality::compute (usa `admissible_pending`).
      * @param array|null $riskResult    Salida de Risk::compute, o null si el índice no se
@@ -470,14 +509,17 @@ class Quality {
         $cands      = $qualityResult['admissible_pending'] ?? [];
         $riskActive = $riskResult !== null && ($riskResult['enabled'] ?? false);
 
-        // Conjunto de encuestadores de alto riesgo, indexado por "equipo\0encuestador".
+        // Conjunto de encuestadores de alto riesgo, indexado por "equipo\0encuestador"
+        // con ambos lados PLEGADOS (normKey): estable ante la elección de grafía.
+        $pair = fn(string $team, string $enum): string =>
+            MemberNorm::normKey($team) . "\0" . MemberNorm::normKey($enum);
         $highRisk = [];
         if ($riskActive) {
             foreach (($riskResult['teams'] ?? []) as $t) {
                 foreach (($t['enumerators'] ?? []) as $en) {
                     $idx = $en['index'] ?? null;
                     if ($idx !== null && $idx >= Risk::SUSPICION_Z) {
-                        $highRisk[$t['name'] . "\0" . $en['name']] = true;
+                        $highRisk[$pair((string) $t['name'], (string) $en['name'])] = true;
                     }
                 }
             }
@@ -486,7 +528,7 @@ class Quality {
         $uids     = [];
         $excluded = 0;
         foreach ($cands as $c) {
-            if ($riskActive && isset($highRisk[$c['team'] . "\0" . $c['enum']])) {
+            if ($riskActive && isset($highRisk[$pair((string) $c['team'], (string) $c['enum'])])) {
                 $excluded++;
                 continue;
             }

@@ -445,4 +445,65 @@ final class QualityTest extends DbTestCase
         $this->assertSame(0, $none['high_risk_excluded']);
         $this->assertFalse($none['risk_active']);
     }
+
+    // ---- Normalización de miembro/equipo de texto libre (forms.member_normalize) ----
+
+    public function testNormalizationMergesVariantsWithinTeamOnly(): void
+    {
+        $formId = $this->makeForm(); // member_normalize = 'normalize' (default)
+        // La misma persona con tres grafías EN EL MISMO equipo (que también varía)…
+        $this->addSubmission($formId, ['team' => 'Norte',  'enum' => 'C. M. S.']);
+        $this->addSubmission($formId, ['team' => 'norte',  'enum' => 'c m s']);
+        $this->addSubmission($formId, ['team' => 'NORTE ', 'enum' => 'C.M.S']);
+        // …y un HOMÓNIMO en otro equipo: NO se mezcla (fusión dentro del equipo).
+        $this->addSubmission($formId, ['team' => 'Sur', 'enum' => 'C. M. S.']);
+
+        $q = Quality::compute($formId, null, null, null, 'es', 'team', 'enum', null, null, null);
+
+        $this->assertCount(2, $q['teams']);
+        $byName = [];
+        foreach ($q['teams'] as $t) $byName[$t['name']] = $t;
+        // Etiqueta = grafía más frecuente (empate 1-1-1 → la menor alfabética: 'NORTE '… no:
+        // pickLabel ordena por grafía; con 1-1-1 gana 'NORTE ' por orden ksort+arsort estable).
+        $norte = $byName['NORTE '] ?? $byName['Norte'] ?? $byName['norte'] ?? null;
+        $this->assertNotNull($norte, 'el equipo fusionado existe con alguna de sus grafías');
+        $this->assertSame(3, $norte['total']);
+        $this->assertCount(1, $norte['enumerators']); // UNA persona, no tres
+        $this->assertSame(3, $norte['enumerators'][0]['total']);
+
+        $sur = $byName['Sur'];
+        $this->assertSame(1, $sur['total']);
+        $this->assertCount(1, $sur['enumerators']);
+    }
+
+    public function testNormalizationRawModeKeepsVariantsApart(): void
+    {
+        $formId = $this->makeForm();
+        DB::run("UPDATE forms SET member_normalize = 'raw' WHERE id = ?", [$formId]);
+        $this->addSubmission($formId, ['team' => 'Norte', 'enum' => 'C. M. S.']);
+        $this->addSubmission($formId, ['team' => 'Norte', 'enum' => 'c m s']);
+
+        $q = Quality::compute($formId, null, null, null, 'es', 'team', 'enum', null, null, null);
+        $this->assertCount(1, $q['teams']);
+        $this->assertCount(2, $q['teams'][0]['enumerators']); // sin fusión
+    }
+
+    public function testAliasModeRemapsSpellingFamilies(): void
+    {
+        $formId = $this->makeForm();
+        DB::run("UPDATE forms SET member_normalize = 'alias' WHERE id = ?", [$formId]);
+        // «JLVH» es una errata de «JLHV» (baile de letras: la normalización no las une).
+        DB::run(
+            "INSERT INTO member_aliases (form_id, axis, from_key, to_value) VALUES (?, 'member', 'jlvh', 'JLHV')",
+            [$formId]
+        );
+        $this->addSubmission($formId, ['team' => 'Norte', 'enum' => 'JLHV']);
+        $this->addSubmission($formId, ['team' => 'Norte', 'enum' => 'JLVH']);
+        $this->addSubmission($formId, ['team' => 'Norte', 'enum' => 'jlhv ']);
+
+        $q = Quality::compute($formId, null, null, null, 'es', 'team', 'enum', null, null, null);
+        $this->assertCount(1, $q['teams'][0]['enumerators']);
+        $this->assertSame('JLHV', $q['teams'][0]['enumerators'][0]['name']); // canónico del alias
+        $this->assertSame(3, $q['teams'][0]['enumerators'][0]['total']);
+    }
 }

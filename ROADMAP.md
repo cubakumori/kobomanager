@@ -25,11 +25,11 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 >
 > **Próxima tanda (acordada jul-2026, tras el release 1.43.0):** (1) ~~enlace público de
 > solo lectura del panel de muestra~~ **ENTREGADO en 1.45.0** (`expose_sample` opt-in por
-> enlace; ver `CHANGELOG.md`); (2) **normalización del eje miembro/equipo de texto libre**
-> (ver «Muestra por equipo — pendientes»); (3) retomar el **cifrado de campos sensibles**
-> empezando por su sesión de diseño (sección de seguridad); (4) redactar el **borrador de
-> solicitud a OTF/OSTIF** para la auditoría externa (a partir de `SECURITY.md` y las notas
-> privadas).
+> enlace); (2) ~~normalización del eje miembro/equipo de texto libre~~ **ENTREGADA en
+> 1.46.0** (los tres modos, con alias incluidos; ver `CHANGELOG.md`); (3) retomar el
+> **cifrado de campos sensibles** empezando por su sesión de diseño (sección de
+> seguridad); (4) redactar el **borrador de solicitud a OTF/OSTIF** para la auditoría
+> externa (a partir de `SECURITY.md` y las notas privadas).
 
 ---
 
@@ -252,29 +252,6 @@ Quedan como ideas reabribles si aparece una necesidad real.
       la «Distribución observada» de los secundarios CON objetivo pasa de reparto neutro a
       cumplimiento → la **paleta** debe aplicarles la semántica completa (tramos por %,
       como al campo principal), no solo el tono de la familia como hoy (nota jul-2026).
-- [ ] **Normalización del eje de miembro/equipo cuando es texto libre** *(PRÓXIMA TANDA,
-      nº2; de la conversación
-      jul-2026)* — un campo de miembro de **texto libre** (p. ej. iniciales) sufre variantes de
-      la misma persona («ABC» / «abc» / «Abc», o espacios), y hoy la clave de agrupación es el
-      **string crudo** (`(string) $valor` en `Stats`/`Quality`/`Risk`/`Sample`), así que se
-      parte en varios cubos en TODAS las vistas de desglose por miembro/equipo. Diseño acordado
-      = **ajuste por formulario con tres modos**:
-      1. **«Mantener tal cual»** — comportamiento actual, sensible a mayúsculas/espacios.
-      2. **«Normalizar al agrupar» (POR DEFECTO)** — `trim` + colapsar espacios internos +
-         `mb_strtolower` para la CLAVE; etiqueta mostrada = la **grafía original más frecuente**
-         entre las filas fusionadas (si escriben «ABC» la mayoría, se ve «ABC»).
-      3. **«Normalizar + alias»** — además, una **tabla de alias por formulario** que mapea
-         variantes/erratas a un canónico («A.B.C» → «ABC»). Capa más pesada (almacenamiento +
-         UI de gestión + mantenimiento manual); puede construirse **después** de los dos primeros.
-      Aplicar vía **helper compartido en las cuatro vistas** (Estadísticas, Control de calidad,
-      Índice de riesgo y Muestra) para que el mismo miembro cuente igual en todas. Matices:
-      (a) el ajuste **solo tiene efecto en campos de texto/metadatos** — un `select_one` ya tiene
-      códigos canónicos, ahí es no-op y la UI no debería ofrecerlo; (b) **un solo ajuste por
-      formulario** cubre ambos ejes (miembro y equipo); (c) **no muta datos** (normaliza en
-      lectura, reversible); (d) al cambiar el default a «Normalizar» en formularios existentes se
-      fusionan variantes de golpe al actualizar — casi siempre deseable, inocuo para
-      `_submitted_by` y `select_one`, pero mencionarlo en el CHANGELOG cuando toque.
-
 ---
 
 ## Publicación (en torno a hacer público el repo)

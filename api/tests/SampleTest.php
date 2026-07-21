@@ -418,4 +418,31 @@ final class SampleTest extends DbTestCase
         $this->assertNull($res['group_field']);
         $this->assertSame([], $res['groups']);
     }
+
+    // ---- Normalización del eje de equipo de texto libre (forms.member_normalize) ----
+
+    public function testNormalizationMatchesPlanTargetsAcrossSpellings(): void
+    {
+        $formId = $this->makeForm(); // member_normalize = 'normalize' (default)
+        // SIN esquema: el equipo es TEXTO LIBRE. El plan se escribió «HAB#1»…
+        DB::run(
+            'INSERT INTO sample_targets (form_id, team_value, sample_value, target) VALUES (?, ?, ?, ?)',
+            [$formId, 'HAB#1', 'a1', 2]
+        );
+        // …y los datos llegan con variantes de grafía del MISMO equipo.
+        $u1 = $this->addSubmission($formId, ['team' => 'hab#1', 'age' => 'a1']);
+        $u2 = $this->addSubmission($formId, ['team' => 'HAB #1', 'age' => 'a1']);
+        $this->review($u1, 'approved');
+        $this->review($u2, 'approved');
+
+        $res = Sample::compute($formId, null, null, null, 'es', 'team', 'age');
+
+        // UN solo equipo, con el plan casado: 2/2 hechos, nada «fuera de plan».
+        $this->assertCount(1, $res['teams']);
+        $team = $res['teams'][0];
+        $this->assertSame(2, $team['done']);
+        $this->assertSame(2, $team['target']);
+        $this->assertFalse($team['out_of_plan']);
+        $this->assertSame('hab1', $team['key']); // clave plegada
+    }
 }

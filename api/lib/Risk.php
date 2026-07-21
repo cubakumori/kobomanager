@@ -114,6 +114,21 @@ class Risk {
         $teamOptMap = $teamField !== null ? ($options[$teamField] ?? []) : [];
         $enumOptMap = $enumIsField ? ($options[$enumPath] ?? []) : [];
 
+        // Normalización de ejes de TEXTO LIBRE (forms.member_normalize; ver el bloque
+        // homólogo de lib/Quality): clave plegada, etiqueta = grafía más frecuente (o
+        // canónico del alias); select_one = no-op; el miembro se fusiona DENTRO de su
+        // equipo. Para el Índice es doblemente importante: al fusionar variantes, el
+        // encuestador alcanza su `min_n` real y los cohortes de pares dejan de estar
+        // contaminados por «medio-encuestadores».
+        $normMode = MemberNorm::mode(
+            DB::run('SELECT member_normalize FROM forms WHERE id = ?', [$formId])->fetch()['member_normalize'] ?? null
+        );
+        $normResolver = MemberNorm::resolver($normMode, $formId);
+        $normTeam  = $normMode !== 'raw' && $teamField !== null && !$teamOptMap;
+        $normEnum  = $normMode !== 'raw' && !$enumOptMap;
+        $teamSpell = []; $teamCanon = [];
+        $enumSpell = []; $enumCanon = [];
+
         $teamMeta = $teamField !== null ? [
             'key'   => $teamField,
             'label' => $labelsOn ? ($labels[$teamField] ?? $teamField) : $teamField,
@@ -191,6 +206,18 @@ class Risk {
             $ev = $payload[$enumPath] ?? null;
             $tKey = ($tv === null || $tv === '' || is_array($tv)) ? '—' : (string) $tv;
             $eKey = ($ev === null || $ev === '' || is_array($ev)) ? '—' : (string) $ev;
+            if ($normTeam && $tKey !== '—') {
+                $rt = $normResolver('team', $tKey);
+                $teamSpell[$rt['key']][$tKey] = ($teamSpell[$rt['key']][$tKey] ?? 0) + 1;
+                if ($rt['canon'] !== null) $teamCanon[$rt['key']] = $rt['canon'];
+                $tKey = $rt['key'];
+            }
+            if ($normEnum && $eKey !== '—') {
+                $re = $normResolver('member', $eKey);
+                $enumSpell[$tKey][$re['key']][$eKey] = ($enumSpell[$tKey][$re['key']][$eKey] ?? 0) + 1;
+                if ($re['canon'] !== null) $enumCanon[$tKey][$re['key']] = $re['canon'];
+                $eKey = $re['key'];
+            }
 
             if (!isset($groups[$tKey][$eKey])) $groups[$tKey][$eKey] = self::newAcc();
             $g = &$groups[$tKey][$eKey];
@@ -323,7 +350,9 @@ class Risk {
 
             $teamOut = [
                 'name'         => $tKey === '—' ? '—'
-                    : (($labelsOn && isset($teamOptMap[$tKey])) ? $teamOptMap[$tKey] : $tKey),
+                    : ($normTeam
+                        ? (MemberNorm::pickLabel($teamSpell[$tKey] ?? [], $teamCanon[$tKey] ?? null) ?: $tKey)
+                        : (($labelsOn && isset($teamOptMap[$tKey])) ? $teamOptMap[$tKey] : $tKey)),
                 'count'        => 0,
                 'received'     => 0,
                 'scored'       => 0,
@@ -348,7 +377,9 @@ class Risk {
 
             foreach ($enums as $eKey => $e) {
                 $name = $eKey === '—' ? '—'
-                    : (($labelsOn && isset($enumOptMap[$eKey])) ? $enumOptMap[$eKey] : $eKey);
+                    : ($normEnum
+                        ? (MemberNorm::pickLabel($enumSpell[$tKey][$eKey] ?? [], $enumCanon[$tKey][$eKey] ?? null) ?: $eKey)
+                        : (($labelsOn && isset($enumOptMap[$eKey])) ? $enumOptMap[$eKey] : $eKey));
                 $scored = $e['in'] >= $minN;
 
                 $components = [];

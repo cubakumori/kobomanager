@@ -490,6 +490,20 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   is gated by `$includeReview` (so public links get the volume/quality but not the review mix,
   mirroring `by_status`). The two fields are configured from a per‑form **settings screen**
   (`admin/forms/{id}` `GET`/`PATCH`, view `FormSettingsView.vue`, route `admin-form-settings`).
+  - **Free‑text axis normalization** (1.46.0): `forms.member_normalize`
+    (`raw`/`normalize`/`alias`, default `normalize`) governs the **bucket key** of the
+    team/enumerator axes across the four analysis views (Stats, Quality, Risk, Sample) via
+    `lib/MemberNorm` — the key folds case/whitespace/punctuation (`normKey`), the visible
+    label is the **most frequent original spelling** (or the alias' canonical), and the
+    enumerator merges **within its team** (composite `tKey→eKey` bucket). Fields with schema
+    options (`select_one`) keep raw keys (guaranteed no‑op); `_submitted_by` is canonical in
+    practice. Mode `alias` adds the per‑form `member_aliases` table (axis `member`/`team`,
+    `from_key` stored normalized → canonical `to_value`; replace‑all `PUT
+    admin/forms/{id}/member-aliases`, editor embedded in the settings screen). Read‑time
+    only: `RowScope` filters and submissions stay raw; Stats' interactive `?teams=` filter
+    expands selected bucket keys to the raw spellings present in the data so its SQL and
+    PHP matching keep comparing raw values, and Quality×Risk name crossings fold both
+    sides with `normKey` (conservative under every mode).
   - **Meta‑team grouping** (1.38.0, optional): `forms.team_group_field` names a submission field
     one level **above** the team (region, province…; chain `enumerator → team → meta‑team`, each
     link many‑to‑one). Must be single‑valued and **distinct** from the team and enumerator fields

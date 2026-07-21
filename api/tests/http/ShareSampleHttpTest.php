@@ -103,11 +103,12 @@ final class ShareSampleHttpTest extends HttpTestCase
         $this->assertSame(2, $data['grand']['done']);
         $this->assertSame(3, $data['grand']['target']);
         $this->assertSame(1, $data['grand']['pending']);
+        // Claves de cubo PLEGADAS (member_normalize por defecto, 1.46.0).
         $teams = $this->teams($data);
-        $this->assertSame(1, $teams['T1']['done']);
-        $this->assertSame(2, $teams['T1']['target']);
-        $this->assertSame(1, $teams['T1']['pending']);
-        $this->assertSame(1, $teams['T2']['done']);
+        $this->assertSame(1, $teams['t1']['done']);
+        $this->assertSame(2, $teams['t1']['target']);
+        $this->assertSame(1, $teams['t1']['pending']);
+        $this->assertSame(1, $teams['t2']['done']);
 
         // El toggle transitorio del denominador es interno: aquí se IGNORA.
         $res2 = $this->request('GET', "public/share/{$link['token']}/sample?denominator=approved_pending");
@@ -177,10 +178,11 @@ final class ShareSampleHttpTest extends HttpTestCase
         $this->assertSame(200, $res['status']);
         $teams = $this->teams($res['json']['data']);
         // T1 visible (con sus datos); T2 sigue en el eje por su fila del PLAN, pero
-        // sin nada hecho ni backlog (sus envíos quedan fuera del alcance).
-        $this->assertSame(1, $teams['T1']['done']);
-        $this->assertSame(0, $teams['T2']['done']);
-        $this->assertSame(0, $teams['T2']['pending']);
+        // sin nada hecho ni backlog (sus envíos quedan fuera del alcance). Claves
+        // plegadas (member_normalize por defecto, 1.46.0).
+        $this->assertSame(1, $teams['t1']['done']);
+        $this->assertSame(0, $teams['t2']['done']);
+        $this->assertSame(0, $teams['t2']['pending']);
         $this->assertSame(1, $res['json']['data']['grand']['done']);
         @unlink($jar);
     }

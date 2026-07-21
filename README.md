@@ -74,7 +74,13 @@ native validation status.
   **team → enumerator breakdown** (you pick the form's team and enumerator fields) adds
   volume, review mix, duration and completeness per team and per enumerator; an optional
   **team-grouping field** (a "meta-team": region, province…) adds a *Group teams* toggle
-  that lifts the breakdown one level to **meta-team → teams**.
+  that lifts the breakdown one level to **meta-team → teams**. When the team/enumerator
+  field is **free text** (hand-typed initials), a per-form **normalization setting**
+  merges spelling variants of the same person when grouping ("C. M. S." = "c m s";
+  case, spaces and punctuation folded; enumerators merge **within their team** only),
+  with an optional **alias table** for variants normalization can't join ("JLVH" →
+  "JLHV") — applied consistently across Statistics, Quality control, Risk index and
+  Sample; read-time only (submissions are never modified) and reversible.
 - **Sample by team**: compares what's *received* against a *planned sample* — how many
   surveys each team must collect per value of a sampling `select_one` (e.g. age range).
   A panel shows done/target and % per team × value, highlights shortfall and over-sample,

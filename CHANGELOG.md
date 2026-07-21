@@ -4,6 +4,39 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.46.0] - 2026-07-21
+
+### Añadido
+
+- **Normalización del eje encuestador/equipo de texto libre** (ítem nº2 de la tanda
+  jul-2026): con campos de texto libre (iniciales tecleadas a mano), la misma persona
+  aparecía como «C. M. S.», «c m s» o «C.M.S» y cada grafía contaba como un
+  encuestador distinto en TODAS las vistas de desglose — diluyendo volúmenes,
+  distorsionando tasas de calidad, dejando al Índice de riesgo sin N suficiente y
+  partiendo el cumplimiento de muestra. Ajuste **por formulario** con tres modos
+  (Ajustes del formulario, solo visible si algún eje elegido es texto/metadato):
+  - **«Mantener tal cual»** — el comportamiento clásico (cada grafía, un grupo).
+  - **«Normalizar al agrupar»** *(nuevo por defecto)* — la clave de agrupación pliega
+    mayúsculas, espacios y puntuación; la etiqueta visible es la **grafía original más
+    frecuente** del grupo. El encuestador se fusiona **dentro de su equipo** (dos «abc»
+    de equipos distintos nunca se mezclan).
+  - **«Normalizar + alias»** — además, una **tabla de alias por formulario** une
+    variantes que el plegado no puede unir («JLVH» → «JLHV»), con editor propio
+    (variante → canónico, por eje, con sugerencias de valores observados).
+  Aplicado por un helper compartido en las cuatro vistas (Estadísticas, Control de
+  calidad, Índice de riesgo y Muestra — incluido el casado de los objetivos del plan);
+  los `select_one` no se tocan (códigos ya canónicos) y los filtros de envíos siguen
+  comparando valores crudos. **No muta datos** (agrupación en lectura) y es reversible.
+
+### Actualización
+
+- Columna nueva `forms.member_normalize` (DEFAULT `'normalize'`) y tabla nueva
+  `member_aliases`: al actualizar, ejecutar `php api/cli/migrate.php`. **Ojo**: el
+  default `'normalize'` aplica también a los formularios existentes — las variantes
+  de mayúsculas/espacios/puntuación se fusionan de golpe al actualizar (casi siempre
+  lo deseado, e inocuo para `select_one` y `_submitted_by`); quien prefiera el
+  comportamiento clásico elige «Mantener tal cual» en los ajustes del formulario.
+
 ## [1.45.1] - 2026-07-21
 
 ### Corregido
