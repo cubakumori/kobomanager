@@ -4,6 +4,24 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.43.1] - 2026-07-21
+
+### Corregido
+
+- **`npm audit` de nuevo en 0 vulnerabilidades** (6 avisos *high* acumulados en la
+  cadena de dependencias JS; ninguno explotable en una instalación desplegada — al
+  servidor solo sube el build estático + PHP, pero se corrige igual):
+  - `axios` 1.16.1 → 1.18.1 (la única dependencia afectada que viaja en el bundle;
+    varias advisories de prototype pollution y DoS en utilidades que KoboManager no
+    usa directamente).
+  - Cadena de desarrollo: `vite` 8.0.x → 8.1.5 (advisory de `launch-editor`/`server.fs.deny`,
+    solo Windows), `form-data` y `brace-expansion` transitivas al día.
+  - `shell-quote` 1.8.4 → 1.10.0 (DoS cuadrático en `parse()`): concurrently 10 aún
+    pinea la versión vulnerable, así que se fuerza con un `overrides` en
+    `package.json` — se retirará cuando concurrently actualice su pin.
+  Verificado: build y paridad i18n OK, `npm run dev` arranca PHP+Vite y `/api/v1/health`
+  responde 200, PHPUnit 453/453.
+
 ## [1.43.0] - 2026-07-21
 
 Tanda de ajustes pre-release.
