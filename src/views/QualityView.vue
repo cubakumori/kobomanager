@@ -74,15 +74,20 @@ async function load() {
 const canReview = computed(() => q.value?.can_validate && q.value?.deployment_status !== 'archived')
 
 // Infractoras que aún NO están «en espera» (las ya marcadas no se re-marcan).
+// Candidatas del lote «marcar en espera»: SOLO las no admitidas PENDIENTES. Con
+// alcance «Todos» entran en la página infractoras ya revisadas (aprobadas o
+// rechazadas): el lote NO las revierte en masa — una revisión hecha por un humano
+// no se pisa con un clic (mismo guardarraíl que «aprobar admisibles», que solo
+// toca pendientes). Cambiarlas una a una desde el detalle sigue siendo posible.
 const pendingHold = computed(() => {
   const uids = []
   for (const tm of q.value?.teams ?? [])
     for (const e of tm.enumerators)
-      for (const v of e.violations) if (v.review_status !== 'on_hold') uids.push(v.uid)
+      for (const v of e.violations) if (v.review_status === 'pending') uids.push(v.uid)
   return uids
 })
-// Infractoras que YA están «en espera»: explica la resta entre la tarjeta
-// «No admitidas» y el número del botón de lote.
+// Infractoras que el lote NO tocará (ya en espera o ya revisadas): explica la
+// resta entre la tarjeta «No admitidas» y el número del botón.
 const heldCount = computed(() => (q.value?.flagged ?? 0) - pendingHold.value.length)
 
 // Tasa de no admitidas. Regla ÚNICA en toda la página: no admitidas sobre el

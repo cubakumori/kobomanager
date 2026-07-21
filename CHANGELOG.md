@@ -4,6 +4,21 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.43.0] - 2026-07-21
+
+Tanda de ajustes pre-release.
+
+### Corregido
+
+- **El lote «Marcar en espera las N no admitidas» ya no puede revertir revisiones
+  hechas**: con el alcance «Todos» entran en la página infractoras **ya revisadas**
+  (aprobadas o rechazadas) y el botón las incluía en el lote — un clic podía volver
+  a «En espera» cientos de decisiones humanas. Ahora el lote solo toca las
+  **pendientes** (el mismo guardarraíl que «Aprobar las admisibles», 1.26.0): el
+  botón cuenta solo esas, el aviso explica cuántas se saltan por estar ya revisadas
+  o en espera, y la confirmación lo dice expresamente. Cambiar una revisión hecha
+  sigue siendo posible una a una desde el detalle, donde es una decisión deliberada.
+
 ## [1.42.0] - 2026-07-21
 
 Tanda de retoques de los paneles (muestra, estadísticas y control de calidad).
