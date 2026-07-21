@@ -110,7 +110,8 @@ native validation status.
   rate. Per-form thresholds (with a one-click **suggestion** from the form's real p5/p95
   durations), a configurable review-status scope (by default only pending / on-hold
   submissions are reported; a toggle on the page — and its export — switches to *all*
-  on the fly without touching the global setting), and a one-click batch **"put the N
+  without touching the global setting, and the choice is **remembered per device**),
+  and a one-click batch **"put the N
   non-admissible on hold"** over the normal review flow — like its symmetric counterpart,
   it only ever touches **pending** submissions: already-reviewed offenders (visible under
   the *all* scope) are never bulk-reverted. The same decisions also exist **per team**

@@ -556,9 +556,12 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   setting (`qc_scope`: `pending_hold` default | `all`, Settings → Panels tab) decides which
   submissions get *reported*: by default only pending/on-hold ones (approved/rejected already
   passed human review, so QC counts never contradict the stats review cards). Since 1.27.0
-  the page carries a **transient toggle**: `?scope=all|pending_hold` overrides the global
+  the page carries a **toggle**: `?scope=all|pending_hold` overrides the global
   setting **for that request only** (anyone with `can_view`; unrecognised values fall back
-  to the global; nothing is persisted — the response's `scope` is the effective one). Consecutiveness
+  to the global; the server persists nothing — the response's `scope` is the effective one).
+  Since 1.46.1 the frontend **remembers the choice per device** (localStorage) and re-sends
+  it on every load, so navigating to a submission and back keeps the selected scope; the
+  global setting remains the default for devices that never touched the chip. Consecutiveness
   chains are always built over **all** of an enumerator's surveys regardless of scope — a
   pending survey overlapping an approved one is still flagged (against its real end), the
   approved one just isn't listed. The analysis is

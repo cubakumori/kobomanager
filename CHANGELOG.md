@@ -4,6 +4,20 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.46.1] - 2026-07-22
+
+### Corregido
+
+- **El alcance del Control de calidad recuerda tu elección** (reporte del usuario):
+  el chip «Alcance: …» era transitorio a propósito (1.27.0) y, al abrir el detalle
+  de un envío y volver, la vista se remontaba y caía al ajuste global — si este
+  estaba en «Todos», tu «Pendientes/En espera» se perdía en cada ida y vuelta. La
+  elección se guarda ahora como **preferencia por dispositivo** (localStorage, como
+  el selector de vistas del panel de muestra) y se reaplica en cada carga; el ajuste
+  global (Configuración → Paneles, default de fábrica «Pendientes/En espera») sigue
+  siendo el punto de partida para quien nunca tocó el chip. El servidor no cambia
+  (el `?scope=` sigue siendo por-petición).
+
 ## [1.46.0] - 2026-07-21
 
 ### Añadido

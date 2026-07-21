@@ -30,14 +30,21 @@ const flash = ref('')
 const batchBusy = ref(false)
 const approveBusy = ref(false)
 
-// --- Alcance por estado de revisión: toggle TRANSITORIO de la vista -----------
-// Arranca en el ajuste global (la primera carga va sin parámetro) y al cambiarlo
-// recarga con `?scope=`, que el backend aplica solo a esa petición. No persiste
-// nada ni pide permiso extra; `q.scope` es siempre el alcance EFECTIVO devuelto.
-const scopeOverride = ref(null) // null = ajuste global
+// --- Alcance por estado de revisión: preferencia POR DISPOSITIVO --------------
+// Arranca en la preferencia recordada (o, sin ella, en el ajuste global: la
+// primera carga va sin parámetro) y al cambiarlo recarga con `?scope=` y
+// RECUERDA la elección en localStorage — ver el detalle de un envío y volver ya
+// no la resetea (el toggle nació transitorio en 1.27.0 y el remontado de la
+// vista caía al ajuste global). `q.scope` es siempre el alcance EFECTIVO
+// devuelto; el ajuste global sigue siendo el default para quien nunca tocó el
+// chip (el enlace «Cambiar» del admin lo gobierna).
+const SCOPE_KEY = 'km.quality.scope'
+const storedScope = localStorage.getItem(SCOPE_KEY)
+const scopeOverride = ref(['all', 'pending_hold'].includes(storedScope) ? storedScope : null)
 function setScope(s) {
   if (loading.value || s === q.value?.scope) return
   scopeOverride.value = s
+  localStorage.setItem(SCOPE_KEY, s)
   load()
 }
 
