@@ -31,6 +31,19 @@ Tanda de retoques de los paneles (muestra, estadísticas y control de calidad).
   muestra, 1.41.0); sigue siendo transitorio y el enlace «Cambiar» del admin sigue
   gobernando el default global.
 
+### Corregido
+
+- **La barra del «Total general» del panel de muestra ya no mezcla manzanas con
+  naranjas** (defecto de origen, 1.32.0): su numerador incluía TODOS los envíos
+  hechos en alcance —también los de equipos **fuera de plan**, que no aportan nada
+  al denominador— y podía marcar un absurdo «301 %» con el plan aún incompleto.
+  Ahora la barra compara **solo los equipos planificados** (Σ hecho frente a Σ
+  objetivo, sin topar la sobre-muestra: superar el 100 % sigue siendo legítimo,
+  igual que en una fila), y el volumen fuera de plan se muestra aparte como nota
+  («+N envíos en equipos fuera de plan»), visible pero sin distorsionar el
+  cumplimiento. El semáforo y el doughnut de resumen ya usaban su propio agregado
+  estricto y no cambian.
+
 ## [1.41.0] - 2026-07-21
 
 **Denominador transitorio en el panel de muestra**: «¿y si contaran también los

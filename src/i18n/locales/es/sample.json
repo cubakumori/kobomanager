@@ -63,6 +63,7 @@
     "ungrouped": "Sin agrupar",
     "ungroupedHint": "La pertenencia al grupo se infiere de los envíos: un equipo sin envíos (o sin valor del campo de agrupación) queda en «Sin agrupar» hasta su primer envío.",
     "retentionNote": "Retención activa ({n} días): el panel solo cuenta los envíos retenidos en caché — lo purgado descuenta la cuota aunque siga en KoboToolbox.",
-    "denominatorToggleTitle": "Cambia temporalmente qué cuenta como «hecho» (no modifica el ajuste del plan; al recargar vuelve al configurado)."
+    "denominatorToggleTitle": "Cambia temporalmente qué cuenta como «hecho» (no modifica el ajuste del plan; al recargar vuelve al configurado).",
+    "grandOutOfPlan": "+{n} envío(s) en equipos fuera de plan (no cuentan en la barra: no tienen objetivo)"
   }
 }

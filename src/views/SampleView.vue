@@ -161,6 +161,23 @@ const groupRows = computed(() => {
 // Filas efectivas de los modos tabulares y de gráficos: equipo ⇄ meta-equipo.
 const displayTeams = computed(() => (groupOn.value ? groupRows.value : data.value?.teams ?? []))
 
+// ---------- Total general: SOLO equipos planificados ----------
+// La barra de cumplimiento compara manzanas con manzanas: Σ hecho de los equipos
+// CON plan frente a Σ objetivos (sin topar la sobre-muestra: puede superar el
+// 100 %, igual que una fila). Los equipos «fuera de plan» no entran en el
+// numerador (no participan en el denominador); su volumen se muestra aparte como
+// nota, no se esconde. Siempre sobre data.teams (con agrupado activo, igual).
+const plannedGrand = computed(() => {
+  let done = 0
+  let target = 0
+  let outOfPlanDone = 0
+  for (const tm of data.value?.teams ?? []) {
+    if (tm.out_of_plan) outOfPlanDone += tm.done
+    else { done += tm.done; target += tm.target }
+  }
+  return { done, target, pct: target > 0 ? (done * 100) / target : null, outOfPlanDone }
+})
+
 // ---------- Plegado de tarjetas de equipo (modo lineal) ----------
 // Estado efímero (se resetea al recargar: es un panel de monitoreo, no una preferencia).
 const collapsedTeams = ref(new Set())
@@ -432,16 +449,20 @@ onMounted(load)
           </div>
           <div class="mt-3">
             <div class="flex items-baseline justify-between text-sm">
-              <span class="font-semibold text-slate-900">{{ num(data.grand.done) }} / {{ num(data.grand.target) }}</span>
-              <span class="text-slate-500">{{ pct(data.grand.pct) }}</span>
+              <span class="font-semibold text-slate-900">{{ num(plannedGrand.done) }} / {{ num(plannedGrand.target) }}</span>
+              <span class="text-slate-500">{{ pct(plannedGrand.pct) }}</span>
             </div>
             <div class="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
               <div
                 class="h-full rounded-full transition-all"
-                :class="barFill((data.grand.pct ?? 0) >= 100).class"
-                :style="[barFill((data.grand.pct ?? 0) >= 100).style, { width: barWidth(data.grand.done, data.grand.target) + '%' }]"
+                :class="barFill((plannedGrand.pct ?? 0) >= 100).class"
+                :style="[barFill((plannedGrand.pct ?? 0) >= 100).style, { width: barWidth(plannedGrand.done, plannedGrand.target) + '%' }]"
               ></div>
             </div>
+            <!-- Volumen fuera de plan: visible pero fuera de la barra (no participa en el denominador) -->
+            <p v-if="plannedGrand.outOfPlanDone" class="mt-1 text-xs text-amber-600">
+              {{ $t('sample.grandOutOfPlan', { n: num(plannedGrand.outOfPlanDone) }) }}
+            </p>
           </div>
           <!-- Corte de revisión (última aprobación) + backlog actual -->
           <div class="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-slate-100 pt-3 text-xs text-slate-500">
