@@ -33,6 +33,7 @@ const blankForm = () => ({
   expose_stats: false,
   expose_attachments: false,
   expose_review_summary: false,
+  expose_sample: false,
   password: '',
   expires_at: '',
   row_filter: null,
@@ -176,6 +177,7 @@ async function onBulkCreate() {
       expose_stats: form.value.expose_stats,
       expose_attachments: canExposeAttachments.value && form.value.expose_attachments,
       expose_review_summary: canExposeReviewSummary.value && form.value.expose_review_summary,
+      expose_sample: canExposeSample.value && form.value.expose_sample,
       password: passwordPolicy.value === 'off' ? '' : form.value.password,
       expires_at: form.value.expires_at,
       row_filter: form.value.row_filter,
@@ -195,7 +197,11 @@ async function onBulkCreate() {
 const canCreate = computed(
   () =>
     form.value.form_id &&
-    (form.value.expose_list || form.value.expose_detail || form.value.expose_map || form.value.expose_stats) &&
+    (form.value.expose_list ||
+      form.value.expose_detail ||
+      form.value.expose_map ||
+      form.value.expose_stats ||
+      (canExposeSample.value && form.value.expose_sample)) &&
     !(passwordPolicy.value === 'required' && !form.value.password),
 )
 
@@ -209,6 +215,13 @@ const canExposeAttachments = computed(
 const canExposeReviewSummary = computed(() => {
   const f = forms.value.find((x) => x.id === Number(form.value.form_id))
   return !!(f && (f.stats_team_field || f.stats_enumerator_field))
+})
+
+// Panel de muestra: solo si el formulario elegido tiene campo de muestreo
+// configurado (mismo gating que el backend; sin él no hay panel que mostrar).
+const canExposeSample = computed(() => {
+  const f = forms.value.find((x) => x.id === Number(form.value.form_id))
+  return !!(f && f.sample_field)
 })
 
 async function onCreate() {
@@ -225,6 +238,7 @@ async function onCreate() {
       expose_stats: form.value.expose_stats,
       expose_attachments: canExposeAttachments.value && form.value.expose_attachments,
       expose_review_summary: canExposeReviewSummary.value && form.value.expose_review_summary,
+      expose_sample: canExposeSample.value && form.value.expose_sample,
       password: passwordPolicy.value === 'off' ? '' : form.value.password,
       expires_at: form.value.expires_at,
       row_filter: form.value.row_filter,
@@ -269,6 +283,7 @@ function exposesText(link) {
   if (link.expose_stats) parts.push(t('shares.exposeStats'))
   if (link.expose_attachments) parts.push(t('shares.exposeAttachments'))
   if (link.expose_review_summary) parts.push(t('shares.exposeReviewSummary'))
+  if (link.expose_sample) parts.push(t('shares.exposeSample'))
   return parts.join(' · ')
 }
 
@@ -620,8 +635,16 @@ onMounted(() => {
               <input type="checkbox" v-model="form.expose_review_summary" />
               {{ $t('shares.exposeReviewSummary') }}
             </label>
+            <!-- Panel de muestra: solo con campo de muestreo configurado en el formulario -->
+            <label v-if="canExposeSample" class="inline-flex items-center gap-2 text-sm" :title="$t('shares.exposeSampleHint')">
+              <input type="checkbox" v-model="form.expose_sample" />
+              {{ $t('shares.exposeSample') }}
+            </label>
           </div>
-          <p v-if="!(form.expose_list || form.expose_detail || form.expose_map || form.expose_stats)" class="mt-1 text-xs text-red-600 dark:text-red-400">
+          <p
+            v-if="!(form.expose_list || form.expose_detail || form.expose_map || form.expose_stats || (canExposeSample && form.expose_sample))"
+            class="mt-1 text-xs text-red-600 dark:text-red-400"
+          >
             {{ $t('shares.exposeAtLeastOne') }}
           </p>
           <p v-if="attachmentsPolicy === 'require_password' && form.expose_attachments && !canExposeAttachments" class="mt-1 text-xs text-amber-600 dark:text-amber-400">

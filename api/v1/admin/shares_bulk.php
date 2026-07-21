@@ -29,7 +29,7 @@ if (!$formId) {
     ErrorResponse::send('VALIDATION_ERROR', 'Falta form_id');
 }
 $form = DB::run(
-    'SELECT id, stats_team_field, stats_enumerator_field, schema_json FROM forms WHERE id = ? AND active = 1',
+    'SELECT id, stats_team_field, stats_enumerator_field, sample_field, schema_json FROM forms WHERE id = ? AND active = 1',
     [$formId]
 )->fetch();
 if (!$form) {
@@ -93,9 +93,9 @@ try {
     $stmt = $conn->prepare(
         'INSERT INTO share_links
             (token, form_id, created_by, label, expose_list, expose_detail, expose_map, expose_stats,
-             expose_attachments, expose_review_summary, row_filter, field_filter, team_filter, stats_status,
-             password_hash, expires_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+             expose_attachments, expose_review_summary, expose_sample, row_filter, field_filter, team_filter,
+             stats_status, password_hash, expires_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     foreach ($valid as $value) {
         $optLabel = trim((string) ($options[$value] ?? ''));
@@ -108,7 +108,7 @@ try {
         $stmt->execute([
             $token, $formId, $admin['id'], $label,
             $settings['expose_list'], $settings['expose_detail'], $settings['expose_map'], $settings['expose_stats'],
-            $settings['expose_attachments'], $settings['expose_review_summary'],
+            $settings['expose_attachments'], $settings['expose_review_summary'], $settings['expose_sample'],
             $rule ? json_encode($rule, JSON_UNESCAPED_UNICODE) : null,
             $settings['field_filter'], $settings['team_filter'], $settings['stats_status'],
             $settings['password_hash'], $settings['expires_at'],

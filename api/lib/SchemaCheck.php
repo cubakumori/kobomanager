@@ -246,6 +246,13 @@ class SchemaCheck {
          'fix' => "ALTER TABLE users ADD COLUMN totp_recovery_codes JSON NULL AFTER totp_enabled_at"],
         ['table' => 'users', 'column' => 'totp_last_step', 'since' => '1.39.0',
          'fix' => "ALTER TABLE users ADD COLUMN totp_last_step BIGINT UNSIGNED NULL AFTER totp_recovery_codes"],
+
+        // Panel de muestra por equipo en enlaces compartidos. Opt-in por enlace con
+        // DEFAULT 0 (como expose_review_summary): expone cumplimiento agregado
+        // hecho/objetivo, y su denominador revela recuentos agregados de revisión,
+        // así que los enlaces existentes no deben empezar a exponerlo solos.
+        ['table' => 'share_links', 'column' => 'expose_sample', 'since' => '1.45.0',
+         'fix' => "ALTER TABLE share_links ADD COLUMN expose_sample TINYINT(1) NOT NULL DEFAULT 0 AFTER expose_review_summary"],
     ];
 
     /** Columnas cuyo backfill requiere el recálculo PHP de migrate.php (no basta SQL). */

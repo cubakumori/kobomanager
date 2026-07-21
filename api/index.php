@@ -183,6 +183,7 @@ $routes = [
     'public/share/:token/map'              => 'public/share_map.php',
     'public/share/:token/stats'            => 'public/share_stats.php',
     'public/share/:token/review-summary'   => 'public/share_review_summary.php',
+    'public/share/:token/sample'           => 'public/share_sample.php',
     // Formulario de contacto público (página «Apoyar»): sin sesión.
     'public/contact'                       => 'public/contact.php',
 ];

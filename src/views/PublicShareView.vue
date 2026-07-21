@@ -9,10 +9,11 @@ import AttachmentsGallery from '../components/AttachmentsGallery.vue'
 import Skeleton from '../components/Skeleton.vue'
 import { useTableFreeze, useTableHeaderLines, usePctFormat } from '../composables/appConfig'
 
-// Leaflet y Chart.js solo se descargan si el enlace expone mapa/estadísticas
-// (chunks aparte; ambos componentes se renderizan bajo v-if).
+// Leaflet y Chart.js solo se descargan si el enlace expone mapa/estadísticas/
+// muestra (chunks aparte; los componentes se renderizan bajo v-if).
 const LeafletMap = defineAsyncComponent(() => import('../components/LeafletMap.vue'))
 const StatsPanels = defineAsyncComponent(() => import('../components/StatsPanels.vue'))
+const SamplePanel = defineAsyncComponent(() => import('../components/SamplePanel.vue'))
 
 const { t, locale } = useI18n()
 const { freezeFirst } = useTableFreeze()
@@ -45,6 +46,7 @@ const availableViews = computed(() => {
   if (meta.value?.expose_list) v.push('list')
   if (meta.value?.expose_map) v.push('map')
   if (meta.value?.expose_stats) v.push('stats')
+  if (meta.value?.expose_sample) v.push('sample')
   if (meta.value?.expose_review_summary) v.push('review')
   return v
 })
@@ -208,6 +210,23 @@ async function loadStats() {
   }
 }
 
+// ---------- panel de muestra (opt-in del enlace) ----------
+// El mismo SamplePanel de la vista interna, en modo readonly (el denominador es
+// el del plan, informativo; el toggle transitorio es herramienta del revisor).
+const sample = ref(null)
+const sampleLoading = ref(false)
+async function loadSample() {
+  sampleLoading.value = true
+  try {
+    const { data } = await publicApi.get(`/public/share/${token.value}/sample`, cfg())
+    sample.value = data.data
+  } catch {
+    sample.value = null
+  } finally {
+    sampleLoading.value = false
+  }
+}
+
 // ---------- resumen de revisión (opt-in del enlace) ----------
 // Misma presentación que la sección homónima de Control de calidad, pero con los
 // recuentos que devuelve el endpoint público (agregados; sin datos de envíos).
@@ -243,6 +262,8 @@ async function loadActiveView() {
     await loadMap()
   } else if (view.value === 'stats') {
     await loadStats()
+  } else if (view.value === 'sample') {
+    await loadSample()
   } else if (view.value === 'review') {
     await loadReview()
   } else if (meta.value?.expose_list) {
@@ -396,6 +417,15 @@ onMounted(loadMeta)
             <StatsPanels v-else-if="stats" :stats="stats" />
             <p v-else class="rounded-xl bg-white px-5 py-8 text-center text-sm text-slate-400 ring-1 ring-slate-200">
               {{ $t('stats.noData') }}
+            </p>
+          </template>
+
+          <!-- Panel de muestra (cumplimiento agregado hecho/objetivo por equipo) -->
+          <template v-else-if="view === 'sample'">
+            <Skeleton v-if="sampleLoading" variant="cards" :count="3" />
+            <SamplePanel v-else-if="sample" :data="sample" readonly />
+            <p v-else class="rounded-xl bg-white px-5 py-8 text-center text-sm text-slate-400 ring-1 ring-slate-200">
+              {{ $t('sample.noData') }}
             </p>
           </template>
 

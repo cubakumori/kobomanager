@@ -185,15 +185,23 @@ is their guard — it resolves the token, checks the requested capability, and f
 password‑protected links requires a short‑lived **HMAC ticket** (issued by the rate‑limited
 `unlock` endpoint, sent back via the `X-Share-Ticket` header **or** the `?k=` query param so
 plain `<img>`/`<audio>` requests can carry it). Out‑of‑scope or other‑form submissions return
-404; the internal review status is never exposed by default. The one **opt‑in** exception
-(1.27.0) is `expose_review_summary`: `GET /public/share/{token}/review-summary`
+404; the internal review status is never exposed by default. There are two **opt‑in**
+exceptions, both aggregate‑only and `DEFAULT 0` so existing links never start exposing
+them. `expose_review_summary` (1.27.0): `GET /public/share/{token}/review-summary`
 (`share_review_summary.php`) returns the **aggregate review‑status counts** per
 team/enumerator — no submission data — reusing `Quality::compute` with the link's row
 scope (`row_filter` AND `team_filter`, the latter via the `$extraScope` param) and
 returning only `review_summary`. It requires the form to have a team or enumerator field
 (enforced both at creation in `parseSettings()` and live in the endpoint) and deliberately
 ignores the link's `stats_status` scope — showing review progress is the whole point of
-the flag, which stays `DEFAULT 0` so existing links never start exposing it. Admin CRUD is
+the flag. `expose_sample` (1.45.0): `GET /public/share/{token}/sample` (`share_sample.php`)
+returns the **sample‑compliance panel** (aggregate done/target per team × value, backlog,
+projections) reusing `Sample::compute` with the link's row/field scope and `team_filter`;
+it requires `forms.sample_field` (same dual enforcement), always uses the **plan's
+denominator** (the internal `?denominator=` toggle is not offered publicly), counts as a
+view for the "expose at least one" rule (a sample‑only link is a first‑class use case)
+and shares the on‑disk micro‑cache pattern of `share_stats.php`. The frontend renders it
+with the same shared `SamplePanel.vue` as the internal view (readonly mode). Admin CRUD is
 in `v1/admin/shares*`; the password policy is the `share_password_policy` setting.
 
 **Bulk creation.** `POST /admin/shares/bulk` (`shares_bulk.php`) creates one link per chosen

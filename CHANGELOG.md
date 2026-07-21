@@ -4,6 +4,32 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.45.0] - 2026-07-21
+
+### Añadido
+
+- **El panel de muestra puede exponerse en enlaces públicos de solo lectura**
+  (`expose_sample`, opt-in por enlace): un coordinador sigue el cumplimiento de la
+  muestra sin cuenta — el mismo panel interno (los seis modos de vista, agrupado por
+  meta-equipo, total general, backlog y proyecciones) como pestaña «Muestra» de
+  `/s/<token>`, o como **enlace solo-muestra** (cuenta como vista propia: no hace
+  falta exponer lista ni detalle). Respeta el filtro de filas, el alcance fijo por
+  equipo y el ocultado de columnas del enlace; el denominador es SIEMPRE el del plan
+  (el toggle transitorio es herramienta del revisor interno); y como el resumen de
+  revisión, expone solo agregados (nunca envíos) y revela recuentos agregados de
+  revisión — por eso es opt-in, con contraseña/caducidad/revocación disponibles como
+  siempre. Solo se ofrece si el formulario tiene campo de muestreo configurado
+  (validado al crear y en vivo), y usa la misma micro-caché en disco que las
+  estadísticas públicas. El panel interno y el público comparten componente
+  (`SamplePanel.vue`, como `StatsPanels.vue`). Cierra el ítem nº1 de la tanda
+  jul-2026 del ROADMAP.
+
+### Actualización
+
+- Columna nueva `share_links.expose_sample` (DEFAULT 0): al actualizar una instancia
+  existente, ejecutar `php api/cli/migrate.php` (la red de seguridad de esquema la
+  detecta y la añade; los enlaces existentes no cambian de comportamiento).
+
 ## [1.44.0] - 2026-07-21
 
 ### Añadido

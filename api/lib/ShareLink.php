@@ -49,8 +49,9 @@ class ShareLink {
      * (difieren entre simple y lote).
      *
      * @return array{expose_list:int,expose_detail:int,expose_map:int,expose_stats:int,
-     *   expose_attachments:int,expose_review_summary:int,field_filter:?string,
-     *   team_filter:?string,stats_status:?string,password_hash:?string,expires_at:?string}
+     *   expose_attachments:int,expose_review_summary:int,expose_sample:int,
+     *   field_filter:?string,team_filter:?string,stats_status:?string,
+     *   password_hash:?string,expires_at:?string}
      */
     public static function parseSettings(array $body, array $form): array {
         // Qué expone el enlace (al menos uno; la lista es lo razonable por defecto).
@@ -58,7 +59,18 @@ class ShareLink {
         $exposeDetail = !empty($body['expose_detail']) ? 1 : 0;
         $exposeMap    = !empty($body['expose_map']) ? 1 : 0;
         $exposeStats  = !empty($body['expose_stats']) ? 1 : 0;
-        if (!$exposeList && !$exposeDetail && !$exposeMap && !$exposeStats) {
+
+        // Panel de muestra por equipo: opt-in explícito (su hecho/objetivo y backlog
+        // revelan recuentos agregados de revisión, como el resumen) y solo si el
+        // formulario tiene el campo de muestreo configurado (sin él no hay panel).
+        // Cuenta como vista para la regla «al menos una»: un enlace SOLO-muestra
+        // (el coordinador sigue el avance sin ver envíos) es un caso de uso pleno.
+        $exposeSample = 0;
+        if (!empty($body['expose_sample']) && !empty($form['sample_field'])) {
+            $exposeSample = 1;
+        }
+
+        if (!$exposeList && !$exposeDetail && !$exposeMap && !$exposeStats && !$exposeSample) {
             ErrorResponse::send('VALIDATION_ERROR', 'El enlace debe exponer al menos una vista');
         }
 
@@ -139,6 +151,7 @@ class ShareLink {
             'expose_stats'          => $exposeStats,
             'expose_attachments'    => $exposeAttachments,
             'expose_review_summary' => $exposeReviewSummary,
+            'expose_sample'         => $exposeSample,
             'field_filter'       => $fieldJson,
             'team_filter'        => $teamJson,
             'stats_status'       => $statsStatus,
@@ -171,7 +184,9 @@ class ShareLink {
         $row = DB::run(
             'SELECT sl.*, f.name AS form_name, f.schema_json, f.active AS form_active,
                     f.deployment_status, f.last_synced_at,
-                    f.stats_team_field, f.stats_enumerator_field
+                    f.stats_team_field, f.stats_enumerator_field,
+                    f.sample_field, f.sample_field2, f.sample_field3, f.sample_denominator,
+                    f.team_group_field, f.retention_days
              FROM share_links sl
              JOIN forms f ON f.id = sl.form_id
              WHERE sl.token = ?',
@@ -285,9 +300,9 @@ class ShareLink {
 
     /**
      * Guard común de los endpoints públicos: resuelve el token, comprueba la
-     * capacidad pedida ('list'|'detail'|'map'|'stats'|'attachments'|'review_summary')
-     * y, si el enlace tiene contraseña, exige un ticket válido. Corta con el error
-     * adecuado o devuelve la fila.
+     * capacidad pedida ('list'|'detail'|'map'|'stats'|'attachments'|'review_summary'|
+     * 'sample') y, si el enlace tiene contraseña, exige un ticket válido. Corta con
+     * el error adecuado o devuelve la fila.
      */
     public static function requireAccess(string $token, string $capability): array {
         self::throttle();
@@ -302,6 +317,7 @@ class ShareLink {
             'stats'          => 'expose_stats',
             'attachments'    => 'expose_attachments',
             'review_summary' => 'expose_review_summary',
+            'sample'         => 'expose_sample',
             default          => null,
         };
         if ($exposeCol === null || !(int) $link[$exposeCol]) {

@@ -36,6 +36,9 @@ ErrorResponse::ok([
     'expose_map'       => (bool) $link['expose_map'],
     'expose_stats'     => (bool) $link['expose_stats'],
     'expose_review_summary' => (bool) $link['expose_review_summary'],
+    // El panel de muestra exige además el campo de muestreo configurado EN VIVO
+    // (mismo criterio que su endpoint): si se desconfigura, la pestaña desaparece.
+    'expose_sample'    => (bool) $link['expose_sample'] && ($link['sample_field'] ?? '') !== '',
     // Alcance por estado del enlace ('approved' o null): la vista pública lo anuncia
     // («solo envíos aprobados») para que los recuentos no desconcierten al visitante.
     'status_scope'     => ShareLink::statusScope($link),

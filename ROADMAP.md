@@ -23,12 +23,13 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 > técnica; la organización asume la responsabilidad y el hosting) vive en
 > `my.docs/MONETIZE.md`, no aquí.
 >
-> **Próxima tanda (acordada jul-2026, tras el release 1.43.0):** (1) **enlace público de
-> solo lectura del panel de muestra** (ver «Muestra por equipo — pendientes»); (2)
-> **normalización del eje miembro/equipo de texto libre** (misma sección); (3) retomar el
-> **cifrado de campos sensibles** empezando por su sesión de diseño (sección de seguridad);
-> (4) redactar el **borrador de solicitud a OTF/OSTIF** para la auditoría externa (a partir
-> de `SECURITY.md` y las notas privadas).
+> **Próxima tanda (acordada jul-2026, tras el release 1.43.0):** (1) ~~enlace público de
+> solo lectura del panel de muestra~~ **ENTREGADO en 1.45.0** (`expose_sample` opt-in por
+> enlace; ver `CHANGELOG.md`); (2) **normalización del eje miembro/equipo de texto libre**
+> (ver «Muestra por equipo — pendientes»); (3) retomar el **cifrado de campos sensibles**
+> empezando por su sesión de diseño (sección de seguridad); (4) redactar el **borrador de
+> solicitud a OTF/OSTIF** para la auditoría externa (a partir de `SECURITY.md` y las notas
+> privadas).
 
 ---
 
@@ -241,9 +242,6 @@ Quedan como ideas reabribles si aparece una necesidad real.
       sin envíos, a costa de configuración manual; (b) el mismo test de dependencia funcional
       de «Detectar meta-equipos» podría reforzar también el eslabón `encuestador → equipo`
       (hoy sin validar). La jerarquía de N niveles sigue aparcada en «Frentes mayores».
-- [ ] **Enlace público de solo lectura del panel de muestra** *(PRÓXIMA TANDA, nº1)* — un coordinador sigue el avance
-      sin cuenta, como el resumen de revisión de los enlaces compartidos. Encaja con la
-      micro-caché en disco de `share_stats` y con el alcance fijo por equipo del enlace.
 - [ ] **Objetivos por celda para los campos secundarios** — hoy los secundarios (sexo, raza…)
       solo muestran distribución observada; una etapa 2 podría planificar también su cuota.
       *(Decisión jul-2026, propuesta del usuario)*: cuando se construya, se gobernará con un

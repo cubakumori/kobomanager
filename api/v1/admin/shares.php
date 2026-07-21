@@ -19,7 +19,7 @@ if ($method === 'GET') {
     $rows = DB::run(
         "SELECT sl.id, sl.token, sl.form_id, f.name AS form_name, sl.label,
                 sl.expose_list, sl.expose_detail, sl.expose_map, sl.expose_stats, sl.expose_attachments,
-                sl.expose_review_summary,
+                sl.expose_review_summary, sl.expose_sample,
                 sl.row_filter, sl.field_filter, sl.team_filter, sl.stats_status,
                 (sl.password_hash IS NOT NULL) AS has_password,
                 sl.expires_at, sl.revoked_at, sl.last_accessed_at, sl.access_count,
@@ -42,6 +42,7 @@ if ($method === 'GET') {
         'expose_stats'      => (bool) $r['expose_stats'],
         'expose_attachments'=> (bool) $r['expose_attachments'],
         'expose_review_summary' => (bool) $r['expose_review_summary'],
+        'expose_sample'     => (bool) $r['expose_sample'],
         'row_filter'      => RowScope::normalize($r['row_filter'] ? json_decode($r['row_filter'], true) : null),
         'field_filter'    => FieldScope::normalize($r['field_filter'] ? json_decode($r['field_filter'], true) : null),
         'team_filter'     => $r['team_filter'] ? json_decode($r['team_filter'], true) : null,
@@ -70,7 +71,7 @@ if ($method === 'POST') {
         ErrorResponse::send('VALIDATION_ERROR', 'Falta form_id');
     }
     $form = DB::run(
-        'SELECT id, stats_team_field, stats_enumerator_field FROM forms WHERE id = ? AND active = 1',
+        'SELECT id, stats_team_field, stats_enumerator_field, sample_field FROM forms WHERE id = ? AND active = 1',
         [$formId]
     )->fetch();
     if (!$form) {
@@ -90,13 +91,14 @@ if ($method === 'POST') {
     DB::run(
         'INSERT INTO share_links
             (token, form_id, created_by, label, expose_list, expose_detail, expose_map, expose_stats,
-             expose_attachments, expose_review_summary, row_filter, field_filter, team_filter, stats_status,
-             password_hash, expires_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+             expose_attachments, expose_review_summary, expose_sample, row_filter, field_filter, team_filter,
+             stats_status, password_hash, expires_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
             $token, $formId, $admin['id'], $label !== '' ? $label : null,
             $settings['expose_list'], $settings['expose_detail'], $settings['expose_map'], $settings['expose_stats'],
-            $settings['expose_attachments'], $settings['expose_review_summary'], $filterJson, $settings['field_filter'],
+            $settings['expose_attachments'], $settings['expose_review_summary'], $settings['expose_sample'],
+            $filterJson, $settings['field_filter'],
             $settings['team_filter'], $settings['stats_status'], $settings['password_hash'], $settings['expires_at'],
         ]
     );
@@ -109,6 +111,7 @@ if ($method === 'POST') {
             'exposeMap'         => $settings['expose_map'],  'exposeStats'  => $settings['expose_stats'],
             'exposeAttachments' => $settings['expose_attachments'],
             'exposeReviewSummary' => $settings['expose_review_summary'],
+            'exposeSample'      => $settings['expose_sample'],
         ],
         'has_password' => $settings['password_hash'] !== null, 'expires_at' => $settings['expires_at'],
         'stats_status' => $settings['stats_status'] ?? 'all', 'team_filter' => $settings['team_filter'] !== null,
