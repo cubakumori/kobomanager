@@ -4,6 +4,33 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.42.0] - 2026-07-21
+
+Tanda de retoques de los paneles (muestra, estadísticas y control de calidad).
+
+### Mejorado
+
+- **Panel de muestra — selector de vistas reordenado**: «Semáforo» pasa a ir junto a
+  «Mapa de calor» (son primos: la misma rejilla equipo × valor, con gradiente por %
+  uno y tres estados el otro). Orden nuevo: lineal, tabla, mapa de calor, semáforo,
+  barras, resumen.
+- **Semáforo con el % cumplido**: cada fila muestra a la derecha de su chip de total
+  el porcentaje de cumplimiento del equipo (o meta-equipo) — el extra de cifra que a
+  la rejilla le faltaba sin renunciar a su lectura de un vistazo.
+- **Barras sin encoger en pantalla estrecha**: el gráfico reserva un ancho mínimo por
+  equipo y se desplaza horizontalmente (como las tablas) en vez de comprimir todas
+  las barras hasta lo ilegible.
+- **Cifras legibles sobre los doughnuts**: las etiquetas «valor (%)» pasan a texto
+  blanco con sombra oscura, legible sobre cualquier fondo — antes, una cifra a
+  caballo entre el arco y el fondo de la página se fundía con él. Aplica a todos los
+  gráficos de anillo (resumen del panel de muestra, «Estado de revisión» y «con
+  ubicación» de Estadísticas): el plugin de etiquetas es compartido.
+- **Control de calidad — alcance como chip-botón**: las dos pastillas
+  «Pendientes/En espera | Todos» del encabezado se sustituyen por el chip-botón que
+  alterna al otro alcance con un clic (mismo lenguaje que el «Cuenta: …» del panel de
+  muestra, 1.41.0); sigue siendo transitorio y el enlace «Cambiar» del admin sigue
+  gobernando el default global.
+
 ## [1.41.0] - 2026-07-21
 
 **Denominador transitorio en el panel de muestra**: «¿y si contaran también los

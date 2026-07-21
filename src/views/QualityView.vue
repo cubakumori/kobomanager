@@ -325,30 +325,23 @@ onMounted(load)
         >
           {{ $t('stats.qualityAdjust') }}
         </RouterLink>
-        <!-- Alcance por estado de revisión: toggle transitorio de la vista (arranca en el
-             ajuste global; el enlace del admin sigue cambiando el default para todos) -->
+        <!-- Alcance por estado de revisión: chip-botón transitorio (alterna al otro
+             alcance, como el denominador del panel de muestra; arranca en el ajuste
+             global y el enlace del admin sigue cambiando el default para todos) -->
         <span class="inline-flex items-center gap-1.5">
-          {{ $t('stats.qualityScopeLabel') }}:
-          <span
-            class="inline-flex overflow-hidden rounded-md ring-1 ring-slate-300 dark:ring-slate-600"
-            role="group"
+          <button
+            type="button"
+            :aria-pressed="String(q.scope === 'all')"
             :title="$t('stats.qualityScopeToggleHint')"
+            class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+            @click="setScope(q.scope === 'all' ? 'pending_hold' : 'all')"
           >
-            <button
-              type="button"
-              class="px-2 py-0.5 font-medium"
-              :class="q.scope === 'pending_hold' ? 'bg-primary-600 text-white' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'"
-              :aria-pressed="q.scope === 'pending_hold'"
-              @click="setScope('pending_hold')"
-            >{{ $t('stats.qualityScopeTogglePending') }}</button>
-            <button
-              type="button"
-              class="px-2 py-0.5 font-medium"
-              :class="q.scope === 'all' ? 'bg-primary-600 text-white' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'"
-              :aria-pressed="q.scope === 'all'"
-              @click="setScope('all')"
-            >{{ $t('stats.qualityScopeToggleAll') }}</button>
-          </span>
+            {{ $t('stats.qualityScopeLabel') }}:
+            {{ q.scope === 'all' ? $t('stats.qualityScopeToggleAll') : $t('stats.qualityScopeTogglePending') }}
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="h-3 w-3">
+              <path fill-rule="evenodd" d="M13.2 2.24a.75.75 0 0 0 .04 1.06l2.1 1.95H6.75a.75.75 0 0 0 0 1.5h8.59l-2.1 1.95a.75.75 0 1 0 1.02 1.1l3.5-3.25a.75.75 0 0 0 0-1.1l-3.5-3.25a.75.75 0 0 0-1.06.04Zm-6.4 8a.75.75 0 0 0-1.06-.04l-3.5 3.25a.75.75 0 0 0 0 1.1l3.5 3.25a.75.75 0 1 0 1.02-1.1l-2.1-1.95h8.59a.75.75 0 0 0 0-1.5H4.66l2.1-1.95a.75.75 0 0 0 .04-1.06Z" clip-rule="evenodd" />
+            </svg>
+          </button>
           <RouterLink
             v-if="auth.isAdmin"
             :to="{ path: '/admin/settings', query: { tab: 'panels' } }"

@@ -74,12 +74,14 @@ const canSample = computed(() => {
 // ---------- Selector de tipo de vista ----------
 // Preferencia por dispositivo (no por formulario), como el tema.
 const VIEW_KEY = 'km.sample.view'
+// Orden: el semáforo va JUNTO al mapa de calor (son primos: la misma rejilla,
+// con gradiente por % uno y tres estados el otro).
 const VIEWS = [
   { key: 'linear', label: 'sample.viewLinear' },
   { key: 'table', label: 'sample.viewTable' },
   { key: 'heatmap', label: 'sample.viewHeatmap' },
-  { key: 'bars', label: 'sample.viewBars' },
   { key: 'traffic', label: 'sample.viewTraffic' },
+  { key: 'bars', label: 'sample.viewBars' },
   { key: 'summary', label: 'sample.viewSummary' },
 ]
 const storedView = localStorage.getItem(VIEW_KEY)
@@ -674,9 +676,15 @@ onMounted(load)
             </div>
           </section>
 
-          <!-- ===== Modo BARRAS: hecho vs objetivo por equipo (Chart.js) ===== -->
+          <!-- ===== Modo BARRAS: hecho vs objetivo por equipo (Chart.js). En pantalla
+               estrecha las barras NO se encogen: ancho mínimo por equipo y scroll
+               horizontal, como las tablas. ===== -->
           <section v-else-if="view === 'bars'" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <div class="h-72"><StatsChart type="bar" :data="barsData" :options="barsOptions" /></div>
+            <div class="overflow-x-auto">
+              <div class="h-72" :style="{ minWidth: `max(${displayTeams.length * 44}px, 100%)` }">
+                <StatsChart type="bar" :data="barsData" :options="barsOptions" />
+              </div>
+            </div>
           </section>
 
           <!-- ===== Modo SEMÁFORO: rejilla sin cifras, estado por celda ===== -->
@@ -704,11 +712,15 @@ onMounted(load)
                       ></span>
                     </td>
                     <td class="py-2">
-                      <span
-                        class="inline-block h-6 w-6 rounded-md"
-                        v-bind="trafficCell(row.team.target > 0 ? row.team : null)"
-                        :title="trafficTitle(row.team.target > 0 ? row.team : null, row.team.name)"
-                      ></span>
+                      <span class="inline-flex items-center gap-2">
+                        <span
+                          class="inline-block h-6 w-6 rounded-md"
+                          v-bind="trafficCell(row.team.target > 0 ? row.team : null)"
+                          :title="trafficTitle(row.team.target > 0 ? row.team : null, row.team.name)"
+                        ></span>
+                        <!-- % cumplido del total de la fila: el extra de cifra que el semáforo no da -->
+                        <span v-if="row.team.pct != null" class="text-xs tabular-nums text-slate-500">{{ pct(row.team.pct) }}</span>
+                      </span>
                     </td>
                   </tr>
                 </tbody>
