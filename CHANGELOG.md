@@ -4,6 +4,25 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.41.0] - 2026-07-21
+
+**Denominador transitorio en el panel de muestra**: «¿y si contaran también los
+pendientes?» con un clic, sin tocar el plan.
+
+### Añadido
+
+- **Chip-botón del denominador** en el «Total general» del panel de muestra: el
+  rótulo «Cuenta: solo aprobados / aprobados y pendientes» ahora alterna
+  TEMPORALMENTE entre ambos denominadores al hacer clic (icono ⇄ y tooltip). Es el
+  mismo patrón que el alcance transitorio del Control de calidad (1.27.0):
+  `GET /forms/{id}/sample?denominator=approved|approved_pending` sustituye
+  `forms.sample_denominator` **solo para esa petición** — nada se escribe, el ajuste
+  del plan sigue mandando para todo el mundo y al recargar se vuelve al configurado.
+  Como lo aplica el backend, toda la vista reacciona en la misma recarga: celdas,
+  proyecciones, semáforo, resumen y el agrupado por meta-equipo (recuerda la
+  semántica deliberada de 1.37.0: con «aprobados y pendientes», un pendiente cuenta
+  como hecho Y sigue apareciendo en el backlog). Sin cambio de esquema.
+
 ## [1.40.0] - 2026-07-20
 
 **Retención y borrado de envíos en la caché local** (minimización de datos), por

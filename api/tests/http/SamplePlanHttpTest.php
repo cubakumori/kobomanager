@@ -191,6 +191,47 @@ final class SamplePlanHttpTest extends HttpTestCase
         @unlink($jar);
     }
 
+    public function testPanelDenominatorTransientOverride(): void
+    {
+        $userId = $this->seedUser('admin', 'sp_admin4@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $formId = $this->seedForm($accId, null, $this->schemaJson());
+        $jar = $this->login('sp_admin4@test.local', 'Secret123!');
+
+        // Plan con denominador 'approved' + un envío APROBADO y otro PENDIENTE.
+        $this->request('PUT', "admin/forms/$formId/sample-plan", [
+            'sample_field' => 'age', 'denominator' => 'approved',
+            'cells' => [['team_value' => 't1', 'sample_value' => 'a1', 'target' => 10]],
+        ], $jar);
+        foreach ([['u_ok', 'approved'], ['u_pend', 'pending']] as [$uid, $status]) {
+            DB::run(
+                'INSERT INTO submissions_cache (form_id, submission_uid, json_payload, submitted_at, review_status, last_synced_at)
+                 VALUES (?, ?, ?, UTC_TIMESTAMP(), ?, NOW())',
+                [$formId, $uid, json_encode(['team' => 't1', 'age' => 'a1']), $status]
+            );
+        }
+
+        // Sin parámetro: manda el denominador del plan (solo el aprobado cuenta).
+        $res = $this->request('GET', "forms/$formId/sample", null, $jar);
+        $this->assertSame('approved', $res['json']['data']['denominator']);
+        $this->assertSame(1, $res['json']['data']['grand']['done']);
+
+        // Override transitorio: el pendiente también cuenta, y el efectivo viaja.
+        $res = $this->request('GET', "forms/$formId/sample?denominator=approved_pending", null, $jar);
+        $this->assertSame('approved_pending', $res['json']['data']['denominator']);
+        $this->assertSame(2, $res['json']['data']['grand']['done']);
+
+        // Nada se escribió: el ajuste del plan sigue siendo 'approved'.
+        $row = DB::run('SELECT sample_denominator FROM forms WHERE id = ?', [$formId])->fetch();
+        $this->assertSame('approved', $row['sample_denominator']);
+
+        // Valor no válido → se ignora (cae al del plan, sin 500 ni 422).
+        $res = $this->request('GET', "forms/$formId/sample?denominator=nope", null, $jar);
+        $this->assertSame(200, $res['status'], $res['raw']);
+        $this->assertSame('approved', $res['json']['data']['denominator']);
+        @unlink($jar);
+    }
+
     public function testPanelNotConfiguredWhenNoSampleField(): void
     {
         $userId = $this->seedUser('admin', 'sp_admin3@test.local', 'Secret123!');

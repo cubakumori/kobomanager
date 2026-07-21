@@ -62,6 +62,7 @@
     "groupTeamCount": "{n} team(s)",
     "ungrouped": "Ungrouped",
     "ungroupedHint": "Group membership is inferred from submissions: a team with no submissions (or no value for the grouping field) stays under “Ungrouped” until its first submission.",
-    "retentionNote": "Retention active ({n} days): the panel only counts submissions retained in the cache — purged ones subtract from the quota even though they remain in KoboToolbox."
+    "retentionNote": "Retention active ({n} days): the panel only counts submissions retained in the cache — purged ones subtract from the quota even though they remain in KoboToolbox.",
+    "denominatorToggleTitle": "Temporarily switch what counts as “done” (does not change the plan setting; reloading returns to the configured one)."
   }
 }

@@ -10,6 +10,11 @@
  * columnas. NO se cachea (igual que forms/stats.php): el alcance es por-usuario y
  * el denominador depende del estado de revisión, que cambia en la app entre syncs.
  * El enlace público de solo lectura (con su micro-caché) es una 2ª iteración.
+ *
+ * `?denominator=approved|approved_pending` sustituye `forms.sample_denominator`
+ * SOLO para esta petición (toggle transitorio de la vista, espejo del `?scope=`
+ * del control de calidad): nada se escribe ni pide permiso extra; la respuesta
+ * lleva siempre el denominador EFECTIVO aplicado.
  */
 
 $user   = Auth::require();
@@ -53,11 +58,18 @@ $fieldScope = FieldScope::ruleForUser($user, $formId);
 $schemaRaw  = $form['schema_json'] ? json_decode($form['schema_json'], true) : null;
 $secondary  = array_values(array_filter([$form['sample_field2'], $form['sample_field3']], fn($v) => $v !== null && $v !== ''));
 
+// Denominador efectivo: el del plan, salvo override transitorio válido en `?denominator=`.
+$denominator = (string) $form['sample_denominator'];
+$denomParam  = (string) ($_GET['denominator'] ?? '');
+if (in_array($denomParam, ['approved', 'approved_pending'], true)) {
+    $denominator = $denomParam;
+}
+
 $sample = Sample::compute(
     $formId, $schemaRaw, $scope, $fieldScope, $user['locale'],
     $form['stats_team_field'] ?: null,
     (string) $form['sample_field'],
-    (string) $form['sample_denominator'],
+    $denominator,
     $secondary,
     null, null,
     $form['team_group_field'] ?: null

@@ -31,17 +31,31 @@ const data = ref(null)
 const loading = ref(true)
 const error = ref('')
 
+// Denominador transitorio (null = el del plan): «¿y si contaran también los
+// pendientes?» sin tocar el ajuste — mismo patrón que el `?scope=` del control de
+// calidad. El backend lo aplica solo a esa petición y devuelve el EFECTIVO.
+const denominatorOverride = ref(null)
+
 async function load() {
   loading.value = true
   error.value = ''
   try {
-    const res = await api.get(`/forms/${formId.value}/sample`)
+    const params = denominatorOverride.value ? { denominator: denominatorOverride.value } : {}
+    const res = await api.get(`/forms/${formId.value}/sample`, { params })
     data.value = res.data.data
   } catch (e) {
     error.value = apiError(e, t('sample.loadError'))
   } finally {
     loading.value = false
   }
+}
+
+// Alterna al denominador contrario del EFECTIVO actual y recarga (todo reacciona:
+// celdas, proyecciones, semáforo, resumen y el agrupado por meta-equipo).
+function toggleDenominator() {
+  if (loading.value || !data.value) return
+  denominatorOverride.value = data.value.denominator === 'approved' ? 'approved_pending' : 'approved'
+  load()
 }
 
 const num = (n) => (n ?? 0).toLocaleString(locale.value)
@@ -399,9 +413,20 @@ onMounted(load)
         <section class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <div class="flex flex-wrap items-baseline justify-between gap-2">
             <h2 class="font-semibold text-slate-900">{{ $t('sample.grandTotal') }}</h2>
-            <span class="text-xs uppercase tracking-wider text-slate-400">
+            <!-- Chip-botón: alterna TEMPORALMENTE el denominador (no toca el plan) -->
+            <button
+              type="button"
+              :disabled="loading"
+              :aria-pressed="String(data.denominator === 'approved_pending')"
+              :title="$t('sample.denominatorToggleTitle')"
+              class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs uppercase tracking-wider text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:cursor-wait dark:hover:bg-slate-800"
+              @click="toggleDenominator"
+            >
               {{ data.denominator === 'approved_pending' ? $t('sample.denominatorApprovedPending') : $t('sample.denominatorApproved') }}
-            </span>
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="h-3 w-3">
+                <path fill-rule="evenodd" d="M13.2 2.24a.75.75 0 0 0 .04 1.06l2.1 1.95H6.75a.75.75 0 0 0 0 1.5h8.59l-2.1 1.95a.75.75 0 1 0 1.02 1.1l3.5-3.25a.75.75 0 0 0 0-1.1l-3.5-3.25a.75.75 0 0 0-1.06.04Zm-6.4 8a.75.75 0 0 0-1.06-.04l-3.5 3.25a.75.75 0 0 0 0 1.1l3.5 3.25a.75.75 0 1 0 1.02-1.1l-2.1-1.95h8.59a.75.75 0 0 0 0-1.5H4.66l2.1-1.95a.75.75 0 0 0 .04-1.06Z" clip-rule="evenodd" />
+              </svg>
+            </button>
           </div>
           <div class="mt-3">
             <div class="flex items-baseline justify-between text-sm">
