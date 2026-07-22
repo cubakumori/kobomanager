@@ -30,6 +30,13 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 > **cifrado de campos sensibles** empezando por su sesión de diseño (sección de
 > seguridad); (4) redactar el **borrador de solicitud a OTF/OSTIF** para la auditoría
 > externa (a partir de `SECURITY.md` y las notas privadas).
+>
+> **Acordados además (jul-2026, propuestas del usuario tras su revisión de 1.46.x;
+> orden respecto a nº3/nº4 a su criterio):** (5) **incongruencias equipo ↔ meta-equipo
+> visibles y resolubles desde el QC** (detección accesible + resolución guiada — ver
+> «Control de calidad — extensiones diferidas»); (6) **comentarios generales por equipo
+> en el QC** (nota por equipo y fecha desde la propia página, visible en Comentarios —
+> misma sección).
 
 ---
 
@@ -99,6 +106,27 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       voltear la bandera de otro envío), así que persistirlas sería una vista materializada
       con recálculo en cada sync + edición de umbrales. Este hito (histórico por naturaleza,
       `source='auto'`) es el único donde persistir empezaría a valer la pena.
+- [ ] **Incongruencias equipo ↔ meta-equipo, visibles y resolubles desde el QC**
+      *(**ACORDADO jul-2026**, propuesta del usuario; solo con `team_group_field`
+      configurado)* — el chequeo «Detectar problemas» de los ajustes del formulario
+      (equipos cuyos envíos apuntan a más de un meta-equipo: código de equipo o de
+      provincia mal tecleado) vive hoy escondido en Ajustes. Dos piezas:
+      - **(a) Exponer la detección en la página de Control de calidad** (más a mano
+        para el flujo diario): una tarjeta/aviso con los conflictos del chequeo
+        existente (`admin/forms/:id/team-group`). Decidir permiso: el endpoint actual
+        es de admin — la sección en QC puede limitarse a admin/`can_settings`, o ganar
+        una variante de solo lectura para `can_view`.
+      - **(b) Resolución GUIADA de cada incongruencia** — NO un auto-fix ciego: la
+        dirección del arreglo es ambigua (una provincia tiene varios equipos, así que
+        el código de equipo «correcto» no se deduce solo de la provincia; lo
+        determinista es lo contrario: corregir el meta-equipo al dominante del equipo).
+        Modal por conflicto que muestra los envíos discrepantes y ofrece (1) corregir
+        la provincia al dominante del equipo (un clic, determinista) o (2) corregir el
+        código de equipo eligiendo entre los equipos de esa provincia (elige el humano;
+        sugerencia si hay candidato único). Aplica por el flujo de **edición real** ya
+        existente (PATCH a Kobo con migración de `_uuid`, arrastre de revisiones y
+        auditoría — 1.9.x); confirmación explícita siempre, nunca automático en
+        silencio, y respetando `viewer_can_edit`/permisos de edición.
 - [ ] **Horario admisible de trabajo** (franja horaria por formulario, evaluada en
       `APP_TIMEZONE`): encuestas iniciadas de madrugada como bandera propia.
 - [ ] **Velocidad imposible entre puntos geo consecutivos** del mismo encuestador
@@ -109,14 +137,20 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       señal dudosa con cuestionarios cortos y umbral difícil. La variante fuerte,
       **duplicados exactos de respuestas** (a nivel de formulario, solo contenido),
       quedó **entregada en 1.22.0**.
-- [ ] **Comentarios generales / por grupo / por miembro** *(Fase 2 del panel de
-      comentarios; la Fase 1 —panel de los comentarios de revisión existentes por
-      envío— se entregó en 1.25.0)*: comentarios **desligados de un envío** (una nota
-      para todo un equipo o un encuestador). Es un tipo de dato nuevo: tabla
-      `form_comments` (`scope_type: general|team|enumerator`, `scope_value`, autor,
-      cuerpo, fecha) → SchemaCheck + nota de upgrade, UI de escritura, permisos de
-      escritura (¿`can_validate`?) y decisiones de edición/borrado. Hito propio cuando
-      haya demanda.
+- [ ] **Comentarios generales por equipo en el Control de calidad** *(Fase 2 del panel
+      de comentarios; la Fase 1 —panel de los comentarios de revisión existentes por
+      envío— se entregó en 1.25.0. **ACORDADO jul-2026**, propuesta del usuario: la
+      demanda que faltaba, con v1 concreta)*: comentarios **desligados de un envío**.
+      V1 acordada: un **icono en el bloque de cada equipo** de la página de QC (junto a
+      los lotes por equipo de 1.44.0) abre un modal para dejar una **nota asociada al
+      equipo y la fecha** — p. ej. la acción general tomada («puestas en espera todas
+      las no admitidas de hoy; revisar el lunes»). Las notas aparecen también en la
+      página de **Comentarios** del formulario (sección propia «Generales», junto a los
+      comentarios por envío). Implementación: tabla `form_comments`
+      (`scope_type: general|team|enumerator`, `scope_value`, autor, cuerpo, fecha) →
+      SchemaCheck + nota de upgrade; escribir = `can_validate` (acompaña acciones de
+      revisión); decidir edición/borrado (¿autor y admin?). Los alcances `general` y
+      `enumerator` pueden esperar a una iteración posterior si la v1 se queda en equipo.
 - [ ] **Índice de riesgo — Fase 2 e histórico** *(la Fase 1 —percentmatch, señales
       relativas a pares, índice explicado por encuestador y equipo, opt-in
       `forms.risk_min_n`— se entregó en 1.23.0)*:
