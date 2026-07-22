@@ -117,14 +117,16 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
         es de admin — la sección en QC puede limitarse a admin/`can_settings`, o ganar
         una variante de solo lectura para `can_view`.
       - **(b) Resolución de incongruencias, con desempate por ENCUESTADOR** *(diseño
-        refinado por el usuario)* — el meta-equipo solo no determina el equipo (una
-        provincia tiene varios), pero el **código de encuestador** sí: se busca a qué
-        equipo del meta-equipo correcto pertenece el encuestador del envío (misma
-        dependencia funcional encuestador → equipo, casando el valor con la
-        normalización/alias de 1.46.0). El mismo desempate puede decidir la
-        **dirección** del arreglo: si el encuestador pertenece a un equipo de la
-        provincia del envío, lo mal tecleado fue el equipo; si pertenece al equipo que
-        dice el envío, lo mal tecleado fue la provincia. Ajuste por formulario
+        refinado por el usuario)* — la dirección por defecto es **corregir el EQUIPO
+        dando por bueno el meta-equipo**: el meta-equipo suele ser un `select_one`
+        (elegido, no tecleado), así que es el lado fiable; corregirlo a él queda solo
+        como opción manual para el caso raro (mal clic en el select o meta-equipo de
+        texto libre). El meta-equipo solo no determina el equipo (una provincia tiene
+        varios), pero el **código de encuestador** sí: se busca a qué equipo del
+        meta-equipo del envío pertenece el encuestador (misma dependencia funcional
+        encuestador → equipo, casando el valor con la normalización/alias de 1.46.0 —
+        clave aquí, porque el campo de encuestador es el que suele ser texto libre).
+        Ajuste por formulario
         **«Resolución de incongruencias equipo ↔ meta-equipo»** con modos:
         1. **Automático — mejor aproximación**: desempate por encuestador; lo no
            resuelto cae a confirmación particular.
