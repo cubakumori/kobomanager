@@ -273,6 +273,12 @@ class SchemaCheck {
         // select_one y _submitted_by); el CHANGELOG lo anuncia y 'raw' restaura lo clásico.
         ['table' => 'forms', 'column' => 'member_normalize', 'since' => '1.46.0',
          'fix' => "ALTER TABLE forms ADD COLUMN member_normalize VARCHAR(16) NOT NULL DEFAULT 'normalize' AFTER retention_days"],
+
+        // Modo de resolución de incongruencias equipo↔meta-equipo del QC (ver
+        // lib/TeamConflicts). DEFAULT 'approx' inocuo: el modo solo gobierna qué
+        // PROPONE la tarjeta; nada se escribe sin confirmación del usuario.
+        ['table' => 'forms', 'column' => 'team_conflict_mode', 'since' => '1.47.0',
+         'fix' => "ALTER TABLE forms ADD COLUMN team_conflict_mode VARCHAR(16) NOT NULL DEFAULT 'approx' AFTER member_normalize"],
     ];
 
     /** Columnas cuyo backfill requiere el recálculo PHP de migrate.php (no basta SQL). */

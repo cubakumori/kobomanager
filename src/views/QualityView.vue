@@ -15,6 +15,7 @@ import { fmtDuration } from '../composables/derived'
 import { usePctFormat } from '../composables/appConfig'
 import Skeleton from '../components/Skeleton.vue'
 import ReviewBadge from '../components/ReviewBadge.vue'
+import TeamConflictPanel from '../components/TeamConflictPanel.vue'
 import StatsChart from '../components/StatsChart.vue'
 import Modal from '../components/Modal.vue'
 
@@ -419,6 +420,11 @@ onMounted(load)
           >{{ $t('stats.qualityScopeChange') }}</RouterLink>
         </span>
       </div>
+
+      <!-- Incongruencias equipo ↔ meta-equipo (solo con team_group_field y permiso
+           «Ajustes»: el panel se carga y se oculta solo). Resolverlas cambia los
+           equipos de envíos reales → al aplicar se recarga el análisis entero. -->
+      <TeamConflictPanel v-if="q.can_settings" :form-id="formId" @changed="load" />
 
       <!-- Recuento general: evaluadas, no admitidas y las banderas activas -->
       <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">

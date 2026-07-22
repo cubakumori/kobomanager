@@ -35,6 +35,8 @@ require __DIR__ . '/lib/MemberNorm.php';
 require __DIR__ . '/lib/Stats.php';
 require __DIR__ . '/lib/Sample.php';
 require __DIR__ . '/lib/TeamGroups.php';
+require __DIR__ . '/lib/TeamConflicts.php';
+require __DIR__ . '/lib/SubmissionEdit.php';
 require __DIR__ . '/lib/Quality.php';
 require __DIR__ . '/lib/Risk.php';
 require __DIR__ . '/lib/Comments.php';
@@ -164,6 +166,7 @@ $routes = [
     'forms/:id/stats'           => 'forms/stats.php',
     'forms/:id/sample'          => 'forms/sample.php',
     'forms/:id/quality'         => 'forms/quality.php',
+    'forms/:id/team-conflicts'  => 'forms/team_conflicts.php',
     'forms/:id/quality/suggest' => 'forms/quality_suggest.php',
     'forms/:id/quality/export'  => 'forms/quality_export.php',
     'forms/:id/risk'            => 'forms/risk.php',

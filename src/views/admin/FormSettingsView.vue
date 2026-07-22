@@ -47,6 +47,10 @@ const retentionDays = ref('')
 // gobierna la clave de agrupación de las vistas (solo lectura, reversible). Solo
 // se ofrece si algún eje elegido es texto/metadato (en select_one es un no-op).
 const memberNormalize = ref('normalize')
+// Resolución de incongruencias equipo↔meta-equipo (tarjeta del QC): solo elige
+// cómo PROPONE — nada se escribe sin confirmación (ver lib/TeamConflicts).
+const teamConflictMode = ref('approx')
+const CONFLICT_MODES = ['approx', 'first', 'least', 'confirm_group', 'confirm_each']
 // Tabla de alias (modo 'alias'): filas {axis:'member'|'team', from, to}.
 const aliases = ref([])
 const savingAliases = ref(false)
@@ -85,6 +89,7 @@ async function load() {
     riskMinN.value = cfg.data.data.risk_min_n ?? ''
     retentionDays.value = cfg.data.data.retention_days ?? ''
     memberNormalize.value = cfg.data.data.member_normalize || 'normalize'
+    teamConflictMode.value = cfg.data.data.team_conflict_mode || 'approx'
     canSample.value = !!cfg.data.data.can_sample
     sampleTargetCount.value = cfg.data.data.sample_target_count ?? 0
     savedTeamField.value = teamField.value
@@ -287,6 +292,7 @@ async function save() {
       risk_min_n: minutes(riskMinN.value),
       retention_days: minutes(retentionDays.value),
       member_normalize: memberNormalize.value,
+      team_conflict_mode: teamConflictMode.value,
     })
     flash.value = t('formSettings.saved')
     savedTeamField.value = teamField.value
@@ -406,6 +412,20 @@ onMounted(load)
             </button>
           </div>
         </div>
+
+        <!-- Modo de resolución de incongruencias (la tarjeta del QC propone según esto) -->
+        <label v-if="groupField" class="mt-4 block sm:max-w-sm">
+          <span class="text-sm font-medium text-slate-700">{{ $t('formSettings.conflictMode') }}</span>
+          <select
+            v-model="teamConflictMode"
+            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
+          >
+            <option v-for="m in CONFLICT_MODES" :key="m" :value="m">{{ $t('formSettings.conflictMode_' + m) }}</option>
+          </select>
+          <span class="mt-1 block text-xs text-slate-400">
+            {{ $t('formSettings.conflictModeHint_' + teamConflictMode) }} {{ $t('formSettings.conflictModeHint') }}
+          </span>
+        </label>
 
         <!-- Resultado de «Detectar meta-equipos»: candidatos rankeados, clic = elegir -->
         <div v-if="suggestResult" class="mt-3 rounded-lg bg-slate-50 p-3 text-sm ring-1 ring-slate-200 dark:bg-slate-800/40 dark:ring-slate-700">

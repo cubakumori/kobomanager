@@ -32,9 +32,10 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 > externa (a partir de `SECURITY.md` y las notas privadas).
 >
 > **Acordados además (jul-2026, propuestas del usuario tras su revisión de 1.46.x;
-> orden respecto a nº3/nº4 a su criterio):** (5) **incongruencias equipo ↔ meta-equipo
-> visibles y resolubles desde el QC** (detección accesible + resolución guiada — ver
-> «Control de calidad — extensiones diferidas»); (6) **comentarios generales por equipo
+> orden respecto a nº3/nº4 a su criterio):** (5) ~~incongruencias equipo ↔ meta-equipo
+> visibles y resolubles desde el QC~~ **ENTREGADA en 1.47.0** (tarjeta en el QC +
+> resolución con desempate por encuestador y los cinco modos; ver `CHANGELOG.md`);
+> (6) **comentarios generales por equipo
 > en el QC** (nota por equipo y fecha desde la propia página, visible en Comentarios —
 > misma sección).
 
@@ -106,7 +107,13 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       voltear la bandera de otro envío), así que persistirlas sería una vista materializada
       con recálculo en cada sync + edición de umbrales. Este hito (histórico por naturaleza,
       `source='auto'`) es el único donde persistir empezaría a valer la pena.
-- [ ] **Incongruencias equipo ↔ meta-equipo, visibles y resolubles desde el QC**
+- [x] **Incongruencias equipo ↔ meta-equipo, visibles y resolubles desde el QC** —
+      **ENTREGADA en 1.47.0** tal como se diseñó (tarjeta en el QC con permiso
+      «Ajustes», resolución por el flujo de edición real con `can_edit`, desempate
+      por encuestador aprendido solo de filas consistentes y casado con la
+      normalización/alias, cinco modos en `forms.team_conflict_mode`, resumen por
+      tanda en los automáticos, opción manual «corregir el meta-equipo» caso a caso,
+      bloqueada en demo). Ver `CHANGELOG.md` [1.47.0]. *Diseño original:*
       *(**ACORDADO jul-2026**, propuesta del usuario; solo con `team_group_field`
       configurado)* — el chequeo «Detectar problemas» de los ajustes del formulario
       (equipos cuyos envíos apuntan a más de un meta-equipo: código de equipo o de

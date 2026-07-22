@@ -161,6 +161,17 @@ CREATE TABLE IF NOT EXISTS forms (
     --   'alias'     = además re-mapea variantes vía member_aliases («jlvh» → «JLHV»)
     -- No muta datos (solo agrupación en lectura, reversible); en select_one es un no-op.
     member_normalize    VARCHAR(16) NOT NULL DEFAULT 'normalize',
+    -- RESOLUCIÓN de incongruencias equipo ↔ meta-equipo desde el Control de calidad
+    -- (equipos cuyos envíos apuntan a >1 valor de team_group_field) — ver
+    -- lib/TeamConflicts. Elige cómo PROPONE la tarjeta del QC; nada se escribe sin
+    -- confirmación del usuario y el disparo es siempre manual:
+    --   'approx'        = (default) desempate por encuestador; lo no resuelto cae a
+    --                     confirmación particular
+    --   'first'         = primer equipo (alfabético) del meta-equipo correcto
+    --   'least'         = equipo con menos encuestas del meta-equipo correcto
+    --   'confirm_group' = un equipo elegido a mano para todos los casos del meta-equipo
+    --   'confirm_each'  = confirmación caso a caso
+    team_conflict_mode  VARCHAR(16) NOT NULL DEFAULT 'approx',
     sync_status         ENUM('pending', 'success', 'error') DEFAULT 'pending',
     last_sync_error     TEXT,
     active              TINYINT(1) DEFAULT 1,

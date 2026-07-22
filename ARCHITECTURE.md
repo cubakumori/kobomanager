@@ -521,6 +521,21 @@ to a new one (key rotation; see `DEPLOY.md §12`).
     (dominant value + strays) as a data‑quality warning. The algorithm **proposes/validates,
     never dictates**: the SELECT lists every valid‑type candidate, and insufficient data reports
     itself instead of blocking.
+  - **Team↔meta‑team mismatch resolution** (1.47.0): `lib/TeamConflicts.php` via
+    `forms/{id}/team-conflicts` surfaces those conflicts as a card on the **Quality control**
+    page (GET plan with settings permission; card component `TeamConflictPanel.vue`) and
+    resolves them. Default direction: **fix the TEAM trusting the meta‑team** (a `select_one`
+    is picked, not typed — the reliable side); since the meta‑team alone doesn't determine the
+    team, the tie‑break is the **enumerator code** (functional dependency enumerator → team
+    learned only from *consistent* rows, folded with the 1.46.0 normalization/alias — the
+    enumerator axis folds globally here, chasing the person across teams). Five per‑form modes
+    in `forms.team_conflict_mode` (`approx` default / `first` / `least` / `confirm_group` /
+    `confirm_each`); automatic modes always show a **batch summary** (one OK, never invisible
+    writes), the trigger is always manual from the card, and the rare manual option fixes the
+    meta‑team instead. Applying (POST, ≤50 changes, edit permission; demo‑blocked) runs each
+    change through the shared real‑edit core `lib/SubmissionEdit.php` (extracted from the PUT
+    of `submissions/{id}`): Kobo PATCH → new `_uuid` migration → review‑history carry‑over →
+    audit per edit, plus a `resolve_team_conflicts` batch summary entry.
 - **Quality control** (`lib/Quality.php`, `v1/forms/quality.php`, view `QualityView.vue` at
   `forms/{id}/quality`): flags submissions outside the form's admissible thresholds — four
   per‑form columns edited from the same settings screen (`forms.qc_min_duration` /

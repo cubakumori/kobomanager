@@ -92,6 +92,8 @@ class Demo {
         'admin/db/import'          => ['POST'],
         // Edición de envíos: escribe en la cuenta Kobo real.
         'submissions/:id'          => ['PUT'],
+        // Resolución de incongruencias equipo↔meta-equipo: edición en lote (Kobo real).
+        'forms/:id/team-conflicts' => ['POST'],
         // Sync manual contra Kobo (los cron del servidor siguen activos).
         'admin/forms/sync'         => ['POST'],
         'admin/forms/:id/sync'     => ['POST'],

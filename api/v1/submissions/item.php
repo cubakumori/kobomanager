@@ -136,12 +136,6 @@ if ($method === 'PUT') {
         }
     }
 
-    $payload = json_decode($sub['json_payload'], true) ?: [];
-    $koboId  = $payload['_id'] ?? null;
-    if (!$koboId) {
-        ErrorResponse::send('INTERNAL_ERROR', 'El envío en caché no tiene _id de Kobo');
-    }
-
     // Cuenta + token para escribir en Kobo.
     $acc = DB::run(
         'SELECT server_url, api_token FROM kobo_accounts WHERE id = ?',
@@ -151,72 +145,20 @@ if ($method === 'PUT') {
         ErrorResponse::send('KOBO_ACCOUNT_DISABLED', 'La cuenta Kobo no existe');
     }
 
-    // Valores anteriores (para auditoría).
-    $before = [];
-    foreach ($data as $k => $v) {
-        $before[$k] = $payload[$k] ?? null;
-    }
-
-    // 1) Escribir en Kobo (lanza KoboException si falla).
-    //    Una edición en Kobo crea una versión nueva con un _uuid NUEVO (el _id
-    //    numérico se conserva); editSubmission devuelve ese _uuid resultante.
+    // Núcleo compartido de la edición real (lib/SubmissionEdit): PATCH a Kobo,
+    // migración del _uuid nuevo, arrastre de revisiones y auditoría.
     $client = new KoboClient($acc['server_url'], TokenVault::decrypt($acc['api_token']));
     try {
-        $newUuid = $client->editSubmission($sub['kobo_asset_uid'], (int) $koboId, $data);
+        $res = SubmissionEdit::apply($sub, $data, $client, (int) $user['id'], $formId);
     } catch (KoboException $e) {
         ErrorResponse::send($e->errorCode, $e->getMessage());
+    } catch (RuntimeException $e) {
+        ErrorResponse::send('INTERNAL_ERROR', $e->getMessage());
     }
-
-    // 2) Solo si Kobo aceptó, actualizar la caché.
-    foreach ($data as $k => $v) {
-        $payload[$k] = $v;
-    }
-
-    // Si el _uuid cambió, migramos la clave de caché y arrastramos el historial de
-    // revisiones (indexado por submission_uid = _uuid) para no perderlo en el
-    // próximo resync `full` (que reconcilia por _uuid y borraría la fila antigua).
-    $changedUuid = ($newUuid !== '' && $newUuid !== $uid);
-    if ($changedUuid) {
-        $payload['_uuid'] = $newUuid;
-    }
-
-    $conn = DB::conn();
-    $conn->beginTransaction();
-    try {
-        // La edición puede cambiar campos que alimentan las columnas materializadas
-        // (p. ej. un geopoint) → se recalculan junto con el payload.
-        $cc = Derived::cacheColumns($payload, $schemaRaw);
-        DB::run(
-            'UPDATE submissions_cache SET submission_uid = ?, json_payload = ?, search_text = ?,
-                    kobo_id = ?, duration_s = ?, att_count = ?, has_geo = ?
-             WHERE id = ?',
-            [
-                $changedUuid ? $newUuid : $uid,
-                json_encode($payload, JSON_UNESCAPED_UNICODE),
-                SubmissionSearch::textFor($payload, FormSchema::searchOptionLabels($schemaRaw)),
-                $cc['kobo_id'], $cc['duration_s'], $cc['att_count'], $cc['has_geo'],
-                $sub['id'],
-            ]
-        );
-        if ($changedUuid) {
-            DB::run(
-                'UPDATE submission_reviews SET submission_uid = ? WHERE submission_uid = ?',
-                [$newUuid, $uid]
-            );
-        }
-        $conn->commit();
-    } catch (\Throwable $e) {
-        $conn->rollBack();
-        // Kobo ya aceptó el cambio; informamos del fallo de caché para que el usuario
-        // resincronice (la edición en Kobo es real).
-        ErrorResponse::send('INTERNAL_ERROR', 'La edición se guardó en Kobo pero falló la actualización de la caché local');
-    }
-
-    Audit::log($user['id'], 'edit', $formId, $uid, ['before' => $before, 'after' => $data, 'new_uid' => $changedUuid ? $newUuid : null]);
 
     ErrorResponse::ok([
-        'data'           => $payload,
-        'submission_uid' => $changedUuid ? $newUuid : $uid,
+        'data'           => $res['data'],
+        'submission_uid' => $res['submission_uid'],
     ]);
 }
 

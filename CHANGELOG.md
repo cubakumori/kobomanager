@@ -4,6 +4,46 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.47.0] - 2026-07-22
+
+### Añadido
+
+- **Incongruencias equipo ↔ meta-equipo, visibles y resolubles desde el Control de
+  calidad** (ítem nº5 de la tanda jul-2026; diseño refinado por el usuario): el
+  chequeo «Detectar problemas» de los ajustes (equipos cuyos envíos apuntan a más de
+  un meta-equipo) vivía escondido en Ajustes; ahora una **tarjeta en la página de QC**
+  (visible con permiso «Ajustes» y `team_group_field` configurado) muestra los
+  conflictos y permite **resolverlos**. La dirección por defecto **corrige el EQUIPO
+  dando por bueno el meta-equipo** (un `select_one` elegido, no tecleado: el lado
+  fiable); como el meta-equipo solo no determina el equipo, el **desempate es por
+  CÓDIGO DE ENCUESTADOR** (dependencia funcional encuestador → equipo, aprendida solo
+  de las filas consistentes y casada con la normalización/alias de 1.46.0 — clave con
+  encuestadores de texto libre). Ajuste por formulario con **cinco modos**:
+  - **Automático — mejor aproximación** *(default)*: desempate por encuestador; lo no
+    resuelto (empate o encuestador desconocido) cae a confirmación caso a caso.
+  - **Automático — primer equipo** (alfabético) del meta-equipo correcto.
+  - **Automático — equipo con menos encuestas** del meta-equipo correcto.
+  - **Semi-automático — confirmación general**: un modal elige UN equipo para todos
+    los casos de cada meta-equipo.
+  - **Confirmación particular**: modal por caso, con el desempate por encuestador
+    solo PREseleccionado y la opción manual rara de **corregir el meta-equipo**
+    (mal clic en el select) al valor dominante del equipo.
+  Salvaguardas: el disparo es **siempre manual** desde la tarjeta (nunca en el sync);
+  los modos automáticos muestran **confirmación de resumen por tanda** (la lista de
+  cambios, un solo OK — nunca escritura invisible); y cada corrección aplica por el
+  **flujo de edición real** (PATCH a KoboToolbox con migración de `_uuid`, arrastre
+  de revisiones y auditoría — 1.9.x, extraído a `lib/SubmissionEdit` compartido),
+  respetando permisos de edición, alcance por filas y columnas ocultas. En demo la
+  aplicación queda bloqueada (escribe en la cuenta Kobo real). Verificado contra
+  datos reales: 6 envíos descarriados en 5 equipos, 5 resueltos por encuestador
+  (incluida una grafía «C .M. S.» plegada por la normalización) y 1 confirmado a mano.
+
+### Actualización
+
+- Columna nueva `forms.team_conflict_mode` (DEFAULT `'approx'`, inocuo: solo gobierna
+  qué PROPONE la tarjeta — nada se escribe sin confirmación): al actualizar, ejecutar
+  `php api/cli/migrate.php`.
+
 ## [1.46.1] - 2026-07-21
 
 ### Corregido
