@@ -78,6 +78,7 @@ const flowSteps = [1, 2, 3, 4]
         <li><strong>{{ $t('guide.exploreCalculated') }}:</strong> {{ $t('guide.exploreCalculatedBody') }}</li>
         <li><strong>{{ $t('guide.exploreStats') }}:</strong> {{ $t('guide.exploreStatsBody') }}</li>
         <li id="sample" class="scroll-mt-24"><strong>{{ $t('guide.exploreSample') }}:</strong> {{ $t('guide.exploreSampleBody') }}</li>
+        <li><strong>{{ $t('guide.exploreNorm') }}:</strong> {{ $t('guide.exploreNormBody') }}</li>
       </ul>
     </section>
 
@@ -100,6 +101,7 @@ const flowSteps = [1, 2, 3, 4]
         <li><strong>{{ $t('guide.reviewSingle') }}:</strong> {{ $t('guide.reviewSingleBody') }}</li>
         <li><strong>{{ $t('guide.reviewBatch') }}:</strong> {{ $t('guide.reviewBatchBody') }}</li>
         <li><strong>{{ $t('guide.reviewQuality') }}:</strong> {{ $t('guide.reviewQualityBody') }}</li>
+        <li><strong>{{ $t('guide.reviewConflicts') }}:</strong> {{ $t('guide.reviewConflictsBody') }}</li>
         <li id="risk" class="scroll-mt-24"><strong>{{ $t('guide.reviewRisk') }}:</strong> {{ $t('guide.reviewRiskBody') }}</li>
         <li><strong>{{ $t('guide.reviewComments') }}:</strong> {{ $t('guide.reviewCommentsBody') }}</li>
         <li><strong>{{ $t('guide.reviewExport') }}:</strong> {{ $t('guide.reviewExportBody') }}</li>

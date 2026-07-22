@@ -38,6 +38,17 @@ Todos los cambios notables de KoboManager. El formato sigue
   datos reales: 6 envíos descarriados en 5 equipos, 5 resueltos por encuestador
   (incluida una grafía «C .M. S.» plegada por la normalización) y 1 confirmado a mano.
 
+### Documentación
+
+- **Puesta al día de la Guía de uso y la portada** con lo entregado en 1.44.0–1.47.0
+  que aún no aparecía: en la **Guía**, los lotes del QC por equipo, el alcance del QC
+  recordado por dispositivo, sección nueva «Incongruencias equipo ↔ meta-equipo»,
+  sección nueva «Grafías de encuestador/equipo» (normalización/alias) y el panel de
+  muestra como vista opt-in de los enlaces compartidos; en la **portada**, menciones
+  breves de esas mismas piezas dentro de las tarjetas existentes (calidad, seguimiento
+  por equipo, enlaces). README (bloque de Quality control) y ROADMAP (poda de lo
+  entregado) al día; ARCHITECTURE ya se actualizó con el hito.
+
 ### Actualización
 
 - Columna nueva `forms.team_conflict_mode` (DEFAULT `'approx'`, inocuo: solo gobierna

@@ -93,8 +93,11 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 > **1.27.0**: **toggle del alcance** en la propia página (y su export):
 > `?scope=all|pending_hold` sustituye el ajuste global `qc_scope` solo para esa petición
 > (desde **1.46.1** la elección se recuerda por dispositivo). Además, **1.44.0** añadió
-> los lotes POR EQUIPO («marcar en espera» y «rechazar» las no admitidas del equipo) y
-> **1.46.0** la normalización del eje encuestador/equipo de texto libre.
+> los lotes POR EQUIPO («marcar en espera» y «rechazar» las no admitidas del equipo),
+> **1.46.0** la normalización del eje encuestador/equipo de texto libre y **1.47.0** las
+> **incongruencias equipo ↔ meta-equipo visibles y resolubles desde la propia página**
+> (tarjeta con los conflictos + resolución por el flujo de edición real, con desempate
+> por encuestador y cinco modos configurables — ver `CHANGELOG.md`).
 > Quedan estas extensiones, para cuando haya demanda:
 
 - [ ] **Marcado on-hold totalmente automático al sincronizar** *(el checkbox original)*:
@@ -107,49 +110,6 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       voltear la bandera de otro envío), así que persistirlas sería una vista materializada
       con recálculo en cada sync + edición de umbrales. Este hito (histórico por naturaleza,
       `source='auto'`) es el único donde persistir empezaría a valer la pena.
-- [x] **Incongruencias equipo ↔ meta-equipo, visibles y resolubles desde el QC** —
-      **ENTREGADA en 1.47.0** tal como se diseñó (tarjeta en el QC con permiso
-      «Ajustes», resolución por el flujo de edición real con `can_edit`, desempate
-      por encuestador aprendido solo de filas consistentes y casado con la
-      normalización/alias, cinco modos en `forms.team_conflict_mode`, resumen por
-      tanda en los automáticos, opción manual «corregir el meta-equipo» caso a caso,
-      bloqueada en demo). Ver `CHANGELOG.md` [1.47.0]. *Diseño original:*
-      *(**ACORDADO jul-2026**, propuesta del usuario; solo con `team_group_field`
-      configurado)* — el chequeo «Detectar problemas» de los ajustes del formulario
-      (equipos cuyos envíos apuntan a más de un meta-equipo: código de equipo o de
-      provincia mal tecleado) vive hoy escondido en Ajustes. Dos piezas:
-      - **(a) Exponer la detección en la página de Control de calidad** (más a mano
-        para el flujo diario): una tarjeta/aviso con los conflictos del chequeo
-        existente (`admin/forms/:id/team-group`). Decidir permiso: el endpoint actual
-        es de admin — la sección en QC puede limitarse a admin/`can_settings`, o ganar
-        una variante de solo lectura para `can_view`.
-      - **(b) Resolución de incongruencias, con desempate por ENCUESTADOR** *(diseño
-        refinado por el usuario)* — la dirección por defecto es **corregir el EQUIPO
-        dando por bueno el meta-equipo**: el meta-equipo suele ser un `select_one`
-        (elegido, no tecleado), así que es el lado fiable; corregirlo a él queda solo
-        como opción manual para el caso raro (mal clic en el select o meta-equipo de
-        texto libre). El meta-equipo solo no determina el equipo (una provincia tiene
-        varios), pero el **código de encuestador** sí: se busca a qué equipo del
-        meta-equipo del envío pertenece el encuestador (misma dependencia funcional
-        encuestador → equipo, casando el valor con la normalización/alias de 1.46.0 —
-        clave aquí, porque el campo de encuestador es el que suele ser texto libre).
-        Ajuste por formulario
-        **«Resolución de incongruencias equipo ↔ meta-equipo»** con modos:
-        1. **Automático — mejor aproximación**: desempate por encuestador; lo no
-           resuelto cae a confirmación particular.
-        2. **Automático — primer equipo** del meta-equipo correcto.
-        3. **Automático — equipo con menos encuestas** del meta-equipo correcto.
-        4. **Semi-automático — confirmación general**: un modal elige UN equipo para
-           todos los casos de esa provincia.
-        5. **Confirmación particular**: modal por caso, eligiendo entre los equipos de
-           la provincia en cuestión.
-        Salvaguardas: se dispara siempre **manualmente** desde la tarjeta del QC (nunca
-        en el sync); en los modos automáticos, **confirmación de resumen por tanda**
-        (la lista de cambios, un solo OK — nunca escritura invisible, y menos con los
-        modos arbitrarios 2-3); solo con `team_group_field` definido; aplica por el
-        flujo de **edición real** ya existente (PATCH a Kobo con migración de `_uuid`,
-        arrastre de revisiones y auditoría — 1.9.x), respetando los permisos de
-        edición.
 - [ ] **Horario admisible de trabajo** (franja horaria por formulario, evaluada en
       `APP_TIMEZONE`): encuestas iniciadas de madrugada como bandera propia.
 - [ ] **Velocidad imposible entre puntos geo consecutivos** del mismo encuestador
@@ -301,7 +261,10 @@ Quedan como ideas reabribles si aparece una necesidad real.
       (diccionario explícito equipo→grupo) evitaría el cubo «Sin agrupar» de los equipos aún
       sin envíos, a costa de configuración manual; (b) el mismo test de dependencia funcional
       de «Detectar meta-equipos» podría reforzar también el eslabón `encuestador → equipo`
-      (hoy sin validar). La jerarquía de N niveles sigue aparcada en «Frentes mayores».
+      como CHEQUEO (desde 1.47.0 esa dependencia ya se **explota** en el desempate de la
+      resolución de incongruencias — `lib/TeamConflicts` la aprende de las filas
+      consistentes—, pero no existe como validación/aviso propio en Ajustes). La jerarquía
+      de N niveles sigue aparcada en «Frentes mayores».
 - [ ] **Objetivos por celda para los campos secundarios** — hoy los secundarios (sexo, raza…)
       solo muestran distribución observada; una etapa 2 podría planificar también su cuota.
       *(Decisión jul-2026, propuesta del usuario)*: cuando se construya, se gobernará con un

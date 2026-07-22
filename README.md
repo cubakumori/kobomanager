@@ -123,7 +123,17 @@ native validation status.
   opt-in shortcut (a global *"approve admissible in bulk"* setting places it on the
   submissions table, the QC page, both, or nowhere): approving is terminal, so it
   additionally excludes high-risk enumerators when the risk index is active. A companion **review-status summary** breaks down
-  approved / pending / on-hold / rejected counts (and %) by team and enumerator. The
+  approved / pending / on-hold / rejected counts (and %) by team and enumerator. With a
+  team-grouping field set, a card on the same page surfaces **team ↔ meta-team
+  mismatches** (teams whose submissions point to more than one meta-team — a mistyped
+  team code, since the meta-team is picked from a dropdown and is the reliable side) and
+  **resolves them**: the team is corrected trusting the meta-team, with an **enumerator
+  tie-break** (which team of that meta-team does the submission's enumerator belong to,
+  folded with the normalization/alias setting). Five per-form modes — from best
+  approximation to case-by-case confirmation (where the rare inverse fix, correcting the
+  meta-team, is also offered); always triggered manually, automatic modes always show the
+  batch summary before writing, and every correction goes through the real edit flow
+  (written back to Kobo, audited, edit permission required). The
   flagged drill-down is **downloadable** (CSV or `.xlsx`) to take to the field-team meeting.
 - **Risk index** (fabrication / "curbstoning" detection, opt-in per form): a heuristic
   index that aggregates **peer-relative** signals — answer similarity (*percentmatch*),
