@@ -116,17 +116,31 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
         existente (`admin/forms/:id/team-group`). Decidir permiso: el endpoint actual
         es de admin — la sección en QC puede limitarse a admin/`can_settings`, o ganar
         una variante de solo lectura para `can_view`.
-      - **(b) Resolución GUIADA de cada incongruencia** — NO un auto-fix ciego: la
-        dirección del arreglo es ambigua (una provincia tiene varios equipos, así que
-        el código de equipo «correcto» no se deduce solo de la provincia; lo
-        determinista es lo contrario: corregir el meta-equipo al dominante del equipo).
-        Modal por conflicto que muestra los envíos discrepantes y ofrece (1) corregir
-        la provincia al dominante del equipo (un clic, determinista) o (2) corregir el
-        código de equipo eligiendo entre los equipos de esa provincia (elige el humano;
-        sugerencia si hay candidato único). Aplica por el flujo de **edición real** ya
-        existente (PATCH a Kobo con migración de `_uuid`, arrastre de revisiones y
-        auditoría — 1.9.x); confirmación explícita siempre, nunca automático en
-        silencio, y respetando `viewer_can_edit`/permisos de edición.
+      - **(b) Resolución de incongruencias, con desempate por ENCUESTADOR** *(diseño
+        refinado por el usuario)* — el meta-equipo solo no determina el equipo (una
+        provincia tiene varios), pero el **código de encuestador** sí: se busca a qué
+        equipo del meta-equipo correcto pertenece el encuestador del envío (misma
+        dependencia funcional encuestador → equipo, casando el valor con la
+        normalización/alias de 1.46.0). El mismo desempate puede decidir la
+        **dirección** del arreglo: si el encuestador pertenece a un equipo de la
+        provincia del envío, lo mal tecleado fue el equipo; si pertenece al equipo que
+        dice el envío, lo mal tecleado fue la provincia. Ajuste por formulario
+        **«Resolución de incongruencias equipo ↔ meta-equipo»** con modos:
+        1. **Automático — mejor aproximación**: desempate por encuestador; lo no
+           resuelto cae a confirmación particular.
+        2. **Automático — primer equipo** del meta-equipo correcto.
+        3. **Automático — equipo con menos encuestas** del meta-equipo correcto.
+        4. **Semi-automático — confirmación general**: un modal elige UN equipo para
+           todos los casos de esa provincia.
+        5. **Confirmación particular**: modal por caso, eligiendo entre los equipos de
+           la provincia en cuestión.
+        Salvaguardas: se dispara siempre **manualmente** desde la tarjeta del QC (nunca
+        en el sync); en los modos automáticos, **confirmación de resumen por tanda**
+        (la lista de cambios, un solo OK — nunca escritura invisible, y menos con los
+        modos arbitrarios 2-3); solo con `team_group_field` definido; aplica por el
+        flujo de **edición real** ya existente (PATCH a Kobo con migración de `_uuid`,
+        arrastre de revisiones y auditoría — 1.9.x), respetando los permisos de
+        edición.
 - [ ] **Horario admisible de trabajo** (franja horaria por formulario, evaluada en
       `APP_TIMEZONE`): encuestas iniciadas de madrugada como bandera propia.
 - [ ] **Velocidad imposible entre puntos geo consecutivos** del mismo encuestador
