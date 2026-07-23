@@ -387,6 +387,16 @@ async function load() {
     loaded.value = true
     total.value = data.data.total
     scopeTotal.value = data.data.scope_total ?? data.data.total
+    // Página fuera de rango: un lote de revisión puede vaciar la última página de
+    // un filtro (p. ej. «solo admisibles») y dejar la vista en una página que ya
+    // no existe — vacía y, si solo queda una página, sin controles de paginación.
+    // Se salta a la última página real y se recarga (el aviso del lote se
+    // conserva). Estricto (>) para que la recarga no pueda encadenarse en bucle.
+    const lastPage = Math.max(1, Math.ceil(total.value / perPage.value))
+    if (items.value.length === 0 && total.value > 0 && page.value > lastPage) {
+      page.value = lastPage
+      return load()
+    }
     schema.value = data.data.schema ?? null
     labelMode.value = data.data.label_mode ?? 'raw'
     fieldTruncate.value = data.data.field_truncate ?? null

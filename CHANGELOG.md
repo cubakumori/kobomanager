@@ -4,6 +4,23 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.50.1] - 2026-07-23
+
+### Corregido
+
+- **Tabla de envíos: página fuera de rango tras un lote de revisión** (reporte del
+  usuario): con un filtro activo (p. ej. «solo admisibles»), aprobar en lote toda la
+  última página dejaba la vista en una página que ya no existía — tabla en «Sin envíos»
+  y, si lo restante cabía en una sola página, sin controles de paginación (el bloque
+  solo se muestra con más de una página), obligando a recargar y reactivar el filtro a
+  mano. Ahora, si la carga vuelve vacía con resultados restantes y la página actual
+  supera la última real, la vista **salta a la última página** del filtro y recarga
+  (una sola vez: el estricto `>` impide encadenarse), conservando el aviso «N envío(s)
+  revisados» y el filtro activo. Cubre igualmente el mismo atasco con el filtro de
+  estado (p. ej. pendientes + lote). El filtro «solo admisibles» sigue siendo
+  transitorio a propósito (no sobrevive a una recarga manual), pero ya no hace falta
+  recargar.
+
 ## [1.50.0] - 2026-07-23
 
 ### Añadido
