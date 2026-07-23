@@ -4,6 +4,24 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.50.2] - 2026-07-23
+
+### Cambiado
+
+- **La tabla de envíos recuerda TODOS los filtros activos entre recargas y visitas**
+  (continuación del reporte del usuario en 1.50.1): antes, el orden y el filtro de
+  revisión ya se persistían por formulario, y el filtro avanzado y las columnas por su
+  cuenta, pero el **término de búsqueda** y el filtro **«solo admisibles»** se perdían al
+  recargar (se recargaba «todo» y había que reactivarlos a mano). Ahora ambos se guardan
+  por formulario en la misma preferencia de vista (`km.view.<id>`), así que sobreviven a
+  recargar la página y a navegar a un envío y volver. «Solo admisibles» se **reconfirma**
+  al cargar contra el ajuste global vigente: si un admin desactivó el atajo en la tabla,
+  el filtro se limpia solo (y se olvida la preferencia) en vez de mostrar un estado
+  imposible. Con esto, el flujo de aprobar en lote página a página con «solo admisibles»
+  ya no pierde el filtro en ningún punto. La página (nº de página) sigue reiniciándose a
+  la 1.ª a propósito, y el salto a la última página válida tras un lote (1.50.1) se
+  mantiene.
+
 ## [1.50.1] - 2026-07-23
 
 ### Corregido

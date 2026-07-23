@@ -160,7 +160,9 @@ native validation status.
 
 - **Human-readable labels** from the XLSForm (codes → text, multilingual).
 - **Attachments** (photo / audio / video / file) served through an authenticated proxy.
-- **Search** and persistent **advanced filters**.
+- **Search** and **advanced filters** — both persisted per form/device, alongside the
+  sort, review-status and "admissible only" filters, so a reload or a trip to a
+  submission and back keeps the view exactly as you left it.
 - **Export to Excel (.xlsx) or CSV** — pick scope (all / approved only) and format in a
   dialog; honors each user's row/column scoping. The native `.xlsx` (no dependencies)
   gives real columns, sidestepping the CSV delimiter issue in European-locale Excel.

@@ -34,9 +34,11 @@ const search = ref('')
 const reviewFilter = ref('') // '' = todos
 const sort = ref('date_desc')
 // Filtro «solo admisibles»: envíos PENDIENTES que pasan todos los umbrales automáticos
-// de control de calidad (sin bandera; sin alto riesgo). Transitorio (no se persiste
-// entre visitas: es un filtro de acción puntual del revisor). Solo se ofrece si el
-// ajuste global lo permite en la tabla (`admit_batch` = 'table'|'both') y hay validación.
+// de control de calidad (sin bandera; sin alto riesgo). Se persiste por formulario junto
+// al resto de la vista (km.view.*): sobrevive a recargar y a navegar a un detalle y
+// volver, para no perder el hilo al aprobar en lote página a página. Solo se ofrece si el
+// ajuste global lo permite en la tabla (`admit_batch` = 'table'|'both') y hay validación;
+// si al cargar ya no está permitido, se limpia solo (ver load()).
 const admissibleOnly = ref(false)
 const admitBatch = ref('table')
 
@@ -57,6 +59,11 @@ function loadViewPrefs() {
     const saved = JSON.parse(localStorage.getItem(viewKey(formId.value)) || 'null')
     if (isValidSort(saved?.sort)) sort.value = saved.sort
     if (REVIEWS.includes(saved?.review)) reviewFilter.value = saved.review
+    // Búsqueda y «solo admisibles» también se recuerdan por formulario. Ausentes en
+    // objetos antiguos → valores neutros (sin búsqueda, sin filtro). «solo admisibles»
+    // se reconfirma en load() contra el ajuste global vigente.
+    search.value = typeof saved?.search === 'string' ? saved.search : ''
+    admissibleOnly.value = saved?.admissible === true
     const pp = Number(localStorage.getItem('km.perPage'))
     if (perPageOptions.includes(pp)) perPage.value = pp
   } catch {
@@ -65,7 +72,15 @@ function loadViewPrefs() {
 }
 function saveViewPrefs() {
   try {
-    localStorage.setItem(viewKey(formId.value), JSON.stringify({ sort: sort.value, review: reviewFilter.value }))
+    localStorage.setItem(
+      viewKey(formId.value),
+      JSON.stringify({
+        sort: sort.value,
+        review: reviewFilter.value,
+        search: search.value,
+        admissible: admissibleOnly.value,
+      }),
+    )
     localStorage.setItem('km.perPage', String(perPage.value))
   } catch {
     /* noop */
@@ -405,7 +420,13 @@ async function load() {
     admitBatch.value = data.data.admit_batch ?? 'table'
     // Si el filtro estaba activo pero el ajuste global ya no lo permite (o el
     // formulario pasó a archivado), se desactiva para no mostrar un estado imposible.
-    if (admissibleOnly.value && !canAdmitTable.value) admissibleOnly.value = false
+    // Como ahora se persiste, se reescribe también la preferencia para que no vuelva a
+    // restaurarse en cada recarga (el backend ya ignoró el `admissible=1` de esta carga,
+    // así que los datos mostrados son los del alcance sin filtrar: coherente).
+    if (admissibleOnly.value && !canAdmitTable.value) {
+      admissibleOnly.value = false
+      saveViewPrefs()
+    }
     clearSelection()
     ensurePrefs()
   } catch (e) {
@@ -418,18 +439,23 @@ async function load() {
   }
 }
 
+// Mientras el watcher de formId restaura preferencias, los de abajo no deben
+// recargar (esa carga ya la hace el propio watcher de formId).
+let suppressPrefsReload = false
+
+// Búsqueda: recarga (con debounce) desde la 1.ª página y recuerda el término por
+// formulario. Guardado por suppressPrefsReload para no duplicar la carga cuando la
+// restauración al cambiar de formulario asigna el término guardado.
 let searchTimer
 watch(search, () => {
+  if (suppressPrefsReload) return
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
+    saveViewPrefs()
     page.value = 1
     load()
   }, 300)
 })
-
-// Mientras el watcher de formId restaura preferencias, el de abajo no debe
-// recargar (esa carga ya la hace el propio watcher de formId).
-let suppressPrefsReload = false
 
 // Filtro de revisión, orden y tamaño de página: recargar desde la primera página
 // (y recordar la elección para la próxima visita).
@@ -440,9 +466,11 @@ watch([reviewFilter, sort, perPage], () => {
   load()
 })
 
-// Filtro «solo admisibles»: transitorio (no se persiste), recarga desde la 1.ª página.
+// Filtro «solo admisibles»: recarga desde la 1.ª página y se recuerda por formulario
+// (km.view.*), igual que la búsqueda y el filtro de revisión.
 watch(admissibleOnly, () => {
   if (suppressPrefsReload) return
+  saveViewPrefs()
   page.value = 1
   load()
 })

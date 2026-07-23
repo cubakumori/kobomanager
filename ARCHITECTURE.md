@@ -142,7 +142,12 @@ never widen. Conditions referencing fields hidden by `FieldScope` are rejected (
 the editor's field/value source for non‑admins is `GET /forms/{id}/scope-fields` (visible
 fields only; suggested values constrained to the user's row scope). The filter persists
 per form/device in `localStorage` (`km.filter.<formId>`). Map and stats stay on the full
-user scope on purpose.
+user scope on purpose. The rest of the submissions view state persists per form/device in
+`km.view.<formId>` — **sort**, **review‑status filter**, **search term** and the
+**"admissible only"** toggle (page size is global, `km.perPage`) — so a reload or a round
+trip to a submission restores the view; the page number resets to 1 on purpose, and
+"admissible only" is re‑confirmed against the current global setting on load (cleared if an
+admin has since disabled the in‑table shortcut).
 
 ### Column‑level permissions (`lib/FieldScope.php`)
 Twin of row scoping: where `RowScope` decides *which submissions* are visible, `FieldScope`
