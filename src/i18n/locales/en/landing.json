@@ -33,7 +33,7 @@
     "featQualityTitle": "Survey quality control",
     "featQualityDesc": "Catch rushed or fabricated interviews: too short or too long, overlapping in time with another by the same enumerator, with suspiciously short gaps between consecutive ones, with duplicate answers or the same GPS point repeated. You set the thresholds per form, the non-admissible ones go on hold in one click — in bulk or per team — and the list downloads as CSV or Excel. And if a team code comes in mistyped, the app catches it and guides you to fix it.",
     "featRiskTitle": "Risk index (fabrication detection)",
-    "featRiskDesc": "Prioritise which enumerators to back-check by combining peer-relative signals — similarity across their own surveys, straight-lining, atypical distribution, digit preference, productivity and GPS. Never an opaque grade: each component is explained with its value and the team median. A signal to prioritise, not proof.",
+    "featRiskDesc": "Prioritise which enumerators to back-check by combining peer-relative signals — similarity across their own surveys, straight-lining, atypical distribution, digit preference, productivity, GPS and how much more quality control flags their work than their peers'. Never an opaque grade: each component is explained with its value and the team median. A signal to prioritise, not proof.",
     "featCommentsTitle": "Review comments",
     "featCommentsDesc": "All of a form's review comments on one page, grouped by team and enumerator, with date, status, author and a link to the submission. See what's been commented without opening submissions one by one; filter by status and by text.",
     "featStatsTitle": "Team tracking",
