@@ -4,6 +4,31 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.49.0] - 2026-07-23
+
+### Añadido
+
+- **Clasificación de los solapes en el Control de calidad** (ítem prioritario acordado
+  tras revisar el QC en un entorno de baja conectividad y cortes de luz): la bandera
+  «Solapada» marcaba CUALQUIER hueco negativo contra el `end` máximo visto, mezclando
+  dos situaciones muy distintas. Ahora `lib/Quality` mide además el hueco contra la
+  **inmediatamente anterior** por inicio y separa dos banderas:
+  - **Solapada** (`overlap`, rojo): solape PARCIAL con la inmediatamente anterior (se
+    entrelazan) → concurrencia real: una persona en dos sitios a la vez (código
+    compartido o fabricación). La señal que interesa.
+  - **Solape con registro largo** (`overlap_long`, apagado): la encuesta cae dentro de
+    la ventana de un formulario dejado abierto (batería/apagón/pausa) cuyo `end` tardío
+    la engulle — incluida la anidada cuya «anterior» es el propio registro largo. En
+    entornos con cortes de electricidad es la norma y casi siempre benigno; antes UNA
+    encuesta colgada «teñía» en cascada a todas las que empezaban antes de su fin.
+  En el drill-down, cada solape con registro largo enlaza al **culpable** («dentro de
+  {inicio} – {fin}») y el registro largo, si se reporta, muestra a cuántas **engulle**;
+  la respuesta añade `gap_prev_s`, `long_uid`/`long_start_at`/`long_end_at` y `engulfs`
+  por violación. Ambas clases siguen contando como no admitidas (sin cambio de
+  semántica en lotes ni en «aprobar admisibles»); el export distingue las dos palabras.
+  Con la clase benigna separada, la señal limpia «entre consecutivas» queda lista para
+  alimentar el Índice de riesgo (siguiente ítem del ROADMAP).
+
 ## [1.48.0] - 2026-07-23
 
 ### Añadido

@@ -240,20 +240,25 @@ async function approveAdmissible() {
 }
 
 // Las banderas, en el orden canónico del backend.
-const FLAGS = ['short', 'long', 'short_gap', 'overlap', 'duplicate', 'gps']
+const FLAGS = ['short', 'long', 'short_gap', 'overlap', 'overlap_long', 'duplicate', 'gps']
 const FLAG_KEY = {
   short: 'qualityFlagShort',
   long: 'qualityFlagLong',
   short_gap: 'qualityFlagShortGap',
   overlap: 'qualityFlagOverlap',
+  overlap_long: 'qualityFlagOverlapLong',
   duplicate: 'qualityFlagDuplicate',
   gps: 'qualityFlagGps',
 }
+// «Solape con registro largo» va en un color APAGADO a propósito: es la clase
+// habitualmente benigna (formulario colgado por apagón/pausa), frente al rojo
+// del solape entre consecutivas (concurrencia real).
 const FLAG_CLS = {
   short: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
   long: 'bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300',
   short_gap: 'bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300',
   overlap: 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300',
+  overlap_long: 'bg-slate-200 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300',
   duplicate: 'bg-pink-100 text-pink-700 dark:bg-pink-950/50 dark:text-pink-300',
   gps: 'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300',
 }
@@ -447,6 +452,9 @@ onMounted(load)
       <p v-if="q.untimed" class="text-xs text-slate-400">{{ $t('stats.qualityUntimed', { n: q.untimed }) }}</p>
       <p v-if="q.gps_enabled" class="text-xs text-slate-400">
         {{ $t('stats.qualityGpsHint', { n: q.gps_min_repeats }) }}
+      </p>
+      <p v-if="q.flags.overlap_long" class="text-xs text-slate-400">
+        {{ $t('stats.qualityOverlapLongHint') }}
       </p>
 
       <!-- Resumen de estado de revisión por equipo → encuestador (todos los envíos) -->
@@ -676,8 +684,15 @@ onMounted(load)
                         <td class="py-1.5 pr-4 text-slate-600">{{ v.start_at ?? '—' }}</td>
                         <td class="py-1.5 pr-4 text-slate-600">{{ v.end_at ?? '—' }}</td>
                         <td class="py-1.5 pr-4 text-slate-600">{{ fmtDuration(v.duration_s) }}</td>
-                        <td class="py-1.5 pr-4" :class="v.gap_s != null && v.gap_s < 0 ? 'font-semibold text-red-600 dark:text-red-400' : 'text-slate-600'">
+                        <!-- Hueco: rojo solo para la concurrencia real (entre consecutivas);
+                             el solape con registro largo va apagado y enlaza al culpable. -->
+                        <td class="py-1.5 pr-4" :class="v.gap_s != null && v.gap_s < 0 ? (v.flags.includes('overlap') ? 'font-semibold text-red-600 dark:text-red-400' : 'font-medium text-slate-500') : 'text-slate-600'">
                           {{ fmtGap(v.gap_s) }}
+                          <RouterLink
+                            v-if="v.long_uid"
+                            :to="{ name: 'submission-detail', params: { id: formId, subId: v.long_uid }, query: { from: 'quality' } }"
+                            class="block text-[11px] font-normal text-slate-400 hover:text-primary-600 hover:underline"
+                          >{{ $t('stats.qualityLongRecordRef', { start: v.long_start_at ?? '—', end: v.long_end_at ?? '—' }) }}</RouterLink>
                         </td>
                         <td class="py-1.5 pr-4">
                           <span
@@ -686,6 +701,11 @@ onMounted(load)
                             class="mr-1 inline-block rounded-full px-2 py-0.5 font-medium"
                             :class="FLAG_CLS[f]"
                           >{{ $t('stats.' + FLAG_KEY[f], 1) }}</span>
+                          <!-- Este envío ES el registro largo: cuántas encuestas engulle. -->
+                          <span
+                            v-if="v.engulfs"
+                            class="mr-1 inline-block rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-500 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700"
+                          >{{ $t('stats.qualityEngulfs', { n: v.engulfs }) }}</span>
                         </td>
                         <td class="py-1.5 pr-4"><ReviewBadge :status="v.review_status" /></td>
                         <td class="py-1.5">

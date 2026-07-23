@@ -102,7 +102,10 @@ native validation status.
   by how consistently each team maps to a single value, and **Detect issues** lists the
   teams split across several values as a data-quality warning.
 - **Quality control**: flags interviews outside the form's admissible thresholds — too
-  **short** or too **long**, per enumerator **overlapping** in time (a fabrication signal)
+  **short** or too **long**, per enumerator **overlapping** in time (real concurrency with
+  the previous interview, a fabrication signal, told apart from the usually benign
+  **overlap with a long record** — a form left open through a power cut that engulfs the
+  surveys done meanwhile, with a link to the culprit)
   or with a suspiciously **short gap** between consecutive interviews, **duplicate** answers
   (identical content across submissions, with per-form sensitivity) and **fixed GPS** (the
   same exact point repeated by one enumerator) — grouped by team → enumerator with a

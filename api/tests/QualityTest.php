@@ -5,11 +5,12 @@ declare(strict_types=1);
 /**
  * Tests de lib/Quality (control de calidad por equipo/encuestador).
  *
- * Puntos críticos: las cuatro banderas contra los umbrales (corta/larga por
- * duración; hueco corto/solapada por consecutividad del MISMO encuestador),
- * que el solape se marca SIEMPRE aunque el umbral de consecutividad esté
- * desactivado, que la cadena usa el máximo `end` visto (encuestas englobadas),
- * y que los envíos sin marcas de tiempo cuentan aparte sin generar banderas.
+ * Puntos críticos: las banderas contra los umbrales (corta/larga por duración;
+ * hueco corto/solapada por consecutividad del MISMO encuestador), que el solape
+ * se marca SIEMPRE aunque el umbral de consecutividad esté desactivado, que la
+ * cadena usa el máximo `end` visto (encuestas englobadas), la CLASIFICACIÓN del
+ * solape (entre consecutivas vs con registro largo, con la referencia al
+ * culpable), y que los envíos sin marcas de tiempo cuentan aparte sin banderas.
  */
 final class QualityTest extends DbTestCase
 {
@@ -62,7 +63,7 @@ final class QualityTest extends DbTestCase
         $q = $this->compute($formId, 4, 60, null);
         $this->assertSame(3, $q['total']);
         $this->assertSame(2, $q['flagged']);
-        $this->assertSame(['short' => 1, 'long' => 1, 'short_gap' => 0, 'overlap' => 0, 'duplicate' => 0, 'gps' => 0], $q['flags']);
+        $this->assertSame(['short' => 1, 'long' => 1, 'short_gap' => 0, 'overlap' => 0, 'overlap_long' => 0, 'duplicate' => 0, 'gps' => 0], $q['flags']);
 
         $v = $this->violationsByUid($q);
         $this->assertSame(['short'], $v[$short]['flags']);
@@ -82,13 +83,17 @@ final class QualityTest extends DbTestCase
         $e = $this->timed($formId, 'luis', '09:11:00', '09:13:00');
 
         $q = $this->compute($formId, null, null, 4);
-        $this->assertSame(['short' => 0, 'long' => 0, 'short_gap' => 1, 'overlap' => 1, 'duplicate' => 0, 'gps' => 0], $q['flags']);
+        $this->assertSame(['short' => 0, 'long' => 0, 'short_gap' => 1, 'overlap' => 1, 'overlap_long' => 0, 'duplicate' => 0, 'gps' => 0], $q['flags']);
 
         $v = $this->violationsByUid($q);
         $this->assertSame(['short_gap'], $v[$b]['flags']);
         $this->assertSame(120, $v[$b]['gap_s']);
+        // c se entrelaza con b (la inmediatamente anterior terminó DENTRO de su
+        // ventana) → concurrencia real, sin referencia a registro largo.
         $this->assertSame(['overlap'], $v[$c]['flags']);
         $this->assertSame(-300, $v[$c]['gap_s']);
+        $this->assertSame(-300, $v[$c]['gap_prev_s']);
+        $this->assertNull($v[$c]['long_uid']);
         $this->assertArrayNotHasKey($a, $v);
         $this->assertArrayNotHasKey($d, $v);
         $this->assertArrayNotHasKey($e, $v);
@@ -104,6 +109,63 @@ final class QualityTest extends DbTestCase
         $this->assertSame(1, $q['flagged']);
         $this->assertSame(1, $q['flags']['overlap']);
         $this->assertSame(['overlap'], $this->violationsByUid($q)[$b]['flags']);
+    }
+
+    /**
+     * El caso «cascada» del FAQ de solapamiento: UN formulario dejado abierto
+     * varias horas (apagón/pausa) engulle a las encuestas hechas dentro de su
+     * ventana. Todas deben salir como `overlap_long` (con la referencia al
+     * registro largo), NUNCA como `overlap` (concurrencia real) — incluida la
+     * PRIMERA anidada, cuya «inmediatamente anterior» es el propio registro largo.
+     */
+    public function testLongRecordCascadeClassifiedAsOverlapLong(): void
+    {
+        $formId = $this->makeForm();
+        $long = $this->timed($formId, 'ana', '08:00:00', '14:36:00'); // registro largo (6 h 36)
+        $s1 = $this->timed($formId, 'ana', '10:35:00', '11:55:00');   // anidada: su anterior ES el largo
+        $s2 = $this->timed($formId, 'ana', '12:08:00', '14:29:00');   // anterior (s1) ya terminó → cascada
+        $s3 = $this->timed($formId, 'ana', '14:29:00', '14:35:00');   // ídem (huecoPrev = 0)
+        $s4 = $this->timed($formId, 'ana', '14:37:00', '14:45:00');   // arranca tras el fin máximo → limpia
+
+        // max=300 min: solo el registro largo (396 min) cae por `long`, y así se
+        // le ve el «engulle» en su fila del drill-down.
+        $q = $this->compute($formId, null, 300, null);
+        $this->assertSame(0, $q['flags']['overlap']);
+        $this->assertSame(3, $q['flags']['overlap_long']);
+        $this->assertSame(1, $q['flags']['long']);
+
+        $v = $this->violationsByUid($q);
+        foreach ([$s1, $s2, $s3] as $uid) {
+            $this->assertSame(['overlap_long'], $v[$uid]['flags']);
+            $this->assertSame($long, $v[$uid]['long_uid']);
+            $this->assertNotNull($v[$uid]['long_end_at']);
+        }
+        // El registro largo se reporta (bandera `long`) y declara a cuántas engulle.
+        $this->assertSame(['long'], $v[$long]['flags']);
+        $this->assertSame(3, $v[$long]['engulfs']);
+        $this->assertArrayNotHasKey($s4, $v);
+    }
+
+    /**
+     * Mixto: dentro de la ventana de un registro largo, dos encuestas que ADEMÁS
+     * se entrelazan entre sí. La entrelazada es concurrencia real (`overlap`),
+     * no ruido del registro largo.
+     */
+    public function testInterleaveInsideLongWindowIsStillRealOverlap(): void
+    {
+        $formId = $this->makeForm();
+        $long = $this->timed($formId, 'ana', '08:00:00', '14:00:00'); // registro largo
+        $a = $this->timed($formId, 'ana', '10:00:00', '10:30:00');    // anidada → overlap_long
+        $b = $this->timed($formId, 'ana', '10:20:00', '10:50:00');    // se entrelaza con a → overlap
+
+        $q = $this->compute($formId, null, null, null);
+        $v = $this->violationsByUid($q);
+        $this->assertSame(['overlap_long'], $v[$a]['flags']);
+        $this->assertSame($long, $v[$a]['long_uid']);
+        $this->assertSame(['overlap'], $v[$b]['flags']);
+        $this->assertNull($v[$b]['long_uid']);
+        $this->assertSame(1, $q['flags']['overlap']);
+        $this->assertSame(1, $q['flags']['overlap_long']);
     }
 
     public function testUntimedSubmissionsCountedApartAndNeverFlagged(): void

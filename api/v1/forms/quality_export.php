@@ -71,8 +71,8 @@ $headerRow = $en
 // Etiqueta legible de cada bandera (forma singular; mismas palabras que la UI). El
 // orden de emisión sigue Quality::FLAGS, el orden canónico.
 $flagWords = $en
-    ? ['short' => 'Short', 'long' => 'Long', 'short_gap' => 'Short gap', 'overlap' => 'Overlapping', 'duplicate' => 'Duplicate', 'gps' => 'Pinned GPS']
-    : ['short' => 'Corta', 'long' => 'Larga', 'short_gap' => 'Hueco corto', 'overlap' => 'Solapada', 'duplicate' => 'Duplicada', 'gps' => 'GPS clavado'];
+    ? ['short' => 'Short', 'long' => 'Long', 'short_gap' => 'Short gap', 'overlap' => 'Overlapping', 'overlap_long' => 'Overlap w/ long record', 'duplicate' => 'Duplicate', 'gps' => 'Pinned GPS']
+    : ['short' => 'Corta', 'long' => 'Larga', 'short_gap' => 'Hueco corto', 'overlap' => 'Solapada', 'overlap_long' => 'Solape con registro largo', 'duplicate' => 'Duplicada', 'gps' => 'GPS clavado'];
 $reviewWords = $en
     ? ['pending' => 'Pending', 'approved' => 'Approved', 'on_hold' => 'On hold', 'rejected' => 'Rejected']
     : ['pending' => 'Pendiente', 'approved' => 'Aprobado', 'on_hold' => 'En espera', 'rejected' => 'Rechazado'];

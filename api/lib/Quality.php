@@ -12,8 +12,14 @@
  *   - long      : duración > qc_max_duration (NULL = sin tope).
  *   - short_gap : hueco entre el FIN de una encuesta y el INICIO de la siguiente
  *                 del mismo encuestador < qc_min_gap.
- *   - overlap   : hueco NEGATIVO (la siguiente empezó antes de acabar la anterior;
- *                 señal de fabricación). Se marca SIEMPRE, sin umbral configurable.
+ *   - overlap   : solape ENTRE CONSECUTIVAS: la encuesta se entrelaza parcialmente
+ *                 con la inmediatamente anterior del mismo encuestador (concurrencia
+ *                 real: una persona en dos sitios a la vez → código compartido o
+ *                 fabricación). Se marca SIEMPRE, sin umbral configurable.
+ *   - overlap_long : solape CON REGISTRO LARGO: la encuesta cae dentro de la ventana
+ *                 de un formulario dejado abierto (batería/apagón/pausa) cuyo `end`
+ *                 tardío la engulle. Habitualmente benigno (en entornos con cortes
+ *                 de luz es la norma), pero sigue contando como no admitida.
  *   - duplicate : otro envío del FORMULARIO (de cualquier encuestador) tiene
  *                 exactamente las mismas respuestas (solo campos de datos; los
  *                 envíos sin ninguna respuesta no cuentan). Sin umbral: una copia
@@ -33,6 +39,17 @@
  * se compara contra el fin real más tardío, no contra el de la englobada). Los
  * envíos sin start/end válidos no son evaluables: cuentan aparte (`untimed`) y
  * no participan en la cadena.
+ *
+ * CLASIFICACIÓN del solape (hueco < 0): además del hueco contra el máximo, se
+ * mide el hueco contra la INMEDIATAMENTE anterior por inicio. Si esa anterior ya
+ * había terminado (huecoPrev >= 0), el negativo viene solo del `end` tardío de un
+ * registro más viejo → `overlap_long` (la cascada del formulario colgado). Si la
+ * anterior además ENGULLE a esta (terminó después de ella), esa anterior es el
+ * propio registro largo → también `overlap_long`. Solo el solape PARCIAL con la
+ * anterior (se entrelazan: la anterior terminó dentro de la ventana de esta) es
+ * concurrencia real → `overlap`. Cada violación `overlap_long` lleva la
+ * referencia del registro largo que la engulle (`long_uid` + sus tiempos), y el
+ * registro largo, si se reporta, lleva `engulfs` (a cuántas engulle).
  *
  * ALCANCE por estado de revisión (`$scopeStatuses`, del ajuste global `qc_scope`):
  * decide qué envíos se REPORTAN y se cuentan (por defecto solo pendientes/en
@@ -56,7 +73,7 @@
 class Quality {
 
     /** Las banderas, en el orden canónico de la UI. */
-    public const FLAGS = ['short', 'long', 'short_gap', 'overlap', 'duplicate', 'gps'];
+    public const FLAGS = ['short', 'long', 'short_gap', 'overlap', 'overlap_long', 'duplicate', 'gps'];
 
     /** Repeticiones del mismo punto exacto que convierten el grupo en «GPS clavado». */
     public const GPS_MIN_REPEATS = 3;
@@ -305,11 +322,35 @@ class Quality {
                 // no), por `start` ascendente. El alcance no altera la física del hueco.
                 $timed = array_values(array_filter($entries, fn($e) => $e['dur'] !== null));
                 usort($timed, fn($a, $b) => [$a['start'], $a['end'], $a['uid']] <=> [$b['start'], $b['end'], $b['uid']]);
-                $gaps = [];          // uid => hueco (s) respecto al máximo `end` anterior
-                $prevEndMax = null;
+                $gaps        = []; // uid => hueco (s) respecto al máximo `end` anterior
+                $gapsPrev    = []; // uid => hueco (s) respecto al fin de la INMEDIATAMENTE anterior
+                $overlapKind = []; // uid => 'overlap' (consecutivas) | 'overlap_long' (registro largo)
+                $longRef     = []; // uid solapado => entrada del registro largo que lo engulle
+                $engulfs     = []; // uid del registro largo => nº de envíos que engulle
+                $prev = null;      // inmediatamente anterior por inicio
+                $maxE = null;      // la entrada que ostenta el `end` máximo visto
                 foreach ($timed as $e) {
-                    if ($prevEndMax !== null) $gaps[$e['uid']] = $e['start'] - $prevEndMax;
-                    $prevEndMax = $prevEndMax === null ? $e['end'] : max($prevEndMax, $e['end']);
+                    if ($maxE !== null) {
+                        $gap     = $e['start'] - $maxE['end'];
+                        $gapPrev = $e['start'] - $prev['end'];
+                        $gaps[$e['uid']]     = $gap;
+                        $gapsPrev[$e['uid']] = $gapPrev;
+                        if ($gap < 0) {
+                            // Clasificación (ver docblock): anterior ya terminada → el
+                            // negativo viene del `end` tardío de un registro más viejo;
+                            // anterior que la ENGULLE → esa anterior es el registro
+                            // largo. Solo el solape parcial es concurrencia real.
+                            if ($gapPrev >= 0 || $prev['end'] >= $e['end']) {
+                                $overlapKind[$e['uid']] = 'overlap_long';
+                                $longRef[$e['uid']] = $maxE;
+                                $engulfs[$maxE['uid']] = ($engulfs[$maxE['uid']] ?? 0) + 1;
+                            } else {
+                                $overlapKind[$e['uid']] = 'overlap';
+                            }
+                        }
+                    }
+                    $prev = $e;
+                    if ($maxE === null || $e['end'] > $maxE['end']) $maxE = $e;
                 }
 
                 // Banderas por envío: se calculan SIEMPRE (también fuera del alcance por
@@ -323,7 +364,7 @@ class Quality {
                         if ($maxDurS !== null && $e['dur'] > $maxDurS) $flags[] = 'long';
                         $gap = $gaps[$e['uid']] ?? null;
                         if ($gap !== null) {
-                            if ($gap < 0) $flags[] = 'overlap';
+                            if ($gap < 0) $flags[] = $overlapKind[$e['uid']];
                             elseif ($minGapS !== null && $gap < $minGapS) $flags[] = 'short_gap';
                         }
                     }
@@ -370,6 +411,9 @@ class Quality {
 
                     $enumOut['flagged']++;
                     foreach ($flags as $f) $enumOut['flags'][$f]++;
+                    // Referencias del solape con registro largo: quién engulle a esta
+                    // (long_*) y, si ESTA es el registro largo, a cuántas engulle.
+                    $lr = $longRef[$e['uid']] ?? null;
                     $enumOut['violations'][] = [
                         'uid'           => $e['uid'],
                         'submitted_at'  => $e['submitted_at'],
@@ -377,6 +421,11 @@ class Quality {
                         'end_at'        => Derived::formatLocal($e['end']),
                         'duration_s'    => $e['dur'],
                         'gap_s'         => $gaps[$e['uid']] ?? null,
+                        'gap_prev_s'    => $gapsPrev[$e['uid']] ?? null,
+                        'long_uid'      => $lr['uid'] ?? null,
+                        'long_start_at' => $lr !== null ? Derived::formatLocal($lr['start']) : null,
+                        'long_end_at'   => $lr !== null ? Derived::formatLocal($lr['end']) : null,
+                        'engulfs'       => $engulfs[$e['uid']] ?? 0,
                         'flags'         => $flags,
                         'review_status' => $e['st'],
                     ];

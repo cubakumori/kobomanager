@@ -545,11 +545,18 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   shown over a **single denominator** — the total *received* (all submissions in the user's row
   scope, unfiltered by review status), per form, team and enumerator — so the `n / total`
   fraction and its % always agree at a glance.
-  Six flags (`Quality::FLAGS`): **short**/**long** (duration from the schema's `start`/`end`
-  meta keys, same as the duration sort), **short gap**/**overlap** per enumerator
-  *consecutiveness* (gap between a survey's start and the max `end` seen so far in that
-  enumerator's start‑ordered chain; a negative gap — overlapping surveys, a fabrication signal —
-  is always flagged, regardless of the threshold), **duplicate** (another submission of the form,
+  Seven flags (`Quality::FLAGS`): **short**/**long** (duration from the schema's `start`/`end`
+  meta keys, same as the duration sort), **short gap**/**overlap**/**overlap_long** per
+  enumerator *consecutiveness* (gap between a survey's start and the max `end` seen so far in
+  that enumerator's start‑ordered chain; a negative gap is always flagged, regardless of the
+  threshold, and since 1.49.0 it is **classified** by also measuring the gap against the
+  *immediately previous* survey: a partial interleave with it is real concurrency →
+  `overlap`, the serious fabrication signal; otherwise the negative comes from the late `end`
+  of an older record — a form left open through a battery/power cut/pause — that engulfs it →
+  `overlap_long`, usually benign and the norm under unreliable electricity. Each engulfed
+  violation carries the culprit's reference (`long_uid` + its local times, linked in the
+  drill‑down) plus `gap_prev_s`, and the long record itself reports how many it `engulfs`.
+  Both classes still count as non‑admissible), **duplicate** (another submission of the form,
   from any enumerator, with identical content — team/enumerator fields excluded; a submission
   participates only with at least `qc_dup_min_answers` non‑empty content answers, default 2, so
   the sensitivity is tunable per form and `NULL`/0 turns the signal off) and **gps** ("GPS

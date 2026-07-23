@@ -121,27 +121,17 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       voltear la bandera de otro envío), así que persistirlas sería una vista materializada
       con recálculo en cada sync + edición de umbrales. Este hito (histórico por naturaleza,
       `source='auto'`) es el único donde persistir empezaría a valer la pena.
-- [ ] **PRIORITARIO — distinguir «solape con registro largo» de «solape entre
-      consecutivas»** *(acordado jul-2026, tras revisar el QC en un entorno de baja
-      conectividad y cortes de luz)*. Hoy `overlap` se marca con CUALQUIER hueco
-      negativo respecto al **`end` máximo visto hasta ese momento** (`prevEndMax`,
-      `Quality::compute`), lo que mezcla dos situaciones muy distintas:
-      - **Solape con registro largo**: una encuesta posterior cae DENTRO de la ventana
-        de un formulario dejado abierto (un `end` tardío por batería/apagón/pausa) que
-        empezó antes. En un entorno con cortes de electricidad esto es lo **habitual y
-        casi siempre benigno**, y hoy «tiñe» en cascada a todas las que empiezan antes
-        de ese fin (una sola encuesta larga inflando el recuento de solapes).
-      - **Solape entre consecutivas**: la encuesta se solapa con la **inmediatamente
-        anterior** por inicio (`inicio_i − fin_{i-1} < 0`) → dos entrevistas de verdad
-        concurrentes = una persona en dos sitios a la vez (código compartido o
-        fabricación). Esta es la señal que interesa.
-      Diseño: calcular AMBOS huecos (contra `prevEndMax`, como hoy, y contra el fin de
-      la inmediatamente anterior) y clasificar el solape en esas dos clases; decidir si
-      se parte `Quality::FLAGS` en dos banderas o se añade metadato a la existente (con
-      su i18n, filtros y export). En el drill-down, señalar además **cuál** es el
-      registro largo que engulle a los demás. Barato de calcular (la cadena ya está
-      ordenada por inicio); alto valor en este entorno, donde separar el ruido del apagón
-      de la concurrencia real es justo lo que hoy no se puede.
+- [x] **Distinguir «solape con registro largo» de «solape entre consecutivas»**
+      *(acordado jul-2026 tras revisar el QC en baja conectividad; **ENTREGADO en
+      1.49.0**)*. `Quality::FLAGS` quedó partida en dos banderas: `overlap` (rojo)
+      solo para el solape PARCIAL con la inmediatamente anterior (concurrencia real:
+      código compartido o fabricación) y `overlap_long` (apagada) para la encuesta
+      engullida por la ventana de un formulario dejado abierto (apagón/pausa) —
+      incluida la anidada cuya «anterior» es el propio registro largo. El drill-down
+      enlaza al culpable («dentro de {inicio} – {fin}») y el registro largo muestra a
+      cuántas engulle; export e i18n distinguen las dos clases. Ambas siguen contando
+      como no admitidas (posible iteración futura: demotar `overlap_long` a solo
+      informativa si en la práctica estorba a los lotes).
 - [ ] **Horario admisible de trabajo** (franja horaria por formulario, evaluada en
       `APP_TIMEZONE`): encuestas iniciadas de madrugada como bandera propia.
 - [ ] **Velocidad imposible entre puntos geo consecutivos** del mismo encuestador
