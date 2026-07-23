@@ -33,8 +33,14 @@ $fieldScope = FieldScope::ruleForUser($user, $formId);
 $schemaRaw  = $form['schema_json'] ? json_decode($form['schema_json'], true) : null;
 
 // Alcance por estado de revisión: reutiliza el ajuste global del control de calidad
-// (por defecto solo pendientes/en espera; 'all' evalúa todos).
-$qcScope  = Settings::qcScope();
+// (por defecto solo pendientes/en espera; 'all' evalúa todos). Igual que quality.php,
+// `?scope=` lo sustituye SOLO para esta petición (toggle transitorio de la vista,
+// disponible para cualquiera con can_view); un valor no reconocido cae al global.
+$qcScope = Settings::qcScope();
+$scopeParam = (string) ($_GET['scope'] ?? '');
+if (in_array($scopeParam, Settings::VALID_QC_SCOPE, true)) {
+    $qcScope = $scopeParam;
+}
 $statuses = $qcScope === 'all' ? null : ['pending', 'on_hold'];
 
 $risk = Risk::compute(

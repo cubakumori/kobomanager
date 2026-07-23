@@ -58,6 +58,40 @@ final class RiskHttpTest extends HttpTestCase
         @unlink($jar);
     }
 
+    public function testScopeParamOverridesGlobal(): void
+    {
+        $this->seedUser('admin', 'admin@test.local', 'Secret123!');
+        $accId  = $this->seedAccount();
+        $formId = $this->seedForm($accId);
+        $this->enableRisk($formId, 3);
+        foreach ([1, 2, 3] as $i) $this->seedSubmission($formId, "fab$i", ['enum' => 'fab', 'p1' => 'a', 'p2' => 'b']);
+        foreach ([1, 2, 3] as $i) $this->seedSubmission($formId, "ann$i", ['enum' => 'ann', 'p1' => "a$i", 'p2' => "b$i"]);
+        foreach ([1, 2, 3] as $i) $this->seedSubmission($formId, "ben$i", ['enum' => 'ben', 'p1' => "c$i", 'p2' => "d$i"]);
+        // Todos los envíos ya revisados (aprobados): fuera del alcance por defecto
+        // (pending/on_hold), que es justo el caso «casi todo aprobado» del usuario.
+        DB::run('UPDATE submissions_cache SET review_status = ? WHERE form_id = ?', ['approved', $formId]);
+        $jar = $this->login('admin@test.local', 'Secret123!');
+
+        // Por defecto (global pending/on_hold): nada en alcance → nadie puntúa.
+        $def = $this->request('GET', "forms/$formId/risk", null, $jar);
+        $this->assertSame(200, $def['status']);
+        $this->assertSame('pending_hold', $def['json']['data']['scope']);
+        $this->assertSame(0, $def['json']['data']['scored']);
+
+        // Con ?scope=all: se evalúan todos → el fabricador puntúa y encabeza.
+        $all = $this->request('GET', "forms/$formId/risk?scope=all", null, $jar);
+        $this->assertSame(200, $all['status']);
+        $this->assertSame('all', $all['json']['data']['scope']);
+        $this->assertSame(3, $all['json']['data']['scored']);
+        $this->assertSame('fab', $all['json']['data']['teams'][0]['enumerators'][0]['name']);
+
+        // Un valor no reconocido cae al global (no rompe).
+        $bad = $this->request('GET', "forms/$formId/risk?scope=bogus", null, $jar);
+        $this->assertSame(200, $bad['status']);
+        $this->assertSame('pending_hold', $bad['json']['data']['scope']);
+        @unlink($jar);
+    }
+
     public function testForbiddenWithoutView(): void
     {
         $uid = $this->seedUser('viewer', 'v@test.local', 'Secret123!');

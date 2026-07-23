@@ -183,15 +183,6 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       (a todos se les cuelgan formularios) se cancela y el atípico sigue destacando.
       **Depende del ítem de clasificación de solapes** (para usar «entre consecutivas» y
       no el solape-con-registro-largo).
-- [ ] **Paridad del toggle de alcance en el Índice de riesgo** *(de la revisión
-      jul-2026; menor pero causa confusión)* — la página de QC deja a cualquiera cambiar
-      el alcance por-petición a «Todos» (`?scope=`, 1.27.0), pero la de **Índice de
-      riesgo NO**: `risk.php` obedece solo el ajuste global `qc_scope` y `RiskView` únicamente
-      MUESTRA la etiqueta del alcance. Efecto observado: con `risk_min_n` puesto y la mayoría
-      de envíos ya aprobados/rechazados, el índice reporta «aún no hay encuestadores con
-      suficientes envíos» porque el alcance por defecto (pending/on_hold) deja fuera casi
-      todo — sin forma de cambiarlo desde la propia página. Replicar el toggle de QC
-      (`?scope=`) en el índice.
 - [ ] **Índice de riesgo — Fase 2 e histórico** *(la Fase 1 —percentmatch, señales
       relativas a pares, índice explicado por encuestador y equipo, opt-in
       `forms.risk_min_n`— se entregó en 1.23.0)*:

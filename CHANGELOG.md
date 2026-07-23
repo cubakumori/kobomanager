@@ -4,6 +4,21 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.48.0] - 2026-07-23
+
+### Añadido
+
+- **Toggle de alcance por-petición en el Índice de riesgo** (reporte del usuario): el
+  índice se alimenta por defecto de pendientes/en espera (los aprobados/rechazados ya
+  pasaron revisión humana), así que en un formulario con casi todo ya revisado reporta
+  «aún no hay encuestadores con suficientes envíos para puntuar». La página de riesgo
+  gana ahora el mismo **chip-botón de alcance** que el Control de calidad (1.27.0):
+  alterna entre «Pendientes/En espera» y «Todos» por-petición (`?scope=`), recordando
+  la elección **por dispositivo** (clave propia `km.risk.scope`, independiente de la
+  del QC); el enlace del admin sigue gobernando el default global (Configuración →
+  Paneles). Antes solo se mostraba la etiqueta del alcance, sin forma de cambiarlo
+  desde la propia página.
+
 ## [1.47.0] - 2026-07-22
 
 ### Añadido

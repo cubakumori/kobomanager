@@ -141,7 +141,10 @@ native validation status.
   pool, digit preference (Benford), productivity and GPS clustering — to **prioritise who
   to back-check**. Never an opaque score: every enumerator expands into its components
   with the real value, the team median and a plain-language explanation. It is a signal
-  to prioritise verifications, **not proof**, and needs volume.
+  to prioritise verifications, **not proof**, and needs volume. Like quality control, the
+  page carries a transient **scope toggle** (pending/on-hold vs. all, remembered per
+  device): a form whose submissions are mostly already reviewed can still be scored over
+  all of them.
 - **Review comments panel**: all of a form's review comments (made in the app or imported
   from Kobo) on one page, grouped by team → enumerator, with date, status, author, text and
   a direct link to each submission — so you can see what's been commented without opening

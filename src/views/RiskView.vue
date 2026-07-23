@@ -23,11 +23,27 @@ const r = ref(null)
 const loading = ref(true)
 const error = ref('')
 
+// Alcance por estado de revisión: igual que el Control de calidad, la primera carga
+// va SIN parámetro (arranca en el ajuste global `qc_scope`) y el toggle recarga con
+// `?scope=`, RECORDANDO la elección por dispositivo (clave propia, independiente de la
+// del QC). `r.scope` es siempre el alcance EFECTIVO que devuelve el backend; el enlace
+// del admin gobierna el default global para todos.
+const SCOPE_KEY = 'km.risk.scope'
+const storedScope = localStorage.getItem(SCOPE_KEY)
+const scopeOverride = ref(['all', 'pending_hold'].includes(storedScope) ? storedScope : null)
+function setScope(s) {
+  if (loading.value || s === r.value?.scope) return
+  scopeOverride.value = s
+  localStorage.setItem(SCOPE_KEY, s)
+  load()
+}
+
 async function load() {
   loading.value = true
   error.value = ''
   try {
-    const { data } = await api.get(`/forms/${formId.value}/risk`)
+    const qs = scopeOverride.value ? `?scope=${scopeOverride.value}` : ''
+    const { data } = await api.get(`/forms/${formId.value}/risk${qs}`)
     r.value = data.data
   } catch (e) {
     error.value = apiError(e, t('risk.loadError'))
@@ -128,12 +144,34 @@ onMounted(load)
           <span>{{ $t('risk.minN') }}: <span class="font-semibold text-slate-700">{{ r.min_n }}</span></span>
           <span>{{ $t('risk.scored') }}: <span class="font-semibold text-slate-700">{{ r.scored }}</span></span>
           <span v-if="r.insufficient">{{ $t('risk.insufficient', { n: r.insufficient }) }}</span>
-          <span>{{ $t('stats.qualityScopeLabel') }}: <span class="font-semibold text-slate-700">{{ $t('stats.qualityScope_' + r.scope) }}</span></span>
           <RouterLink
             v-if="canConfigure"
             :to="{ name: 'admin-form-settings', params: { id: formId } }"
             class="font-medium text-primary-600 hover:underline"
           >{{ $t('stats.qualityAdjust') }}</RouterLink>
+          <!-- Alcance por estado de revisión: chip-botón transitorio (igual que el
+               Control de calidad); arranca en el global y el enlace del admin cambia
+               el default para todos -->
+          <span class="inline-flex items-center gap-1.5">
+            <button
+              type="button"
+              :aria-pressed="String(r.scope === 'all')"
+              :title="$t('stats.qualityScopeToggleHint')"
+              class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+              @click="setScope(r.scope === 'all' ? 'pending_hold' : 'all')"
+            >
+              {{ $t('stats.qualityScopeLabel') }}:
+              {{ r.scope === 'all' ? $t('stats.qualityScopeToggleAll') : $t('stats.qualityScopeTogglePending') }}
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="h-3 w-3">
+                <path fill-rule="evenodd" d="M13.2 2.24a.75.75 0 0 0 .04 1.06l2.1 1.95H6.75a.75.75 0 0 0 0 1.5h8.59l-2.1 1.95a.75.75 0 1 0 1.02 1.1l3.5-3.25a.75.75 0 0 0 0-1.1l-3.5-3.25a.75.75 0 0 0-1.06.04Zm-6.4 8a.75.75 0 0 0-1.06-.04l-3.5 3.25a.75.75 0 0 0 0 1.1l3.5 3.25a.75.75 0 1 0 1.02-1.1l-2.1-1.95h8.59a.75.75 0 0 0 0-1.5H4.66l2.1-1.95a.75.75 0 0 0 .04-1.06Z" clip-rule="evenodd" />
+              </svg>
+            </button>
+            <RouterLink
+              v-if="auth.isAdmin"
+              :to="{ path: '/admin/settings', query: { tab: 'panels' } }"
+              class="font-medium text-primary-600 hover:underline"
+            >{{ $t('stats.qualityScopeChange') }}</RouterLink>
+          </span>
         </div>
 
         <!-- Qué señales se están usando -->

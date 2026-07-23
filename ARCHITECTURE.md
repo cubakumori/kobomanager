@@ -643,7 +643,10 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   returns `enabled: false` and the view shows an empty state inviting configuration). One
   streaming pass over `submissions_cache` (`FieldScope::apply` per row like `lib/Stats`), grouped
   by team → enumerator via `stats_team_field`/`stats_enumerator_field`; the review‑status scope
-  reuses `qc_scope`. Signals: **percentmatch** (per‑enumerator answer similarity — mean of each
+  reuses `qc_scope` and, since 1.48.0, the page carries the **same transient `?scope=` toggle** as
+  quality control (remembered per device under its own `km.risk.scope` key) — so a form whose
+  submissions are mostly already reviewed can still be evaluated over *all* of them without
+  touching the global setting. Signals: **percentmatch** (per‑enumerator answer similarity — mean of each
   submission's best pairwise match; O(n²) bounded by a `PM_SAMPLE=200` sample, reported), skips /
   "don't know" rate, straight‑lining, answer‑distribution TVD vs. peers and (team level) vs. the
   pool of teams, Benford first‑digit TVD, productivity (interviews/day) and GPS clustering. Each
