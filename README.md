@@ -141,7 +141,9 @@ native validation status.
 - **Risk index** (fabrication / "curbstoning" detection, opt-in per form): a heuristic
   index that aggregates **peer-relative** signals — answer similarity (*percentmatch*),
   skips/"don't know", straight-lining, answer distribution vs. peers and vs. the team
-  pool, digit preference (Benford), productivity and GPS clustering — to **prioritise who
+  pool, digit preference (Benford), productivity, GPS clustering and the **quality-control
+  flag rate** (how much more of their work gets flagged than their peers', counting only
+  the clean flags: short, real consecutive overlap, duplicate) — to **prioritise who
   to back-check**. Never an opaque score: every enumerator expands into its components
   with the real value, the team median and a plain-language explanation. It is a signal
   to prioritise verifications, **not proof**, and needs volume. Like quality control, the

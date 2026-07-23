@@ -23,6 +23,14 @@
  * PARES: los z se calculan contra los COMPAÑEROS DE EQUIPO puntuables (si no hay campo
  * de equipo, contra todos los encuestadores del formulario).
  *
+ * PUENTE CON EL QC (desde 1.50.0): la métrica `qc_flag_rate` trae la física de las
+ * banderas de lib/Quality al índice — tasa de envíos con bandera CONTABLE
+ * (Quality::RISK_FLAGS: corta + solape entre consecutivas + duplicada) sobre los envíos
+ * en alcance. No se recomputa aquí: el llamador computa Quality y pasa
+ * Quality::riskRates() como $qcRates (par (equipo, encuestador) plegado con normKey,
+ * mismo emparejamiento que admissiblePendingUids). Al z-scorearse contra pares, el
+ * ruido sistémico de los apagones (a todos se les cuelgan formularios) se cancela.
+ *
  * ALCANCE por estado de revisión (`$scopeStatuses`, del ajuste `qc_scope`, igual que
  * lib/Quality): decide qué envíos ALIMENTAN las señales y el índice (por defecto
  * pending/on_hold; los aprobados/rechazados ya pasaron revisión humana). La MEZCLA de
@@ -76,6 +84,13 @@ class Risk {
         'benford'       => ['weight' => 0.5, 'dir' => 'high'],
         'productivity'  => ['weight' => 0.4, 'dir' => 'high'],
         'gps_cluster'   => ['weight' => 0.5, 'dir' => 'low'],
+        // Tasa de banderas del Control de calidad (envíos con bandera contable /
+        // envíos en alcance; Quality::RISK_FLAGS = corta + solape entre consecutivas
+        // + duplicada — sin las ruidosas en apagones ni GPS, ya cubierta por
+        // gps_cluster). El valor NO se recomputa aquí: llega vía $qcRates desde los
+        // conteos que lib/Quality ya calcula. Al ser relativa a pares, el ruido
+        // sistémico (a todos se les cuelgan formularios) se cancela.
+        'qc_flag_rate'  => ['weight' => 0.6, 'dir' => 'high'],
     ];
 
     /**
@@ -88,6 +103,12 @@ class Risk {
      * @param string|null $enumField     forms.stats_enumerator_field (NULL/`_submitted_by`).
      * @param int|null    $minN          forms.risk_min_n (NULL = índice desactivado).
      * @param array|null  $scopeStatuses Estados que ALIMENTAN el índice (NULL = todos).
+     * @param array|null  $qcRates       Salida de Quality::riskRates() — tasa de banderas
+     *                                 contables por par (equipo, encuestador) plegado —
+     *                                 para la métrica qc_flag_rate. NULL = métrica
+     *                                 inactiva (el llamador no computó el QC). Debe
+     *                                 venir del MISMO alcance ($scope/$scopeStatuses)
+     *                                 para que numerador y pares sean coherentes.
      */
     public static function compute(
         int $formId,
@@ -98,7 +119,8 @@ class Risk {
         ?string $teamField,
         ?string $enumField,
         ?int $minN,
-        ?array $scopeStatuses = null
+        ?array $scopeStatuses = null,
+        ?array $qcRates = null
     ): array {
         // Mismo gating que lib/Stats/lib/Quality: no se agrupa por un campo oculto.
         $teamField = ($teamField !== null && $teamField !== '' && !FieldScope::isHidden($fieldScope, $teamField))
@@ -286,6 +308,18 @@ class Risk {
             unset($g);
         }
 
+        // Etiquetas resueltas de equipo/encuestador (mismo criterio que lib/Quality):
+        // se usan tanto en la salida como para casar el par con Quality::riskRates
+        // (ambos módulos resuelven idéntico; el plegado normKey hace la clave estable).
+        $teamName = fn(string $tKey): string => $tKey === '—' ? '—'
+            : ($normTeam
+                ? (MemberNorm::pickLabel($teamSpell[$tKey] ?? [], $teamCanon[$tKey] ?? null) ?: $tKey)
+                : (($labelsOn && isset($teamOptMap[$tKey])) ? $teamOptMap[$tKey] : $tKey));
+        $enumName = fn(string $tKey, string $eKey): string => $eKey === '—' ? '—'
+            : ($normEnum
+                ? (MemberNorm::pickLabel($enumSpell[$tKey][$eKey] ?? [], $enumCanon[$tKey][$eKey] ?? null) ?: $eKey)
+                : (($labelsOn && isset($enumOptMap[$eKey])) ? $enumOptMap[$eKey] : $eKey));
+
         // --- Métricas brutas por encuestador ---
         // Estructura de trabajo: tKey => eKey => ['received','in','status','metrics'=>[k=>info]].
         // De paso, se agrega la distribución de respuestas por EQUIPO (suma de miembros)
@@ -297,6 +331,18 @@ class Risk {
             foreach ($enums as $eKey => $g) {
                 if ($g['in'] === 0) continue; // nada en alcance → fuera del índice
                 $metrics = self::computeRawMetrics($g, $poolDist);
+                // Tasa de banderas del QC: no se recomputa — se busca el par resuelto
+                // en el mapa que trae el llamador (Quality::riskRates).
+                if ($qcRates !== null) {
+                    $pk = MemberNorm::normKey($teamName($tKey)) . "\0" . MemberNorm::normKey($enumName($tKey, $eKey));
+                    $qr = $qcRates[$pk] ?? null;
+                    if ($qr !== null && $qr['total'] > 0) {
+                        $metrics['qc_flag_rate'] = [
+                            'value' => round($qr['flagged'] / $qr['total'], 4),
+                            'extra' => ['flagged' => $qr['flagged'], 'submissions' => $qr['total']],
+                        ];
+                    }
+                }
                 foreach ($metrics as $k => $_) $metricsSeen[$k] = true;
                 foreach ($g['dist'] as $field => $counts) {
                     foreach ($counts as $val => $c) {
@@ -349,10 +395,7 @@ class Risk {
             }
 
             $teamOut = [
-                'name'         => $tKey === '—' ? '—'
-                    : ($normTeam
-                        ? (MemberNorm::pickLabel($teamSpell[$tKey] ?? [], $teamCanon[$tKey] ?? null) ?: $tKey)
-                        : (($labelsOn && isset($teamOptMap[$tKey])) ? $teamOptMap[$tKey] : $tKey)),
+                'name'         => $teamName($tKey),
                 'count'        => 0,
                 'received'     => 0,
                 'scored'       => 0,
@@ -376,10 +419,7 @@ class Risk {
             }
 
             foreach ($enums as $eKey => $e) {
-                $name = $eKey === '—' ? '—'
-                    : ($normEnum
-                        ? (MemberNorm::pickLabel($enumSpell[$tKey][$eKey] ?? [], $enumCanon[$tKey][$eKey] ?? null) ?: $eKey)
-                        : (($labelsOn && isset($enumOptMap[$eKey])) ? $enumOptMap[$eKey] : $eKey));
+                $name = $enumName($tKey, $eKey);
                 $scored = $e['in'] >= $minN;
 
                 $components = [];

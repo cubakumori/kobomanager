@@ -4,6 +4,27 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.50.0] - 2026-07-23
+
+### Añadido
+
+- **Señal de riesgo relativa a pares por tasa de banderas del QC** (segundo ítem
+  prioritario de la revisión en baja conectividad): hasta ahora el Índice de riesgo y el
+  Control de calidad eran subsistemas separados y «este encuestador está señalado mucho
+  más que sus compañeros» era un juicio manual sobre los conteos del QC. Métrica nueva
+  **`qc_flag_rate`** en `Risk::METRICS` (peso 0.6, dir `alto`): envíos con bandera
+  **contable** sobre envíos en alcance, z-scoreada de forma robusta contra los pares del
+  equipo, con su valor + mediana + explicación como las demás señales. Banderas
+  contables (`Quality::RISK_FLAGS`): **corta + solape entre consecutivas (1.49.0) +
+  duplicada**; quedan fuera larga/hueco-corto/solape-con-registro-largo (ruido puro en
+  entornos con apagones — al ser la tasa relativa a pares, el ruido sistémico se cancela
+  y el atípico sigue destacando) y GPS clavado (el índice ya tiene `gps_cluster`).
+  Sin recomputar nada: `Quality::compute` cuenta `risk_flagged` por encuestador,
+  `Quality::riskRates()` lo empaqueta y `Risk::compute` lo consume (emparejamiento por
+  par (equipo, encuestador) plegado, el mismo de `admissiblePendingUids`); `risk.php`,
+  `quality.php` y `submissions.php` pasan la tasa, así que el índice que excluye a los
+  de alto riesgo del atajo «aprobar admisibles» es idéntico al de la página del índice.
+
 ## [1.49.0] - 2026-07-23
 
 ### Añadido

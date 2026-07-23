@@ -365,4 +365,66 @@ final class RiskTest extends DbTestCase
         $this->assertNull($this->enumByName($r, 'out'));
         $this->assertNotNull($this->enumByName($r, 'fab'));
     }
+
+    // ---- Métrica qc_flag_rate (tasa de banderas del QC, vía Quality::riskRates) ----
+
+    /** Envío con encuestador y tiempos (mismo día), para que lib/Quality lo evalúe. */
+    private function addTimed(int $formId, string $enum, string $start, string $end): string
+    {
+        return $this->add($formId, [
+            'enum'  => $enum,
+            'start' => "2026-07-01T$start",
+            'end'   => "2026-07-01T$end",
+        ]);
+    }
+
+    public function testQcFlagRateFromQualityCounts(): void
+    {
+        $formId = $this->makeForm();
+        // fab: 2 de 3 cortas (min 4). cid: 1 de 3. ann/ben: limpios. Sin solapes.
+        $this->addTimed($formId, 'fab', '09:00:00', '09:02:00');
+        $this->addTimed($formId, 'fab', '10:00:00', '10:02:00');
+        $this->addTimed($formId, 'fab', '11:00:00', '11:30:00');
+        $this->addTimed($formId, 'cid', '09:00:00', '09:02:00');
+        $this->addTimed($formId, 'cid', '10:00:00', '10:30:00');
+        $this->addTimed($formId, 'cid', '11:00:00', '11:30:00');
+        foreach (['ann', 'ben'] as $who) {
+            $this->addTimed($formId, $who, '09:00:00', '09:30:00');
+            $this->addTimed($formId, $who, '10:00:00', '10:30:00');
+            $this->addTimed($formId, $who, '11:00:00', '11:30:00');
+        }
+
+        // La tasa NO se recomputa en Risk: viene de lib/Quality (misma fuente que el QC).
+        $quality = Quality::compute($formId, null, null, null, 'es', null, 'enum', 4, null, null);
+        $r = Risk::compute($formId, null, null, null, 'es', null, 'enum', 3, null, Quality::riskRates($quality));
+
+        $fab = $this->enumByName($r, 'fab');
+        $c = $this->component($fab, 'qc_flag_rate');
+        $this->assertNotNull($c);
+        $this->assertSame(0.6667, $c['value']);
+        $this->assertSame(2, $c['flagged']);
+        $this->assertSame(3, $c['submissions']);
+        // Pares: 0.6667 / 0.3333 / 0 / 0 → fab destaca claramente por encima (dir high).
+        $this->assertGreaterThan(1.5, $c['z']);
+        // Limpio: tasa 0, z no positivo.
+        $ann = $this->component($this->enumByName($r, 'ann'), 'qc_flag_rate');
+        $this->assertSame(0.0, $ann['value']);
+        $this->assertLessThanOrEqual(0.0, $ann['z']);
+        // La señal figura activa en el registro de señales.
+        $sig = array_values(array_filter($r['signals'], fn($s) => $s['key'] === 'qc_flag_rate'))[0];
+        $this->assertTrue($sig['active']);
+    }
+
+    /** Sin $qcRates (llamador que no computó el QC) la métrica queda inactiva. */
+    public function testQcFlagRateAbsentWithoutRates(): void
+    {
+        $formId = $this->makeForm();
+        foreach ([1, 2, 3] as $i) $this->addTimed($formId, 'ana', "0$i:00:00", "0$i:30:00");
+
+        $r = $this->compute($formId, 3);
+        $this->assertNull($this->component($this->enumByName($r, 'ana'), 'qc_flag_rate'));
+        $sig = array_values(array_filter($r['signals'], fn($s) => $s['key'] === 'qc_flag_rate'))[0];
+        $this->assertFalse($sig['active']);
+        $this->assertSame('insufficient_data', $sig['reason']);
+    }
 }

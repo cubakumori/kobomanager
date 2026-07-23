@@ -179,10 +179,13 @@ if (($_GET['admissible'] ?? '') === '1'
     );
     $risk = null;
     if ($qcForm['risk_min_n'] !== null) {
+        // Con la tasa de banderas del QC (ya computado arriba): mismo índice de
+        // exclusión que la página del Índice de riesgo.
         $risk = Risk::compute(
             $formId, $schema, $scope, $fieldScope, $user['locale'],
             $qcForm['stats_team_field'] ?: null, $qcForm['stats_enumerator_field'] ?: null,
-            (int) $qcForm['risk_min_n'], $qcStatuses
+            (int) $qcForm['risk_min_n'], $qcStatuses,
+            Quality::riskRates($quality)
         );
     }
     $admissibleUids = Quality::admissiblePendingUids($quality, $risk)['uids'];

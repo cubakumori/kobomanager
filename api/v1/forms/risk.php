@@ -19,7 +19,8 @@ if (Request::method() !== 'GET') {
 }
 
 $form = DB::run(
-    'SELECT id, name, schema_json, deployment_status, stats_team_field, stats_enumerator_field, risk_min_n
+    'SELECT id, name, schema_json, deployment_status, stats_team_field, stats_enumerator_field, risk_min_n,
+            qc_min_duration, qc_max_duration, qc_min_gap, qc_dup_min_answers
      FROM forms WHERE id = ? AND active = 1',
     [$formId]
 )->fetch();
@@ -43,11 +44,30 @@ if (in_array($scopeParam, Settings::VALID_QC_SCOPE, true)) {
 }
 $statuses = $qcScope === 'all' ? null : ['pending', 'on_hold'];
 
+// Métrica qc_flag_rate: el índice consume los conteos de banderas que lib/Quality ya
+// calcula (misma fuente de verdad que la página de QC), con el MISMO alcance por filas
+// y estado. Cuesta una segunda pasada de streaming —el precio de no duplicar la
+// física—, que se ahorra si el índice está desactivado (risk_min_n NULL).
+$qcRates = null;
+if ($form['risk_min_n'] !== null) {
+    $quality = Quality::compute(
+        $formId, $schemaRaw, $scope, $fieldScope, $user['locale'],
+        $form['stats_team_field'] ?: null, $form['stats_enumerator_field'] ?: null,
+        $form['qc_min_duration'] !== null ? (int) $form['qc_min_duration'] : null,
+        $form['qc_max_duration'] !== null ? (int) $form['qc_max_duration'] : null,
+        $form['qc_min_gap'] !== null ? (int) $form['qc_min_gap'] : null,
+        $statuses,
+        $form['qc_dup_min_answers'] !== null ? (int) $form['qc_dup_min_answers'] : null
+    );
+    $qcRates = Quality::riskRates($quality);
+}
+
 $risk = Risk::compute(
     $formId, $schemaRaw, $scope, $fieldScope, $user['locale'],
     $form['stats_team_field'] ?: null, $form['stats_enumerator_field'] ?: null,
     $form['risk_min_n'] !== null ? (int) $form['risk_min_n'] : null,
-    $statuses
+    $statuses,
+    $qcRates
 );
 
 ErrorResponse::ok(array_merge([

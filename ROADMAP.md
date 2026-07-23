@@ -156,23 +156,20 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       SchemaCheck + nota de upgrade; escribir = `can_validate` (acompaña acciones de
       revisión); decidir edición/borrado (¿autor y admin?). Los alcances `general` y
       `enumerator` pueden esperar a una iteración posterior si la v1 se queda en equipo.
-- [ ] **PRIORITARIO — señal de riesgo relativa a pares basada en la tasa de banderas de
-      QC** *(acordado jul-2026)*. Hoy el índice de riesgo (`lib/Risk`) y el control de
-      calidad (`lib/Quality`) son subsistemas SEPARADOS: ninguna bandera física del QC
-      (corta/larga/hueco/solape/duplicado/GPS) entra en el índice, así que «este
-      encuestador está señalado mucho más que sus compañeros» es hoy un juicio manual y
-      visual sobre los conteos de la página de QC. Propuesta: una **métrica nueva** en
-      `Risk::METRICS` = **tasa de envíos con bandera** del encuestador (envíos señalados /
-      envíos en alcance), z-scoreada de forma robusta contra los pares del equipo (dir
-      `high`, como las demás), con su valor + mediana de pares + explicación. Decisiones
-      de diseño: **qué banderas** entran (probablemente corta + «solape entre
-      consecutivas» del ítem de arriba + duplicado; **excluir** larga/hueco-corto, ruido
-      puro en entornos con apagones); reutilizar los conteos por-encuestador que
-      `Quality` YA calcula (que `Risk` los consuma, no recomputar); peso a fijar. Encaja
-      especialmente en baja conectividad: al ser **relativa a pares**, el ruido sistémico
-      (a todos se les cuelgan formularios) se cancela y el atípico sigue destacando.
-      **Depende del ítem de clasificación de solapes** (para usar «entre consecutivas» y
-      no el solape-con-registro-largo).
+- [x] **Señal de riesgo relativa a pares basada en la tasa de banderas de QC**
+      *(acordado jul-2026; **ENTREGADO en 1.50.0**)*. Métrica `qc_flag_rate` en
+      `Risk::METRICS` (peso 0.6, dir `high`): envíos con bandera **contable**
+      (`Quality::RISK_FLAGS` = corta + «solape entre consecutivas» de 1.49.0 +
+      duplicada) sobre envíos en alcance, z-scoreada contra los pares con su valor +
+      mediana + explicación, como las demás. Excluidas larga/hueco-corto/solape-con-
+      registro-largo (ruido puro con apagones) y GPS clavado (el índice ya tiene
+      `gps_cluster`; contarla dos veces inflaría el mismo fenómeno). Sin recomputar:
+      `Quality::compute` cuenta `risk_flagged` por encuestador y `Quality::riskRates()`
+      lo entrega a `Risk::compute` (emparejamiento por par plegado, como
+      `admissiblePendingUids`); `risk.php`, `quality.php` y `submissions.php` pasan la
+      tasa para que el índice de exclusión de alto riesgo sea idéntico en todas partes.
+      Al ser relativa a pares, el ruido sistémico (a todos se les cuelgan formularios)
+      se cancela y el atípico sigue destacando.
 - [ ] **Índice de riesgo — Fase 2 e histórico** *(la Fase 1 —percentmatch, señales
       relativas a pares, índice explicado por encuestador y equipo, opt-in
       `forms.risk_min_n`— se entregó en 1.23.0)*:

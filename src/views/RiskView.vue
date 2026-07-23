@@ -56,7 +56,7 @@ const { formatPctNumber } = usePctFormat()
 const hasTeams = computed(() => !!r.value?.team_field)
 
 // Componentes por-encuestador (en orden del backend) + señal de equipo.
-const PCT_METRICS = ['percentmatch', 'straightlining', 'distribution', 'skip_rate', 'benford', 'team_distribution']
+const PCT_METRICS = ['percentmatch', 'straightlining', 'distribution', 'skip_rate', 'benford', 'qc_flag_rate', 'team_distribution']
 
 function fmtValue(key, val) {
   if (val == null) return '—'

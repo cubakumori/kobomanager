@@ -75,6 +75,15 @@ class Quality {
     /** Las banderas, en el orden canónico de la UI. */
     public const FLAGS = ['short', 'long', 'short_gap', 'overlap', 'overlap_long', 'duplicate', 'gps'];
 
+    /**
+     * Banderas que cuentan para la tasa del Índice de riesgo (métrica qc_flag_rate):
+     * corta + solape entre consecutivas + duplicada. Quedan fuera a propósito `long`,
+     * `short_gap` y `overlap_long` (ruido puro en entornos con apagones: un formulario
+     * colgado las dispara solas) y también `gps` (el índice ya tiene gps_cluster como
+     * señal propia; contarla aquí puntuaría dos veces el mismo fenómeno).
+     */
+    public const RISK_FLAGS = ['short', 'overlap', 'duplicate'];
+
     /** Repeticiones del mismo punto exacto que convierten el grupo en «GPS clavado». */
     public const GPS_MIN_REPEATS = 3;
 
@@ -386,12 +395,15 @@ class Quality {
                 if ($inCount === 0) continue;
 
                 $enumOut = [
-                    'name'       => $enumName($tKey, $eKey),
-                    'count'      => $inCount,        // en alcance
-                    'total'      => count($entries), // todos los recibidos del encuestador
-                    'flagged'    => 0,
-                    'flags'      => $zeroFlags,
-                    'violations' => [],
+                    'name'         => $enumName($tKey, $eKey),
+                    'count'        => $inCount,        // en alcance
+                    'total'        => count($entries), // todos los recibidos del encuestador
+                    'flagged'      => 0,
+                    // Envíos en alcance con ≥1 bandera CONTABLE para el Índice de
+                    // riesgo (RISK_FLAGS): numerador de la tasa qc_flag_rate.
+                    'risk_flagged' => 0,
+                    'flags'        => $zeroFlags,
+                    'violations'   => [],
                 ];
 
                 foreach ($entries as $e) {
@@ -411,6 +423,7 @@ class Quality {
 
                     $enumOut['flagged']++;
                     foreach ($flags as $f) $enumOut['flags'][$f]++;
+                    if (array_intersect($flags, self::RISK_FLAGS)) $enumOut['risk_flagged']++;
                     // Referencias del solape con registro largo: quién engulle a esta
                     // (long_*) y, si ESTA es el registro largo, a cuántas engulle.
                     $lr = $longRef[$e['uid']] ?? null;
@@ -589,5 +602,28 @@ class Quality {
             'high_risk_excluded' => $excluded,
             'risk_active'        => $riskActive,
         ];
+    }
+
+    /**
+     * Tasa de banderas contables por encuestador, para la métrica `qc_flag_rate` del
+     * Índice de riesgo: mapa "equipo\0encuestador" => ['flagged' => envíos en alcance
+     * con ≥1 bandera de RISK_FLAGS, 'total' => envíos en alcance]. Función PURA sobre
+     * la salida de compute(): Risk la consume sin recomputar la física de banderas.
+     *
+     * El par se pliega con MemberNorm::normKey a ambos lados, exactamente como en
+     * admissiblePendingUids (Quality y Risk resuelven los mismos nombres, así que las
+     * claves casan). Si dos nombres resueltos plegaran a la misma clave, se SUMAN
+     * (fusionar de más solo promedia a la misma persona fragmentada).
+     */
+    public static function riskRates(array $qualityResult): array {
+        $out = [];
+        foreach (($qualityResult['teams'] ?? []) as $t) {
+            foreach (($t['enumerators'] ?? []) as $e) {
+                $key = MemberNorm::normKey((string) $t['name']) . "\0" . MemberNorm::normKey((string) $e['name']);
+                $out[$key]['flagged'] = ($out[$key]['flagged'] ?? 0) + (int) ($e['risk_flagged'] ?? 0);
+                $out[$key]['total']   = ($out[$key]['total'] ?? 0) + (int) ($e['count'] ?? 0);
+            }
+        }
+        return $out;
     }
 }

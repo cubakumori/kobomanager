@@ -64,10 +64,13 @@ $admissible  = ['enabled' => false];
 if ($canValidate && Settings::qcAdmitBatchInQc()) {
     $risk = null;
     if ($form['risk_min_n'] !== null) {
+        // Se pasa la tasa de banderas del QC (ya computado arriba) para que el índice
+        // de exclusión sea EXACTAMENTE el que muestra la página del Índice de riesgo.
         $risk = Risk::compute(
             $formId, $schemaRaw, $scope, $fieldScope, $user['locale'],
             $form['stats_team_field'] ?: null, $form['stats_enumerator_field'] ?: null,
-            (int) $form['risk_min_n'], $statuses
+            (int) $form['risk_min_n'], $statuses,
+            Quality::riskRates($quality)
         );
     }
     $picked     = Quality::admissiblePendingUids($quality, $risk);

@@ -656,7 +656,16 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   touching the global setting. Signals: **percentmatch** (per‑enumerator answer similarity — mean of each
   submission's best pairwise match; O(n²) bounded by a `PM_SAMPLE=200` sample, reported), skips /
   "don't know" rate, straight‑lining, answer‑distribution TVD vs. peers and (team level) vs. the
-  pool of teams, Benford first‑digit TVD, productivity (interviews/day) and GPS clustering. Each
+  pool of teams, Benford first‑digit TVD, productivity (interviews/day), GPS clustering and,
+  since 1.50.0, the **QC flag rate** (`qc_flag_rate`): in‑scope submissions with a *countable*
+  quality‑control flag over in‑scope submissions. Countable = `Quality::RISK_FLAGS` (short + the
+  real consecutive overlap of 1.49.0 + duplicate); long/short‑gap/overlap‑with‑long‑record are
+  excluded (pure noise under power cuts — and being peer‑relative, systemic noise cancels out)
+  as is the pinned‑GPS flag (already covered by `gps_cluster`). It is **not recomputed**:
+  `Quality::compute` counts `risk_flagged` per enumerator and `Quality::riskRates()` hands the
+  map to `Risk::compute` (`$qcRates`, folded (team, enumerator) pair keys — the same pairing as
+  `admissiblePendingUids`); `risk.php`, `quality.php` and `submissions.php` all pass it, so the
+  high‑risk exclusion index of the "approve admissible" shortcut matches the risk page exactly. Each
   metric is z‑scored **robustly** (median/MAD, so the cheater can't inflate their own baseline)
   against the enumerator's **team peers**; only positive z contributes to the weighted index
   (percentmatch dominant). Team index is not the members' mean but "how many are over the suspicion

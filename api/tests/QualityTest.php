@@ -508,6 +508,28 @@ final class QualityTest extends DbTestCase
         $this->assertFalse($none['risk_active']);
     }
 
+    // ---- Tasa de banderas para el Índice de riesgo (RISK_FLAGS / riskRates) ----
+
+    /** Solo las banderas CONTABLES (corta/solape real/duplicada) entran en la tasa:
+     *  larga, hueco corto y solape-con-registro-largo quedan fuera (ruido de apagón). */
+    public function testRiskRatesCountOnlyCountableFlags(): void
+    {
+        $formId = $this->makeForm();
+        $this->timed($formId, 'ana', '08:00:00', '14:00:00'); // registro largo → long
+        $this->timed($formId, 'ana', '10:00:00', '10:30:00'); // engullida → overlap_long
+        $this->timed($formId, 'ana', '15:00:00', '15:02:00'); // corta → short (contable)
+        $this->timed($formId, 'ana', '16:00:00', '16:30:00'); // limpia
+
+        $q = $this->compute($formId, 4, 300, null);
+        $ana = $q['teams'][0]['enumerators'][0];
+        $this->assertSame(3, $ana['flagged']);      // long + overlap_long + short
+        $this->assertSame(1, $ana['risk_flagged']); // solo la corta cuenta para el índice
+
+        $rates = Quality::riskRates($q);
+        $key = MemberNorm::normKey('—') . "\0" . MemberNorm::normKey('ana');
+        $this->assertSame(['flagged' => 1, 'total' => 4], $rates[$key]);
+    }
+
     // ---- Normalización de miembro/equipo de texto libre (forms.member_normalize) ----
 
     public function testNormalizationMergesVariantsWithinTeamOnly(): void

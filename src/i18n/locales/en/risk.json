@@ -36,6 +36,7 @@
       "benford": "Digit preference (Benford)",
       "productivity": "Productivity",
       "gps_cluster": "GPS clustering",
+      "qc_flag_rate": "QC flag rate",
       "team_distribution": "Team distribution"
     },
     "explain": {
@@ -46,6 +47,7 @@
       "benford": "The leading digit of their numbers departs from what's expected in natural data. May indicate made-up figures, or magnitudes that don't follow the pattern.",
       "productivity": "Completes many more interviews per day than peers. May indicate fabricated records, or simply longer working hours.",
       "gps_cluster": "Their GPS points are very close together. May indicate surveys filled from one spot, or a small work area.",
+      "qc_flag_rate": "Quality control flags more of their submissions than their peers' (short ones, real consecutive overlaps and duplicates; the flags that are noisy under power cuts don't count). May indicate fabrication, or a stretch of hard conditions.",
       "team_distribution": "The team's answer distribution departs from that of the other teams. May indicate a team problem, or a different area."
     },
     "reason": {

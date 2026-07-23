@@ -36,6 +36,7 @@
       "benford": "Preferencia de dígitos (Benford)",
       "productivity": "Productividad",
       "gps_cluster": "Agrupación GPS",
+      "qc_flag_rate": "Tasa de banderas del QC",
       "team_distribution": "Distribución del equipo"
     },
     "explain": {
@@ -46,6 +47,7 @@
       "benford": "La primera cifra de sus números se aleja de lo esperado en datos naturales. Puede indicar cifras inventadas, o magnitudes que no siguen ese patrón.",
       "productivity": "Completa muchas más entrevistas por día que sus pares. Puede indicar registros fabricados, o simplemente más horas de trabajo.",
       "gps_cluster": "Sus puntos GPS están muy juntos. Puede indicar encuestas rellenadas desde un mismo sitio, o un área de trabajo pequeña.",
+      "qc_flag_rate": "El Control de calidad le señala más envíos que a sus pares (cortas, solapes reales entre consecutivas y duplicadas; las banderas ruidosas en apagones no cuentan). Puede indicar fabricación, o una racha de condiciones difíciles.",
       "team_distribution": "La distribución de respuestas del equipo se aleja de la del resto de equipos. Puede indicar un problema de equipo, o una zona distinta."
     },
     "reason": {
