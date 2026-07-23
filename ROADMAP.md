@@ -40,15 +40,16 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 > misma sección).
 >
 > **PRIORITARIO (acordado jul-2026, tras revisar el QC en un entorno de baja
-> conectividad y cortes de electricidad):** (7) **distinguir tipos de solape** en el
-> Control de calidad — «solape con registro largo» vs «solape entre encuestas
-> consecutivas» (ver «Control de calidad — extensiones diferidas»); (8) **señal de
-> riesgo relativa a pares basada en la tasa de banderas de QC** por encuestador (ver
-> «Índice de riesgo»). Motivación: con apagones, un formulario dejado abierto dispara
-> solapes benignos en cascada (un `end` tardío contra el que caen varias encuestas),
-> así que hay que **separar ese ruido de la concurrencia real**, y llevar esa señal
-> —relativa a pares, que cancela el ruido sistémico— al índice de riesgo, donde hoy no
-> entra ninguna bandera física del QC.
+> conectividad y cortes de electricidad) — AMBOS ENTREGADOS:** (7) ~~distinguir tipos de
+> solape~~ **ENTREGADO en 1.49.0** (`overlap` entre consecutivas vs `overlap_long` con
+> registro largo, con enlace al culpable; ver «Control de calidad — extensiones
+> diferidas» y `CHANGELOG.md`); (8) ~~señal de riesgo relativa a pares basada en la tasa
+> de banderas de QC~~ **ENTREGADA en 1.50.0** (métrica `qc_flag_rate`; ver «Índice de
+> riesgo»). Motivación (cumplida): con apagones, un formulario dejado abierto disparaba
+> solapes benignos en cascada (un `end` tardío contra el que caen varias encuestas); ya
+> se **separa ese ruido de la concurrencia real** y esa señal limpia —relativa a pares,
+> que cancela el ruido sistémico— entra en el índice de riesgo, que antes no incorporaba
+> ninguna bandera física del QC.
 
 ---
 
