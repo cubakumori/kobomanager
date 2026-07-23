@@ -38,6 +38,17 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
 > (6) **comentarios generales por equipo
 > en el QC** (nota por equipo y fecha desde la propia página, visible en Comentarios —
 > misma sección).
+>
+> **PRIORITARIO (acordado jul-2026, tras revisar el QC en un entorno de baja
+> conectividad y cortes de electricidad):** (7) **distinguir tipos de solape** en el
+> Control de calidad — «solape con registro largo» vs «solape entre encuestas
+> consecutivas» (ver «Control de calidad — extensiones diferidas»); (8) **señal de
+> riesgo relativa a pares basada en la tasa de banderas de QC** por encuestador (ver
+> «Índice de riesgo»). Motivación: con apagones, un formulario dejado abierto dispara
+> solapes benignos en cascada (un `end` tardío contra el que caen varias encuestas),
+> así que hay que **separar ese ruido de la concurrencia real**, y llevar esa señal
+> —relativa a pares, que cancela el ruido sistémico— al índice de riesgo, donde hoy no
+> entra ninguna bandera física del QC.
 
 ---
 
@@ -110,6 +121,27 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       voltear la bandera de otro envío), así que persistirlas sería una vista materializada
       con recálculo en cada sync + edición de umbrales. Este hito (histórico por naturaleza,
       `source='auto'`) es el único donde persistir empezaría a valer la pena.
+- [ ] **PRIORITARIO — distinguir «solape con registro largo» de «solape entre
+      consecutivas»** *(acordado jul-2026, tras revisar el QC en un entorno de baja
+      conectividad y cortes de luz)*. Hoy `overlap` se marca con CUALQUIER hueco
+      negativo respecto al **`end` máximo visto hasta ese momento** (`prevEndMax`,
+      `Quality::compute`), lo que mezcla dos situaciones muy distintas:
+      - **Solape con registro largo**: una encuesta posterior cae DENTRO de la ventana
+        de un formulario dejado abierto (un `end` tardío por batería/apagón/pausa) que
+        empezó antes. En un entorno con cortes de electricidad esto es lo **habitual y
+        casi siempre benigno**, y hoy «tiñe» en cascada a todas las que empiezan antes
+        de ese fin (una sola encuesta larga inflando el recuento de solapes).
+      - **Solape entre consecutivas**: la encuesta se solapa con la **inmediatamente
+        anterior** por inicio (`inicio_i − fin_{i-1} < 0`) → dos entrevistas de verdad
+        concurrentes = una persona en dos sitios a la vez (código compartido o
+        fabricación). Esta es la señal que interesa.
+      Diseño: calcular AMBOS huecos (contra `prevEndMax`, como hoy, y contra el fin de
+      la inmediatamente anterior) y clasificar el solape en esas dos clases; decidir si
+      se parte `Quality::FLAGS` en dos banderas o se añade metadato a la existente (con
+      su i18n, filtros y export). En el drill-down, señalar además **cuál** es el
+      registro largo que engulle a los demás. Barato de calcular (la cadena ya está
+      ordenada por inicio); alto valor en este entorno, donde separar el ruido del apagón
+      de la concurrencia real es justo lo que hoy no se puede.
 - [ ] **Horario admisible de trabajo** (franja horaria por formulario, evaluada en
       `APP_TIMEZONE`): encuestas iniciadas de madrugada como bandera propia.
 - [ ] **Velocidad imposible entre puntos geo consecutivos** del mismo encuestador
@@ -134,6 +166,32 @@ registra en [`CHANGELOG.md`](./CHANGELOG.md).
       SchemaCheck + nota de upgrade; escribir = `can_validate` (acompaña acciones de
       revisión); decidir edición/borrado (¿autor y admin?). Los alcances `general` y
       `enumerator` pueden esperar a una iteración posterior si la v1 se queda en equipo.
+- [ ] **PRIORITARIO — señal de riesgo relativa a pares basada en la tasa de banderas de
+      QC** *(acordado jul-2026)*. Hoy el índice de riesgo (`lib/Risk`) y el control de
+      calidad (`lib/Quality`) son subsistemas SEPARADOS: ninguna bandera física del QC
+      (corta/larga/hueco/solape/duplicado/GPS) entra en el índice, así que «este
+      encuestador está señalado mucho más que sus compañeros» es hoy un juicio manual y
+      visual sobre los conteos de la página de QC. Propuesta: una **métrica nueva** en
+      `Risk::METRICS` = **tasa de envíos con bandera** del encuestador (envíos señalados /
+      envíos en alcance), z-scoreada de forma robusta contra los pares del equipo (dir
+      `high`, como las demás), con su valor + mediana de pares + explicación. Decisiones
+      de diseño: **qué banderas** entran (probablemente corta + «solape entre
+      consecutivas» del ítem de arriba + duplicado; **excluir** larga/hueco-corto, ruido
+      puro en entornos con apagones); reutilizar los conteos por-encuestador que
+      `Quality` YA calcula (que `Risk` los consuma, no recomputar); peso a fijar. Encaja
+      especialmente en baja conectividad: al ser **relativa a pares**, el ruido sistémico
+      (a todos se les cuelgan formularios) se cancela y el atípico sigue destacando.
+      **Depende del ítem de clasificación de solapes** (para usar «entre consecutivas» y
+      no el solape-con-registro-largo).
+- [ ] **Paridad del toggle de alcance en el Índice de riesgo** *(de la revisión
+      jul-2026; menor pero causa confusión)* — la página de QC deja a cualquiera cambiar
+      el alcance por-petición a «Todos» (`?scope=`, 1.27.0), pero la de **Índice de
+      riesgo NO**: `risk.php` obedece solo el ajuste global `qc_scope` y `RiskView` únicamente
+      MUESTRA la etiqueta del alcance. Efecto observado: con `risk_min_n` puesto y la mayoría
+      de envíos ya aprobados/rechazados, el índice reporta «aún no hay encuestadores con
+      suficientes envíos» porque el alcance por defecto (pending/on_hold) deja fuera casi
+      todo — sin forma de cambiarlo desde la propia página. Replicar el toggle de QC
+      (`?scope=`) en el índice.
 - [ ] **Índice de riesgo — Fase 2 e histórico** *(la Fase 1 —percentmatch, señales
       relativas a pares, índice explicado por encuestador y equipo, opt-in
       `forms.risk_min_n`— se entregó en 1.23.0)*:
