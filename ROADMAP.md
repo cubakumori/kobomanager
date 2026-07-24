@@ -69,23 +69,6 @@ Lo que queda por hacer e ideas para más adelante. Todo lo ya entregado se regis
 
 ## Muestra por equipo
 
-- [ ] **Panel de muestra: selector de orden + más estadísticas en «Resumen»**
-      *(acordado; próxima sesión)*. Solo frontend (`SamplePanel.vue`); el backend ya envía
-      todos los equipos y sus proyecciones.
-      - **Selector de orden** en la barra superior (junto al selector de vista y «Agrupar
-        equipos»), recordado **por dispositivo** y aplicado a **todos** los modos (no solo
-        «Resumen»). Los **«fuera de plan» siempre al final**. Claves: **% de cumplimiento
-        ascendente** (más atrasados primero), objetivo (el actual, por defecto), hecho,
-        backlog (pendientes + en espera) y alfabético. Con «Agrupar equipos», ordena
-        **dentro de cada grupo**. Es un `computed` sobre `displayTeams`.
-      - **Más estadísticas en «Resumen»** (aprovechando el espacio bajo el doughnut, sin
-        duplicar la tarjeta de cabecera): (1) **proyección agregada** «N de M equipos
-        proyectan cumplir el objetivo al ritmo actual» (usa `teams[].projection`); (2)
-        **reparto por estado de avance** (completos ≥100 % · en progreso · atrasados <50 % ·
-        sin empezar), quizá barra apilada con la paleta de cumplimiento; (3) **mejor y peor
-        equipo** por % de cumplimiento; (4) **% global** como número grande junto al
-        doughnut; (5) opcional, **celdas del plan cubiertas** (recorre `teams[].cells`).
-        Priorizar (1) y (2).
 - [ ] **Extensiones del meta-equipo**: (a) diccionario explícito equipo→grupo (evita el cubo
       «Sin agrupar»); (b) el test de dependencia funcional como CHEQUEO propio del eslabón
       `encuestador → equipo` en Ajustes.

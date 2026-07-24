@@ -8,7 +8,9 @@
  * misma forma) y NO carga nada por su cuenta. La PRESENTACIÓN se elige con un
  * selector (preferencia por dispositivo en localStorage): lineal (tarjetas con
  * barras), tabla, mapa de calor, semáforo, barras agrupadas (Chart.js) y resumen
- * (doughnut). Con meta-equipo configurado, toggle «Agrupar equipos» (roll-up de
+ * (doughnut + estadísticas agregadas). Un segundo selector elige el ORDEN de los
+ * equipos (misma persistencia; aplica a todos los modos, «fuera de plan» al
+ * final). Con meta-equipo configurado, toggle «Agrupar equipos» (roll-up de
  * solo presentación sobre `teams[].group`).
  *
  * `readonly` (vista pública): el chip del denominador es texto informativo, no un
@@ -59,6 +61,41 @@ const view = ref(VIEWS.some((v) => v.key === storedView) ? storedView : 'linear'
 function setView(key) {
   view.value = key
   localStorage.setItem(VIEW_KEY, key)
+}
+
+// ---------- Selector de ORDEN de los equipos ----------
+// Preferencia por dispositivo, como el tipo de vista. Se aplica a TODOS los
+// modos (es un reordenado de `displayTeams`, no una vista): 'target' conserva el
+// orden del backend (planificados por objetivo desc), 'pct' pone delante a los
+// más atrasados (% ascendente), 'done' y 'backlog' descendentes, 'alpha' por
+// nombre. Los «fuera de plan» (y «Sin agrupar», su primo en el roll-up) van
+// SIEMPRE al final, conservando su orden relativo (sort estable).
+const SORT_KEY = 'km.sample.sort'
+const SORTS = [
+  { key: 'target', label: 'sample.sortTarget' },
+  { key: 'pct', label: 'sample.sortPct' },
+  { key: 'done', label: 'sample.sortDone' },
+  { key: 'backlog', label: 'sample.sortBacklog' },
+  { key: 'alpha', label: 'sample.sortAlpha' },
+]
+const storedSort = localStorage.getItem(SORT_KEY)
+const sortBy = ref(SORTS.some((s) => s.key === storedSort) ? storedSort : 'target')
+function setSort(key) {
+  sortBy.value = key
+  localStorage.setItem(SORT_KEY, key)
+}
+// Ordena filas de equipo O de meta-equipo (misma forma). El % nulo (sin
+// objetivo) se trata como infinito: nunca adelanta a un equipo con plan.
+function sortRows(rows) {
+  const toEnd = (r) => (r.out_of_plan || r.ungrouped ? 1 : 0)
+  const cmp = {
+    target: () => 0, // orden del backend
+    pct: (a, b) => (a.pct ?? Infinity) - (b.pct ?? Infinity),
+    done: (a, b) => b.done - a.done,
+    backlog: (a, b) => b.pending + b.on_hold - (a.pending + a.on_hold),
+    alpha: (a, b) => a.name.localeCompare(b.name, locale.value),
+  }[sortBy.value]
+  return [...rows].sort((a, b) => toEnd(a) - toEnd(b) || cmp(a, b))
 }
 
 // ---------- Toggle «Agrupar equipos» (meta-equipo) ----------
@@ -128,8 +165,10 @@ const groupRows = computed(() => {
   return rows
 })
 
-// Filas efectivas de los modos tabulares y de gráficos: equipo ⇄ meta-equipo.
-const displayTeams = computed(() => (groupOn.value ? groupRows.value : props.data?.teams ?? []))
+// Filas efectivas de los modos tabulares y de gráficos: equipo ⇄ meta-equipo,
+// ya con el ORDEN elegido aplicado (agrupado, ordena los grupos; los equipos de
+// cada grupo se ordenan al pintarlos en el árbol del modo lineal).
+const displayTeams = computed(() => sortRows(groupOn.value ? groupRows.value : props.data?.teams ?? []))
 
 // ---------- Total general: SOLO equipos planificados ----------
 // La barra de cumplimiento compara manzanas con manzanas: Σ hecho de los equipos
@@ -299,6 +338,50 @@ const summaryOptions = {
   maintainAspectRatio: false,
   plugins: { legend: { display: true, position: 'bottom' }, valueLabels: { enabled: true } },
 }
+
+// ---------- Estadísticas del modo RESUMEN (bajo el doughnut) ----------
+// Siempre sobre los EQUIPOS reales con plan (no los meta-equipos: la proyección
+// es por equipo), y sin repetir la tarjeta de cabecera (hecho/objetivo/backlog).
+// «Sin empezar» prima sobre «atrasado»: un equipo a 0 no está atrasado, no ha
+// arrancado. «Proyectan cumplir» = objetivo ya alcanzado o ritmo>0 (hay ETA).
+const summaryStats = computed(() => {
+  const planned = (props.data?.teams ?? []).filter((tm) => !tm.out_of_plan && tm.target > 0)
+  const s = {
+    teams: planned.length,
+    projMet: 0,
+    complete: 0, inProgress: 0, behind: 0, notStarted: 0,
+    best: null, worst: null,
+    cellsMet: 0, cellsTotal: 0,
+  }
+  for (const tm of planned) {
+    if (tm.projection && (tm.projection.met || tm.projection.eta)) s.projMet++
+    const p = tm.pct ?? 0
+    if (tm.done === 0) s.notStarted++
+    else if (p >= 100) s.complete++
+    else if (p < 50) s.behind++
+    else s.inProgress++
+    if (!s.best || p > s.best.pct) s.best = { name: tm.name, pct: p }
+    if (!s.worst || p < s.worst.pct) s.worst = { name: tm.name, pct: p }
+    for (const c of tm.cells) {
+      if (c.target == null) continue
+      s.cellsTotal++
+      if (c.done >= c.target) s.cellsMet++
+    }
+  }
+  return s
+})
+// Barra apilada del reparto por estado: segmentos con la paleta del semáforo
+// (misma semántica: cumplido/en ritmo/atrasado) + gris de «sin objetivo» para
+// los que no han empezado.
+const summaryStates = computed(() => {
+  const s = summaryStats.value
+  return [
+    { key: 'complete', label: 'sample.summaryComplete', n: s.complete, chip: trafficChip('met') },
+    { key: 'inprogress', label: 'sample.summaryInProgress', n: s.inProgress, chip: trafficChip('onpace') },
+    { key: 'behind', label: 'sample.summaryBehind', n: s.behind, chip: trafficChip('behind') },
+    { key: 'notstarted', label: 'sample.summaryNotStarted', n: s.notStarted, chip: trafficChip('none') },
+  ]
+})
 </script>
 
 <template>
@@ -318,6 +401,17 @@ const summaryOptions = {
           {{ $t(v.label) }}
         </button>
       </div>
+      <!-- Selector de ORDEN de equipos (preferencia por dispositivo) -->
+      <label class="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+        <span>{{ $t('sample.sortLabel') }}</span>
+        <select
+          :value="sortBy"
+          class="rounded-lg border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-800"
+          @change="setSort($event.target.value)"
+        >
+          <option v-for="s in SORTS" :key="s.key" :value="s.key">{{ $t(s.label) }}</option>
+        </select>
+      </label>
       <label
         v-if="groupable"
         class="flex cursor-pointer items-center gap-2 text-xs font-medium text-slate-600"
@@ -420,7 +514,7 @@ const summaryOptions = {
       <!-- ===== Modo LINEAL: tarjeta por equipo con barras y proyección; agrupado,
            árbol de dos niveles (tarjeta de meta-equipo → sus equipos) ===== -->
       <template v-if="view === 'linear'">
-      <template v-for="grp in groupOn ? groupRows : [null]" :key="grp?.key ?? '__flat__'">
+      <template v-for="grp in groupOn ? displayTeams : [null]" :key="grp?.key ?? '__flat__'">
         <!-- Tarjeta de meta-equipo (agregados; clic = plegar/desplegar sus equipos) -->
         <section v-if="grp" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <div
@@ -463,7 +557,7 @@ const summaryOptions = {
 
         <template v-if="!grp || !collapsedGroups.has(grp.key)">
         <section
-          v-for="team in grp ? grp.teams : data.teams"
+          v-for="team in grp ? sortRows(grp.teams) : displayTeams"
           :key="team.key"
           class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200"
           :class="grp ? 'ml-4 sm:ml-8' : ''"
@@ -681,8 +775,46 @@ const summaryOptions = {
 
       <!-- ===== Modo RESUMEN: doughnut global + lista compacta de equipos ===== -->
       <section v-else-if="view === 'summary'" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <div class="grid items-center gap-6 sm:grid-cols-2">
-          <div class="h-64"><StatsChart type="doughnut" :data="summaryData" :options="summaryOptions" /></div>
+        <div class="grid items-start gap-6 sm:grid-cols-2">
+          <div>
+            <div class="h-64"><StatsChart type="doughnut" :data="summaryData" :options="summaryOptions" /></div>
+            <!-- Estadísticas agregadas (sobre los equipos CON plan; la cabecera ya
+                 da hecho/objetivo/backlog, aquí va lo que la tarjeta no cuenta) -->
+            <div v-if="summaryStats.teams" class="mt-4 space-y-3 border-t border-slate-100 pt-3 text-xs text-slate-500">
+              <!-- (1) Proyección agregada -->
+              <p>
+                <span class="font-medium text-slate-600">{{ $t('sample.projection') }}:</span>
+                {{ $t('sample.summaryProjection', { n: num(summaryStats.projMet), m: num(summaryStats.teams) }) }}
+              </p>
+              <!-- (2) Reparto por estado de avance: barra apilada + leyenda con cifras -->
+              <div>
+                <div class="flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    v-for="st in summaryStates"
+                    :key="st.key"
+                    class="h-full"
+                    :class="st.chip.class"
+                    :style="[st.chip.style, { width: (st.n * 100) / summaryStats.teams + '%' }]"
+                  ></div>
+                </div>
+                <div class="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+                  <span v-for="st in summaryStates" :key="st.key" class="flex items-center gap-1.5">
+                    <span class="inline-block h-3 w-3 rounded" :class="st.chip.class" :style="st.chip.style"></span>
+                    {{ $t(st.label) }}: <span class="font-semibold tabular-nums text-slate-700">{{ num(st.n) }}</span>
+                  </span>
+                </div>
+              </div>
+              <!-- (3) Mejor y peor equipo + (5) celdas del plan cubiertas -->
+              <p v-if="summaryStats.teams > 1" class="space-x-3">
+                <span>{{ $t('sample.summaryBest') }}: <span class="font-medium text-slate-700">{{ summaryStats.best.name }}</span> · <span class="tabular-nums">{{ pct(summaryStats.best.pct) }}</span></span>
+                <span>{{ $t('sample.summaryWorst') }}: <span class="font-medium text-slate-700">{{ summaryStats.worst.name }}</span> · <span class="tabular-nums">{{ pct(summaryStats.worst.pct) }}</span></span>
+              </p>
+              <p v-if="summaryStats.cellsTotal">
+                {{ $t('sample.summaryCells') }}:
+                <span class="font-semibold tabular-nums text-slate-700">{{ num(summaryStats.cellsMet) }} / {{ num(summaryStats.cellsTotal) }}</span>
+              </p>
+            </div>
+          </div>
           <div class="space-y-2">
             <div v-for="team in displayTeams" :key="team.key" class="flex items-baseline justify-between gap-3 text-sm">
               <span class="min-w-0 truncate text-slate-700">

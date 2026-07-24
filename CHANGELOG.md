@@ -4,6 +4,29 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.51.0] - 2026-07-24
+
+### Añadido
+
+- **Selector de orden de equipos en el panel de muestra** (`forms/<id>/sample` y pestaña
+  «Muestra» de los enlaces públicos): junto al selector de vista y al toggle «Agrupar
+  equipos», un desplegable «Orden» reordena los equipos en **todos** los modos (lineal,
+  tabla, mapa de calor, semáforo, barras y resumen). Claves: **objetivo** (el orden de
+  siempre, por defecto), **% cumplido ascendente** (los más atrasados primero), **hecho**,
+  **backlog** (pendientes + en espera) y **alfabético**. Los equipos «fuera de plan» van
+  siempre al final; con «Agrupar equipos» activo se ordenan los grupos y, dentro de cada
+  grupo, sus equipos («Sin agrupar» siempre al final). Preferencia **por dispositivo**
+  (localStorage, `km.sample.sort`), como el tipo de vista. Solo presentación: el backend
+  no cambia.
+- **Más estadísticas en el modo «Resumen» del panel de muestra**, bajo el doughnut y sin
+  repetir la tarjeta de cabecera (todas sobre los equipos **con plan**): **proyección
+  agregada** («N de M equipos proyectan cumplir el objetivo al ritmo actual», a partir de
+  `teams[].projection`); **reparto por estado de avance** como barra apilada con leyenda
+  (completos ≥100 % · en progreso · atrasados <50 % · sin empezar), con los colores de la
+  paleta de cumplimiento activa (incluido el preset mono); **mejor y peor equipo** por %
+  de cumplimiento (solo con 2+ equipos); y **celdas del plan cubiertas** (celdas
+  equipo × valor con su objetivo alcanzado).
+
 ## [1.50.3] - 2026-07-24
 
 ### Cambiado
