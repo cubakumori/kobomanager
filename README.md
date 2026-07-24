@@ -88,8 +88,13 @@ native validation status.
   A panel shows done/target and % per team × value, highlights shortfall and over-sample,
   flags cells "out of plan", and projects a completion date per team at the current pace —
   with a **view-type selector** (linear bars, table, heat map, traffic light, grouped bars,
-  summary doughnut; remembered per device) and an instance-wide **compliance palette**
+  summary doughnut; remembered per device), a **team-order selector** (target, % complete
+  with the most behind first, done, review backlog, alphabetical; out-of-plan teams always
+  last; also remembered per device) and an instance-wide **compliance palette**
   (classic, soft, colorblind-safe, or single-color where opacity encodes progress).
+  The summary view adds aggregate stats under the doughnut: how many teams project to meet
+  their target at the current pace, a progress-state breakdown (complete / in progress /
+  behind / not started), best and worst team, and plan cells covered.
   You count either approved-only or approved-and-pending submissions — switchable on the
   fly from the panel itself (a transient toggle that never touches the plan setting) — and
   secondary fields (sex, race…) show their observed distribution. The plan is edited on its own page

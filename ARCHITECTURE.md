@@ -705,10 +705,22 @@ to a new one (key rotation; see `DEPLOY.md §12`).
   when changing the team field would strand an existing plan's targets. The read‑only panel has a
   **view‑type selector** (linear/table/heatmap/traffic light/grouped bars/summary doughnut —
   the traffic light sits next to the heat map since 1.42.0, same grid with three states, and
-  shows each row's completion % — per‑device preference in `localStorage`). The grand‑total bar
+  shows each row's completion % — per‑device preference in `localStorage`) and, since 1.51.0,
+  a **team‑order selector** (`km.sample.sort`, per‑device too) applied to every mode: target
+  (the backend order, default), % complete ascending (most behind first), done, review
+  backlog (pending + on hold) or alphabetical — out‑of‑plan teams (and the "Ungrouped"
+  bucket) always sort last, and with grouping on it orders the groups and the teams inside
+  each group. Presentation‑only: the backend order is untouched. The summary mode also adds
+  **aggregate stats** under the doughnut (computed over planned teams only, `target > 0`):
+  how many teams project to meet their target at the current pace (`projection.met || eta`),
+  a progress‑state breakdown rendered as a stacked bar with the active compliance palette
+  (complete ≥100% · in progress · behind <50% · not started, where "not started" wins over
+  "behind" at zero done), best/worst team by % (with 2+ teams) and plan cells covered.
+  The grand‑total bar
   compares **planned teams only** (Σ done vs Σ target, over‑sample uncapped; out‑of‑plan volume
   shown apart as a note — fixed in 1.42.0, it used to mix all received into the numerator).
-  A public read‑only link is deferred (see ROADMAP).
+  A public read‑only view of this panel exists since 1.45.0 via share links (`expose_sample`,
+  same shared `SamplePanel.vue`; see the share‑links section).
   Not cached (per‑user scope + review‑status‑dependent denominator, like `forms/stats.php`).
   The panel also returns **review context** (1.37.0): `last_approved_at` — the *cutoff*, i.e.
   the latest **approve action** from the `submission_reviews` history (whether made in the app
