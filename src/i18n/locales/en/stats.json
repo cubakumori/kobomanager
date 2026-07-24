@@ -157,7 +157,6 @@
     "qualityScopeLabel": "Scope",
     "qualityScope_pending_hold": "only pending or on hold",
     "qualityScope_all": "all submissions",
-    "qualityScopeChange": "Change",
     "qualityScopeTogglePending": "Pending/On hold",
     "qualityScopeToggleAll": "All",
     "qualityScopeToggleHint": "Temporary change: affects this view only, not the global setting",

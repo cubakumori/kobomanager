@@ -149,29 +149,24 @@ onMounted(load)
             :to="{ name: 'admin-form-settings', params: { id: formId } }"
             class="font-medium text-primary-600 hover:underline"
           >{{ $t('stats.qualityAdjust') }}</RouterLink>
-          <!-- Alcance por estado de revisión: chip-botón transitorio (igual que el
-               Control de calidad); arranca en el global y el enlace del admin cambia
-               el default para todos -->
-          <span class="inline-flex items-center gap-1.5">
-            <button
-              type="button"
-              :aria-pressed="String(r.scope === 'all')"
-              :title="$t('stats.qualityScopeToggleHint')"
-              class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 dark:hover:bg-slate-800 dark:hover:text-slate-300"
-              @click="setScope(r.scope === 'all' ? 'pending_hold' : 'all')"
-            >
-              {{ $t('stats.qualityScopeLabel') }}:
-              {{ r.scope === 'all' ? $t('stats.qualityScopeToggleAll') : $t('stats.qualityScopeTogglePending') }}
-              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="h-3 w-3">
-                <path fill-rule="evenodd" d="M13.2 2.24a.75.75 0 0 0 .04 1.06l2.1 1.95H6.75a.75.75 0 0 0 0 1.5h8.59l-2.1 1.95a.75.75 0 1 0 1.02 1.1l3.5-3.25a.75.75 0 0 0 0-1.1l-3.5-3.25a.75.75 0 0 0-1.06.04Zm-6.4 8a.75.75 0 0 0-1.06-.04l-3.5 3.25a.75.75 0 0 0 0 1.1l3.5 3.25a.75.75 0 1 0 1.02-1.1l-2.1-1.95h8.59a.75.75 0 0 0 0-1.5H4.66l2.1-1.95a.75.75 0 0 0 .04-1.06Z" clip-rule="evenodd" />
-              </svg>
-            </button>
-            <RouterLink
-              v-if="auth.isAdmin"
-              :to="{ path: '/admin/settings', query: { tab: 'panels' } }"
-              class="font-medium text-primary-600 hover:underline"
-            >{{ $t('stats.qualityScopeChange') }}</RouterLink>
-          </span>
+          <!-- Alcance por estado de revisión: chip-botón transitorio que se cambia
+               AQUÍ MISMO (igual que el Control de calidad y el denominador de la
+               muestra); arranca en el ajuste global. El valor por defecto para todos
+               se ajusta en Configuración → Paneles (sin enlace propio: el toggle es el
+               control de esta vista, no el default). -->
+          <button
+            type="button"
+            :aria-pressed="String(r.scope === 'all')"
+            :title="$t('stats.qualityScopeToggleHint')"
+            class="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2 py-0.5 font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+            @click="setScope(r.scope === 'all' ? 'pending_hold' : 'all')"
+          >
+            {{ $t('stats.qualityScopeLabel') }}:
+            {{ r.scope === 'all' ? $t('stats.qualityScopeToggleAll') : $t('stats.qualityScopeTogglePending') }}
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="h-3 w-3">
+              <path fill-rule="evenodd" d="M13.2 2.24a.75.75 0 0 0 .04 1.06l2.1 1.95H6.75a.75.75 0 0 0 0 1.5h8.59l-2.1 1.95a.75.75 0 1 0 1.02 1.1l3.5-3.25a.75.75 0 0 0 0-1.1l-3.5-3.25a.75.75 0 0 0-1.06.04Zm-6.4 8a.75.75 0 0 0-1.06-.04l-3.5 3.25a.75.75 0 0 0 0 1.1l3.5 3.25a.75.75 0 1 0 1.02-1.1l-2.1-1.95h8.59a.75.75 0 0 0 0-1.5H4.66l2.1-1.95a.75.75 0 0 0 .04-1.06Z" clip-rule="evenodd" />
+            </svg>
+          </button>
         </div>
 
         <!-- Qué señales se están usando -->

@@ -157,7 +157,6 @@
     "qualityScopeLabel": "Alcance",
     "qualityScope_pending_hold": "únicamente pendientes o en espera",
     "qualityScope_all": "todos los envíos",
-    "qualityScopeChange": "Cambiar",
     "qualityScopeTogglePending": "Pendientes/En espera",
     "qualityScopeToggleAll": "Todos",
     "qualityScopeToggleHint": "Cambio temporal: solo afecta a esta vista, no al ajuste global",

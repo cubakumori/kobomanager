@@ -4,6 +4,21 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.50.3] - 2026-07-24
+
+### Cambiado
+
+- **El alcance por estado de revisión se cambia en la propia página, sin ir a Ajustes**
+  (reporte del usuario, páginas de Índice de riesgo y Control de calidad): el selector de
+  alcance ya alternaba in-place, pero estaba estilizado como texto apagado y a su lado
+  había un enlace azul «Cambiar» que llevaba a Configuración → Paneles (el valor **por
+  defecto** global, no el de esta vista) — así que parecía que ese enlace era la forma de
+  cambiarlo y confundía. Ahora el selector es un **chip-botón con borde** (se ve que es
+  clicable) y se ha **quitado el enlace «Cambiar»**, dejando el toggle como único control
+  de alcance de la vista, igual que el denominador del panel de muestra. El valor por
+  defecto global se sigue ajustando en Configuración → Paneles (por la navegación normal;
+  admins). Se elimina la clave i18n huérfana `qualityScopeChange`.
+
 ## [1.50.2] - 2026-07-23
 
 ### Cambiado
