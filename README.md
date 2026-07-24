@@ -7,6 +7,8 @@ them view, edit and validate submissions without needing a KoboToolbox account.
 - Pending work and future ideas: [`ROADMAP.md`](./ROADMAP.md)
 - Production deployment: [`DEPLOY.md`](./DEPLOY.md) — including how to run your own
   public **demo instance** (`DEMO_MODE`)
+- Practical FAQs — the reasoning behind the app's less obvious features and how to
+  interpret them (in Spanish): [`FAQs/`](./FAQs/README.md)
 
 ## Who it's for
 
