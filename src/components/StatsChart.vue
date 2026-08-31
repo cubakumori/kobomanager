@@ -113,9 +113,20 @@ const props = defineProps({
   type: { type: String, default: 'bar' }, // 'bar' | 'doughnut'
   data: { type: Object, required: true },
   options: { type: Object, default: () => ({}) },
+  // Descripción para lectores de pantalla (el <canvas> de Chart.js no anuncia
+  // nada por sí solo). Si no se pasa, se genera un resumen genérico con el total.
+  label: { type: String, default: '' },
 })
 
 const comp = computed(() => (props.type === 'doughnut' ? Doughnut : Bar))
+
+const { t } = useI18n()
+const ariaLabel = computed(() => {
+  if (props.label) return props.label
+  const ds = props.data?.datasets?.[0]?.data || []
+  const total = ds.reduce((a, b) => a + (Number(b) || 0), 0)
+  return t('stats.chartAria', { count: props.data?.labels?.length || ds.length, total })
+})
 
 // ---------- Modo claro/oscuro ----------
 // Los colores de texto/rejilla de Chart.js se fijan como DEFAULTS globales leyendo
@@ -134,4 +145,7 @@ watchEffect(() => {
 </script>
 
 <template>
-  <component :is="comp" :key="isDark" :data="data" :options="options" /></template>
+  <div role="img" :aria-label="ariaLabel" class="h-full w-full">
+    <component :is="comp" :key="isDark" :data="data" :options="options" :aria-label="ariaLabel" />
+  </div>
+</template>

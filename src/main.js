@@ -15,12 +15,15 @@ app.use(pinia)
 app.use(i18n)
 app.use(router)
 
-// Ante un 401 global: limpiar sesión y mandar al login.
+// Ante un 401 global: limpiar sesión y mandar al login conservando el destino
+// (misma convención `?redirect=` que el guard del router: tras reloguear, el
+// usuario vuelve a la página en la que le caducó la sesión).
 setUnauthorizedHandler(() => {
   const auth = useAuthStore(pinia)
   auth.clear()
-  if (router.currentRoute.value.name !== 'login') {
-    router.push({ name: 'login' })
+  const current = router.currentRoute.value
+  if (current.name !== 'login') {
+    router.push({ name: 'login', query: { redirect: current.fullPath } })
   }
 })
 

@@ -182,9 +182,36 @@ function buildExportUrl() {
   return `/api/v1/forms/${formId.value}/export${qs ? '?' + qs : ''}`
 }
 
-function doExport() {
-  window.location.href = buildExportUrl()
-  exportOpen.value = false
+// Descarga vía fetch + blob y NO navegando la página entera (window.location):
+// si la sesión caducó o el backend responde 403/500, el navegador renderizaba el
+// JSON de error crudo y se perdía el estado de la SPA; así el error se captura y
+// se muestra dentro del propio modal.
+const exporting = ref(false)
+const exportError = ref(false)
+async function doExport() {
+  exporting.value = true
+  exportError.value = false
+  try {
+    const res = await fetch(buildExportUrl(), { credentials: 'same-origin' })
+    if (!res.ok) throw new Error(String(res.status))
+    const blob = await res.blob()
+    const cd = res.headers.get('Content-Disposition') || ''
+    const m = cd.match(/filename="?([^";]+)"?/)
+    const name = m ? m[1] : `export.${exportFormat.value === 'xlsx' ? 'xlsx' : 'csv'}`
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 30_000)
+    exportOpen.value = false
+  } catch {
+    exportError.value = true
+  } finally {
+    exporting.value = false
+  }
 }
 
 // --- Filtro avanzado (mismo formato y motor que el scoping por filas; solo restringe) ---
@@ -346,6 +373,17 @@ function onDrop(targetIdx) {
   savePrefs()
 }
 
+// Alternativa al drag & drop para teclado y táctil (el DnD nativo de HTML5 no
+// funciona en móvil ni con lector de pantalla).
+function moveCol(i, delta) {
+  const j = i + delta
+  if (j < 0 || j >= orderedCols.value.length) return
+  const arr = [...orderedCols.value]
+  ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  orderedCols.value = arr
+  savePrefs()
+}
+
 function resetCols() {
   try {
     localStorage.removeItem(storeKey(formId.value))
@@ -481,6 +519,10 @@ watch(admissibleOnly, () => {
 // el flag lo silencia durante este flush (nextTick corre después de los watchers
 // encolados) y así solo hay UNA petición.
 watch(formId, async () => {
+  // Al salir de la vista hacia una ruta sin :id, el parámetro pasa a undefined
+  // ANTES de desmontar (gotcha de vue-router): sin esta guarda se disparaba una
+  // carga espuria GET /forms/NaN/… y lecturas de localStorage 'km.*.NaN'.
+  if (!Number.isInteger(formId.value)) return
   suppressPrefsReload = true
   prefsForm = null
   orderedCols.value = []
@@ -596,6 +638,24 @@ onMounted(() => { loadAdvFilter(); load() })
                 v-if="isDerivedCol(c)"
                 class="ml-auto shrink-0 rounded bg-accent-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent-700 dark:bg-accent-900/40 dark:text-accent-300"
               >{{ $t('submissions.columnsCalculated') }}</span>
+              <span class="shrink-0" :class="isDerivedCol(c) ? '' : 'ml-auto'">
+                <button
+                  type="button"
+                  class="rounded px-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 disabled:opacity-30"
+                  :disabled="i === 0"
+                  :aria-label="$t('submissions.columnsMoveUp')"
+                  :title="$t('submissions.columnsMoveUp')"
+                  @click.stop="moveCol(i, -1)"
+                >↑</button>
+                <button
+                  type="button"
+                  class="rounded px-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 disabled:opacity-30"
+                  :disabled="i === orderedCols.length - 1"
+                  :aria-label="$t('submissions.columnsMoveDown')"
+                  :title="$t('submissions.columnsMoveDown')"
+                  @click.stop="moveCol(i, 1)"
+                >↓</button>
+              </span>
             </li>
             <li v-if="!orderedCols.length" class="px-2 py-2 text-sm text-slate-400">—</li>
           </ul>
@@ -903,12 +963,15 @@ onMounted(() => { loadAdvFilter(); load() })
           </label>
         </fieldset>
         <p class="text-xs text-slate-400">{{ $t('submissions.exportHint') }}</p>
+        <p v-if="exportError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200" role="alert">
+          {{ $t('submissions.exportError') }}
+        </p>
         <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
           <button type="button" class="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100" @click="exportOpen = false">
             {{ $t('common.cancel') }}
           </button>
-          <button type="button" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700" @click="doExport">
-            {{ $t('submissions.export') }}
+          <button type="button" :disabled="exporting" class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60" @click="doExport">
+            {{ exporting ? $t('submissions.exporting') : $t('submissions.export') }}
           </button>
         </div>
       </div>

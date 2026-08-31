@@ -113,6 +113,7 @@
     "next": "Siguiente →",
     "noFields": "Sin campos.",
     "location": "Ubicación",
+    "loadError": "No se pudo cargar. Comprueba la conexión y vuelve a intentarlo en un momento.",
     "mapEmpty": "Ningún envío tiene coordenadas.",
     "poweredBy": "Compartido con KoboManager",
     "prevPage": "Anterior",

@@ -59,11 +59,16 @@ const view = computed(() => {
 })
 const currentSub = computed(() => (route.query.sub ? String(route.query.sub) : null))
 
-function go(query) {
-  router.replace({ name: 'share', params: { token: token.value }, query: { ...route.query, ...query } })
+// push (no replace): abrir un detalle o cambiar de pestaña debe crear entrada de
+// historial — el botón «atrás» (sobre todo el físico en móvil) tiene que volver a
+// la vista anterior del enlace, no sacar al visitante del share. `replace: true`
+// queda para correcciones internas (p. ej. cerrar un detalle que falló al cargar).
+function go(query, { replace = false } = {}) {
+  const to = { name: 'share', params: { token: token.value }, query: { ...route.query, ...query } }
+  replace ? router.replace(to) : router.push(to)
 }
 function setView(v) {
-  router.replace({ name: 'share', params: { token: token.value }, query: v === 'list' ? {} : { view: v } })
+  router.push({ name: 'share', params: { token: token.value }, query: v === 'list' ? {} : { view: v } })
 }
 
 // ---------- carga de metadatos ----------
@@ -119,8 +124,14 @@ const columns = computed(() => {
 })
 const pages = computed(() => Math.max(1, Math.ceil(list.value.total / list.value.per_page)))
 
+// Errores de carga por sección: un 500 o un rate-limit NO debe disfrazarse de
+// «no hay datos» (formulario aparentemente vacío) ni dejar la página anterior en
+// pantalla sin aviso. Cada loader marca su sección; el template lo diferencia.
+const loadErrors = ref({ list: false, map: false, stats: false, sample: false, review: false })
+
 async function loadList(page = 1) {
   listLoading.value = true
+  loadErrors.value.list = false
   try {
     const { data } = await publicApi.get(
       `/public/share/${token.value}/submissions`,
@@ -128,7 +139,9 @@ async function loadList(page = 1) {
     )
     list.value = { ...data.data }
   } catch {
-    /* errores no fatales: se deja la lista anterior */
+    // Se conserva la lista anterior, pero con aviso (sin él, el visitante creería
+    // estar viendo la página que pidió).
+    loadErrors.value.list = true
   } finally {
     listLoading.value = false
   }
@@ -153,10 +166,6 @@ const detailFields = computed(() => {
   const d = detail.value?.data ?? {}
   return Object.entries(d).filter(([k]) => !k.startsWith('_'))
 })
-function fmtVal(v) {
-  return v !== null && typeof v === 'object' ? JSON.stringify(v) : String(v ?? '')
-}
-
 // URL del proxy público de adjuntos. El ticket (si el enlace tiene contraseña)
 // viaja en ?k= porque un <img>/<audio> no puede enviar la cabecera X-Share-Ticket.
 function attUrl(att) {
@@ -171,7 +180,7 @@ async function loadDetail(uid) {
     detail.value = data.data
   } catch {
     detail.value = null
-    go({ sub: undefined })
+    go({ sub: undefined }, { replace: true })
   } finally {
     detailLoading.value = false
   }
@@ -185,11 +194,13 @@ const features = computed(() =>
 )
 async function loadMap() {
   mapLoading.value = true
+  loadErrors.value.map = false
   try {
     const { data } = await publicApi.get(`/public/share/${token.value}/map`, cfg())
     points.value = data.data.points
   } catch {
     points.value = []
+    loadErrors.value.map = true
   } finally {
     mapLoading.value = false
   }
@@ -200,11 +211,13 @@ const stats = ref(null)
 const statsLoading = ref(false)
 async function loadStats() {
   statsLoading.value = true
+  loadErrors.value.stats = false
   try {
     const { data } = await publicApi.get(`/public/share/${token.value}/stats`, cfg())
     stats.value = data.data
   } catch {
     stats.value = null
+    loadErrors.value.stats = true
   } finally {
     statsLoading.value = false
   }
@@ -217,11 +230,13 @@ const sample = ref(null)
 const sampleLoading = ref(false)
 async function loadSample() {
   sampleLoading.value = true
+  loadErrors.value.sample = false
   try {
     const { data } = await publicApi.get(`/public/share/${token.value}/sample`, cfg())
     sample.value = data.data
   } catch {
     sample.value = null
+    loadErrors.value.sample = true
   } finally {
     sampleLoading.value = false
   }
@@ -244,11 +259,13 @@ const pctOf = (n, total) => (total > 0 ? formatPctNumber((n * 100) / total, loca
 const reviewHasTeams = computed(() => !!review.value?.team_field)
 async function loadReview() {
   reviewLoading.value = true
+  loadErrors.value.review = false
   try {
     const { data } = await publicApi.get(`/public/share/${token.value}/review-summary`, cfg())
     review.value = data.data
   } catch {
     review.value = null
+    loadErrors.value.review = true
   } finally {
     reviewLoading.value = false
   }
@@ -320,7 +337,7 @@ onMounted(loadMeta)
           <input
             v-model="password"
             type="password"
-            autocomplete="off"
+            autocomplete="current-password"
             :placeholder="$t('share.password')"
             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
           />
@@ -414,6 +431,9 @@ onMounted(loadMeta)
           <!-- Estadísticas -->
           <template v-if="view === 'stats'">
             <Skeleton v-if="statsLoading" variant="cards" :count="4" />
+            <p v-else-if="loadErrors.stats" class="rounded-xl bg-red-50 px-5 py-8 text-center text-sm text-red-700 ring-1 ring-red-200" role="alert">
+              {{ $t('share.loadError') }}
+            </p>
             <StatsPanels v-else-if="stats" :stats="stats" />
             <p v-else class="rounded-xl bg-white px-5 py-8 text-center text-sm text-slate-400 ring-1 ring-slate-200">
               {{ $t('stats.noData') }}
@@ -423,6 +443,9 @@ onMounted(loadMeta)
           <!-- Panel de muestra (cumplimiento agregado hecho/objetivo por equipo) -->
           <template v-else-if="view === 'sample'">
             <Skeleton v-if="sampleLoading" variant="cards" :count="3" />
+            <p v-else-if="loadErrors.sample" class="rounded-xl bg-red-50 px-5 py-8 text-center text-sm text-red-700 ring-1 ring-red-200" role="alert">
+              {{ $t('share.loadError') }}
+            </p>
             <SamplePanel v-else-if="sample" :data="sample" readonly />
             <p v-else class="rounded-xl bg-white px-5 py-8 text-center text-sm text-slate-400 ring-1 ring-slate-200">
               {{ $t('sample.noData') }}
@@ -432,6 +455,9 @@ onMounted(loadMeta)
           <!-- Resumen de revisión (recuentos agregados por equipo/encuestador) -->
           <template v-else-if="view === 'review'">
             <Skeleton v-if="reviewLoading" variant="lines" :lines="6" />
+            <p v-else-if="loadErrors.review" class="rounded-xl bg-red-50 px-5 py-8 text-center text-sm text-red-700 ring-1 ring-red-200" role="alert">
+              {{ $t('share.loadError') }}
+            </p>
             <section v-else-if="review && review.review_summary.length" class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
               <h2 class="font-semibold text-slate-900">{{ $t('share.reviewTitle') }}</h2>
               <p class="mb-3 text-xs text-slate-400">{{ $t('share.reviewDesc') }}</p>
@@ -489,6 +515,9 @@ onMounted(loadMeta)
           <!-- Mapa -->
           <template v-else-if="view === 'map'">
             <Skeleton v-if="mapLoading" variant="lines" :lines="4" />
+            <p v-else-if="loadErrors.map" class="rounded-xl bg-red-50 px-5 py-8 text-center text-sm text-red-700 ring-1 ring-red-200" role="alert">
+              {{ $t('share.loadError') }}
+            </p>
             <LeafletMap
               v-else-if="points.length"
               :features="features"
@@ -543,6 +572,11 @@ onMounted(loadMeta)
                 </tbody>
               </table>
             </div>
+
+            <!-- Aviso de carga fallida (se conserva la página anterior en pantalla) -->
+            <p v-if="loadErrors.list" class="rounded-xl bg-red-50 px-4 py-3 text-center text-sm text-red-700 ring-1 ring-red-200" role="alert">
+              {{ $t('share.loadError') }}
+            </p>
 
             <!-- Paginación -->
             <div v-if="pages > 1" class="flex items-center justify-center gap-2">

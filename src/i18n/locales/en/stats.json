@@ -18,6 +18,7 @@
     "last30": "Last 30 days",
     "vsPrev": "{n} in the previous period",
     "noData": "No data.",
+    "chartAria": "Chart with {count} categories (total: {total})",
     "loadError": "Could not load the statistics",
     "lastSubmission": "Last submission: {date}",
     "duration": "Fill-in duration",

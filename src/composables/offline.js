@@ -24,7 +24,7 @@ export function useOnline() {
 export async function clearDataCaches() {
   if (!('caches' in window)) return
   try {
-    await Promise.all([caches.delete('km-api'), caches.delete('km-att')])
+    await Promise.all([caches.delete('km-api'), caches.delete('km-att'), caches.delete('km-att-pub')])
   } catch {
     /* almacenamiento no disponible */
   }

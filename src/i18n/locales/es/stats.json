@@ -18,6 +18,7 @@
     "last30": "Últimos 30 días",
     "vsPrev": "{n} en el periodo anterior",
     "noData": "Sin datos.",
+    "chartAria": "Gráfico con {count} categorías (total: {total})",
     "loadError": "No se pudieron cargar las estadísticas",
     "lastSubmission": "Último envío: {date}",
     "duration": "Duración de cumplimentación",

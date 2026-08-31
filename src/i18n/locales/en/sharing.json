@@ -113,6 +113,7 @@
     "next": "Next →",
     "noFields": "No fields.",
     "location": "Location",
+    "loadError": "Could not load. Check your connection and try again in a moment.",
     "mapEmpty": "No submission has coordinates.",
     "poweredBy": "Shared with KoboManager",
     "prevPage": "Previous",

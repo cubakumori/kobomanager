@@ -4,6 +4,55 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.54.0] - 2026-08-31
+
+Tercera tanda de la revisión: frontend (privacidad del service worker, robustez
+y accesibilidad).
+
+### Arreglado
+
+- **Los adjuntos de enlaces públicos ya no sobreviven en caché a la revocación del
+  enlace**: la ruta CacheFirst de 7 días del service worker capturaba también los del
+  proxy público, y un visitante seguía viendo una foto una semana después de revocar
+  o caducar el enlace. Ahora van en caché propia corta (NetworkFirst, 1 h, solo como
+  respaldo sin red), y **ninguna URL con ticket de contraseña (`?k=…`) se cachea
+  jamás** (la URL entera es la clave de Cache Storage y el ticket quedaba escrito en
+  disco). La limpieza del logout borra también la caché nueva.
+- **Cerrar sesión sin conexión dejaba la interfaz rota**: el POST de logout fallaba,
+  el error se propagaba y la limpieza/redirección no corría. Ahora el logout es
+  best-effort (la cookie caduca sola en el servidor) y la limpieza local siempre
+  ocurre. Además el logout borra las preferencias por-formulario que guardan el
+  término de búsqueda (`km.view.*`/`km.filter.*`): no deben heredarse entre usuarios
+  del mismo navegador (columnas y tema se conservan a propósito).
+- **Al salir de la tabla de envíos se disparaba una petición espuria
+  `GET /forms/NaN/…`** (el parámetro de ruta pasa a `undefined` antes de desmontar).
+- **Una sesión caducada ya no pierde el destino**: el manejador global de 401 manda
+  al login con `?redirect=…` (como el guard del router) y tras reloguear se vuelve a
+  la página en la que caducó.
+- **Diálogos apilados**: con dos abiertos (p. ej. un confirm sobre un modal), Escape
+  cerraba los dos y el foco se escapaba al de abajo; ahora hay una pila y solo el del
+  tope gestiona el teclado.
+- **Los errores del enlace público ya no se disfrazan de «sin datos»**: cada pestaña
+  (lista, mapa, estadísticas, muestra, revisión) distingue «no se pudo cargar» de
+  «no hay datos», y un cambio de página fallido muestra aviso en vez de dejar la
+  página anterior en silencio.
+
+### Cambiado
+
+- **El botón «atrás» funciona dentro de los enlaces públicos** (sobre todo el físico
+  en móvil): abrir un detalle o cambiar de pestaña crea entrada de historial
+  (`router.push`); antes todo era `replace` y «atrás» sacaba del enlace.
+- **Exportar descarga vía fetch** en vez de navegar la página entera: un 403/500 ya
+  no saca de la SPA al JSON de error crudo — se muestra el error en el propio modal,
+  con estado «Exportando…» mientras tanto.
+- **Reordenar columnas también sin ratón**: botones ↑/↓ por fila en el selector de
+  columnas (el drag & drop nativo no funciona en táctil ni con teclado); el arrastre
+  sigue disponible.
+- **Accesibilidad de los gráficos**: los `<canvas>` de Chart.js van ahora envueltos
+  en `role="img"` con una descripción (`aria-label`) generada del propio gráfico.
+- El campo de contraseña de los enlaces compartidos usa
+  `autocomplete="current-password"` (los gestores de contraseñas ya pueden guardarla).
+
 ## [1.53.0] - 2026-08-31
 
 Segunda tanda de la revisión: endurecimiento y correcciones del backend

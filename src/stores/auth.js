@@ -59,12 +59,26 @@ export const useAuthStore = defineStore('auth', {
     },
     async logout() {
       try {
+        // Sin red, el POST falla: da igual — la limpieza local de abajo es lo que
+        // cierra la sesión a efectos de UI (sin el catch, el error se propagaba y
+        // el router.push del llamador nunca corría → shell autenticado roto).
         await api.post('/auth/logout')
+      } catch {
+        /* best-effort: la cookie caduca sola en el servidor */
       } finally {
         this.user = null
         // PWA: al cerrar sesión se borran las cachés de datos del service
         // worker (API/adjuntos) para no dejar datos sensibles en el dispositivo.
         clearDataCaches()
+        // Preferencias por-formulario con datos potencialmente personales (término
+        // de búsqueda persistido): no deben heredarse entre usuarios del mismo
+        // navegador. Las de columnas/tema (km.cols.*, km.theme…) son inocuas y se
+        // conservan a propósito.
+        try {
+          for (const k of Object.keys(localStorage)) {
+            if (k.startsWith('km.view.') || k.startsWith('km.filter.')) localStorage.removeItem(k)
+          }
+        } catch { /* almacenamiento no disponible */ }
       }
     },
     async fetchMe() {

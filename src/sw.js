@@ -18,7 +18,7 @@
 import { clientsClaim } from 'workbox-core'
 import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching'
 import { registerRoute, NavigationRoute } from 'workbox-routing'
-import { NetworkFirst, CacheFirst } from 'workbox-strategies'
+import { NetworkFirst, CacheFirst, NetworkOnly } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 
 // Modo 'prompt' (ver vite.config): el SW nuevo NO se activa solo (nada de
@@ -48,15 +48,50 @@ const onlyCache200 = {
   cacheWillUpdate: async ({ response }) => (response.status === 200 ? response : null),
 }
 
-// Adjuntos (binarios, pueden pesar): caché aparte y acotada.
+// Cualquier URL del API con ticket de contraseña (?k=…) va SIEMPRE a la red y
+// jamás a caché: la URL entera es la clave de Cache Storage y el ticket quedaría
+// escrito en disco.
 registerRoute(
   ({ url, request }) =>
-    request.method === 'GET' && /^\/api\/v1\/.*\/attachments\//.test(url.pathname),
+    request.method === 'GET' && url.pathname.startsWith('/api/v1/') && url.searchParams.has('k'),
+  new NetworkOnly(),
+)
+
+// Adjuntos AUTENTICADOS (binarios, pueden pesar): caché aparte y acotada.
+// Excluye los del proxy público de enlaces compartidos (ruta /public/share/…):
+//   - con CacheFirst sobrevivían 7 días a la revocación/caducidad del enlace en
+//     el dispositivo del visitante (y el visitante anónimo nunca dispara la
+//     limpieza de cachés del logout);
+//   - la URL puede llevar el ticket de contraseña (?k=…), que no debe quedar
+//     escrito en Cache Storage.
+registerRoute(
+  ({ url, request }) =>
+    request.method === 'GET' &&
+    /^\/api\/v1\/.*\/attachments\//.test(url.pathname) &&
+    !url.pathname.startsWith('/api/v1/public/'),
   new CacheFirst({
     cacheName: 'km-att',
     plugins: [
       onlyCache200,
       new ExpirationPlugin({ maxEntries: 30, maxAgeSeconds: 7 * 24 * 3600 }),
+    ],
+  }),
+)
+
+// Adjuntos PÚBLICOS (enlaces compartidos): siempre red primero y caché corta de
+// respaldo SOLO para cortes de red; nunca se cachea una URL con ticket (?k=).
+registerRoute(
+  ({ url, request }) =>
+    request.method === 'GET' &&
+    url.pathname.startsWith('/api/v1/public/') &&
+    /\/attachments\//.test(url.pathname) &&
+    !url.searchParams.has('k'),
+  new NetworkFirst({
+    cacheName: 'km-att-pub',
+    networkTimeoutSeconds: 6,
+    plugins: [
+      onlyCache200,
+      new ExpirationPlugin({ maxEntries: 15, maxAgeSeconds: 3600 }),
     ],
   }),
 )

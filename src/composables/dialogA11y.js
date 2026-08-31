@@ -17,6 +17,13 @@ const FOCUSABLE = [
 let openDialogs = 0
 let prevOverflow = ''
 
+// Pila de diálogos abiertos (orden de apertura): con diálogos APILADOS, solo el
+// del TOPE debe gestionar Escape y el ciclo de Tab. Sin la pila, cada diálogo
+// registraba su propio keydown en document y con dos abiertos Escape los cerraba
+// todos (stopPropagation no frena a otros listeners del mismo nodo) y el trap del
+// de abajo robaba el foco al de arriba.
+const dialogStack = []
+
 function lockScroll() {
   if (openDialogs++ === 0) {
     prevOverflow = document.documentElement.style.overflow
@@ -50,6 +57,7 @@ function unlockScroll() {
 export function useDialogA11y(containerRef, onClose, openRef = null) {
   let prevFocused = null
   let active = false
+  const handle = {} // identidad de este diálogo en la pila
 
   const focusable = () => {
     const el = containerRef.value
@@ -59,6 +67,8 @@ export function useDialogA11y(containerRef, onClose, openRef = null) {
 
   const onKeydown = (e) => {
     if (!active) return
+    // Solo el diálogo del tope de la pila gestiona el teclado.
+    if (dialogStack[dialogStack.length - 1] !== handle) return
     if (e.key === 'Escape') {
       e.preventDefault()
       e.stopPropagation()
@@ -86,6 +96,7 @@ export function useDialogA11y(containerRef, onClose, openRef = null) {
   const activate = async () => {
     if (active) return
     active = true
+    dialogStack.push(handle)
     lockScroll()
     prevFocused = document.activeElement
     document.addEventListener('keydown', onKeydown, true)
@@ -101,6 +112,8 @@ export function useDialogA11y(containerRef, onClose, openRef = null) {
   const deactivate = () => {
     if (!active) return
     active = false
+    const i = dialogStack.indexOf(handle)
+    if (i !== -1) dialogStack.splice(i, 1)
     unlockScroll()
     document.removeEventListener('keydown', onKeydown, true)
     if (prevFocused && typeof prevFocused.focus === 'function') prevFocused.focus()
