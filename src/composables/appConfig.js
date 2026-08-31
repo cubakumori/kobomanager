@@ -69,8 +69,14 @@ const sampleShowQuickFill = ref(true)
 const samplePalette = ref('classic')
 const sampleMonoColor = ref('')
 
+// ¿Se ofrece «¿Olvidaste tu contraseña?» en el login? (ajuste global del admin).
+const passwordResetEnabled = ref(false)
+
 // Promesa de «config lista»: la usa el guard del router para decidir rutas
-// públicas (p. ej. /apoyar) sin depender del orden de carga.
+// públicas (p. ej. /apoyar) sin depender del orden de carga. RESUELVE CON EL
+// PAYLOAD de /config (o null sin red): este módulo es el ÚNICO que hace el GET —
+// darkMode.js y LoginForm leen de aquí (antes cada uno disparaba el suyo y el
+// arranque en frío hacía 3 peticiones idénticas).
 const configReady = publicApi
   .get('/config')
   .then(({ data }) => {
@@ -107,8 +113,10 @@ const configReady = publicApi
     if (data.data.sample_show_quick_fill != null) sampleShowQuickFill.value = !!data.data.sample_show_quick_fill
     if (VALID_SAMPLE_PALETTES.includes(data.data.sample_palette)) samplePalette.value = data.data.sample_palette
     sampleMonoColor.value = String(data.data.sample_mono_color || '')
+    passwordResetEnabled.value = !!data.data.password_reset_enabled
+    return data.data
   })
-  .catch(() => { /* sin red: vale el valor cacheado o el default */ })
+  .catch(() => null /* sin red: vale el valor cacheado o el default */)
 
 /** ¿Se congela la primera columna de las tablas? (reactivo) */
 export function useTableFreeze() {
@@ -188,4 +196,9 @@ export function useSampleConfig() {
 }
 
 /** Promesa que resuelve cuando /config se ha cargado (para el guard del router). */
+/** ¿Está habilitado el flujo «olvidé mi contraseña»? (reactivo; para el login). */
+export function usePasswordReset() {
+  return { passwordResetEnabled }
+}
+
 export { configReady }

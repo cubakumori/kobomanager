@@ -1,16 +1,11 @@
-<script setup>
-import { computed, watchEffect } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { Bar, Doughnut } from 'vue-chartjs'
-import { useDarkMode } from '../composables/darkMode'
-import { usePctFormat } from '../composables/appConfig'
-
-// Formato global de porcentajes para las etiquetas «valor (p%)» del plugin.
-// El plugin dibuja fuera del ciclo reactivo: lee esta variable en cada draw.
-const { formatPctNumber } = usePctFormat()
-const { locale } = useI18n()
-let chartLocale = locale.value
-watchEffect(() => { chartLocale = locale.value })
+<script>
+// Bloque de MÓDULO (corre UNA vez, no por instancia): registro de Chart.js, el
+// plugin de etiquetas de valor y los defaults de color del modo claro/oscuro.
+// Antes vivía en <script setup> y cada gráfico re-registraba el plugin (misma id:
+// la última instancia pisaba a las anteriores) y montaba su propio watchEffect
+// mutando ChartJS.defaults — funcionaba por capturar singletons, pero era frágil
+// y trabajo repetido por instancia.
+import { watchEffect } from 'vue'
 import {
   Chart as ChartJS,
   Title,
@@ -24,6 +19,9 @@ import {
   LineElement,
   PointElement,
 } from 'chart.js'
+import { i18n } from '../i18n'
+import { useDarkMode } from '../composables/darkMode'
+import { usePctFormat } from '../composables/appConfig'
 
 // LineController/LineElement/PointElement permiten datasets `type:'line'` dentro de un
 // gráfico de barras (mixto): se usa para la línea de total ACUMULADO sobre «Envíos por
@@ -32,6 +30,16 @@ ChartJS.register(
   Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement,
   LineController, LineElement, PointElement,
 )
+
+// Formato global de porcentajes para las etiquetas «valor (p%)» del plugin.
+// El plugin dibuja fuera del ciclo reactivo: lee el locale global en cada draw.
+const { formatPctNumber } = usePctFormat()
+const chartLocale = () => i18n.global.locale.value
+
+function cssVar(name, fallback) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  return v || fallback
+}
 
 // Plugin propio (sin dependencias) para dibujar el valor —y el % si se da una base—
 // sobre cada barra/segmento, no solo en el hover (clave en móvil). Solo actúa si el
@@ -58,7 +66,7 @@ const valueLabelsPlugin = {
       meta.data.forEach((el, i) => {
         const v = Number(ds.data[i])
         if (!v) return
-        const pct = base && base > 0 ? formatPctNumber((v * 100) / base, chartLocale) : null
+        const pct = base && base > 0 ? formatPctNumber((v * 100) / base, chartLocale()) : null
         const txt = pct != null ? `${v} (${pct}%)` : `${v}`
         if (type === 'doughnut') {
           if (el.endAngle - el.startAngle < 0.3) return // segmento muy pequeño: solo en leyenda/hover
@@ -109,6 +117,26 @@ const valueLabelsPlugin = {
 }
 ChartJS.register(valueLabelsPlugin)
 
+// ---------- Modo claro/oscuro ----------
+// Los colores de texto/rejilla de Chart.js se fijan como DEFAULTS globales leyendo
+// los tokens slate (que se invierten bajo `.dark`); al cambiar el modo, el :key
+// del template recrea cada gráfico para que tome los nuevos valores. Un solo
+// watchEffect de módulo (useDarkMode es un singleton de módulo, seguro aquí).
+const { isDark: isDarkGlobal } = useDarkMode()
+watchEffect(() => {
+  void isDarkGlobal.value // dependencia: re-leer al alternar el modo
+  ChartJS.defaults.color = cssVar('--color-slate-500', '#64748b')
+  ChartJS.defaults.borderColor = isDarkGlobal.value ? 'rgba(148, 163, 184, 0.15)' : 'rgba(0, 0, 0, 0.1)'
+})
+
+export default {}
+</script>
+
+<script setup>
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { Bar, Doughnut } from 'vue-chartjs'
+
 const props = defineProps({
   type: { type: String, default: 'bar' }, // 'bar' | 'doughnut'
   data: { type: Object, required: true },
@@ -128,20 +156,7 @@ const ariaLabel = computed(() => {
   return t('stats.chartAria', { count: props.data?.labels?.length || ds.length, total })
 })
 
-// ---------- Modo claro/oscuro ----------
-// Los colores de texto/rejilla de Chart.js se fijan como DEFAULTS globales leyendo
-// los tokens slate (que se invierten bajo `.dark`); al cambiar el modo, el :key
-// del template recrea el gráfico para que tome los nuevos valores.
-function cssVar(name, fallback) {
-  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
-  return v || fallback
-}
-const { isDark } = useDarkMode()
-watchEffect(() => {
-  void isDark.value // dependencia: re-leer al alternar el modo
-  ChartJS.defaults.color = cssVar('--color-slate-500', '#64748b')
-  ChartJS.defaults.borderColor = isDark.value ? 'rgba(148, 163, 184, 0.15)' : 'rgba(0, 0, 0, 0.1)'
-})
+const isDark = isDarkGlobal
 </script>
 
 <template>

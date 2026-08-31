@@ -1,5 +1,5 @@
 import { ref, computed, watchEffect } from 'vue'
-import { publicApi } from '../services/api'
+import { configReady } from './appConfig'
 
 /**
  * Modo oscuro — estado global (módulo singleton).
@@ -38,19 +38,17 @@ watchEffect(() => {
   document.documentElement.classList.toggle('dark', isDark.value)
 })
 
-// Default del sitio + visibilidad del selector (público, best-effort).
-publicApi
-  .get('/config')
-  .then(({ data }) => {
-    const d = data.data
-    if (MODES.includes(d.default_theme)) {
-      serverDefault.value = d.default_theme
-      localStorage.setItem(DEFAULT_CACHE_KEY, d.default_theme)
-    }
-    showToggle.value = d.show_theme_toggle !== false
-    localStorage.setItem(DEFAULT_CACHE_KEY + '.toggle', showToggle.value ? '1' : '0')
-  })
-  .catch(() => { /* sin red/API: se queda el default cacheado o 'auto' */ })
+// Default del sitio + visibilidad del selector: del ÚNICO GET /config del
+// arranque (appConfig.configReady resuelve con el payload; null sin red).
+configReady.then((d) => {
+  if (!d) return /* sin red/API: se queda el default cacheado o 'auto' */
+  if (MODES.includes(d.default_theme)) {
+    serverDefault.value = d.default_theme
+    localStorage.setItem(DEFAULT_CACHE_KEY, d.default_theme)
+  }
+  showToggle.value = d.show_theme_toggle !== false
+  localStorage.setItem(DEFAULT_CACHE_KEY + '.toggle', showToggle.value ? '1' : '0')
+})
 
 /** Fija la preferencia del usuario; null/'' la borra (vuelve al default del sitio). */
 function setPref(mode) {

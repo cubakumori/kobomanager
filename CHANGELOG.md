@@ -4,6 +4,27 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.55.0] - 2026-08-31
+
+Cuarta y última tanda de la revisión: optimizaciones de bajo riesgo. Las de más
+calado (pasada compartida Quality+Riesgo, `extra_keys` persistidas para el
+export, pull de validación filtrado y la memoria de QC en formularios enormes)
+quedan documentadas en el ROADMAP con su porqué.
+
+### Cambiado
+
+- **Un solo `GET /config` al arrancar** (antes tres: appConfig, darkMode y el
+  formulario de login disparaban cada uno el suyo): `configReady` resuelve ahora con
+  el payload y los otros dos consumidores leen de ahí (`usePasswordReset` nuevo para
+  el enlace «¿Olvidaste tu contraseña?»).
+- **StatsChart registra el plugin de etiquetas y los defaults de color UNA vez**
+  (bloque de módulo): antes cada instancia re-registraba el plugin (misma id) y
+  montaba su propio `watchEffect` mutando `ChartJS.defaults`.
+- **LeafletMap sin watcher profundo**: los padres siempre reemplazan el array de
+  features, y el `deep: true` recorría todos los puntos en cada disparo para nada.
+- **`npm audit` a cero** (nanoid/postcss de la cadena de build, sin impacto en el
+  bundle ni en runtime).
+
 ## [1.54.0] - 2026-08-31
 
 Tercera tanda de la revisión: frontend (privacidad del service worker, robustez

@@ -43,6 +43,20 @@ Lo que queda por hacer e ideas para más adelante. Todo lo ya entregado se regis
       reducción parcial apresurada en la tanda 1.52–1.55. Mientras tanto el límite
       práctico documentado es «decenas de miles de envíos por formulario», que cubre a
       los usuarios actuales.
+- [ ] **Otras optimizaciones detectadas en la misma revisión y diferidas a propósito**:
+      - *Pasada compartida Quality + Riesgo*: el Índice de riesgo ya computa Quality
+        entero (`Quality::riskRates`), así que el endpoint hace DOS full scans con
+        `json_decode` + FieldScope por fila; una pasada única (o cachear Quality unos
+        minutos por formulario) reduciría el coste a la mitad.
+      - *Columnas extra del export*: `forms/export` recorre todo el formulario una vez
+        solo para descubrir claves fuera del esquema y otra para emitir; persistir
+        `extra_keys` por formulario (actualizado en el sync) eliminaría la primera pasada.
+      - *Pull de validación filtrado*: `reconcileValidation` baja cada 15 min el mapa
+        completo `_uuid → validation_status`. Filtrar con `$exists` en la query de Kobo
+        lo reduciría a los envíos CON estado, pero entonces «tenía estado → se lo
+        quitaron en Kobo» sería indistinguible de «envío borrado» y el estado local se
+        quedaría obsoleto — necesita diseño (p. ej. cruzar con kobo_validation_seen),
+        no un cambio rápido.
 
 ---
 

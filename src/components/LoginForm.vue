@@ -1,9 +1,10 @@
 <script setup>
-import { ref, nextTick, onMounted } from 'vue'
+import { ref, nextTick } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import api from '../services/api'
 import { useAuthStore, apiError } from '../stores/auth'
+import { usePasswordReset } from '../composables/appConfig'
 
 const emit = defineEmits(['success'])
 const { t } = useI18n()
@@ -14,23 +15,15 @@ const email = ref('')
 const password = ref('')
 const error = ref('')
 const loading = ref(false)
-const resetEnabled = ref(false)
+// Mostrar el enlace «¿Olvidaste tu contraseña?» solo si el admin lo habilitó
+// (del único GET /config del arranque; antes este componente disparaba otro).
+const { passwordResetEnabled: resetEnabled } = usePasswordReset()
 
 // Segundo paso (2FA): con el reto emitido por el backend se pide el código TOTP
 // (o uno de recuperación) en el MISMO formulario; solo entonces hay sesión.
 const challenge = ref('')
 const totpCode = ref('')
 const totpInput = ref(null)
-
-// Mostrar el enlace «¿Olvidaste tu contraseña?» solo si el admin lo habilitó.
-onMounted(async () => {
-  try {
-    const { data } = await api.get('/config')
-    resetEnabled.value = !!data.data.password_reset_enabled
-  } catch {
-    resetEnabled.value = false
-  }
-})
 
 function finish(user) {
   // Si la política de la instancia le exige 2FA y no lo tiene, va directo a su

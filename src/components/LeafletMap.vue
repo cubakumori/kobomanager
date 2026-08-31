@@ -63,7 +63,9 @@ onMounted(async () => {
   draw()
 })
 
-watch(() => props.features, draw, { deep: true })
+// Sin `deep`: los padres siempre REEMPLAZAN el array (computed), y el watcher
+// profundo recorría miles de puntos en cada disparo para nada.
+watch(() => props.features, draw)
 
 onBeforeUnmount(() => {
   if (map) { map.remove(); map = null }
