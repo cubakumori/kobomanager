@@ -110,6 +110,35 @@ final class NotifierTest extends DbTestCase
         $this->assertSame(0, $res2['sent']);
     }
 
+    public function testLateSyncedSubmissionStillNotifies(): void
+    {
+        // Regresión 1.53.0: la ventana iba por `submitted_at` y un envío que Kobo
+        // recibió ANTES de la marca de agua pero que el sync trajo DESPUÉS (timeout,
+        // candado, token roto una pasada) no se avisaba nunca. Con la marca por id
+        // de fila (orden real de llegada a la caché) sí cuenta.
+        $uid = $this->makeUser('viewer', true, 'late@test.local');
+        $f   = $this->makeForm();
+        $this->grantView($uid, $f);
+        $this->subscribe($uid, $f, 'every_sync', '2026-07-17 11:00:00');
+        // Marca por id ya establecida (pasada anterior): tope actual de la caché.
+        $maxId = (int) (DB::run('SELECT MAX(id) AS m FROM submissions_cache')->fetch()['m'] ?? 0);
+        DB::run('UPDATE notification_config SET last_notified_id = ? WHERE user_id = ? AND form_id = ?',
+            [$maxId, $uid, $f]);
+
+        // Envío «tardío»: _submission_time de las 10:00 (anterior a la marca temporal),
+        // pero insertado en la caché AHORA (id > marca por id).
+        $this->addSubmission($f, '2026-07-17 10:00:00');
+
+        $res = Notifier::run($this->now(), $this->collector());
+        $this->assertSame(1, $res['sent']);
+        $this->assertCount(1, $this->outbox);
+        $this->assertStringContainsString('1', $this->outbox[0]['subject']);
+
+        // Y no se repite en la siguiente pasada (la marca por id avanzó).
+        $res2 = Notifier::run($this->now('2026-07-17 12:15:00'), $this->collector());
+        $this->assertSame(0, $res2['sent']);
+    }
+
     public function testRespectsRowScope(): void
     {
         $uid = $this->makeUser('viewer', true, 'scoped@test.local');

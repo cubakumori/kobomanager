@@ -56,8 +56,16 @@ final class SchemaCheckTest extends DbTestCase
 
     public function testDetectsAbsentIndex(): void
     {
-        // Índices presentes vacío = BD anterior a 1.52.0 (uq_form_uid ausente).
+        // Índices presentes vacío = BD vieja: TODOS los INDEX_CHECKS deben salir.
         $missing = SchemaCheck::missingAgainst($this->fullHave());
+        $this->assertCount(count(SchemaCheck::INDEX_CHECKS), $missing);
+        $names = array_map(fn($m) => $m['index'], $missing);
+        $this->assertContains('uq_form_uid', $names);
+        $this->assertContains('uq_notif_user_form', $names);
+        // Y con todos presentes menos uno, solo sale ese uno.
+        $idx = $this->fullHaveIndexes();
+        unset($idx['submissions_cache.uq_form_uid']);
+        $missing = SchemaCheck::missingAgainst($this->fullHave(), $idx);
         $this->assertCount(1, $missing);
         $this->assertSame('uq_form_uid', $missing[0]['index']);
         $this->assertStringContainsString('UNIQUE KEY uq_form_uid', $missing[0]['fix']);

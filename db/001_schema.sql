@@ -300,14 +300,20 @@ CREATE TABLE IF NOT EXISTS notification_config (
     --   del cron de sync). NULL = sin preferencia explícita → aplica el valor por
     --   defecto global (ajuste notifications_default_frequency).
     frequency       VARCHAR(12) NULL DEFAULT NULL,
-    -- Marca de agua UTC de los avisos casi inmediatos (hourly/every_sync): último
-    -- `submitted_at` ya avisado. La mantiene lib/Notifier; NULL = sin línea base
-    -- (el notificador la inicializa a «ahora» sin avisar, para no inundar con el
-    -- histórico). El resumen diario no la usa (su ventana es el día natural).
+    -- Marca de agua de los avisos casi inmediatos (hourly/every_sync). La mantiene
+    -- lib/Notifier; NULL = sin línea base (el notificador la inicializa a «ahora»
+    -- sin avisar, para no inundar con el histórico). El resumen diario no la usa
+    -- (su ventana es el día natural).
+    --   - last_notified_at (UTC): reloj del intervalo 'hourly'.
+    --   - last_notified_id: id de submissions_cache hasta el que ya se avisó — la
+    --     VENTANA de conteo va por orden real de llegada a la caché, no por
+    --     `_submission_time` (un envío sincronizado con retraso también avisa).
     last_notified_at DATETIME NULL,
+    last_notified_id INT UNSIGNED NULL,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_notif_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT fk_notif_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+    CONSTRAINT fk_notif_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
+    UNIQUE KEY uq_notif_user_form (user_id, form_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 3.10 Registro de auditoría

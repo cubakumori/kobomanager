@@ -50,6 +50,15 @@ if (!$force && $last > 0 && (time() - $last) < $minutes * 60) {
     exit(0); // ciclo aún no vencido: salida silenciosa (corre cada minuto)
 }
 
+// Solo una restauración a la vez: la marca se escribe al FINAL, así que un restore
+// que tarde >1 min (o dos procesos simultáneos) dispararía un segundo restore
+// concurrente sin este candado.
+$gotLock = ((int) DB::run("SELECT GET_LOCK('km.demo_reset', 0) AS l")->fetch()['l']) === 1;
+if (!$gotLock) {
+    fwrite(STDOUT, "[SKIP] Otra restauración de la demo está en marcha.\n");
+    exit(0);
+}
+
 try {
     try {
         $res = DemoSeed::restore();

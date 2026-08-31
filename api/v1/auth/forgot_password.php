@@ -6,7 +6,13 @@
  * Inicia el flujo «olvidé mi contraseña». Por seguridad:
  *   - Respuesta SIEMPRE genérica (no revela si el email existe ni si el flujo
  *     está habilitado / el email está configurado).
- *   - Rate-limited por IP (lib/RateLimit, tabla login_attempts).
+ *   - La respuesta se ENVÍA ANTES de hacer ningún trabajo dependiente del caso
+ *     (lookup, token, email): si el email existe, Mailer::send es una llamada
+ *     cURL síncrona de cientos de ms y esa diferencia de latencia era un oráculo
+ *     fiable de «esta cuenta existe». Con la respuesta ya en el aire, todos los
+ *     caminos tardan lo mismo a ojos del cliente.
+ *   - Rate-limited por IP (bucket 'forgot' de rate_hits; ya no comparte
+ *     login_attempts con el login: cada flujo tiene su presupuesto).
  *   - Si el flujo está deshabilitado, no hace nada (responde genérico).
  *   - Genera un token aleatorio; guarda solo su HASH (sha256) + expiración;
  *     invalida tokens previos del usuario. El token en claro viaja solo en el email.
@@ -25,21 +31,36 @@ const RESET_TTL = 3600;
 
 $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 
-// Rate-limit: máx. 5 solicitudes por IP cada 15 min (comparte la tabla login_attempts).
-if (RateLimit::tooMany($ip, 5, 900)) {
+// Rate-limit: máx. 5 solicitudes por IP cada 15 min.
+if (RateLimit::tooManyBucket($ip, 'forgot', 5, 900)) {
     ErrorResponse::send('AUTH_RATE_LIMITED');
 }
-RateLimit::hit($ip);
+RateLimit::hitBucket($ip, 'forgot');
 
 $in    = Request::required(['email']);
 $email = $in['email'];
 
-// Respuesta genérica única (no distingue casos). Se usa en todos los caminos de salida.
-$generic = fn() => ErrorResponse::ok(['message' => 'ok']);
+// Respuesta genérica ÚNICA, enviada YA (idéntica en todos los casos). El script
+// sigue trabajando después con la conexión cerrada de cara al cliente.
+ignore_user_abort(true);
+$body = json_encode(['success' => true, 'data' => ['message' => 'ok']], JSON_UNESCAPED_UNICODE);
+http_response_code(200);
+header('Content-Type: application/json; charset=utf-8');
+header('Content-Length: ' . strlen($body));
+header('Connection: close');
+echo $body;
+if (function_exists('fastcgi_finish_request')) {
+    fastcgi_finish_request();          // FPM: cierra la respuesta de verdad
+} else {
+    while (ob_get_level() > 0) { @ob_end_flush(); }
+    @flush();                          // Apache mod_php / php -S: vacía los buffers
+}
 
-// Flujo deshabilitado por el admin → no hacer nada, pero responder igual.
+// ---- A partir de aquí, nada de output: el cliente ya tiene su respuesta. ----
+
+// Flujo deshabilitado por el admin → no hacer nada.
 if (!Settings::passwordResetEnabled()) {
-    $generic();
+    exit;
 }
 
 $user = DB::run(
@@ -47,9 +68,9 @@ $user = DB::run(
     [$email]
 )->fetch();
 
-// Email desconocido o inactivo → respuesta genérica sin enviar nada.
+// Email desconocido o inactivo → nada que enviar.
 if (!$user) {
-    $generic();
+    exit;
 }
 
 // Token de un solo uso: 32 bytes aleatorios → 64 hex en el enlace; en BD solo el hash.
@@ -66,12 +87,13 @@ DB::run(
 
 Audit::log((int) $user['id'], 'password_reset_requested', null, null, ['ip' => $ip]);
 
-// Enlace a la página pública de reset del frontend.
+// Enlace a la página pública de reset del frontend (APP_URL: en un servidor debe
+// ser la URL pública de la instancia — ver el aviso de config de /health).
 $link = rtrim(APP_URL, '/') . '/reset-password?token=' . $token;
 [$subject, $html, $text] = build_reset_email($user['name'], $link, ($user['locale'] ?: Settings::defaultLocale()));
 Mailer::send($user['email'], $subject, $html, $text);   // degradado sin error si no hay clave
 
-$generic();
+exit;
 
 /** Construye [asunto, html, texto] del email de recuperación, en es|en. */
 function build_reset_email(string $name, string $link, string $locale): array {

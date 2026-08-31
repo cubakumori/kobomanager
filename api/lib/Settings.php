@@ -165,7 +165,9 @@ class Settings {
     public static function recordCronRun(string $name, array $info = []): void {
         $runs = self::get('cron_runs', []);
         if (!is_array($runs)) $runs = [];
-        $runs[$name] = array_merge(['at' => date('Y-m-d H:i:s')], $info);
+        // gmdate: todo el sistema (submitted_at, marcas de agua) va en UTC; date()
+        // usaba la TZ del servidor y /health mostraba horas incoherentes con el resto.
+        $runs[$name] = array_merge(['at' => gmdate('Y-m-d H:i:s') . ' UTC'], $info);
         self::set('cron_runs', $runs);
     }
 

@@ -5,8 +5,8 @@
  *
  * Lo invoca el cron de sincronización (cron/sync_submissions.php) tras cada pasada:
  * para cada usuario cuya frecuencia EFECTIVA (notification_config.frequency o, en su
- * ausencia, el default global) sea 'hourly' o 'every_sync', cuenta los envíos con
- * `submitted_at` posterior a su marca de agua (`last_notified_at`, UTC) y le envía UN
+ * ausencia, el default global) sea 'hourly' o 'every_sync', cuenta los envíos que
+ * ENTRARON EN LA CACHÉ después de su marca de agua y le envía UN
  * email agrupado («N envíos nuevos en {formulario}») más, si suscribió dispositivos
  * (push_subscriptions, opt-in por dispositivo y claves VAPID en config), una
  * notificación push con el mismo recuento (lib/WebPush). El resumen 'daily' sigue en
@@ -28,6 +28,14 @@
  * el opt-in o tras heredar un default vivo), para no inundar con el histórico. Para
  * los suscritos por default global sin fila propia, se crea la fila con frequency
  * NULL (sigue significando «hereda el default») solo para sostener la marca de agua.
+ *
+ * DOBLE marca de agua (desde 1.53.0): la ventana de conteo usa `last_notified_id`
+ * (id de fila de submissions_cache = orden REAL de llegada a la caché), no
+ * `submitted_at`: un envío que Kobo recibió a las 10:30 pero que el sync no pudo
+ * traer hasta las 11:15 (timeout, candado, token roto una pasada) quedaba por
+ * debajo de la marca temporal y no se avisaba NUNCA. `last_notified_at` se
+ * conserva para el reloj 'hourly' y como respaldo de filas antiguas (id NULL =
+ * anteriores a la columna: una última pasada con la ventana temporal y migran).
  */
 class Notifier {
 
@@ -73,6 +81,20 @@ class Notifier {
             return ['sent' => 0, 'push_sent' => 0, 'recipients' => 0, 'baselined' => 0, 'errors' => 0, 'skipped' => 'quiet_hours'];
         }
 
+        // Solo una pasada a la vez: dos crons solapados contarían la misma ventana
+        // ANTES de que advance() mueva la marca → aviso duplicado. Sin espera: si ya
+        // hay un notificador corriendo, esta pasada se retira (la siguiente recoge).
+        $gotLock = ((int) DB::run("SELECT GET_LOCK('km.notifier', 0) AS l")->fetch()['l']) === 1;
+        if (!$gotLock) {
+            return ['sent' => 0, 'push_sent' => 0, 'recipients' => 0, 'baselined' => 0, 'errors' => 0, 'skipped' => 'already_running'];
+        }
+        try {
+
+        // Tope superior de la ventana por id: fijado al EMPEZAR la pasada, para que
+        // las filas que un sync concurrente inserte mientras enviamos no queden por
+        // debajo de la marca sin haberse contado.
+        $maxId = (int) (DB::run('SELECT MAX(id) AS m FROM submissions_cache')->fetch()['m'] ?? 0);
+
         $default   = Settings::notificationsDefaultFrequency();
         $byUser    = [];   // user_id => ['name','email','locale','rows' => [...]]
         $baselined = 0;
@@ -82,7 +104,7 @@ class Notifier {
 
             // Sin línea base: anclarla a ahora sin avisar (evita inundar con histórico).
             if ($r['last_notified_at'] === null) {
-                self::baseline($r, $nowStr);
+                self::baseline($r, $nowStr, $maxId);
                 $baselined++;
                 continue;
             }
@@ -111,8 +133,11 @@ class Notifier {
             $hourlyDue = $hourlyLast === null
                 || ($now->getTimestamp() - strtotime($hourlyLast . ' UTC')) >= (self::HOURLY_INTERVAL - self::INTERVAL_SLACK);
 
-            // Conteo por formulario en la ventana (marca de agua, ahora], con el
-            // scoping por filas del usuario (admins sin filtro).
+            // Conteo por formulario en la ventana (marca de agua, tope de la pasada],
+            // con el scoping por filas del usuario (admins sin filtro). Ventana por id
+            // de fila (orden real de llegada a la caché); las filas anteriores a la
+            // columna last_notified_id (NULL) hacen una última pasada con la ventana
+            // temporal clásica y quedan migradas al avanzar.
             $items = []; // [{form_name, count, nc}]
             foreach ($u['rows'] as $row) {
                 if ($row['eff'] === 'hourly' && !$hourlyDue) continue;
@@ -122,11 +147,19 @@ class Notifier {
                     : RowScope::normalize($row['row_filter'] ? json_decode($row['row_filter'], true) : null);
                 [$scopeSql, $scopeP] = RowScope::sqlCondition($scope, 'json_payload');
 
-                $cnt = (int) DB::run(
-                    "SELECT COUNT(*) AS c FROM submissions_cache
-                     WHERE form_id = ? AND submitted_at > ? AND submitted_at <= ? AND $scopeSql",
-                    array_merge([$row['form_id'], $row['last_notified_at'], $nowStr], $scopeP)
-                )->fetch()['c'];
+                if ($row['last_notified_id'] !== null) {
+                    $cnt = (int) DB::run(
+                        "SELECT COUNT(*) AS c FROM submissions_cache
+                         WHERE form_id = ? AND id > ? AND id <= ? AND $scopeSql",
+                        array_merge([$row['form_id'], (int) $row['last_notified_id'], $maxId], $scopeP)
+                    )->fetch()['c'];
+                } else {
+                    $cnt = (int) DB::run(
+                        "SELECT COUNT(*) AS c FROM submissions_cache
+                         WHERE form_id = ? AND submitted_at > ? AND submitted_at <= ? AND $scopeSql",
+                        array_merge([$row['form_id'], $row['last_notified_at'], $nowStr], $scopeP)
+                    )->fetch()['c'];
+                }
                 if ($cnt <= 0) continue;
 
                 $items[] = ['form_name' => $row['form_name'], 'count' => $cnt, 'row' => $row];
@@ -177,12 +210,16 @@ class Notifier {
             // siguiente pasada.
             if ($delivered) {
                 foreach ($items as $it) {
-                    self::advance($it['row'], $nowStr);
+                    self::advance($it['row'], $nowStr, $maxId);
                 }
             }
         }
 
         return ['sent' => $sent, 'push_sent' => $pushSent, 'recipients' => count($byUser), 'baselined' => $baselined, 'errors' => $errors];
+
+        } finally {
+            DB::run("SELECT RELEASE_LOCK('km.notifier')");
+        }
     }
 
     /** Suscripciones push del usuario. */
@@ -231,7 +268,7 @@ class Notifier {
         $viewers = DB::run(
             "SELECT u.id AS user_id, u.name, u.email, u.locale, u.role,
                     f.id AS form_id, f.name AS form_name, p.row_filter,
-                    nc.id AS nc_id, nc.frequency, nc.last_notified_at
+                    nc.id AS nc_id, nc.frequency, nc.last_notified_at, nc.last_notified_id
              FROM users u
              JOIN user_form_permissions p ON p.user_id = u.id AND p.can_view = 1
              JOIN forms f ON f.id = p.form_id AND f.active = 1
@@ -245,7 +282,7 @@ class Notifier {
         $admins = DB::run(
             "SELECT u.id AS user_id, u.name, u.email, u.locale, u.role,
                     f.id AS form_id, f.name AS form_name, NULL AS row_filter,
-                    nc.id AS nc_id, nc.frequency, nc.last_notified_at
+                    nc.id AS nc_id, nc.frequency, nc.last_notified_at, nc.last_notified_id
              FROM users u
              JOIN forms f ON f.active = 1
              LEFT JOIN notification_config nc ON nc.user_id = u.id AND nc.form_id = f.id
@@ -259,23 +296,29 @@ class Notifier {
     }
 
     /** Fija la línea base (marca de agua) de un par usuario × formulario. */
-    private static function baseline(array $row, string $nowStr): void {
+    private static function baseline(array $row, string $nowStr, int $maxId): void {
         if ($row['nc_id'] !== null) {
-            DB::run('UPDATE notification_config SET last_notified_at = ? WHERE id = ?', [$nowStr, $row['nc_id']]);
+            DB::run('UPDATE notification_config SET last_notified_at = ?, last_notified_id = ? WHERE id = ?',
+                [$nowStr, $maxId, $row['nc_id']]);
             return;
         }
         // Suscrito por el default global sin fila propia: se crea con frequency NULL
-        // (sigue heredando el default) solo para sostener la marca de agua.
+        // (sigue heredando el default) solo para sostener la marca de agua. El upsert
+        // cubre la carrera con el PUT de /notifications (UNIQUE user+form).
         DB::run(
-            'INSERT INTO notification_config (user_id, form_id, frequency, last_notified_at)
-             VALUES (?, ?, NULL, ?)',
-            [$row['user_id'], $row['form_id'], $nowStr]
+            'INSERT INTO notification_config (user_id, form_id, frequency, last_notified_at, last_notified_id)
+             VALUES (?, ?, NULL, ?, ?)
+             ON DUPLICATE KEY UPDATE
+                last_notified_at = COALESCE(last_notified_at, VALUES(last_notified_at)),
+                last_notified_id = COALESCE(last_notified_id, VALUES(last_notified_id))',
+            [$row['user_id'], $row['form_id'], $nowStr, $maxId]
         );
     }
 
     /** Avanza la marca de agua tras un aviso enviado. */
-    private static function advance(array $row, string $nowStr): void {
-        DB::run('UPDATE notification_config SET last_notified_at = ? WHERE id = ?', [$nowStr, $row['nc_id']]);
+    private static function advance(array $row, string $nowStr, int $maxId): void {
+        DB::run('UPDATE notification_config SET last_notified_at = ?, last_notified_id = ? WHERE id = ?',
+            [$nowStr, $maxId, $row['nc_id']]);
     }
 
     /**

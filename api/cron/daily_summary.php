@@ -15,7 +15,7 @@ if (PHP_SAPI !== 'cli') {
     exit("Solo CLI.\n");
 }
 
-require __DIR__ . '/../config.php';
+require getenv('KM_CONFIG') ?: __DIR__ . '/../config.php';
 require __DIR__ . '/../lib/DB.php';
 require __DIR__ . '/../lib/Settings.php';
 require __DIR__ . '/../lib/Mailer.php';
@@ -25,9 +25,27 @@ require __DIR__ . '/../lib/RowScope.php';
 // día natural UTC: `submitted_at` está anclado en UTC (ver SubmissionSync) y el
 // gráfico «por día» de Estadísticas agrupa DATE(submitted_at) — así los conteos
 // del email coinciden con el gráfico, sea cual sea la TZ del servidor.
-$day   = $argv[1] ?? (new DateTime('now', new DateTimeZone('UTC')))->modify('-1 day')->format('Y-m-d');
+$day = $argv[1] ?? (new DateTime('now', new DateTimeZone('UTC')))->modify('-1 day')->format('Y-m-d');
+if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) || DateTime::createFromFormat('Y-m-d', $day) === false) {
+    fwrite(STDERR, "Uso: php api/cron/daily_summary.php [YYYY-MM-DD]\n");
+    exit(1);
+}
 $start = $day . ' 00:00:00';
 $end   = (new DateTime($day, new DateTimeZone('UTC')))->modify('+1 day')->format('Y-m-d') . ' 00:00:00';
+
+// Idempotencia: una doble ejecución del mismo día (cron + lanzamiento manual, o dos
+// crons solapados) duplicaría todos los emails. El candado corta el solape simultáneo
+// y la marca del último día enviado corta la repetición (solo cuando el día es el
+// implícito «ayer»: un día explícito por argumento es un reenvío deliberado).
+$gotLock = ((int) DB::run("SELECT GET_LOCK('km.daily_summary', 0) AS l")->fetch()['l']) === 1;
+if (!$gotLock) {
+    fwrite(STDOUT, "[SKIP] Otro resumen diario está en marcha.\n");
+    exit(0);
+}
+if (!isset($argv[1]) && Settings::get('daily_summary_last_day', '') === $day) {
+    fwrite(STDOUT, "[SKIP] El resumen de $day ya se envió.\n");
+    exit(0);
+}
 
 // Candidatos (usuario × formulario con resumen diario). El conteo se calcula aparte
 // porque cada (usuario, formulario) puede tener un filtro por filas distinto.
@@ -85,6 +103,7 @@ foreach ($candidates as $r) {
 }
 
 if (!$byUser) {
+    if (!isset($argv[1])) Settings::set('daily_summary_last_day', $day);
     Settings::recordCronRun('daily_summary', ['ok' => true, 'day' => $day, 'sent' => 0, 'recipients' => 0]);
     fwrite(STDOUT, "Sin resúmenes que enviar para el día $day.\n");
     exit(0);
@@ -103,6 +122,9 @@ foreach ($byUser as $u) {
     if ($ok) $sent++;
 }
 
+// La marca del día avanza aunque algún envío individual fallara (mejor perder un
+// email puntual que repetir todos los demás en un re-run del mismo día).
+if (!isset($argv[1])) Settings::set('daily_summary_last_day', $day);
 Settings::recordCronRun('daily_summary', [
     'ok'         => $sent === count($byUser),
     'day'        => $day,

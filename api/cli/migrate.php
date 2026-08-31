@@ -50,6 +50,10 @@ foreach ($missing as $m) {
         continue;
     }
     try {
+        // Preparación declarada (p. ej. deduplicar antes de una clave única).
+        if (!empty($m['pre'])) {
+            DB::run($m['pre']);
+        }
         DB::run($m['fix']);
         // Backfill declarado (puebla la columna recién añadida desde datos existentes).
         if (!empty($m['backfill'])) {

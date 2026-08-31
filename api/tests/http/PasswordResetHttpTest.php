@@ -28,8 +28,15 @@ final class PasswordResetHttpTest extends HttpTestCase
 
         $res = $this->request('POST', 'auth/forgot-password', ['email' => 'p@test.local']);
         $this->assertSame(200, $res['status']);
-        $count = DB::run('SELECT COUNT(*) c FROM password_resets WHERE user_id = ?', [$uid])->fetch();
-        $this->assertSame(1, (int) $count['c']);
+        // La respuesta se envía ANTES de crear el token (anti-oráculo de tiempo):
+        // esperar brevemente a que el trabajo diferido escriba la fila.
+        $count = 0;
+        for ($i = 0; $i < 40; $i++) {
+            $count = (int) DB::run('SELECT COUNT(*) c FROM password_resets WHERE user_id = ?', [$uid])->fetch()['c'];
+            if ($count > 0) break;
+            usleep(50_000);
+        }
+        $this->assertSame(1, $count);
     }
 
     public function testForgotUnknownEmailStillGeneric(): void

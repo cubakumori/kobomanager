@@ -105,6 +105,11 @@ class Demo {
         // operador los vea. (El reset periódico también los borraría, pero al menos
         // no se pierden a manos de terceros dentro del ciclo.)
         'admin/messages/:id'       => ['PUT', 'DELETE'],
+        // …y tampoco debe poder LEER la bandeja (mensajes reales con email del
+        // remitente) ni el registro de auditoría (IPs y acciones de otros
+        // visitantes): en la demo todos entran como el mismo admin compartido.
+        'admin/messages'           => ['GET'],
+        'admin/audit'              => ['GET'],
     ];
 
     /** ¿Bloquea el modo demo este patrón de ruta + método? */

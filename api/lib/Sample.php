@@ -81,10 +81,9 @@ class Sample {
             $scopeP   = array_merge($scopeP, $extraP);
         }
 
-        // Denominador → filtro por estado de revisión (columna desnormalizada).
+        // Denominador → estados de revisión que cuentan como «hecho» (la pertenencia
+        // se decide por fila con in_array durante el stream).
         $statuses = self::denominatorStatuses($denominator);
-        $placeholders = implode(',', array_fill(0, count($statuses), '?'));
-        $statusSql = "review_status IN ($placeholders)";
 
         // Campo de equipo efectivo: configurado y NO oculto por FieldScope en este alcance.
         $teamField = ($teamField !== null && $teamField !== '' && !FieldScope::isHidden($fieldScope, $teamField))

@@ -100,7 +100,11 @@ class KoboClient {
     ): \Generator {
         $base = ['format' => 'json', 'limit' => $pageSize, 'sort' => '{"_submission_time":1}'];
         if ($sinceIso !== null) {
-            $base['query'] = json_encode(['_submission_time' => ['$gt' => $sinceIso]]);
+            // $gte y no $gt: con granularidad de segundo, un envío recibido en el
+            // MISMO segundo que el máximo cacheado pero después del sync quedaría
+            // fuera para siempre con $gt. Re-traer la(s) fila(s) frontera en cada
+            // pasada es gratis: el upsert es idempotente.
+            $base['query'] = json_encode(['_submission_time' => ['$gte' => $sinceIso]]);
         }
 
         $start = 0;

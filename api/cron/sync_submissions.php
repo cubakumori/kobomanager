@@ -14,7 +14,7 @@ if (PHP_SAPI !== 'cli') {
     exit("Solo CLI.\n");
 }
 
-require __DIR__ . '/../config.php';
+require getenv('KM_CONFIG') ?: __DIR__ . '/../config.php';
 require __DIR__ . '/../lib/DB.php';
 require __DIR__ . '/../lib/Settings.php';
 require __DIR__ . '/../lib/TokenVault.php';

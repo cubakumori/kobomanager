@@ -52,9 +52,12 @@ class XlsxWriter {
         foreach ($cells as $v) {
             $ref = self::colLetter($col) . $r;
             $col++;
-            if (is_int($v) || is_float($v)) {
+            if (is_int($v) || (is_float($v) && is_finite($v))) {
                 $buf .= '<c r="' . $ref . '"><v>' . $v . '</v></c>';
                 continue;
+            }
+            if (is_float($v)) {
+                $v = (string) $v; // INF/NAN no son un <v> numérico válido → celda de texto
             }
             $s = (string) ($v ?? '');
             if ($s === '') {
@@ -141,6 +144,8 @@ class XlsxWriter {
     private static function esc(string $s): string {
         // XML 1.0 solo admite \t \n \r y >= 0x20 (más los rangos Unicode válidos).
         $s = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/u', '', $s) ?? $s;
-        return htmlspecialchars($s, ENT_QUOTES | ENT_XML1, 'UTF-8');
+        // ENT_SUBSTITUTE: un valor con bytes UTF-8 inválidos (payload malformado de
+        // Kobo) se degrada a U+FFFD en vez de VACIAR la celda en silencio.
+        return htmlspecialchars($s, ENT_QUOTES | ENT_XML1 | ENT_SUBSTITUTE, 'UTF-8');
     }
 }

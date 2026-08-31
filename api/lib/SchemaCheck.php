@@ -290,6 +290,12 @@ class SchemaCheck {
             JOIN submissions_cache sc ON sc.submission_uid = r.submission_uid
             SET r.form_id = sc.form_id
             WHERE r.form_id IS NULL"],
+
+        // Marca de agua por id de fila del notificador (ver lib/Notifier): la ventana
+        // de conteo va por orden real de llegada a la caché. Sin backfill: NULL hace
+        // una última pasada con la ventana temporal clásica y migra al avanzar.
+        ['table' => 'notification_config', 'column' => 'last_notified_id', 'since' => '1.53.0',
+         'fix' => "ALTER TABLE notification_config ADD COLUMN last_notified_id INT UNSIGNED NULL AFTER last_notified_at"],
     ];
 
     /**
@@ -304,6 +310,15 @@ class SchemaCheck {
         // borrara después (pérdida de datos silenciosa). Único por formulario desde 1.52.0.
         ['table' => 'submissions_cache', 'column' => null, 'index' => 'uq_form_uid', 'since' => '1.52.0',
          'fix' => "ALTER TABLE submissions_cache DROP INDEX submission_uid, ADD UNIQUE KEY uq_form_uid (form_id, submission_uid)"],
+
+        // Un usuario × formulario = UNA fila de preferencias: sin la clave única, una
+        // carrera PUT↔notificador podía dejar duplicados (avisos por duplicado en los
+        // LEFT JOIN del notificador y del resumen diario). El `pre` deduplica antes
+        // del ALTER (se queda la fila más reciente) o la clave única no entraría.
+        ['table' => 'notification_config', 'column' => null, 'index' => 'uq_notif_user_form', 'since' => '1.53.0',
+         'pre' => "DELETE a FROM notification_config a
+            JOIN notification_config b ON a.user_id = b.user_id AND a.form_id = b.form_id AND a.id < b.id",
+         'fix' => "ALTER TABLE notification_config ADD UNIQUE KEY uq_notif_user_form (user_id, form_id)"],
     ];
 
     /** Columnas cuyo backfill requiere el recálculo PHP de migrate.php (no basta SQL). */

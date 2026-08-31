@@ -7,11 +7,12 @@
  *   PUT → { frequencies: { <form_id>: 'off'|'daily'|'hourly'|'every_sync', ... } }
  *         guarda la frecuencia por formulario.
  *
- * notification_config no tiene clave única (user,form), así que en PUT se borran
- * las filas del usuario y se reinsertan. La marca de agua de los avisos casi
- * inmediatos (last_notified_at, ver lib/Notifier) se CONSERVA al reinsertar; al
- * pasar un formulario a hourly/every_sync desde un estado no-vivo se inicializa a
- * «ahora» para no avisar del histórico acumulado.
+ * El PUT borra las filas del usuario y las reinserta (transaccional; la clave
+ * única (user_id, form_id) de 1.53.0 hace además imposible el duplicado ante
+ * carreras con el notificador). La marca de agua de los avisos casi inmediatos
+ * (last_notified_at + last_notified_id, ver lib/Notifier) se CONSERVA al
+ * reinsertar; al pasar un formulario a hourly/every_sync desde un estado no-vivo
+ * se inicializa a «ahora» para no avisar del histórico acumulado.
  */
 
 $user = Auth::require();
@@ -106,11 +107,13 @@ if (Request::method() === 'PUT') {
     // Estado anterior, para conservar la marca de agua de los avisos casi inmediatos.
     $old = [];
     foreach (DB::run(
-        'SELECT form_id, frequency, last_notified_at FROM notification_config WHERE user_id = ?',
+        'SELECT form_id, frequency, last_notified_at, last_notified_id FROM notification_config WHERE user_id = ?',
         [$user['id']]
     )->fetchAll() as $r) {
         $old[(int) $r['form_id']] = $r;
     }
+    // Tope actual de la caché: ancla de la marca por id al entrar en una frecuencia viva.
+    $maxCacheId = (int) (DB::run('SELECT MAX(id) AS m FROM submissions_cache')->fetch()['m'] ?? 0);
 
     $pdo = DB::conn();
     $pdo->beginTransaction();
@@ -124,18 +127,21 @@ if (Request::method() === 'PUT') {
             $oldEffective = ($oldRow['frequency'] ?? null) ?? $default;
             $newEffective = $newFreq ?? $default;
 
-            // Marca de agua: se conserva si el formulario ya estaba en una frecuencia
-            // «viva»; al ENTRAR en una viva se ancla a ahora (no avisar del histórico).
-            $watermark = $oldRow['last_notified_at'] ?? null;
+            // Marca de agua (fecha + id de fila): se conserva si el formulario ya
+            // estaba en una frecuencia «viva»; al ENTRAR en una viva se ancla a ahora
+            // (no avisar del histórico).
+            $watermark   = $oldRow['last_notified_at'] ?? null;
+            $watermarkId = $oldRow['last_notified_id'] ?? null;
             if (in_array($newEffective, LIVE_FREQUENCIES, true)
                 && (!in_array($oldEffective, LIVE_FREQUENCIES, true) || $watermark === null)) {
-                $watermark = $nowUtc;
+                $watermark   = $nowUtc;
+                $watermarkId = $maxCacheId;
             }
 
             DB::run(
-                'INSERT INTO notification_config (user_id, form_id, frequency, last_notified_at)
-                 VALUES (?, ?, ?, ?)',
-                [$user['id'], $formId, $newFreq, $watermark]
+                'INSERT INTO notification_config (user_id, form_id, frequency, last_notified_at, last_notified_id)
+                 VALUES (?, ?, ?, ?, ?)',
+                [$user['id'], $formId, $newFreq, $watermark, $watermarkId]
             );
         }
         $pdo->commit();

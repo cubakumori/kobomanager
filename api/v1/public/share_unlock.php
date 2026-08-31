@@ -4,7 +4,14 @@
  * Body: { password }
  * Verifica la contraseña del enlace y, si es correcta, devuelve un ticket firmado
  * de vida corta que el cliente adjunta (cabecera X-Share-Ticket o ?k=) en las
- * peticiones de datos. Rate-limit por IP para frenar la fuerza bruta.
+ * peticiones de datos.
+ *
+ * Fuerza bruta frenada en dos capas (bucket propio en rate_hits; ya NO comparte
+ * login_attempts con el login, así los flujos no se pisan el presupuesto):
+ *   - por IP: 5 fallos/min (rotar de enlace no ayuda);
+ *   - por ENLACE entre todas las IPs: 30 fallos/10 min (una botnet que rota IPs
+ *     contra un mismo enlace tampoco pasa de ahí; un equipo legítimo que escribe
+ *     bien la contraseña no consume fallos).
  */
 
 if (Request::method() !== 'POST') {
@@ -14,13 +21,19 @@ if (Request::method() !== 'POST') {
 $token = (string) Request::param('token');
 $ip    = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 
-if (RateLimit::tooMany($ip, 10, 60)) {
+if (RateLimit::tooManyBucket($ip, 'share_unlock', 5, 60)) {
     ErrorResponse::send('AUTH_RATE_LIMITED');
 }
 
 $link = ShareLink::resolve($token);
 if ($link === null) {
     ErrorResponse::send('NOT_FOUND', 'Enlace no válido o caducado');
+}
+
+// Contador POR ENLACE (ip comodín '*'): el id es interno y no viaja al cliente.
+$linkBucket = 'unlock.' . (int) $link['id'];
+if (RateLimit::tooManyBucket('*', $linkBucket, 30, 600)) {
+    ErrorResponse::send('AUTH_RATE_LIMITED');
 }
 
 $password = (string) (Request::json()['password'] ?? '');
@@ -31,7 +44,8 @@ if (!ShareLink::hasPassword($link)) {
 }
 
 if (!ShareLink::verifyPassword($link, $password)) {
-    RateLimit::hit($ip);   // cuenta el fallo (compartido con el throttle de auth, como forgot-password)
+    RateLimit::hitBucket($ip, 'share_unlock');
+    RateLimit::hitBucket('*', $linkBucket);
     ErrorResponse::send('PASSWORD_INCORRECT', 'Contraseña incorrecta');
 }
 

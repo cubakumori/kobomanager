@@ -231,6 +231,9 @@ updates lag. For reference, in case you edit it:
   Header set X-Content-Type-Options "nosniff"
   Header set Referrer-Policy "no-referrer"
   Header set X-Frame-Options "DENY"
+  # HSTS on HTTPS responses only. No includeSubDomains on purpose: your instance
+  # may live on an apex whose other subdomains you don't control.
+  Header set Strict-Transport-Security "max-age=31536000" env=HTTPS
   # CSP only on text/html (the SPA) — never on /assets, the JSON API, or the
   # attachment proxy's own CSP. script-src carries the HASH of the inline theme
   # <script> in index.html; if you edit that script, recompute it (the command is
@@ -258,6 +261,8 @@ location / {
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "no-referrer" always;
     add_header X-Frame-Options "DENY" always;
+    # HSTS (serve only over HTTPS; drop the header if this block also answers HTTP).
+    add_header Strict-Transport-Security "max-age=31536000" always;
     # CSP for the SPA. script-src carries the hash of the inline theme <script>
     # in index.html — recompute it (command in public/.htaccess) if you edit it.
     add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-nS2wamlqdrnjlfj1B+BpaG9K5aXijY/Kz6SQsvM0Le8='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'" always;

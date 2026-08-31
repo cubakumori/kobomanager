@@ -2,6 +2,11 @@
 /**
  * Rate limiting sencillo basado en la tabla login_attempts.
  * Cuenta intentos fallidos por IP dentro de una ventana de tiempo.
+ *
+ * Desde 1.53.0, login_attempts es EXCLUSIVA del login (tooMany/hit/clear):
+ * forgot-password y el desbloqueo de enlaces usan buckets propios de rate_hits,
+ * para que ningún flujo consuma ni limpie el presupuesto de otro (clear() tras
+ * un login correcto borraba también los fallos de forgot/unlock de esa IP).
  */
 class RateLimit {
     /** ¿Se ha superado el máximo de intentos en la ventana (segundos)? */

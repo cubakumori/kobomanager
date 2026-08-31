@@ -292,11 +292,13 @@ class RowScope {
                 $ph = implode(',', array_fill(0, count($vals), '?'));
                 return ["($ex IS NULL OR $ex NOT IN ($ph))", array_merge([$path, $path], $vals)];
 
+            // Paridad con isEmptyVal (PHP): también son «vacío» un valor de solo
+            // espacios (TRIM) y un array vacío ('[]' tras JSON_UNQUOTE).
             case 'empty':
-                return ["($ex IS NULL OR $ex = '')", [$path, $path]];
+                return ["($ex IS NULL OR TRIM($ex) = '' OR $ex = '[]')", [$path, $path, $path]];
 
             case 'not_empty':
-                return ["($ex IS NOT NULL AND $ex <> '')", [$path, $path]];
+                return ["($ex IS NOT NULL AND TRIM($ex) <> '' AND $ex <> '[]')", [$path, $path, $path]];
 
             case 'lt':
             case 'lte':

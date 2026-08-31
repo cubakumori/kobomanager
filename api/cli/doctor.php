@@ -43,6 +43,9 @@ foreach ($missing as $m) {
 }
 fwrite(STDOUT, "\nAplica estas sentencias (o ejecuta: php api/cli/migrate.php, que además\nrellena las columnas nuevas desde los datos existentes):\n\n");
 foreach ($missing as $m) {
+    if (!empty($m['pre'])) {
+        fwrite(STDOUT, "  {$m['pre']};\n");
+    }
     fwrite(STDOUT, "  {$m['fix']};\n");
     if (!empty($m['backfill'])) {
         fwrite(STDOUT, "  {$m['backfill']};\n");

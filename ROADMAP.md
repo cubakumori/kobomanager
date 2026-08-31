@@ -31,6 +31,21 @@ Lo que queda por hacer e ideas para más adelante. Todo lo ya entregado se regis
 
 ---
 
+## Escala (formularios muy grandes)
+
+- [ ] **Memoria de Quality/TeamConflicts en formularios de cientos de miles de envíos**
+      (hallazgo de la revisión de ago-2026): ambos recorren la caché con `DB::stream`
+      (bien), pero **retienen todas las filas agrupadas en RAM** — la cadena de
+      consecutividad de Quality necesita todos los envíos de cada encuestador, y
+      TeamConflicts su historial por equipo. Con 300–500k envíos son cientos de MB y
+      riesgo de 500 por `memory_limit`. Requiere rearquitectura (agregar en streaming
+      descartando lo ya consumido, o trocear por encuestador); se decidió no hacer una
+      reducción parcial apresurada en la tanda 1.52–1.55. Mientras tanto el límite
+      práctico documentado es «decenas de miles de envíos por formulario», que cubre a
+      los usuarios actuales.
+
+---
+
 ## Control de calidad
 
 - [ ] **Comentarios generales por equipo** *(próximo acordado)*. Notas de QC **desligadas de

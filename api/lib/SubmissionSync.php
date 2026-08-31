@@ -53,7 +53,7 @@ class SubmissionSync {
         // RETENCIÓN: purga ANTES de hablar con Kobo (aplica aunque Kobo esté caído)
         // y calcula el corte que el import usará para saltar lo fuera de ventana
         // (sin el filtro, un sync completo re-importaría lo recién purgado).
-        $retention = DB::run('SELECT retention_days FROM forms WHERE id = ?', [$formId])->fetch()['retention_days'] ?? null;
+        $retention = (DB::run('SELECT retention_days FROM forms WHERE id = ?', [$formId])->fetch() ?: [])['retention_days'] ?? null;
         $purged    = self::purgeExpired($formId, $retention !== null ? (int) $retention : null);
         $cutoff    = self::retentionCutoff($retention !== null ? (int) $retention : null);
         try {
@@ -72,7 +72,12 @@ class SubmissionSync {
                     'SELECT MAX(submitted_at) AS m FROM submissions_cache WHERE form_id = ?',
                     [$formId]
                 )->fetch()['m'];
-                $since = $latest ? date('c', strtotime($latest)) : null;
+                // `submitted_at` está anclado a UTC (ver Derived::ts): se re-formatea
+                // SIN pasar por la TZ del servidor (date('c') aplicaba la zona local:
+                // en el hueco del DST desplazaba la hora de pared y el filtro se
+                // saltaba envíos) y SIN sufijo de offset — Kobo compara
+                // `_submission_time` como CADENA y sus valores no llevan offset.
+                $since = $latest ? gmdate('Y-m-d\TH:i:s', strtotime($latest . ' UTC')) : null;
             }
             // Mapa de etiquetas de opción (todas las traducciones) para enriquecer el
             // texto buscable: se calcula UNA vez por formulario desde el esquema recién
@@ -175,6 +180,15 @@ class SubmissionSync {
             DB::run(
                 'UPDATE forms SET sync_status = \'error\', last_sync_error = ? WHERE id = ?',
                 [$e->getMessage(), $formId]
+            );
+            throw $e;
+        } catch (\Throwable $e) {
+            // También los fallos NO-Kobo (PDO transitorio, bug) dejan constancia: sin
+            // esto el formulario conservaba un sync_status='success' obsoleto y /health
+            // y la UI mentían hasta el siguiente sync bueno.
+            DB::run(
+                'UPDATE forms SET sync_status = \'error\', last_sync_error = ? WHERE id = ?',
+                ['Error interno: ' . $e->getMessage(), $formId]
             );
             throw $e;
         }

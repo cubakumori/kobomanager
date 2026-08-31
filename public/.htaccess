@@ -24,6 +24,9 @@
   Header set X-Content-Type-Options "nosniff"
   Header set Referrer-Policy "no-referrer"
   Header set X-Frame-Options "DENY"
+  # HSTS solo sobre conexiones HTTPS (env=HTTPS). Sin includeSubDomains a propósito:
+  # esta instancia puede vivir en un apex con otros subdominios ajenos.
+  Header set Strict-Transport-Security "max-age=31536000" env=HTTPS
 
   # Content-Security-Policy SOLO sobre respuestas text/html (la propia SPA): no
   # toca /assets, ni las respuestas JSON del API, ni la CSP propia del proxy

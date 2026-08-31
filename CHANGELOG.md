@@ -4,6 +4,81 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.53.0] - 2026-08-31
+
+Segunda tanda de la revisión: endurecimiento y correcciones del backend
+(severidades media/baja).
+
+### Arreglado
+
+- **«Olvidé mi contraseña» ya no delata qué emails existen por el tiempo de
+  respuesta**: cuando el email existía, la llamada síncrona a Resend añadía cientos
+  de ms; ahora la respuesta genérica se envía ANTES de hacer ningún trabajo (lookup,
+  token, email), así todos los caminos tardan lo mismo a ojos del cliente.
+- **El notificador ya no pierde envíos sincronizados con retraso**: la ventana de
+  conteo iba por `_submission_time` y un envío que Kobo tenía pero que el sync trajo
+  tarde (timeout, candado, token roto una pasada) quedaba bajo la marca de agua sin
+  avisarse nunca. Nueva marca por **id de fila** (`notification_config.last_notified_id`,
+  orden real de llegada a la caché); las filas antiguas hacen una última pasada con la
+  ventana temporal clásica y migran solas. Además `Notifier::run` toma un candado
+  (`GET_LOCK('km.notifier')`): dos pasadas de cron solapadas ya no pueden duplicar avisos.
+- **Cursor incremental del sync independiente de la zona horaria del servidor**:
+  `date('c', strtotime(...))` pasaba la marca por la TZ local (en el hueco del DST
+  desplazaba una hora y se saltaban envíos) y añadía un offset que Kobo compara como
+  texto. Ahora `gmdate` sin offset (formato exacto de `_submission_time`), y el filtro
+  usa `$gte` en vez de `$gt` (un envío recibido en el mismo segundo que el máximo
+  cacheado ya no queda fuera para siempre; re-traer la fila frontera es gratis porque
+  el upsert es idempotente).
+- **Un fallo NO-Kobo del sync también marca `sync_status='error'`** (antes el
+  formulario conservaba un `success` obsoleto y /health y la UI mentían hasta el
+  siguiente sync bueno).
+- **Export XLSX**: un valor con bytes UTF-8 inválidos vaciaba la celda en silencio
+  (ahora se degrada a U+FFFD con `ENT_SUBSTITUTE`) y un float `INF`/`NAN` producía un
+  archivo corrupto (ahora va como texto).
+- **Paridad SQL≡PHP del operador `empty`/`not_empty`** del scoping por filas: un valor
+  de solo espacios (o un array vacío) era «vacío» para PHP pero no para SQL, y los
+  agregados podían divergir de los gráficos con el bucket «(vacío)».
+- **`recordCronRun` en UTC** (usaba la TZ del servidor y /health mostraba horas
+  incoherentes con el resto del sistema, que va todo en UTC).
+- **Resumen diario idempotente**: candado (`GET_LOCK('km.daily_summary')`) + marca del
+  último día enviado — una doble ejecución (cron + manual) ya no duplica los emails
+  del día. El argumento `[YYYY-MM-DD]` se valida (re-enviar un día explícito sigue
+  permitido a propósito). `demo_reset` gana el mismo candado (un restore de >1 min con
+  crontab por minuto podía solaparse consigo mismo).
+- Los tres crons cargan la config igual (`KM_CONFIG` respetado también en
+  `sync_submissions` y `daily_summary`, como ya hacía `demo_reset`).
+
+### Cambiado
+
+- **Rate-limiting por flujo**: `login_attempts` queda EXCLUSIVA del login;
+  «olvidé mi contraseña» (5/15 min) y el desbloqueo de enlaces compartidos pasan a
+  buckets propios de `rate_hits`. Antes compartían tabla: un login correcto limpiaba
+  los fallos de los otros flujos de esa IP, y el presupuesto de uno consumía el de otro.
+- **Fuerza bruta contra la contraseña de un enlace compartido, frenada en dos capas**:
+  5 fallos/min por IP (antes 10, y compartidos) + 30 fallos/10 min POR ENLACE entre
+  todas las IPs (una botnet que rota IPs tampoco pasa de ahí).
+- **En modo demo, el visitante ya no puede leer el registro de auditoría ni la bandeja
+  de mensajes de contacto** (`admin/audit` y `admin/messages` GET añadidos a la
+  denylist): todos los visitantes entran como el mismo admin compartido y esas vistas
+  exponían IPs de otros visitantes y mensajes reales con el email del remitente.
+- **`notification_config` con clave única `(user_id, form_id)`** (una carrera
+  PUT↔notificador podía dejar filas duplicadas → avisos por duplicado); la migración
+  deduplica antes de añadir la clave. `migrate.php`/`doctor.php` entienden ahora el
+  paso previo `pre` de una entrada de esquema.
+- La micro-caché de `share_stats` se escribe en un temporal con permisos 0600 y
+  `rename` atómico (antes había una ventana con el umask por defecto entre crear y
+  el `chmod`, relevante solo en hosting compartido).
+
+### Nota de actualización (esquema)
+
+Aplica lo pendiente con `php api/cli/migrate.php` (recomendado), o a mano:
+
+```sql
+ALTER TABLE notification_config ADD COLUMN last_notified_id INT UNSIGNED NULL AFTER last_notified_at;
+DELETE a FROM notification_config a JOIN notification_config b ON a.user_id = b.user_id AND a.form_id = b.form_id AND a.id < b.id;
+ALTER TABLE notification_config ADD UNIQUE KEY uq_notif_user_form (user_id, form_id);
+```
+
 ## [1.52.0] - 2026-08-31
 
 Primera tanda de una revisión de seguridad/robustez de toda la app: los tres

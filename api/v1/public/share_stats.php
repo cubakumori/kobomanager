@@ -71,11 +71,15 @@ $payload = array_merge([
     'deployment_status' => $link['deployment_status'] ?? null,
 ], $stats);
 
-@file_put_contents(
-    $cacheFile,
-    json_encode(['fp' => $fingerprint, 'payload' => $payload], JSON_UNESCAPED_UNICODE),
-    LOCK_EX
-);
-@chmod($cacheFile, 0600);
+// Escritura atómica con permisos restrictivos DESDE la creación (un chmod posterior
+// dejaba una ventana con el umask por defecto en hosting compartido).
+$tmpFile = $cacheFile . '.' . getmypid() . '.tmp';
+if (@file_put_contents(
+    $tmpFile,
+    json_encode(['fp' => $fingerprint, 'payload' => $payload], JSON_UNESCAPED_UNICODE)
+) !== false) {
+    @chmod($tmpFile, 0600);
+    @rename($tmpFile, $cacheFile);
+}
 
 ErrorResponse::ok($payload);
