@@ -35,5 +35,5 @@
   #   php -r '$h=file_get_contents("index.html");preg_match("#<script>(.*?)</script>#s",$h,$m);echo "sha256-".base64_encode(hash("sha256",$m[1],true));'
   # style-src 'unsafe-inline' es necesario para los estilos en línea de Vue/Leaflet.
   # img-src añade los tiles de OpenStreetMap del mapa (Leaflet).
-  Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-GyOuvgU4KjskfU9dxnY0uNhKMq9b4ZTdIG6/cUjqa4c='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'" "expr=%{CONTENT_TYPE} =~ m#text/html#"
+  Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-nS2wamlqdrnjlfj1B+BpaG9K5aXijY/Kz6SQsvM0Le8='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'" "expr=%{CONTENT_TYPE} =~ m#text/html#"
 </IfModule>

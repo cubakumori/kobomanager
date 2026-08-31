@@ -42,7 +42,8 @@ fwrite(STDOUT, ($dryRun ? "[dry-run] " : "") . "Cambios a aplicar: " . count($mi
 $applied      = 0;
 $appliedCols  = [];
 foreach ($missing as $m) {
-    $what = $m['column'] === null ? "tabla {$m['table']}" : "{$m['table']}.{$m['column']}";
+    $what = isset($m['index']) ? "índice {$m['table']}.{$m['index']}"
+          : ($m['column'] === null ? "tabla {$m['table']}" : "{$m['table']}.{$m['column']}");
     fwrite(STDOUT, "  $what … ");
     if ($dryRun) {
         fwrite(STDOUT, "(dry-run)\n");

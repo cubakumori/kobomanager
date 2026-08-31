@@ -279,6 +279,31 @@ class SchemaCheck {
         // PROPONE la tarjeta; nada se escribe sin confirmación del usuario.
         ['table' => 'forms', 'column' => 'team_conflict_mode', 'since' => '1.47.0',
          'fix' => "ALTER TABLE forms ADD COLUMN team_conflict_mode VARCHAR(16) NOT NULL DEFAULT 'approx' AFTER member_normalize"],
+
+        // Formulario dueño de cada revisión: submission_uid dejó de ser único global
+        // (ver INDEX_CHECKS) y el uid a secas es ambiguo entre formularios. El
+        // backfill resuelve desde la caché; las filas cuyo uid ya no existe (huérfanas)
+        // quedan en NULL y el código las trata como comodín.
+        ['table' => 'submission_reviews', 'column' => 'form_id', 'since' => '1.52.0',
+         'fix' => "ALTER TABLE submission_reviews ADD COLUMN form_id INT UNSIGNED NULL AFTER id, ADD INDEX idx_reviews_form_uid (form_id, submission_uid)",
+         'backfill' => "UPDATE submission_reviews r
+            JOIN submissions_cache sc ON sc.submission_uid = r.submission_uid
+            SET r.form_id = sc.form_id
+            WHERE r.form_id IS NULL"],
+    ];
+
+    /**
+     * Índices que el código requiere y que se añadieron/cambiaron tras 1.0.0, cuando
+     * el cambio NO va ligado a una columna nueva (esos viajan dentro del `fix` de su
+     * columna en CHECKS). Detección por NOMBRE de índice en information_schema.STATISTICS.
+     */
+    public const INDEX_CHECKS = [
+        // submission_uid era UNIQUE GLOBAL: el mismo uid en dos formularios (proyecto
+        // clonado, o el fallback al `_id` numérico entre cuentas Kobo) hacía que el
+        // upsert del sync pisara la fila del otro formulario y el barrido de bajas la
+        // borrara después (pérdida de datos silenciosa). Único por formulario desde 1.52.0.
+        ['table' => 'submissions_cache', 'column' => null, 'index' => 'uq_form_uid', 'since' => '1.52.0',
+         'fix' => "ALTER TABLE submissions_cache DROP INDEX submission_uid, ADD UNIQUE KEY uq_form_uid (form_id, submission_uid)"],
     ];
 
     /** Columnas cuyo backfill requiere el recálculo PHP de migrate.php (no basta SQL). */
@@ -301,7 +326,17 @@ class SchemaCheck {
         foreach ($rows as $r) {
             $have[$r['t'] . '.' . $r['c']] = strtoupper((string) $r['n']);
         }
-        return self::missingAgainst($have);
+
+        $idxRows = DB::run(
+            "SELECT DISTINCT TABLE_NAME AS t, INDEX_NAME AS i
+             FROM information_schema.STATISTICS
+             WHERE TABLE_SCHEMA = DATABASE()"
+        )->fetchAll();
+        $haveIdx = []; // "tabla.nombre_de_índice" => true
+        foreach ($idxRows as $r) {
+            $haveIdx[$r['t'] . '.' . $r['i']] = true;
+        }
+        return self::missingAgainst($have, $haveIdx);
     }
 
     /**
@@ -310,9 +345,10 @@ class SchemaCheck {
      * consulta para poder testearlo sin tocar el esquema.
      *
      * @param array<string,string> $have
+     * @param array<string,bool>   $haveIndexes "tabla.índice" => true (de STATISTICS)
      * @return array<int,array>
      */
-    public static function missingAgainst(array $have): array {
+    public static function missingAgainst(array $have, array $haveIndexes = []): array {
         // Tablas presentes = prefijos "tabla" de las claves "tabla.columna" (toda
         // tabla tiene al menos una columna en information_schema.COLUMNS).
         $tables = [];
@@ -335,6 +371,13 @@ class SchemaCheck {
             }
             if (!empty($chk['nullable']) && $have[$key] !== 'YES') {
                 $missing[] = $chk; // existe pero debería admitir NULL
+            }
+        }
+        foreach (self::INDEX_CHECKS as $chk) {
+            // Solo si la tabla existe (si falta entera, otra cosa va muy mal y el
+            // ALTER del fix fallaría igualmente con un error más confuso).
+            if (isset($tables[$chk['table']]) && !isset($haveIndexes[$chk['table'] . '.' . $chk['index']])) {
+                $missing[] = $chk;
             }
         }
         return $missing;

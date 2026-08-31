@@ -28,11 +28,21 @@ final class SchemaCheckTest extends DbTestCase
         return $have;
     }
 
+    /** Mapa "tabla.índice" => true con TODOS los índices esperados presentes. */
+    private function fullHaveIndexes(): array
+    {
+        $idx = [];
+        foreach (SchemaCheck::INDEX_CHECKS as $c) {
+            $idx[$c['table'] . '.' . $c['index']] = true;
+        }
+        return $idx;
+    }
+
     public function testDetectsAbsentTable(): void
     {
         $have = $this->fullHave();
         unset($have['contact_messages.id']); // sin columnas = tabla inexistente
-        $missing = SchemaCheck::missingAgainst($have);
+        $missing = SchemaCheck::missingAgainst($have, $this->fullHaveIndexes());
         $this->assertCount(1, $missing);
         $this->assertSame('contact_messages', $missing[0]['table']);
         $this->assertNull($missing[0]['column']);
@@ -41,14 +51,23 @@ final class SchemaCheckTest extends DbTestCase
 
     public function testNoneMissingWhenAllPresent(): void
     {
-        $this->assertSame([], SchemaCheck::missingAgainst($this->fullHave()));
+        $this->assertSame([], SchemaCheck::missingAgainst($this->fullHave(), $this->fullHaveIndexes()));
+    }
+
+    public function testDetectsAbsentIndex(): void
+    {
+        // Índices presentes vacío = BD anterior a 1.52.0 (uq_form_uid ausente).
+        $missing = SchemaCheck::missingAgainst($this->fullHave());
+        $this->assertCount(1, $missing);
+        $this->assertSame('uq_form_uid', $missing[0]['index']);
+        $this->assertStringContainsString('UNIQUE KEY uq_form_uid', $missing[0]['fix']);
     }
 
     public function testDetectsAbsentColumn(): void
     {
         $have = $this->fullHave();
         unset($have['share_links.stats_status']); // simula columna ausente
-        $missing = SchemaCheck::missingAgainst($have);
+        $missing = SchemaCheck::missingAgainst($have, $this->fullHaveIndexes());
         $cols = array_map(fn($m) => $m['table'] . '.' . $m['column'], $missing);
         $this->assertContains('share_links.stats_status', $cols);
         $this->assertCount(1, $missing);

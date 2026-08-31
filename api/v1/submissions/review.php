@@ -81,14 +81,14 @@ if (!Demo::enabled()) {
 
 // recordReview inserta la fila del log Y actualiza el estado vigente
 // desnormalizado (submissions_cache.review_status) de una vez.
-$reviewId = ValidationStatus::recordReview($uid, (int) $user['id'], 'app', $status, $comment !== '' ? $comment : null);
+$reviewId = ValidationStatus::recordReview($uid, (int) $user['id'], 'app', $status, $comment !== '' ? $comment : null, $formId);
 
 // Línea base del merge a 3 vías: solo si de verdad empujamos a Kobo (en demo no se
 // toca, para que el pull no malinterprete el estado real de la cuenta).
 if ($pushed) {
     DB::run(
-        'UPDATE submissions_cache SET kobo_validation_seen = ? WHERE submission_uid = ?',
-        [$statusUid, $uid]
+        'UPDATE submissions_cache SET kobo_validation_seen = ? WHERE form_id = ? AND submission_uid = ?',
+        [$statusUid, $formId, $uid]
     );
 }
 

@@ -45,6 +45,18 @@ class SubmissionEdit {
             $before[$k] = $payload[$k] ?? null;
         }
 
+        // Carrera edición↔sync: un sync `full` concurrente re-descargaría el _uuid
+        // nuevo como fila aparte y `reconcileFull` borraría esta, dejando las
+        // revisiones huérfanas. Mismo lock por formulario que el sync y que los
+        // endpoints de revisión; aquí, a diferencia de la revisión, si no se
+        // obtiene se ABORTA antes de tocar Kobo (todavía no se escribió nada).
+        $lockName = 'km.sync.form.' . $formId;
+        $gotLock  = ((int) DB::run('SELECT GET_LOCK(?, 5) AS l', [$lockName])->fetch()['l']) === 1;
+        if (!$gotLock) {
+            throw new KoboException('SYNC_IN_PROGRESS', 'Ya hay una sincronización de este formulario en curso');
+        }
+        try {
+
         // 1) Escribir en Kobo (lanza KoboException si falla).
         //    Una edición en Kobo crea una versión nueva con un _uuid NUEVO (el _id
         //    numérico se conserva); editSubmission devuelve ese _uuid resultante.
@@ -82,9 +94,12 @@ class SubmissionEdit {
                 ]
             );
             if ($changedUuid) {
+                // Acotado al formulario: el mismo uid puede existir en otro formulario
+                // (form_id IS NULL = filas antiguas anteriores al backfill de 1.52.0).
                 DB::run(
-                    'UPDATE submission_reviews SET submission_uid = ? WHERE submission_uid = ?',
-                    [$newUuid, $uid]
+                    'UPDATE submission_reviews SET submission_uid = ?, form_id = ?
+                     WHERE submission_uid = ? AND (form_id = ? OR form_id IS NULL)',
+                    [$newUuid, $formId, $uid, $formId]
                 );
             }
             $conn->commit();
@@ -102,5 +117,9 @@ class SubmissionEdit {
             'submission_uid' => $changedUuid ? $newUuid : $uid,
             'changed_uuid'   => $changedUuid,
         ];
+
+        } finally {
+            DB::run('SELECT RELEASE_LOCK(?)', [$lockName]);
+        }
     }
 }

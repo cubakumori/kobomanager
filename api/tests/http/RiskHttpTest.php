@@ -67,6 +67,12 @@ final class RiskHttpTest extends HttpTestCase
         foreach ([1, 2, 3] as $i) $this->seedSubmission($formId, "fab$i", ['enum' => 'fab', 'p1' => 'a', 'p2' => 'b']);
         foreach ([1, 2, 3] as $i) $this->seedSubmission($formId, "ann$i", ['enum' => 'ann', 'p1' => "a$i", 'p2' => "b$i"]);
         foreach ([1, 2, 3] as $i) $this->seedSubmission($formId, "ben$i", ['enum' => 'ben', 'p1' => "c$i", 'p2' => "d$i"]);
+        // Un 4º encuestador con similitud parcial: sin él, los pares serían [1.0, 0, 0]
+        // → MAD 0 → z 0 para todos (por diseño: pares sin dispersión no puntúan) y el
+        // ranking quedaría en manos del desempate, no de la señal.
+        $this->seedSubmission($formId, 'cid1', ['enum' => 'cid', 'p1' => 'x', 'p2' => 'y']);
+        $this->seedSubmission($formId, 'cid2', ['enum' => 'cid', 'p1' => 'x', 'p2' => 'z']);
+        $this->seedSubmission($formId, 'cid3', ['enum' => 'cid', 'p1' => 'q', 'p2' => 'w']);
         // Todos los envíos ya revisados (aprobados): fuera del alcance por defecto
         // (pending/on_hold), que es justo el caso «casi todo aprobado» del usuario.
         DB::run('UPDATE submissions_cache SET review_status = ? WHERE form_id = ?', ['approved', $formId]);
@@ -82,7 +88,7 @@ final class RiskHttpTest extends HttpTestCase
         $all = $this->request('GET', "forms/$formId/risk?scope=all", null, $jar);
         $this->assertSame(200, $all['status']);
         $this->assertSame('all', $all['json']['data']['scope']);
-        $this->assertSame(3, $all['json']['data']['scored']);
+        $this->assertSame(4, $all['json']['data']['scored']);
         $this->assertSame('fab', $all['json']['data']['teams'][0]['enumerators'][0]['name']);
 
         // Un valor no reconocido cae al global (no rompe).

@@ -473,12 +473,14 @@ class Risk {
             // sospechosos» viaja aparte en `harbors`.
             $teamOut['index'] = $teamOut['harbors']['worst_index'];
             // Puntuables primero, luego por índice desc; insuficientes al final.
+            // Último criterio: nombre asc — los empates no deben depender del orden
+            // físico de las filas en la BD (cambia con los índices del esquema).
             usort($teamOut['enumerators'], fn($a, $b) =>
-                [$b['insufficient'] ? 0 : 1, $b['index'] ?? -1] <=> [$a['insufficient'] ? 0 : 1, $a['index'] ?? -1]);
+                [$b['insufficient'] ? 0 : 1, $b['index'] ?? -1, $a['name']] <=> [$a['insufficient'] ? 0 : 1, $a['index'] ?? -1, $b['name']]);
             $teams[] = $teamOut;
         }
-        // Equipos por índice desc (los sin puntuar, al final).
-        usort($teams, fn($a, $b) => [$b['index'] ?? -1, $b['count']] <=> [$a['index'] ?? -1, $a['count']]);
+        // Equipos por índice desc (los sin puntuar, al final); nombre asc como desempate.
+        usort($teams, fn($a, $b) => [$b['index'] ?? -1, $b['count'], $a['name']] <=> [$a['index'] ?? -1, $a['count'], $b['name']]);
 
         // Estado de cada señal: activa si algún encuestador la produjo; si no, el motivo
         // (falta de esquema / de datos) para que la UI explique por qué no aparece.

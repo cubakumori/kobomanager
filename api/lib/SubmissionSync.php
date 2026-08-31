@@ -206,7 +206,7 @@ class SubmissionSync {
 
         $pdo     = DB::conn();
         $created = 0;
-        $upd     = $pdo->prepare('UPDATE submissions_cache SET kobo_validation_seen = ? WHERE submission_uid = ?');
+        $upd     = $pdo->prepare('UPDATE submissions_cache SET kobo_validation_seen = ? WHERE form_id = ? AND submission_uid = ?');
 
         foreach ($rows as $r) {
             $sUid = $r['submission_uid'];
@@ -222,10 +222,10 @@ class SubmissionSync {
                 continue; // Kobo no cambió desde la última vez → nada que hacer.
             }
 
-            $upd->execute([$koboUid, $sUid]);
+            $upd->execute([$koboUid, $formId, $sUid]);
             $localNow = $r['local_status'] ?? 'pending';
             if ($koboNow !== $localNow) {
-                ValidationStatus::recordReview($sUid, null, 'kobo', $koboNow);
+                ValidationStatus::recordReview($sUid, null, 'kobo', $koboNow, null, $formId);
                 $created++;
             }
         }
@@ -369,12 +369,17 @@ class SubmissionSync {
         )->fetchAll();
         if (!$rows) return 0;
 
-        // Primero el historial de revisión (sin FK a la caché: se borra por uid),
+        // Primero el historial de revisión (sin FK a la caché: se borra por uid,
+        // acotado al formulario — el mismo uid puede existir en otro formulario;
+        // form_id IS NULL cubre filas antiguas anteriores al backfill de 1.52.0),
         // después las filas de la caché, y el contador cacheado queda al día aunque
         // esta purga corra sin un sync completo detrás (p. ej. desde el CLI).
         foreach (array_chunk(array_column($rows, 'submission_uid'), 500) as $chunk) {
             $ph = implode(',', array_fill(0, count($chunk), '?'));
-            DB::run("DELETE FROM submission_reviews WHERE submission_uid IN ($ph)", $chunk);
+            DB::run(
+                "DELETE FROM submission_reviews WHERE submission_uid IN ($ph) AND (form_id = ? OR form_id IS NULL)",
+                array_merge($chunk, [$formId])
+            );
         }
         $removed = self::deleteByIds(array_map(fn($r) => (int) $r['id'], $rows));
         DB::run(

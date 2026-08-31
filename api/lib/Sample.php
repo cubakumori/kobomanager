@@ -277,6 +277,7 @@ class Sample {
                 "SELECT MAX(r.created_at) AS cut
                  FROM submission_reviews r
                  JOIN submissions_cache sc ON sc.submission_uid = r.submission_uid
+                      AND (r.form_id = sc.form_id OR r.form_id IS NULL)
                  WHERE sc.form_id = ? AND $cutScopeSql AND r.status = 'approved'",
                 array_merge([$formId], $cutScopeP)
             )->fetch()['cut'] ?? null;

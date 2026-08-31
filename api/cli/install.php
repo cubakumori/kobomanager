@@ -39,6 +39,7 @@ if (($i = array_search('--admin', $args, true)) !== false) {
 }
 
 function ok(string $msg): void   { echo "  ✓ $msg\n"; }
+function warn(string $msg): void { echo "  ⚠ $msg\n"; }
 function fail(string $msg): never { fwrite(STDERR, "  ✗ $msg\n"); exit(1); }
 
 echo "KoboManager — instalador\n\n";
@@ -74,6 +75,25 @@ foreach (['CONFIG_TOKEN_KEY', 'JWT_SECRET'] as $const) {
 }
 ok('CONFIG_TOKEN_KEY y JWT_SECRET con formato válido');
 
+// Valores de dev que suelen quedarse olvidados al instalar en un servidor. No son
+// fatales (una instalación local legítima los usa), pero en producción rompen cosas
+// en silencio: APP_URL es la base de los ENLACES DE LOS EMAILS (recuperación de
+// contraseña, avisos) — en localhost, esos enlaces no llevan a este servidor.
+$appUrlHost = defined('APP_URL') ? strtolower((string) parse_url(APP_URL, PHP_URL_HOST)) : '';
+if ($appUrlHost === 'localhost' || $appUrlHost === '127.0.0.1' || $appUrlHost === '') {
+    warn('APP_URL apunta a «' . (defined('APP_URL') ? APP_URL : '(sin definir)') . '»: si esto es un servidor, cámbialo a la URL pública (los enlaces de los emails salen de ahí).');
+}
+if (defined('APP_ENV') && APP_ENV !== 'prod') {
+    warn('APP_ENV no es "prod": en producción debe serlo (oculta el detalle de los errores).');
+}
+if (defined('COOKIE_SECURE') && COOKIE_SECURE === false && $appUrlHost !== 'localhost' && $appUrlHost !== '127.0.0.1') {
+    warn('COOKIE_SECURE está en false: en producción con HTTPS debe ser true.');
+}
+$permsFile = @fileperms($configFile);
+if ($permsFile !== false && ($permsFile & 0004)) {
+    warn('config.php es legible por «otros» (permisos ' . substr(sprintf('%o', $permsFile), -3) . '): considera chmod 640.');
+}
+
 require $apiDir . '/lib/DB.php';
 require $apiDir . '/lib/SqlScript.php';
 try {
@@ -98,13 +118,25 @@ $files = array_values(array_filter(
 sort($files);
 $files = array_map(static fn($f) => $dbDir . '/' . $f, $files);
 
-// Tablas que debe tener una instalación completa (las crea db/001_schema.sql).
-$expected = [
-    'kobo_accounts', 'users', 'user_sessions', 'forms', 'submissions_cache',
-    'submission_reviews', 'user_form_permissions', 'notification_config', 'audit_log',
-    'login_attempts', 'rate_hits', 'settings', 'password_resets', 'share_links',
-    'contact_messages',
-];
+// Tablas que debe tener una instalación completa. Se derivan de los CREATE TABLE
+// de db/*.sql cuando la carpeta está presente (así la lista nunca se queda corta
+// al crecer el esquema); si no, la copia literal de respaldo (esquema de 1.52.0).
+$expected = [];
+foreach ($files as $file) {
+    if (preg_match_all('/CREATE TABLE IF NOT EXISTS\s+`?(\w+)`?/i', (string) file_get_contents($file), $mm)) {
+        $expected = array_merge($expected, $mm[1]);
+    }
+}
+$expected = array_values(array_unique($expected));
+if (!$expected) {
+    $expected = [
+        'kobo_accounts', 'users', 'user_sessions', 'forms', 'submissions_cache',
+        'submission_reviews', 'user_form_permissions', 'user_form_favorites',
+        'notification_config', 'audit_log', 'login_attempts', 'rate_hits', 'settings',
+        'password_resets', 'share_links', 'contact_messages', 'push_subscriptions',
+        'sample_targets', 'sample_target_history', 'member_aliases',
+    ];
+}
 $placeholders = implode(',', array_fill(0, count($expected), '?'));
 $present = DB::run(
     "SELECT table_name FROM information_schema.tables

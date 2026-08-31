@@ -4,6 +4,71 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.52.0] - 2026-08-31
+
+Primera tanda de una revisión de seguridad/robustez de toda la app: los tres
+hallazgos de severidad alta.
+
+### Arreglado
+
+- **La CSP publicada llevaba un hash equivocado del script de tema** (`public/.htaccess`
+  y los dos bloques de DEPLOY.md §6): el hash `sha256-…` nunca correspondió al
+  `<script>` inline real de `index.html`, así que en cualquier despliegue con esa CSP
+  activa el navegador bloqueaba el script y el modo oscuro/auto no se inicializaba
+  (con error de CSP en consola). Corregido en los tres sitios y **atado con un test**
+  (`api/tests/CspHashTest.php`): si alguien edita el script de tema sin recalcular el
+  hash, la suite falla.
+- **Editar un envío durante una sincronización podía perder su historial de revisión**:
+  la edición real (PUT del detalle y resolución de incongruencias equipo↔meta-equipo)
+  no tomaba el candado por formulario que sí usan el sync y los endpoints de revisión.
+  Un sync completo concurrente re-descargaba el `_uuid` nuevo como fila aparte, borraba
+  la vieja y las revisiones quedaban huérfanas. Ahora `SubmissionEdit::apply` toma
+  `GET_LOCK('km.sync.form.N', 5)` y, si el formulario está sincronizándose, responde
+  `SYNC_IN_PROGRESS` (409) **antes** de escribir nada en Kobo.
+- **`submission_uid` era único GLOBAL en la caché de envíos** y el upsert del sync no
+  actualizaba `form_id`: si el mismo uid aparecía en dos formularios (proyecto
+  clonado/reimportado, o el uid de respaldo `_id` numérico entre cuentas Kobo
+  distintas), el sync de un formulario pisaba la fila del otro y su barrido de bajas
+  la borraba después — pérdida de datos silenciosa. Ahora el uid es único **por
+  formulario** (`UNIQUE (form_id, submission_uid)`), `submission_reviews` gana su
+  propia `form_id` (rellenada por backfill) y todas las consultas por uid quedan
+  acotadas al formulario (revisiones, línea base de validación, purgas, historial,
+  comentarios y corte de muestra).
+- Los **empates del Índice de riesgo** se ordenan ahora por nombre (antes dependían
+  del orden físico de las filas en la BD, que cambia con los índices del esquema).
+
+### Añadido
+
+- **Aviso de configuración `APP_URL`** (reporte del usuario: el email de recuperación
+  de contraseña llegaba con un enlace a `https://localhost:…` porque `APP_URL`
+  conservaba el valor de desarrollo): el instalador (`api/cli/install.php`) avisa si
+  `APP_URL` apunta a localhost, si `APP_ENV` no es `prod` o si `COOKIE_SECURE` sigue
+  en `false`, y `GET /health` (bloque admin) devuelve `config_warnings`, que la página
+  de Auditoría muestra en un panel ámbar. El enlace del email se construye desde
+  `APP_URL` (`api/config.php`): en un servidor debe ser la URL pública de la instancia.
+- `SchemaCheck` entiende ahora también **índices** (`INDEX_CHECKS`), no solo tablas y
+  columnas: `doctor.php` y `migrate.php` detectan y aplican el cambio de clave única.
+
+### Cambiado
+
+- **`GET /health` público ya no expone la versión de PHP ni el detalle de
+  extensiones** (facilitaban ataques dirigidos): el sondeo anónimo devuelve solo
+  `status`; el detalle completo (checks, crons, sync y avisos) queda en el bloque
+  de administrador.
+- El instalador deriva la lista de tablas esperadas de los `CREATE TABLE` de
+  `db/*.sql` (la lista fija anterior se había quedado en 15 de 20 tablas y podía dar
+  por completa una BD a medias).
+
+### Nota de actualización (esquema)
+
+Aplica lo pendiente con `php api/cli/migrate.php` (recomendado), o a mano:
+
+```sql
+ALTER TABLE submissions_cache DROP INDEX submission_uid, ADD UNIQUE KEY uq_form_uid (form_id, submission_uid);
+ALTER TABLE submission_reviews ADD COLUMN form_id INT UNSIGNED NULL AFTER id, ADD INDEX idx_reviews_form_uid (form_id, submission_uid);
+UPDATE submission_reviews r JOIN submissions_cache sc ON sc.submission_uid = r.submission_uid SET r.form_id = sc.form_id WHERE r.form_id IS NULL;
+```
+
 ## [1.51.0] - 2026-07-24
 
 ### Añadido

@@ -71,17 +71,32 @@ class ValidationStatus {
      * ÚNICA vía de escritura de revisiones (endpoints de revisión, pull de
      * validación del sync y tests): mantiene el log y la columna siempre de acuerdo.
      * Devuelve el id de la revisión insertada.
+     *
+     * `$formId` desambigua el uid (único solo POR formulario desde 1.52.0): los
+     * llamadores de producción lo pasan siempre; si falta (tests, seeds) se
+     * resuelve desde la caché, que es unívoco mientras el uid no esté duplicado.
      */
-    public static function recordReview(string $submissionUid, ?int $userId, string $source, string $status, ?string $comment = null): int {
+    public static function recordReview(string $submissionUid, ?int $userId, string $source, string $status, ?string $comment = null, ?int $formId = null): int {
+        if ($formId === null) {
+            $row    = DB::run('SELECT form_id FROM submissions_cache WHERE submission_uid = ? LIMIT 1', [$submissionUid])->fetch();
+            $formId = $row ? (int) $row['form_id'] : null;
+        }
         DB::run(
-            'INSERT INTO submission_reviews (submission_uid, user_id, source, status, comment) VALUES (?, ?, ?, ?, ?)',
-            [$submissionUid, $userId, $source, $status, $comment]
+            'INSERT INTO submission_reviews (form_id, submission_uid, user_id, source, status, comment) VALUES (?, ?, ?, ?, ?, ?)',
+            [$formId, $submissionUid, $userId, $source, $status, $comment]
         );
         $id = (int) DB::conn()->lastInsertId();
-        DB::run(
-            'UPDATE submissions_cache SET review_status = ? WHERE submission_uid = ?',
-            [$status, $submissionUid]
-        );
+        if ($formId !== null) {
+            DB::run(
+                'UPDATE submissions_cache SET review_status = ? WHERE form_id = ? AND submission_uid = ?',
+                [$status, $formId, $submissionUid]
+            );
+        } else {
+            DB::run(
+                'UPDATE submissions_cache SET review_status = ? WHERE submission_uid = ?',
+                [$status, $submissionUid]
+            );
+        }
         return $id;
     }
 

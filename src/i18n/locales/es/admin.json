@@ -469,6 +469,7 @@
   "audit": {
     "title": "Auditoría",
     "subtitle": "Registro de acciones (quién hizo qué y cuándo) y estado del sistema.",
+    "configWarningsTitle": "Avisos de configuración",
     "cronTitle": "Últimas ejecuciones de tareas (cron)",
     "cronNever": "Aún no hay ejecuciones registradas.",
     "cron_daily_summary": "Resumen diario por email",

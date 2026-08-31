@@ -85,6 +85,7 @@ class Comments {
                     u.name AS author, sc.json_payload
              FROM submission_reviews r
              JOIN submissions_cache sc ON sc.submission_uid = r.submission_uid AND sc.form_id = ?
+                  AND (r.form_id = sc.form_id OR r.form_id IS NULL)
              LEFT JOIN users u ON u.id = r.user_id
              WHERE $where
              ORDER BY r.created_at DESC, r.id DESC",

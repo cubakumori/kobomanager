@@ -184,7 +184,11 @@ CREATE TABLE IF NOT EXISTS forms (
 CREATE TABLE IF NOT EXISTS submissions_cache (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     form_id         INT UNSIGNED NOT NULL,
-    submission_uid  VARCHAR(100) NOT NULL UNIQUE,
+    -- El `_uuid` de Kobo (o su `_id` numérico como último recurso). Único POR
+    -- FORMULARIO (uq_form_uid, abajo), no global: el mismo uid puede aparecer en
+    -- dos formularios (proyecto clonado/reimportado, o el fallback numérico entre
+    -- cuentas Kobo distintas) y cada uno debe conservar su propia fila.
+    submission_uid  VARCHAR(100) NOT NULL,
     json_payload    JSON NOT NULL,
     -- Último `_validation_status.uid` de Kobo observado por el sync = línea base del
     -- merge a 3 vías del estado de validación (ver lib/SubmissionSync::reconcileValidation
@@ -210,6 +214,7 @@ CREATE TABLE IF NOT EXISTS submissions_cache (
     submitted_at    DATETIME,
     last_synced_at  DATETIME,
     CONSTRAINT fk_submissions_form FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
+    UNIQUE KEY uq_form_uid (form_id, submission_uid),
     INDEX idx_form_submitted (form_id, submitted_at),
     INDEX idx_form_review (form_id, review_status),
     INDEX idx_form_kobo (form_id, kobo_id),
@@ -223,6 +228,11 @@ CREATE TABLE IF NOT EXISTS submissions_cache (
 --     se aplica en el código (MySQL 5.7 no tiene CHECK por columnas cruzadas).
 CREATE TABLE IF NOT EXISTS submission_reviews (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    -- Formulario dueño de la revisión: como submission_uid solo es único POR
+    -- formulario (ver submissions_cache.uq_form_uid), el uid a secas es ambiguo.
+    -- NULL solo en filas antiguas huérfanas (anteriores al backfill de 1.52.0);
+    -- toda escritura nueva lo rellena.
+    form_id         INT UNSIGNED NULL,
     submission_uid  VARCHAR(100) NOT NULL,
     user_id         INT UNSIGNED NULL,
     source          ENUM('app', 'kobo') NOT NULL DEFAULT 'app',
@@ -230,7 +240,8 @@ CREATE TABLE IF NOT EXISTS submission_reviews (
     comment         TEXT,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_reviews_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_submission (submission_uid)
+    INDEX idx_submission (submission_uid),
+    INDEX idx_reviews_form_uid (form_id, submission_uid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 3.7 Permisos usuario-formulario

@@ -105,13 +105,13 @@ if (!Demo::enabled() && $targets) {
 $pdo = DB::conn();
 $pdo->beginTransaction();
 $applied = [];
-$seenStmt = $pdo->prepare('UPDATE submissions_cache SET kobo_validation_seen = ? WHERE submission_uid = ?');
+$seenStmt = $pdo->prepare('UPDATE submissions_cache SET kobo_validation_seen = ? WHERE form_id = ? AND submission_uid = ?');
 foreach ($targets as $sUid => $koboId) {
     // recordReview inserta la fila del log Y actualiza el estado vigente
     // desnormalizado (submissions_cache.review_status).
-    ValidationStatus::recordReview($sUid, (int) $user['id'], 'app', $status, $comment !== '' ? $comment : null);
+    ValidationStatus::recordReview($sUid, (int) $user['id'], 'app', $status, $comment !== '' ? $comment : null, $formId);
     if ($pushed) {
-        $seenStmt->execute([$statusUid, $sUid]);
+        $seenStmt->execute([$statusUid, $formId, $sUid]);
     }
     $applied[] = $sUid;
 }

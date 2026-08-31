@@ -46,9 +46,9 @@ if ($method === 'GET') {
         'SELECT r.id, r.status, r.comment, r.created_at, r.source, u.name AS user_name
          FROM submission_reviews r
          LEFT JOIN users u ON u.id = r.user_id
-         WHERE r.submission_uid = ?
+         WHERE r.submission_uid = ? AND (r.form_id = ? OR r.form_id IS NULL)
          ORDER BY r.id DESC',
-        [$uid]
+        [$uid, $formId]
     )->fetchAll();
 
     Audit::log($user['id'], 'view', $formId, $uid);

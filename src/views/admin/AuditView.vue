@@ -139,6 +139,18 @@ onMounted(() => {
       <p class="mt-1 text-sm text-slate-500">{{ $t('audit.subtitle') }}</p>
     </header>
 
+    <!-- Avisos de configuración del servidor (p. ej. APP_URL en localhost) -->
+    <section
+      v-if="health?.config_warnings?.length"
+      class="rounded-xl bg-amber-50 p-5 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:ring-amber-900"
+      role="alert"
+    >
+      <h2 class="mb-2 text-sm font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-300">{{ $t('audit.configWarningsTitle') }}</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm text-amber-900 dark:text-amber-200">
+        <li v-for="(w, i) in health.config_warnings" :key="i">{{ w }}</li>
+      </ul>
+    </section>
+
     <!-- Estado del sistema -->
     <section v-if="health" class="grid gap-4 sm:grid-cols-2">
       <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">

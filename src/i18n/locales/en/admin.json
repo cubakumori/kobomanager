@@ -469,6 +469,7 @@
   "audit": {
     "title": "Audit log",
     "subtitle": "Record of actions (who did what and when) and system status.",
+    "configWarningsTitle": "Configuration warnings",
     "cronTitle": "Last scheduled-task (cron) runs",
     "cronNever": "No runs recorded yet.",
     "cron_daily_summary": "Daily email summary",

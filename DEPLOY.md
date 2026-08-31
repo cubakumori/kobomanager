@@ -235,7 +235,7 @@ updates lag. For reference, in case you edit it:
   # attachment proxy's own CSP. script-src carries the HASH of the inline theme
   # <script> in index.html; if you edit that script, recompute it (the command is
   # in public/.htaccess) or dark mode will break the CSP.
-  Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-GyOuvgU4KjskfU9dxnY0uNhKMq9b4ZTdIG6/cUjqa4c='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'" "expr=%{CONTENT_TYPE} =~ m#text/html#"
+  Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-nS2wamlqdrnjlfj1B+BpaG9K5aXijY/Kz6SQsvM0Le8='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'" "expr=%{CONTENT_TYPE} =~ m#text/html#"
 </IfModule>
 ```
 
@@ -260,7 +260,7 @@ location / {
     add_header X-Frame-Options "DENY" always;
     # CSP for the SPA. script-src carries the hash of the inline theme <script>
     # in index.html — recompute it (command in public/.htaccess) if you edit it.
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-GyOuvgU4KjskfU9dxnY0uNhKMq9b4ZTdIG6/cUjqa4c='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-nS2wamlqdrnjlfj1B+BpaG9K5aXijY/Kz6SQsvM0Le8='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'" always;
 }
 
 location = /sw.js { add_header Cache-Control "no-cache"; }   # PWA: revalidate promptly
