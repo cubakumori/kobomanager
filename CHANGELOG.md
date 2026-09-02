@@ -4,6 +4,27 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.55.1] - 2026-09-02
+
+### Cambiado
+
+- **Los avisos de configuración del servidor ya no dependen de `APP_ENV`** (reporte
+  del usuario: el email de recuperación seguía saliendo con `http://localhost:5173`
+  en producción y ningún aviso lo delataba). El detector de «esto es un servidor» es
+  ahora el **host de la petición**: si la app se consulta desde un dominio real y
+  `APP_URL` apunta a localhost, `APP_ENV` no es `prod` o `COOKIE_SECURE` está en
+  `false`, `/health` (bloque admin) lo avisa — justo el caso de una config de dev
+  olvidada en el VPS, que la puerta anterior (solo con `APP_ENV=prod`) no cazaba
+  porque esa config trae también `APP_ENV=dev`.
+- **Los avisos se muestran también en el Dashboard** (panel ámbar, solo admin), no
+  solo en Auditoría: es la primera pantalla tras iniciar sesión, donde de verdad se ven.
+
+> Nota: el enlace del email se construye desde `APP_URL` (`api/config.php`). En un
+> servidor debe ser la URL pública de la instancia (p. ej. `https://km.example.org`);
+> la app no la deriva del `Host` de la petición A PROPÓSITO (un atacante podría
+> forjar ese header en la petición de «olvidé mi contraseña» y envenenar el enlace
+> que recibe la víctima).
+
 ## [1.55.0] - 2026-08-31
 
 Cuarta y última tanda de la revisión: optimizaciones de bajo riesgo. Las de más

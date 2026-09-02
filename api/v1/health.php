@@ -52,17 +52,26 @@ if ($user && ($user['role'] ?? '') === 'admin') {
         'mail_configured'=> Settings::mailConfigured(),
     ];
 
-    // Desajustes de config que en producción rompen cosas de forma silenciosa
+    // Desajustes de config que en un servidor rompen cosas de forma silenciosa
     // (p. ej. APP_URL en localhost => los enlaces de los emails de recuperación
-    // y de avisos apuntan a localhost). Solo se evalúan fuera de dev.
+    // y de avisos apuntan a localhost). El detector de «esto es un servidor» es
+    // el HOST DE LA PETICIÓN, no APP_ENV: una config de dev olvidada en el VPS
+    // suele traer también APP_ENV=dev, y con la puerta anterior (solo prod) los
+    // avisos no saltaban justo en el caso que debían cazar.
     $warnings = [];
-    if (defined('APP_ENV') && APP_ENV === 'prod') {
-        $host = strtolower((string) parse_url(APP_URL, PHP_URL_HOST));
-        if ($host === 'localhost' || $host === '127.0.0.1' || $host === '') {
-            $warnings[] = 'APP_URL apunta a ' . APP_URL . ': los enlaces de los emails (recuperación de contraseña, avisos) llevarán a esa URL, no a este servidor. Corrígelo en api/config.php.';
+    $reqHost  = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+    $isLocalRequest = $reqHost === '' || str_starts_with($reqHost, 'localhost')
+        || str_starts_with($reqHost, '127.0.0.1') || str_starts_with($reqHost, '[::1]');
+    if (!$isLocalRequest) {
+        $appHost = strtolower((string) parse_url(APP_URL, PHP_URL_HOST));
+        if ($appHost === 'localhost' || $appHost === '127.0.0.1' || $appHost === '') {
+            $warnings[] = 'APP_URL apunta a ' . APP_URL . ': los enlaces de los emails (recuperación de contraseña, avisos) llevarán a esa URL, no a este servidor. Corrígelo en api/config.php (p. ej. https://' . $reqHost . ').';
+        }
+        if (!defined('APP_ENV') || APP_ENV !== 'prod') {
+            $warnings[] = 'APP_ENV no es "prod": los errores internos podrían mostrar detalle técnico a los usuarios. Ponlo en "prod" en api/config.php.';
         }
         if (defined('COOKIE_SECURE') && COOKIE_SECURE === false) {
-            $warnings[] = 'COOKIE_SECURE está en false con APP_ENV=prod: la cookie de sesión viajaría también por HTTP sin cifrar.';
+            $warnings[] = 'COOKIE_SECURE está en false: la cookie de sesión viajaría también por HTTP sin cifrar. Ponlo en true en api/config.php.';
         }
     }
     if ($warnings) {

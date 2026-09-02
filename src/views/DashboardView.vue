@@ -13,6 +13,10 @@ const newMessages = ref(0)
 // llega, simplemente no se muestra la tarjeta.
 const accountsCount = ref(null) // null = aún sin saber
 const showFirstSteps = computed(() => auth.isAdmin && accountsCount.value === 0)
+// Avisos de configuración del servidor (p. ej. APP_URL en localhost → los emails
+// salen con enlaces rotos). Vienen de /health (bloque admin); también se ven en
+// Auditoría, pero el Dashboard es donde el admin los va a VER de verdad.
+const configWarnings = ref([])
 onMounted(async () => {
   if (!auth.isAdmin) return
   try {
@@ -27,6 +31,12 @@ onMounted(async () => {
   } catch {
     /* sin tarjeta de primeros pasos */
   }
+  try {
+    const { data } = await api.get('/health')
+    configWarnings.value = data.data.config_warnings || []
+  } catch {
+    /* sin avisos */
+  }
 })
 </script>
 
@@ -40,6 +50,18 @@ onMounted(async () => {
         {{ $t('dashboard.loggedAs', { email: auth.user?.email, role: auth.isAdmin ? $t('common.roleAdmin') : $t('common.roleViewer') }) }}
       </p>
     </header>
+
+    <!-- Avisos de configuración del servidor (solo admin; /health los detecta). -->
+    <section
+      v-if="configWarnings.length"
+      class="rounded-xl bg-amber-50 p-5 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:ring-amber-900"
+      role="alert"
+    >
+      <h2 class="mb-2 text-sm font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-300">{{ $t('audit.configWarningsTitle') }}</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm text-amber-900 dark:text-amber-200">
+        <li v-for="(w, i) in configWarnings" :key="i">{{ w }}</li>
+      </ul>
+    </section>
 
     <!-- Primeros pasos: solo para el admin de una instancia sin cuentas Kobo. -->
     <section
