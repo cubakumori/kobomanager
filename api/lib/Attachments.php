@@ -36,6 +36,19 @@ class Attachments {
         return $out;
     }
 
+    /**
+     * ¿Puede servirse INLINE (mostrarse en el navegador) en los proxies de adjuntos?
+     * Solo multimedia (imagen/audio/vídeo) y NUNCA `image/svg+xml`: un SVG es un
+     * documento XML que puede llevar <script>; aunque la CSP con `sandbox` del proxy
+     * ya lo neutraliza, forzar la descarga es defensa en profundidad gratis (la
+     * galería lo sigue clasificando como imagen para agruparlo).
+     */
+    public static function inlineSafe(string $mime): bool {
+        $m = strtolower(trim(explode(';', $mime)[0]));
+        if ($m === 'image/svg+xml' || str_ends_with($m, '+xml')) return false;
+        return in_array(self::kind($m), ['image', 'audio', 'video'], true);
+    }
+
     /** Clasifica un mimetype en uno de los cinco grupos de la galería. */
     public static function kind(string $mime): string {
         if (str_starts_with($mime, 'image/')) return 'image';

@@ -5,7 +5,7 @@
     "newUser": "New user",
     "password": "Password (min. 8)",
     "newPassword": "New password",
-    "newPasswordHint": "At least 8 characters if you change it.",
+    "newPasswordHint": "At least 8 characters, not a common one, if you change it.",
     "keepPassword": "Leave empty to keep it",
     "createUser": "Create user",
     "creating": "Creating…",

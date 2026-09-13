@@ -17,7 +17,7 @@ if (Request::method() !== 'POST') {
     ErrorResponse::send('VALIDATION_ERROR', 'Método no permitido', 405);
 }
 
-$ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+$ip = Request::clientIp();
 
 // Anti-spam: máx. 5 envíos por IP cada hora.
 if (RateLimit::tooManyBucket($ip, 'contact', 5, 3600)) {

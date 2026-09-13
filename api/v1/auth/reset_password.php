@@ -40,16 +40,14 @@ $in       = Request::required(['token', 'password']);
 $token    = (string) $in['token'];
 $password = (string) $in['password'];
 
-if (strlen($password) < 8) {
-    ErrorResponse::send('VALIDATION_ERROR', 'La contraseña debe tener al menos 8 caracteres');
-}
-
 $reset = find_valid_reset($token);
 if ($reset === null) {
     ErrorResponse::send('RESET_TOKEN_INVALID');
 }
 
 $userId = (int) $reset['user_id'];
+$owner  = DB::run('SELECT email, name FROM users WHERE id = ?', [$userId])->fetch() ?: [];
+Password::enforce($password, [$owner['email'] ?? '', $owner['name'] ?? '']);
 $hash   = password_hash($password, PASSWORD_DEFAULT);
 
 // Aplicar el cambio de forma atómica: nueva contraseña + consumir token + cerrar sesiones.

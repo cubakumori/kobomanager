@@ -17,7 +17,7 @@ if (Request::method() !== 'POST') {
     ErrorResponse::send('VALIDATION_ERROR', 'Método no permitido', 405);
 }
 
-$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+$ip = Request::clientIp();
 if (RateLimit::tooManyBucket($ip, 'totp', 5, 60)) {
     ErrorResponse::send('AUTH_RATE_LIMITED');
 }
@@ -40,6 +40,14 @@ if (!$user || $user['totp_enabled_at'] === null || !$user['totp_secret']) {
     ErrorResponse::send('TOTP_CHALLENGE_EXPIRED');
 }
 
+// Segunda capa por USUARIO entre todas las IPs (10 fallos / 15 min): un código
+// TOTP tiene un millón de valores y el reto vale 5 min; rotar IPs no debe
+// permitir adivinarlo (ni un código de recuperación) contra una cuenta.
+$userKey = 'u' . (int) $user['id'];
+if (RateLimit::tooManyBucket($userKey, 'totp_user', 10, 900)) {
+    ErrorResponse::send('AUTH_RATE_LIMITED');
+}
+
 $code = trim((string) $in['code']);
 
 // ¿Código de recuperación? (más largo que un TOTP y no solo dígitos). Se compara
@@ -55,6 +63,7 @@ if ($isRecovery) {
     }
     if ($matched === null) {
         RateLimit::hitBucket($ip, 'totp');
+        RateLimit::hitBucket($userKey, 'totp_user');
         ErrorResponse::send('TOTP_INVALID');
     }
     unset($hashes[$matched]);
@@ -69,6 +78,7 @@ if ($isRecovery) {
     // Anti-replay: el paso aceptado debe avanzar respecto al último usado.
     if ($step === null || ($user['totp_last_step'] !== null && $step <= (int) $user['totp_last_step'])) {
         RateLimit::hitBucket($ip, 'totp');
+        RateLimit::hitBucket($userKey, 'totp_user');
         ErrorResponse::send('TOTP_INVALID');
     }
     DB::run('UPDATE users SET totp_last_step = ? WHERE id = ?', [$step, $user['id']]);
@@ -76,6 +86,7 @@ if ($isRecovery) {
 
 // Login completo: ahora sí se limpian los fallos de credenciales y se emite sesión.
 RateLimit::clear($ip);
+RateLimit::clearBucket($userKey, 'totp_user');
 Auth::issue($user);
 
 ErrorResponse::ok([

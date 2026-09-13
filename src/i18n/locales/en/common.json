@@ -78,6 +78,7 @@
     "RATE_LIMITED": "Too many requests. Try again in a moment.",
     "FORM_ARCHIVED": "The form is archived: its submissions are read-only.",
     "generic": "An error occurred",
-    "DEMO_LOCKED": "This action is disabled in the demo."
+    "DEMO_LOCKED": "This action is disabled in the demo.",
+    "PASSWORD_WEAK": "The password is not strong enough: use at least 8 characters and avoid common passwords, sequences or your own name/email."
   }
 }

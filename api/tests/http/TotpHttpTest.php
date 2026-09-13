@@ -92,6 +92,27 @@ final class TotpHttpTest extends HttpTestCase
         @unlink($jar2);
     }
 
+    public function testPerUserLimitOnSecondStepStopsIpRotation(): void
+    {
+        $this->seedUser('viewer', 'totpu@test.local', 'Secret123!');
+        $jar = $this->login('totpu@test.local', 'Secret123!');
+        [$secret] = $this->enroll($jar);
+
+        $res = $this->request('POST', 'auth/login', ['email' => 'totpu@test.local', 'password' => 'Secret123!']);
+        $challenge = $res['json']['data']['challenge'];
+        // 10 códigos erróneos desde 10 IPs distintas (la capa por IP, 5/min, nunca salta).
+        for ($i = 1; $i <= 10; $i++) {
+            $res = $this->request('POST', 'auth/login/totp', ['challenge' => $challenge, 'code' => '000000'], null, ["X-Forwarded-For: 198.51.100.$i"]);
+            $this->assertSame(401, $res['status'], "intento $i");
+        }
+        // El 11.º cae por la capa por USUARIO aunque el código sea correcto y la IP nueva.
+        $code = Totp::codeAtStep($secret, $this->nowStep() + 1);
+        $res = $this->request('POST', 'auth/login/totp', ['challenge' => $challenge, 'code' => $code], null, ['X-Forwarded-For: 198.51.100.99']);
+        $this->assertSame(429, $res['status']);
+        $this->assertSame('AUTH_RATE_LIMITED', $res['json']['error']['code']);
+        @unlink($jar);
+    }
+
     public function testRecoveryCodesAreSingleUse(): void
     {
         $this->seedUser('viewer', 'rec@test.local', 'Secret123!');

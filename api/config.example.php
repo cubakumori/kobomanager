@@ -31,6 +31,17 @@ define('JWT_TTL', 8 * 60 * 60);                   // inactividad máxima (idle T
 define('SESSION_ABSOLUTE_TTL', 7 * 24 * 60 * 60); // vida máxima desde el login → re-login; 7 d
 define('SESSION_REFRESH_THRESHOLD', JWT_TTL / 2); // renueva la cookie cuando queda menos de esto
 
+// --- Proxy inverso (opcional) ---
+// Si la app está detrás de Cloudflare, de un nginx/Apache que termina TLS o del
+// proxy del hosting, PHP ve la IP del proxy en REMOTE_ADDR y TODOS los usuarios
+// la comparten: los límites por IP (5 fallos de login/min, desbloqueo de enlaces,
+// throttle público) se aplicarían a la organización entera y la auditoría
+// registraría la IP del proxy. Lista aquí las IPs o rangos CIDR de tus proxies:
+// solo entonces se leen X-Forwarded-For (IP real) y X-Forwarded-Proto (HTTPS
+// tras el proxy). Vacío = sin proxy (REMOTE_ADDR es el cliente). /health avisa
+// si llega X-Forwarded-For desde una IP no declarada.
+define('TRUSTED_PROXIES', []);      // p. ej. ['127.0.0.1', '10.0.0.0/8', '2400:cb00::/32']
+
 // --- Cookies ---
 define('COOKIE_NAME', 'km_session');
 // En producción debe ser true (requiere HTTPS).

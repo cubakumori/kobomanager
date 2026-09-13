@@ -32,6 +32,21 @@ final class AttachmentsTest extends TestCase
         $this->assertSame('file', Attachments::kind(''));
     }
 
+    public function testInlineSafeOnlyForMediaAndNeverSvg(): void
+    {
+        $this->assertTrue(Attachments::inlineSafe('image/jpeg'));
+        $this->assertTrue(Attachments::inlineSafe('image/png; charset=binary'));
+        $this->assertTrue(Attachments::inlineSafe('audio/aac'));
+        $this->assertTrue(Attachments::inlineSafe('video/mp4'));
+        // SVG es XML ejecutable: siempre descarga aunque su MIME empiece por image/.
+        $this->assertFalse(Attachments::inlineSafe('image/svg+xml'));
+        $this->assertFalse(Attachments::inlineSafe('IMAGE/SVG+XML'));
+        // Documentos y desconocidos: descarga.
+        $this->assertFalse(Attachments::inlineSafe('application/pdf'));
+        $this->assertFalse(Attachments::inlineSafe('text/html'));
+        $this->assertFalse(Attachments::inlineSafe('application/octet-stream'));
+    }
+
     public function testForPayloadNormalizesAndSkipsWithoutUid(): void
     {
         $payload = [

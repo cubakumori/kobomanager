@@ -64,7 +64,7 @@ class Auth {
              VALUES (?, ?, FROM_UNIXTIME(?), NOW(), ?, ?)',
             [
                 $user['id'], $jti, $exp,
-                $_SERVER['REMOTE_ADDR'] ?? null,
+                Request::clientIp(),
                 $_SERVER['HTTP_USER_AGENT'] ?? null,
             ]
         );

@@ -78,6 +78,7 @@
     "RATE_LIMITED": "Demasiadas peticiones. Inténtalo de nuevo en un momento.",
     "FORM_ARCHIVED": "El formulario está archivado: sus envíos son de solo lectura.",
     "generic": "Ha ocurrido un error",
-    "DEMO_LOCKED": "Esta acción está deshabilitada en la demo."
+    "DEMO_LOCKED": "Esta acción está deshabilitada en la demo.",
+    "PASSWORD_WEAK": "La contraseña no es suficientemente segura: usa al menos 8 caracteres y evita contraseñas comunes, secuencias o tu propio nombre/email."
   }
 }

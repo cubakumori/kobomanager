@@ -4,6 +4,56 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.56.0] - 2026-09-13
+
+Primera tanda de la revisión de septiembre: endurecimiento de autenticación y del
+manejo de la IP del cliente.
+
+### Añadido
+
+- **Límite de intentos de login POR CUENTA**, además del existente por IP: 20 fallos
+  en 15 minutos sobre el hash del email (bucket `login_acct` de `rate_hits`), y el
+  mismo esquema por usuario en el segundo paso del 2FA (10 fallos / 15 min, bucket
+  `totp_user`). Antes bastaba rotar IPs para probar contraseñas o códigos sin límite
+  contra un usuario concreto; el desbloqueo de enlaces compartidos ya tenía esta
+  segunda capa y el login no. El 429 se devuelve igual para emails inexistentes, así
+  que no revela si la cuenta existe. Un login correcto limpia ambos contadores.
+- **`TRUSTED_PROXIES`** (config opcional, lista de IPs o rangos CIDR): detrás de
+  Cloudflare, de un nginx/Apache que termina TLS o del proxy del hosting, `REMOTE_ADDR`
+  es la IP del proxy y TODOS los usuarios la compartían — cinco fallos de login de
+  cualquiera bloqueaban a la organización entera, el throttle público de enlaces
+  saltaba con pocos visitantes y auditoría/sesiones registraban la IP del proxy. Con
+  la constante, `Request::clientIp()` lee `X-Forwarded-For` **solo** cuando la petición
+  llega desde un proxy declarado (recorriendo la cadena desde el servidor, así el
+  cliente no puede inyectar una IP falsa), y `Request::isHttps()` honra
+  `X-Forwarded-Proto` para HSTS y para el origen propio del chequeo CSRF. Sin la
+  constante todo sigue como antes. `/health` (bloque admin) avisa si llega
+  `X-Forwarded-For` desde una IP no declarada.
+- **Política de contraseñas** (`lib/Password`, fuente única para el alta/edición por
+  admin, el cambio propio, la recuperación por email y los CLI `create_user`/`install`):
+  además del mínimo de 8 caracteres se rechazan las contraseñas más comunes (también
+  con relleno: «Password123!»), las secuencias o repeticiones triviales y las que
+  contienen el email o el nombre del usuario. Código nuevo `PASSWORD_WEAK` (422) con
+  el motivo; textos de ayuda actualizados en ambos idiomas.
+
+### Cambiado
+
+- **Cambiar la contraseña cierra las demás sesiones.** El cambio voluntario desde el
+  perfil conserva la sesión actual y revoca el resto (devuelve `sessions_closed`); el
+  cambio por admin o el reset del 2FA de un usuario cierran todas las suyas (si el admin
+  se edita a sí mismo, conserva la actual). Antes solo lo hacía la recuperación por
+  email: quien cambiaba su contraseña por sospechar un robo dejaba la cookie robada
+  viva hasta el tope absoluto de la sesión (7 días).
+- **Proxy de adjuntos**: las peticiones a Kobo y sus redirecciones quedan restringidas a
+  `http`/`https` también en PHP 8.1 y 8.2 (la restricción usaba solo la constante
+  `CURLOPT_REDIR_PROTOCOLS_STR`, que existe desde PHP 8.3; en versiones anteriores las
+  redirecciones iban sin restricción). Además un `image/svg+xml` ya no se sirve inline
+  (un SVG puede llevar scripts; la CSP con `sandbox` ya lo neutralizaba, esto es defensa
+  en profundidad): se descarga como archivo, la galería lo sigue agrupando como imagen.
+
+> Sin cambios de esquema. Config nueva OPCIONAL: `TRUSTED_PROXIES` (ver
+> `api/config.example.php` y DEPLOY §5).
+
 ## [1.55.1] - 2026-09-02
 
 ### Cambiado

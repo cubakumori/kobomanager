@@ -14,6 +14,7 @@ require getenv('KM_CONFIG') ?: __DIR__ . '/config.php';
 require __DIR__ . '/lib/DB.php';
 require __DIR__ . '/lib/ErrorResponse.php';
 require __DIR__ . '/lib/Request.php';
+require __DIR__ . '/lib/Password.php';
 require __DIR__ . '/lib/TokenVault.php';
 require __DIR__ . '/lib/Totp.php';
 require __DIR__ . '/lib/Auth.php';
@@ -64,9 +65,9 @@ header('Access-Control-Allow-Headers: Content-Type');
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: no-referrer');
-$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-    || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443;
-if ($isHttps) {
+// Tras un proxy de confianza que termina TLS (TRUSTED_PROXIES), el esquema
+// llega en X-Forwarded-Proto; sin él, PHP vería HTTP y HSTS no se emitiría.
+if (Request::isHttps()) {
     header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 }
 
@@ -85,8 +86,7 @@ if ($method === 'OPTIONS') {
 // coinciden. Si no hay Origin ni Referer (clientes no-navegador: cron/CLI, que no
 // arrastran la cookie de la víctima) no se aplica.
 if (in_array($method, ['POST', 'PUT', 'DELETE', 'PATCH'], true)) {
-    $scheme = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443) ? 'https' : 'http';
+    $scheme = Request::isHttps() ? 'https' : 'http';
     $selfOrigin = isset($_SERVER['HTTP_HOST']) ? $scheme . '://' . $_SERVER['HTTP_HOST'] : null;
     $allowedOrigins = array_values(array_filter(array_merge(CORS_ALLOWED_ORIGINS, [$selfOrigin])));
 

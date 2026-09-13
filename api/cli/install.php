@@ -96,6 +96,7 @@ if ($permsFile !== false && ($permsFile & 0004)) {
 
 require $apiDir . '/lib/DB.php';
 require $apiDir . '/lib/SqlScript.php';
+require $apiDir . '/lib/Password.php';
 try {
     $pdo = DB::conn();
 } catch (Throwable $e) {
@@ -178,14 +179,14 @@ if ($userCount > 0) {
         [$email, $password, $name] = $adminArgs;
     } else {
         $email    = trim((string) readline('  Email: '));
-        $password = trim((string) readline('  Contraseña (mín. 8): '));
+        $password = trim((string) readline('  Contraseña (mín. ' . Password::MIN_LENGTH . ', no común): '));
         $name     = trim((string) readline('  Nombre: '));
     }
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         fail("Email no válido: $email (necesita dominio con punto, p. ej. admin@tudominio.org).");
     }
-    if (strlen($password) < 8) {
-        fail('La contraseña debe tener al menos 8 caracteres.');
+    if (($weak = Password::weakness($password, [$email, $name])) !== null) {
+        fail(Password::message($weak) . '.');
     }
     if ($name === '') {
         fail('El nombre no puede estar vacío.');

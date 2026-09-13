@@ -19,7 +19,7 @@ if (Request::method() !== 'POST') {
 }
 
 $token = (string) Request::param('token');
-$ip    = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+$ip    = Request::clientIp();
 
 if (RateLimit::tooManyBucket($ip, 'share_unlock', 5, 60)) {
     ErrorResponse::send('AUTH_RATE_LIMITED');

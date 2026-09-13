@@ -156,12 +156,14 @@ abstract class HttpTestCase extends TestCase
      * Petición a la API de test. Devuelve ['status'=>int, 'json'=>array|null, 'raw'=>string].
      * Usa el cookie jar de la instancia (o uno explícito) y manda Origin propio (pasa CSRF).
      */
-    protected function request(string $method, string $path, ?array $body = null, ?string $jar = null): array
+    protected function request(string $method, string $path, ?array $body = null, ?string $jar = null, array $extraHeaders = []): array
     {
         $jar ??= $this->jar;
         $base = self::apiBase();
         $url = $base . '/api/v1/' . ltrim($path, '/');
-        $headers = ['Origin: ' . $base, 'Accept: application/json'];
+        // El servidor de test declara 127.0.0.1 como proxy de confianza (config.http.php),
+        // así que `X-Forwarded-For: a.b.c.d` en $extraHeaders simula otro cliente.
+        $headers = array_merge(['Origin: ' . $base, 'Accept: application/json'], $extraHeaders);
 
         $ch = curl_init($url);
         $opts = [

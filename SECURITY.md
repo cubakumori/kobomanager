@@ -125,6 +125,10 @@ vendor` directories unreachable from the web, keep the shipped security headers
 `CONFIG_TOKEN_KEY` / `JWT_SECRET`. See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the
 security model.
 
+If the instance sits behind a reverse proxy (Cloudflare, a TLS terminator), declare it in
+`TRUSTED_PROXIES` so per-IP rate limits and the audit log see the real client address
+instead of the proxy's (otherwise one visitor's failed logins throttle everyone).
+
 **If your survey data is sensitive**, given the at-rest boundary above, also:
 
 - Restrict database access to the app's dedicated MySQL user from localhost only;

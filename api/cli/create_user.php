@@ -16,6 +16,7 @@ if (PHP_SAPI !== 'cli') {
 
 require __DIR__ . '/../config.php';
 require __DIR__ . '/../lib/DB.php';
+require __DIR__ . '/../lib/Password.php';
 
 $email    = $argv[1] ?? null;
 $password = $argv[2] ?? null;
@@ -28,6 +29,10 @@ if (!$email || !$password || !$name) {
 }
 if (!in_array($role, ['admin', 'viewer'], true)) {
     fwrite(STDERR, "Rol no válido: $role (usa 'admin' o 'viewer')\n");
+    exit(1);
+}
+if (($weak = Password::weakness($password, [$email, $name])) !== null) {
+    fwrite(STDERR, Password::message($weak) . ".\n");
     exit(1);
 }
 

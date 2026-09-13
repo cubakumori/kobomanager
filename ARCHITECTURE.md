@@ -71,7 +71,10 @@ to HTTP statuses in one table; the frontend maps codes → localized messages (`
   is forced — limiting a stolen cookie's useful life. No schema change.
 - **Self‑service session control.** `GET/DELETE /profile/sessions`: list my active sessions
   (the current one flagged via `Auth::currentTokenId()`) / close all but the current. Mirrors
-  the admin remote‑revoke at `/admin/users/{id}/sessions`.
+  the admin remote‑revoke at `/admin/users/{id}/sessions`. A **credential change** revokes
+  sessions too: changing one's own password keeps the current session and closes the rest;
+  an admin setting a user's password or resetting their 2FA closes all of that user's
+  sessions (the reset flow already did).
 - **Second factor — TOTP** (1.39.0, `lib/Totp.php`): hand‑rolled RFC 6238/4226 (HMAC‑SHA1,
   30 s step, 6 digits, ±1‑step window; unit‑tested against both RFCs' official vectors), no
   dependencies — same criterion as the JWT and WebPush. The secret is stored **encrypted with
@@ -278,13 +281,32 @@ UI can show an «N / total» count.
 For mutating methods (POST/PUT/DELETE/PATCH) the front controller requires the request
 `Origin`/`Referer` to match an allowed origin (`CORS_ALLOWED_ORIGINS` + the server's own
 host); requests with neither header (CLI/cron) are exempt. Reinforces the `SameSite=Lax` cookie.
+The scheme of the server's own origin (and the HSTS decision) comes from `Request::isHttps()`,
+which also honours `X-Forwarded-Proto` behind a trusted proxy.
+
+### Client IP behind reverse proxies (`Request::clientIp()`)
+Every consumer of the client address (rate limits, session rows, contact form) goes through
+`Request::clientIp()` instead of `REMOTE_ADDR`. The optional `TRUSTED_PROXIES` constant
+(IPs or CIDR ranges, v4/v6) lists the reverse proxies in front of the app; only when
+`REMOTE_ADDR` is one of them is `X-Forwarded-For` read — walking the chain from the server
+side and skipping known proxies, so a client cannot inject a fake address at the front of
+the header. Without the constant the behaviour is the classic one. `/health` warns admins
+when a forwarded request arrives from an undeclared proxy (the symptom is one visitor's
+failed logins throttling everybody).
 
 ### Rate limiting (`lib/RateLimit.php`)
-IP‑based counting within a time window. Two backends: `login_attempts` (login, forgot‑password,
-share unlock — supports `clear()` on success) and a generic **bucketed** `rate_hits`
-(`tooManyBucket`/`hitBucket`, with opportunistic pruning) kept separate so public‑read
-throttling never trips the login throttle. `ShareLink::throttle()` uses the `share` bucket to
-cap public share GETs at 240 req/60 s per IP (anti‑scraping/DoS on a leaked link).
+IP‑based counting within a time window. Two backends: `login_attempts` (login only — supports
+`clear()` on success) and a generic **bucketed** `rate_hits` (`tooManyBucket`/`hitBucket`/
+`clearBucket`, with opportunistic pruning) kept separate so public‑read throttling never
+trips the login throttle. `ShareLink::throttle()` uses the `share` bucket to cap public share
+GETs at 240 req/60 s per IP (anti‑scraping/DoS on a leaked link). Brute force against a
+*specific target* is stopped by a **second, per‑target layer** that IP rotation cannot evade:
+per **account** on login (`login_acct`, 20 failures / 15 min on the email hash — counted for
+unknown emails too, so the 429 is not an existence oracle), per **user** on the TOTP step
+(`totp_user`, 10 / 15 min) and per **link** on share unlock (`unlock.<id>`, 30 / 10 min).
+Passwords themselves are checked by `lib/Password` (minimum length, common‑password list,
+trivial sequences, no personal data) — one policy shared by the admin CRUD, the profile,
+the reset flow and the CLIs.
 
 ### Demo mode (`lib/Demo.php`, `lib/DemoSeed.php`)
 Optional `DEMO_MODE` / `DEMO_RESET_MINUTES` / `DEMO_LOGIN_ADMIN`+`DEMO_LOGIN_VIEWER` /
@@ -322,9 +344,10 @@ Operational guide (synthetic seeding via `api/cli/seed_demo.php`, seed generatio
 ### Attachment proxies & CSV hardening
 The attachment proxies (`submissions/{id}/attachments/...` and the public share one) stream
 third‑party files; they set `Content-Security-Policy: default-src 'none'; sandbox`, serve only
-image/audio/video **inline** (everything else `Content-Disposition: attachment`), and rely on
-the global `nosniff`. `KoboClient::getAttachment` follows storage redirects only to HTTP(S)
-with a hop cap (anti‑SSRF). CSV export (`forms/export.php`) prefixes any cell starting with
+image/audio/video **inline** — never `image/svg+xml`, which is scriptable XML and is forced to
+download (`Attachments::inlineSafe`) — everything else `Content-Disposition: attachment`, and
+rely on the global `nosniff`. Every cURL call in `KoboClient` is pinned to `http`/`https`
+(initial request and redirects, with a hop cap) on all supported PHP versions (anti‑SSRF). CSV export (`forms/export.php`) prefixes any cell starting with
 `= + - @`/tab/CR with an apostrophe to defuse spreadsheet formula injection.
 
 ### Kobo integration (`lib/KoboClient.php`)

@@ -12,14 +12,24 @@ if (Request::method() !== 'POST') {
     ErrorResponse::send('VALIDATION_ERROR', 'Método no permitido', 405);
 }
 
-$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+$ip = Request::clientIp();
 
-// Rate limiting: máx. 5 intentos fallidos por IP por minuto.
+// Rate limiting, DOS capas (como el desbloqueo de enlaces compartidos):
+//   - por IP: máx. 5 intentos fallidos por minuto;
+//   - por CUENTA entre todas las IPs: 20 fallos / 15 min sobre el hash del email,
+//     para que una botnet que rota IPs tampoco pueda probar contraseñas sin límite
+//     contra un usuario concreto. Se cuenta también para emails inexistentes
+//     (misma respuesta), así el 429 no delata si la cuenta existe.
 if (RateLimit::tooMany($ip, 5, 60)) {
     ErrorResponse::send('AUTH_RATE_LIMITED');
 }
 
 $in = Request::required(['email', 'password']);
+
+$acctKey = substr(hash('sha256', mb_strtolower($in['email'], 'UTF-8')), 0, 40);
+if (RateLimit::tooManyBucket($acctKey, 'login_acct', 20, 900)) {
+    ErrorResponse::send('AUTH_RATE_LIMITED');
+}
 
 $user = DB::run(
     'SELECT id, name, email, role, locale, ui_prefs, password_hash, totp_enabled_at, active
@@ -35,6 +45,7 @@ $knownUser = $user && $user['active'];
 $passOk    = password_verify($in['password'], $knownUser ? $user['password_hash'] : $decoyHash);
 if (!$knownUser || !$passOk) {
     RateLimit::hit($ip);
+    RateLimit::hitBucket($acctKey, 'login_acct');
     ErrorResponse::send('VALIDATION_ERROR', 'Credenciales incorrectas', 401);
 }
 
@@ -48,8 +59,9 @@ if ($user['totp_enabled_at'] !== null) {
     ]);
 }
 
-// Login correcto: limpia los intentos de esta IP y emite la sesión.
+// Login correcto: limpia los intentos de esta IP y de esta cuenta, y emite la sesión.
 RateLimit::clear($ip);
+RateLimit::clearBucket($acctKey, 'login_acct');
 Auth::issue($user);
 
 ErrorResponse::ok([

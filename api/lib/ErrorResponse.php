@@ -27,6 +27,7 @@ class ErrorResponse {
         'FORM_ARCHIVED'                 => [409, 'El formulario está archivado (solo lectura)'],
         'RESET_TOKEN_INVALID'           => [400, 'El enlace de recuperación no es válido o ha caducado'],
         'PASSWORD_INCORRECT'            => [400, 'La contraseña actual no es correcta'],
+        'PASSWORD_WEAK'                 => [422, 'La contraseña no es suficientemente segura'],
         'SHARE_PASSWORD_REQUIRED'       => [401, 'Este enlace requiere una contraseña'],
         'RATE_LIMITED'                  => [429, 'Demasiadas peticiones. Inténtalo de nuevo en un momento.'],
         'NOT_FOUND'                     => [404, 'Recurso no encontrado'],

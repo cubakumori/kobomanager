@@ -47,6 +47,9 @@ define('VAPID_SUBJECT', 'mailto:tests@test.local');
 define('APP_URL', 'http://localhost:5173');
 define('CORS_ALLOWED_ORIGINS', ['http://localhost:5173']);
 define('APP_ENV', 'dev');
+// El servidor efímero corre en loopback: declararlo proxy de confianza permite a los
+// tests simular clientes distintos con X-Forwarded-For (capas por IP vs por cuenta).
+define('TRUSTED_PROXIES', ['127.0.0.1', '::1']);
 
 // Semilla de la demo (lib/DemoSeed): archivo temporal aislado de los tests.
 define('DEMO_SEED_PATH', sys_get_temp_dir() . '/kobomanager_test_seed.sql');

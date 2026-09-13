@@ -6,6 +6,9 @@
  *   - totp_reset (truthy) borra el 2FA del usuario (secreto, códigos de
  *     recuperación y anti-replay): el «perdí el móvil». El usuario re-enrola
  *     desde su perfil (y si la política se lo exige, en su próximo login).
+ * Cambiar la contraseña o resetear el 2FA de un usuario cierra TODAS sus sesiones
+ * (si el admin se lo hace a sí mismo, conserva la actual): una credencial nueva
+ * no debe convivir con cookies emitidas con la vieja.
  * Protecciones anti-bloqueo:
  *   - No puedes desactivarte ni quitarte el rol admin a ti mismo.
  *   - No se puede dejar el sistema sin ningún admin activo.
@@ -60,9 +63,7 @@ if ((int) $user['active'] === 1 && $user['role'] === 'admin' && $losesAdmin) {
 }
 
 if ($pass !== '') {
-    if (strlen($pass) < 8) {
-        ErrorResponse::send('VALIDATION_ERROR', 'La contraseña debe tener al menos 8 caracteres');
-    }
+    Password::enforce($pass, [$email, $in['name']]);
     DB::run(
         'UPDATE users SET name = ?, email = ?, role = ?, active = ?, password_hash = ? WHERE id = ?',
         [$in['name'], $email, $role, $active, password_hash($pass, PASSWORD_DEFAULT), $id]
@@ -87,6 +88,17 @@ if ($totpReset) {
                 totp_recovery_codes = NULL, totp_last_step = NULL WHERE id = ?',
         [$id]
     );
+}
+
+// Credencial nueva (contraseña o 2FA reseteado) → fuera las sesiones abiertas con la
+// vieja. Si el admin se edita a sí mismo conserva la sesión desde la que lo hace.
+if ($pass !== '' || $totpReset) {
+    $jti = Auth::currentTokenId();
+    if ($id === (int) $admin['id'] && $jti !== null) {
+        DB::run('DELETE FROM user_sessions WHERE user_id = ? AND token_id <> ?', [$id, $jti]);
+    } else {
+        DB::run('DELETE FROM user_sessions WHERE user_id = ?', [$id]);
+    }
 }
 
 Audit::log($admin['id'], 'edit_user', null, null, [

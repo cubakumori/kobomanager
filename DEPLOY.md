@@ -162,6 +162,7 @@ define('SESSION_ABSOLUTE_TTL',  7 * 24 * 60 * 60); // max lifetime since login
 define('SESSION_REFRESH_THRESHOLD', JWT_TTL / 2);  // renew the cookie below this
 
 define('COOKIE_SECURE', true);          // ← true in production (HTTPS)
+define('TRUSTED_PROXIES', []);          // reverse proxy IPs/CIDRs (see note below); [] = none
 define('APP_ENV', 'prod');              // hides error details
 
 // APP_URL is used ONLY for absolute links emailed out of the app (password reset, daily
@@ -191,6 +192,16 @@ define('DONATE_KOFI_URL',   '');  // e.g. 'https://ko-fi.com/you'
 // Optional — public demo (DEMO_MODE, DEMO_RESET_MINUTES, DEMO_LOGIN_ADMIN/VIEWER,
 // DEMO_SEED_PATH): see DEMO.md.
 ```
+
+> **Behind a reverse proxy (Cloudflare, an nginx/Apache TLS terminator, the hosting's
+> own proxy)?** Add its IP(s) or CIDR range(s) to `TRUSTED_PROXIES`, e.g.
+> `define('TRUSTED_PROXIES', ['127.0.0.1', '10.0.0.0/8']);` (Cloudflare publishes its
+> ranges). Without it PHP sees the proxy's IP for every visitor: the per-IP limits
+> (5 failed logins/min, share-link unlock, public throttle) apply to your whole
+> organisation at once, the audit log records the proxy, and HSTS is skipped because the
+> request looks like plain HTTP. With the list set, `X-Forwarded-For` / `X-Forwarded-Proto`
+> are honoured **only** from those addresses. `/health` (admin block) warns when a
+> forwarded request arrives from an undeclared proxy.
 
 > The public "Support" page and the homepage's closing call-to-action can also be
 > turned off from **Settings** (`support_page_enabled` / `landing_cta_enabled`, both on

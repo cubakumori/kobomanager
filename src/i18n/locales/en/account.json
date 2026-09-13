@@ -36,7 +36,7 @@
     "currentPassword": "Current password",
     "newPassword": "New password",
     "confirmPassword": "Confirm new password",
-    "pwHint": "At least 8 characters.",
+    "pwHint": "At least 8 characters; not a common password nor your name/email.",
     "changePassword": "Change password",
     "pwChanged": "Password updated ✓",
     "pwTooShort": "The new password must be at least 8 characters.",

@@ -81,7 +81,7 @@ try {
         $mime = $ctype !== '' && $ctype !== 'application/octet-stream'
             ? $ctype : (($att['mimetype'] ?? '') !== '' ? $att['mimetype'] : 'application/octet-stream');
         $name = $att['media_file_basename'] ?? basename((string) ($att['filename'] ?? $attId));
-        $inline = in_array(Attachments::kind($mime), ['image', 'audio', 'video'], true);
+        $inline = Attachments::inlineSafe($mime);
         header('Content-Type: ' . $mime);
         if ($length !== null) {
             header('Content-Length: ' . $length);

@@ -34,9 +34,7 @@ if (Request::method() === 'POST') {
     if (!in_array($role, ['admin', 'viewer'], true)) {
         ErrorResponse::send('VALIDATION_ERROR', 'Rol no válido');
     }
-    if (strlen($in['password']) < 8) {
-        ErrorResponse::send('VALIDATION_ERROR', 'La contraseña debe tener al menos 8 caracteres');
-    }
+    Password::enforce($in['password'], [$in['email'], $in['name']]);
 
     $exists = DB::run('SELECT id FROM users WHERE email = ?', [$in['email']])->fetch();
     if ($exists) {

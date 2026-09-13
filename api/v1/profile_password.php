@@ -4,8 +4,10 @@
  * Body: { current_password, new_password }
  *
  * Cambio de contraseña voluntario desde el perfil. Verifica la contraseña
- * actual, exige mínimo 8 caracteres para la nueva y la guarda con password_hash.
- * Mantiene la sesión actual (no es un flujo de recuperación).
+ * actual, aplica la política de contraseñas (lib/Password) y la guarda con
+ * password_hash. Mantiene la sesión ACTUAL y cierra todas las DEMÁS: quien
+ * cambia su contraseña porque sospecha un robo espera que la cookie robada deje
+ * de valer (antes seguía viva hasta el tope absoluto de la sesión).
  */
 
 $user = Auth::require();
@@ -18,9 +20,7 @@ $in      = Request::required(['current_password', 'new_password']);
 $current = (string) $in['current_password'];
 $new     = (string) $in['new_password'];
 
-if (strlen($new) < 8) {
-    ErrorResponse::send('VALIDATION_ERROR', 'La contraseña debe tener al menos 8 caracteres');
-}
+Password::enforce($new, [$user['email'], $user['name']]);
 
 $row = DB::run('SELECT password_hash FROM users WHERE id = ?', [$user['id']])->fetch();
 if (!$row || !password_verify($current, $row['password_hash'])) {
@@ -32,6 +32,12 @@ DB::run(
     [password_hash($new, PASSWORD_DEFAULT), $user['id']]
 );
 
-Audit::log((int) $user['id'], 'password_changed', null, null, null);
+// Cerrar las demás sesiones (la actual sigue: no es un flujo de recuperación).
+$jti    = Auth::currentTokenId();
+$closed = $jti !== null
+    ? DB::run('DELETE FROM user_sessions WHERE user_id = ? AND token_id <> ?', [$user['id'], $jti])->rowCount()
+    : 0;
 
-ErrorResponse::ok(['message' => 'ok']);
+Audit::log((int) $user['id'], 'password_changed', null, null, ['sessions_closed' => $closed]);
+
+ErrorResponse::ok(['message' => 'ok', 'sessions_closed' => $closed]);

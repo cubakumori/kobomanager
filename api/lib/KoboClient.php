@@ -368,11 +368,9 @@ class KoboClient {
                 return strlen($chunk);
             },
         ];
+        $opts += self::protocolOpts($follow);
         if ($follow) {
             $opts[CURLOPT_MAXREDIRS] = 3;
-            if (defined('CURLOPT_REDIR_PROTOCOLS_STR')) {
-                $opts[CURLOPT_REDIR_PROTOCOLS_STR] = 'http,https';
-            }
         }
         if ($headers) {
             $opts[CURLOPT_HTTPHEADER] = $headers;
@@ -389,6 +387,31 @@ class KoboClient {
     }
 
     // ---------- HTTP ----------
+
+    /**
+     * Opciones cURL que restringen los protocolos a HTTP(S), en la petición inicial
+     * y (si se siguen) en las redirecciones. Anti-SSRF: ni el `server_url` de una
+     * cuenta ni un `Location` devuelto por el almacenamiento pueden llevar a
+     * file://, gopher://, ftp://… Las variantes `_STR` existen desde PHP 8.3 /
+     * curl 7.85; en 8.1/8.2 (soportados) se usan las máscaras clásicas — antes el
+     * fallback no existía y en esas versiones las redirecciones iban sin restricción.
+     */
+    private static function protocolOpts(bool $follow): array {
+        $opts = [];
+        if (defined('CURLOPT_PROTOCOLS_STR')) {
+            $opts[CURLOPT_PROTOCOLS_STR] = 'http,https';
+        } else {
+            $opts[CURLOPT_PROTOCOLS] = CURLPROTO_HTTP | CURLPROTO_HTTPS;
+        }
+        if ($follow) {
+            if (defined('CURLOPT_REDIR_PROTOCOLS_STR')) {
+                $opts[CURLOPT_REDIR_PROTOCOLS_STR] = 'http,https';
+            } else {
+                $opts[CURLOPT_REDIR_PROTOCOLS] = CURLPROTO_HTTP | CURLPROTO_HTTPS;
+            }
+        }
+        return $opts;
+    }
 
     private function httpGet(string $path, array $query = []): array {
         return $this->request('GET', $path, $query);
@@ -412,7 +435,7 @@ class KoboClient {
             CURLOPT_CUSTOMREQUEST  => $method,
             CURLOPT_TIMEOUT        => self::TIMEOUT,
             CURLOPT_CONNECTTIMEOUT => self::CONNECT_TIMEOUT,
-        ]);
+        ] + self::protocolOpts(false));
         if ($jsonBody !== null) {
             $headers[] = 'Content-Type: application/json';
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($jsonBody, JSON_UNESCAPED_UNICODE));

@@ -29,7 +29,7 @@ class ShareLink {
      * frenar el scraping/abuso de un enlace filtrado. Corta con 429 si se excede.
      */
     public static function throttle(): void {
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $ip = Request::clientIp();
         if (RateLimit::tooManyBucket($ip, 'share', self::RATE_MAX, self::RATE_WINDOW)) {
             ErrorResponse::send('AUTH_RATE_LIMITED');
         }

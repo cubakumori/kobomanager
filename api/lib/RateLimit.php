@@ -48,6 +48,11 @@ class RateLimit {
         return $count >= $max;
     }
 
+    /** Limpia las entradas de un bucket para una clave (p. ej. la cuenta tras un login correcto). */
+    public static function clearBucket(string $ip, string $bucket): void {
+        DB::run('DELETE FROM rate_hits WHERE bucket = ? AND ip = ?', [$bucket, $ip]);
+    }
+
     /** Registra una petición del bucket. Poda vieja de forma oportunista (1%). */
     public static function hitBucket(string $ip, string $bucket): void {
         DB::run('INSERT INTO rate_hits (ip, bucket) VALUES (?, ?)', [$ip, $bucket]);

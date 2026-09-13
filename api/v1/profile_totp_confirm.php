@@ -27,7 +27,7 @@ if (empty($row['totp_secret'])) {
 }
 
 $in   = Request::required(['code']);
-$ip   = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+$ip   = Request::clientIp();
 if (RateLimit::tooManyBucket($ip, 'totp', 5, 60)) {
     ErrorResponse::send('AUTH_RATE_LIMITED');
 }

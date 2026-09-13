@@ -29,7 +29,7 @@ if (Request::method() !== 'POST') {
 /** Caducidad del token de reset, en segundos (1 hora). */
 const RESET_TTL = 3600;
 
-$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+$ip = Request::clientIp();
 
 // Rate-limit: máx. 5 solicitudes por IP cada 15 min.
 if (RateLimit::tooManyBucket($ip, 'forgot', 5, 900)) {

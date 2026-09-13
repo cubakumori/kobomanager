@@ -74,6 +74,13 @@ if ($user && ($user['role'] ?? '') === 'admin') {
             $warnings[] = 'COOKIE_SECURE está en false: la cookie de sesión viajaría también por HTTP sin cifrar. Ponlo en true en api/config.php.';
         }
     }
+    // Proxy inverso sin declarar: la petición trae X-Forwarded-For pero REMOTE_ADDR no
+    // está en TRUSTED_PROXIES → todos los visitantes comparten la IP del proxy (los
+    // límites por IP de login/enlaces se aplican a la organización entera y la
+    // auditoría registra la IP del proxy).
+    if (Request::forwardedButUntrusted()) {
+        $warnings[] = 'La petición llega a través de un proxy (X-Forwarded-For) que no figura en TRUSTED_PROXIES: todos los usuarios comparten la IP ' . ($_SERVER['REMOTE_ADDR'] ?? '?') . ' a efectos de límites de intentos y auditoría. Añade la IP del proxy a TRUSTED_PROXIES en api/config.php.';
+    }
     if ($warnings) {
         $out['config_warnings'] = $warnings;
     }
