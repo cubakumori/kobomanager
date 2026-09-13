@@ -60,6 +60,14 @@ if ($method === 'GET' && preg_match('#/api/v2/assets/[^/]+/data/?$#', $path)) {
     exit;
 }
 
+// GET /api/v2/assets/ — listado de assets (un survey): lo usa «Probar conexión».
+if ($method === 'GET' && preg_match('#/api/v2/assets/?$#', $path)) {
+    echo json_encode(['count' => 1, 'next' => null, 'previous' => null, 'results' => [
+        ['uid' => 'aStub', 'name' => 'Stub form', 'asset_type' => 'survey'],
+    ]]);
+    exit;
+}
+
 // GET /api/v2/assets/{uid}/ — asset con contenido mínimo (esquema vacío).
 if ($method === 'GET' && preg_match('#/api/v2/assets/[^/]+/?$#', $path)) {
     echo json_encode(['content' => ['survey' => [], 'choices' => [], 'translations' => [null]]]);

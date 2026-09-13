@@ -38,6 +38,7 @@ final class DemoModeHttpTest extends HttpTestCase
         $blocked = [
             // Cuentas Kobo
             ['POST',   'admin/accounts'],
+            ['POST',   'admin/accounts/test'],
             ['PUT',    'admin/accounts/1'],
             ['DELETE', 'admin/accounts/1'],
             // Usuarios, contraseñas y sesiones

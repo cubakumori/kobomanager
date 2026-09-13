@@ -67,7 +67,12 @@
     "loadError": "No se pudieron cargar las cuentas",
     "createError": "No se pudo crear la cuenta",
     "deleteError": "No se pudo eliminar la cuenta",
-    "syncError": "no se pudo sincronizar"
+    "syncError": "no se pudo sincronizar",
+    "testConnection": "Probar conexión",
+    "testing": "Probando…",
+    "testOk": "Conexión correcta: el token ve {n} formulario(s).",
+    "testOkSample": "Por ejemplo: {names}.",
+    "testError": "No se pudo conectar con esa URL y token"
   },
   "forms": {
     "title": "Formularios",

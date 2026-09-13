@@ -25,7 +25,8 @@ native validation status.
 **Access & permissions**
 
 - Your team signs in with app users — **no KoboToolbox account needed**, and the API
-  token is never exposed to the browser (stored encrypted on the server).
+  token is never exposed to the browser (stored encrypted on the server). A **Test
+  connection** button checks the server URL and token before saving an account.
 - **Two-factor authentication (TOTP)**: any user can protect their account with an
   authenticator app (with single-use recovery codes), and a global policy can
   **require** it for admins or for everyone; admins can reset a user's 2FA from the

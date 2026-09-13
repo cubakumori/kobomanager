@@ -49,6 +49,29 @@ class Attachments {
         return in_array(self::kind($m), ['image', 'audio', 'video'], true);
     }
 
+    /**
+     * Valor de la cabecera `Content-Disposition` para una descarga/inline con nombre
+     * de archivo arbitrario: `filename="…"` con un respaldo ASCII (para clientes
+     * antiguos) y `filename*=UTF-8''…` (RFC 6266/8187) con el nombre real
+     * percent-encoded — sin él, «Informe_ñandú.xlsx» o «foto niño.jpg» llegaban
+     * mutilados en varios navegadores. Elimina comillas y saltos de línea.
+     */
+    public static function contentDisposition(string $type, string $filename): string {
+        $name = str_replace(["\r", "\n", '"', '\\'], '', trim($filename));
+        if ($name === '') $name = 'file';
+        // Respaldo ASCII: transliteración básica + «?» para lo que no quepa.
+        $ascii = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name);
+        if ($ascii === false || trim($ascii) === '') {
+            $ascii = preg_replace('/[^\x20-\x7E]/', '_', $name) ?: 'file';
+        }
+        $ascii = preg_replace('/[^\x20-\x7E]/', '_', $ascii);
+        $header = $type . '; filename="' . $ascii . '"';
+        if ($ascii !== $name) {
+            $header .= "; filename*=UTF-8''" . rawurlencode($name);
+        }
+        return $header;
+    }
+
     /** Clasifica un mimetype en uno de los cinco grupos de la galería. */
     public static function kind(string $mime): string {
         if (str_starts_with($mime, 'image/')) return 'image';

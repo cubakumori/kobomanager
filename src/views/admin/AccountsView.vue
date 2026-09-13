@@ -26,6 +26,7 @@ const saving = ref(false)
 
 function startCreate() {
   formError.value = ''
+  testResult.value = null
   form.value = { label: '', server_url: 'https://eu.kobotoolbox.org', email: '', api_token: '' }
   creating.value = true
 }
@@ -35,6 +36,28 @@ const editing = ref(null)
 const editForm = ref({ label: '', server_url: '', email: '', api_token: '' })
 const editError = ref('')
 const savingEdit = ref(false)
+
+// «Probar conexión» (alta y edición): llama a Kobo con las credenciales del
+// formulario sin guardar nada; en edición sin token nuevo usa el guardado.
+const testing = ref(false)
+const testResult = ref(null) // { ok, text } o null
+
+async function testConnection(f, accountId = null) {
+  testing.value = true
+  testResult.value = null
+  try {
+    const payload = { server_url: f.server_url, api_token: f.api_token || undefined, account_id: accountId || undefined }
+    const { data } = await api.post('/admin/accounts/test', payload)
+    const d = data.data
+    let text = t('accounts.testOk', { n: d.forms })
+    if (d.sample?.length) text += ' ' + t('accounts.testOkSample', { names: d.sample.join(', ') })
+    testResult.value = { ok: true, text }
+  } catch (e) {
+    testResult.value = { ok: false, text: apiError(e, t('accounts.testError')) }
+  } finally {
+    testing.value = false
+  }
+}
 
 // Sincronización por cuenta
 const syncingId = ref(null)
@@ -71,6 +94,7 @@ async function onCreate() {
 
 function startEdit(a) {
   editError.value = ''
+  testResult.value = null
   editing.value = a
   editForm.value = { label: a.label, server_url: a.server_url, email: a.email, api_token: '' }
 }
@@ -180,13 +204,31 @@ onMounted(load)
             {{ $t('accounts.tokenHelp') }}
           </RouterLink>
         </label>
-        <div class="flex items-center gap-3 pt-1">
+        <div
+          v-if="testResult"
+          class="rounded-lg px-3 py-2 text-sm ring-1"
+          :class="testResult.ok
+            ? 'bg-success-50 text-success-800 ring-success-200 dark:bg-success-900/30 dark:text-success-300 dark:ring-success-800'
+            : 'bg-red-50 text-red-700 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900'"
+          role="status"
+        >
+          {{ testResult.text }}
+        </div>
+        <div class="flex flex-wrap items-center gap-3 pt-1">
           <button
             type="submit"
             :disabled="saving"
             class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
           >
             {{ saving ? $t('common.saving') : $t('accounts.addAccount') }}
+          </button>
+          <button
+            type="button"
+            :disabled="testing || !form.server_url || !form.api_token"
+            class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            @click="testConnection(form)"
+          >
+            {{ testing ? $t('accounts.testing') : $t('accounts.testConnection') }}
           </button>
           <button type="button" class="text-sm font-medium text-slate-500 hover:text-slate-700" @click="creating = false">
             {{ $t('common.cancel') }}
@@ -319,13 +361,31 @@ onMounted(load)
           />
           <span class="text-xs text-slate-400">{{ $t('accounts.tokenKeepHint') }}</span>
         </label>
-        <div class="flex items-center gap-3 pt-1">
+        <div
+          v-if="testResult"
+          class="rounded-lg px-3 py-2 text-sm ring-1"
+          :class="testResult.ok
+            ? 'bg-success-50 text-success-800 ring-success-200 dark:bg-success-900/30 dark:text-success-300 dark:ring-success-800'
+            : 'bg-red-50 text-red-700 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900'"
+          role="status"
+        >
+          {{ testResult.text }}
+        </div>
+        <div class="flex flex-wrap items-center gap-3 pt-1">
           <button
             type="submit"
             :disabled="savingEdit"
             class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
           >
             {{ savingEdit ? $t('common.saving') : $t('common.save') }}
+          </button>
+          <button
+            type="button"
+            :disabled="testing || !editForm.server_url"
+            class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            @click="testConnection(editForm, editing.id)"
+          >
+            {{ testing ? $t('accounts.testing') : $t('accounts.testConnection') }}
           </button>
           <button type="button" class="text-sm font-medium text-slate-500 hover:text-slate-700" @click="editing = null">
             {{ $t('common.cancel') }}

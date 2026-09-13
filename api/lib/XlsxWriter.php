@@ -123,7 +123,7 @@ class XlsxWriter {
         $zip->close();
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="' . str_replace('"', '', $filename) . '"');
+        header('Content-Disposition: ' . Attachments::contentDisposition('attachment', $filename));
         header('Content-Length: ' . (string) filesize($zipPath));
         readfile($zipPath);
 

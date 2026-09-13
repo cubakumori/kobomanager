@@ -23,7 +23,7 @@ Audit::log($admin['id'], 'db_export', null, null, ['scope' => $scope]);
 
 $filename = sprintf('kobomanager-backup-%s-%s.sql', gmdate('Ymd-Hi'), $scope);
 header('Content-Type: application/octet-stream');
-header('Content-Disposition: attachment; filename="' . $filename . '"');
+header('Content-Disposition: ' . Attachments::contentDisposition('attachment', $filename));
 header('Cache-Control: no-store');
 
 DbBackup::export($scope, static function (string $chunk): void {

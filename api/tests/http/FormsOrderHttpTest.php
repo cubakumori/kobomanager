@@ -10,6 +10,32 @@ require_once __DIR__ . '/HttpTestCase.php';
  */
 final class FormsOrderHttpTest extends HttpTestCase
 {
+    public function testAccountConnectionTestEndpoint(): void
+    {
+        $this->seedUser('admin', 'admin@test.local', 'Secret123!');
+        $jar = $this->login('admin@test.local', 'Secret123!');
+
+        // Credenciales explícitas contra el stub de Kobo: responde el nº de formularios.
+        $res = $this->request('POST', 'admin/accounts/test', ['server_url' => self::koboBase() . '/', 'api_token' => 'tok'], $jar);
+        $this->assertSame(200, $res['status'], $res['raw']);
+        $this->assertTrue($res['json']['data']['ok']);
+        $this->assertSame(1, $res['json']['data']['forms']);
+        $this->assertSame(['Stub form'], $res['json']['data']['sample']);
+
+        // Sin token pero con account_id: usa el token guardado (cifrado) de la cuenta.
+        $accId = $this->seedAccount();
+        $res = $this->request('POST', 'admin/accounts/test', ['server_url' => self::koboBase(), 'account_id' => $accId], $jar);
+        $this->assertSame(200, $res['status'], $res['raw']);
+
+        // Sin token ni cuenta → 422; URL no http(s) → 422; servidor inalcanzable → error Kobo.
+        $this->assertSame(422, $this->request('POST', 'admin/accounts/test', ['server_url' => self::koboBase()], $jar)['status']);
+        $this->assertSame(422, $this->request('POST', 'admin/accounts/test', ['server_url' => 'ftp://x.example', 'api_token' => 'tok'], $jar)['status']);
+        $res = $this->request('POST', 'admin/accounts/test', ['server_url' => 'http://127.0.0.1:9', 'api_token' => 'tok'], $jar);
+        $this->assertSame(504, $res['status']);
+        $this->assertSame('KOBO_TIMEOUT', $res['json']['error']['code']);
+        @unlink($jar);
+    }
+
     private function account(string $label): int
     {
         DB::run(

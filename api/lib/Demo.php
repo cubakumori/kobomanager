@@ -57,6 +57,7 @@ class Demo {
     private const BLOCKED = [
         // Cuentas Kobo: nadie crea/edita/borra (el token de la demo no se toca).
         'admin/accounts'           => ['POST'],
+        'admin/accounts/test'      => ['POST'], // llamaría a Kobo con credenciales del visitante
         'admin/accounts/:id'       => ['PUT', 'DELETE'],
         // Usuarios: CRUD, contraseñas y sesiones ajenas.
         'admin/users'              => ['POST'],

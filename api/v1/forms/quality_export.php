@@ -136,7 +136,7 @@ $csvSafe = static function ($v): string {
 };
 
 header('Content-Type: text/csv; charset=utf-8');
-header('Content-Disposition: attachment; filename="' . $fileBase . '.csv"');
+header('Content-Disposition: ' . Attachments::contentDisposition('attachment', $fileBase . '.csv'));
 
 $out = fopen('php://output', 'w');
 fwrite($out, "\xEF\xBB\xBF"); // BOM UTF-8 para Excel

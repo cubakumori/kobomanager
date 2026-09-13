@@ -87,8 +87,7 @@ try {
         if ($length !== null) {
             header('Content-Length: ' . $length);
         }
-        header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment')
-            . '; filename="' . str_replace('"', '', $name) . '"');
+        header('Content-Disposition: ' . Attachments::contentDisposition($inline ? 'inline' : 'attachment', $name));
         header("Content-Security-Policy: default-src 'none'; sandbox");
         header('Cache-Control: private, max-age=300');
     });

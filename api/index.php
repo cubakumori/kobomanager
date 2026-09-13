@@ -126,6 +126,7 @@ $routes = [
     'admin/users/:id'           => 'admin/user_item.php',
     'admin/users/:id/sessions'  => 'admin/user_sessions.php',
     'admin/accounts'            => 'admin/accounts.php',
+    'admin/accounts/test'       => 'admin/account_test.php',   // literal ANTES de :id
     'admin/accounts/:id'        => 'admin/account_item.php',
     'admin/forms'               => 'admin/forms.php',
     'admin/forms/sync'          => 'admin/forms_sync.php',

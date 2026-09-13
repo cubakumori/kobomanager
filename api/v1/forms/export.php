@@ -194,7 +194,7 @@ if ($format === 'xlsx') {
 
 // --- Emitir CSV ---
 header('Content-Type: text/csv; charset=utf-8');
-header('Content-Disposition: attachment; filename="' . $safeName . '_' . date('Ymd') . '.csv"');
+header('Content-Disposition: ' . Attachments::contentDisposition('attachment', $safeName . '_' . date('Ymd') . '.csv'));
 
 $out = fopen('php://output', 'w');
 fwrite($out, "\xEF\xBB\xBF"); // BOM UTF-8 para Excel

@@ -67,7 +67,12 @@
     "loadError": "Could not load the accounts",
     "createError": "Could not create the account",
     "deleteError": "Could not delete the account",
-    "syncError": "could not sync"
+    "syncError": "could not sync",
+    "testConnection": "Test connection",
+    "testing": "Testing…",
+    "testOk": "Connection OK: the token sees {n} form(s).",
+    "testOkSample": "For example: {names}.",
+    "testError": "Could not connect with that URL and token"
   },
   "forms": {
     "title": "Forms",

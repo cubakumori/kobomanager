@@ -47,6 +47,21 @@ final class AttachmentsTest extends TestCase
         $this->assertFalse(Attachments::inlineSafe('application/octet-stream'));
     }
 
+    public function testContentDispositionAsciiAndUtf8(): void
+    {
+        // ASCII puro: solo filename=.
+        $this->assertSame('attachment; filename="report_2026.csv"', Attachments::contentDisposition('attachment', 'report_2026.csv'));
+        // No-ASCII: respaldo transliterado + filename* percent-encoded (RFC 6266).
+        $h = Attachments::contentDisposition('inline', 'foto niño ñandú.jpg');
+        $this->assertStringStartsWith('inline; filename="', $h);
+        $this->assertStringContainsString("filename*=UTF-8''foto%20ni%C3%B1o%20%C3%B1and%C3%BA.jpg", $h);
+        $this->assertDoesNotMatchRegularExpression('/[^\x20-\x7E]/', $h, 'la cabecera es ASCII puro');
+        // Comillas y saltos de línea no pueden romper la cabecera.
+        $h = Attachments::contentDisposition('attachment', "a\"b\r\nX-Evil: 1.txt");
+        $this->assertStringNotContainsString("\n", $h);
+        $this->assertStringNotContainsString('"b', $h);
+    }
+
     public function testForPayloadNormalizesAndSkipsWithoutUid(): void
     {
         $payload = [

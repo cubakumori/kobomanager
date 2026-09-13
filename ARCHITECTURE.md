@@ -355,12 +355,21 @@ denylist (the export would hand any demo visitor the password hashes and the enc
 Kobo token).
 Operational guide (synthetic seeding via `api/cli/seed_demo.php`, seed generation, reset cron, hardening): [`DEMO.md`](DEMO.md).
 
+### Kobo account check
+`POST /admin/accounts/test` (`admin/account_test.php`, admin only, demo‑blocked) calls
+`KoboClient::getAssets()` with the URL + token from the form (or the stored token when
+`account_id` is given without a token) and returns the number of visible surveys plus a
+few names — a "Test connection" button in the accounts UI, so a mistyped token is caught
+before saving instead of at the first sync. Nothing is written.
+
 ### Attachment proxies & CSV hardening
 The attachment proxies (`submissions/{id}/attachments/...` and the public share one) stream
 third‑party files; they set `Content-Security-Policy: default-src 'none'; sandbox`, serve only
 image/audio/video **inline** — never `image/svg+xml`, which is scriptable XML and is forced to
 download (`Attachments::inlineSafe`) — everything else `Content-Disposition: attachment`, and
-rely on the global `nosniff`. Every cURL call in `KoboClient` is pinned to `http`/`https`
+rely on the global `nosniff`. Every download header goes through
+`Attachments::contentDisposition()` (`filename=` ASCII fallback + `filename*=UTF-8''…`,
+quotes/CRLF stripped). Every cURL call in `KoboClient` is pinned to `http`/`https`
 (initial request and redirects, with a hop cap) on all supported PHP versions (anti‑SSRF). CSV export (`forms/export.php`) prefixes any cell starting with
 `= + - @`/tab/CR with an apostrophe to defuse spreadsheet formula injection.
 

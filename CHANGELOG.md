@@ -4,6 +4,31 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.58.0] - 2026-09-13
+
+Tercera tanda de la revisión de septiembre: usabilidad.
+
+### Añadido
+
+- **«Probar conexión» en las cuentas Kobo** (alta y edición): `POST admin/accounts/test`
+  llama al listado de assets con la URL y el token del formulario y responde cuántos
+  formularios ve el token (con hasta cinco nombres de muestra), sin guardar nada. En
+  edición sin token nuevo usa el ya guardado (cifrado; nunca vuelve al navegador). Antes
+  un token mal pegado o una URL con errata solo se descubría al sincronizar. Auditado
+  (`test_kobo_account`); bloqueado en modo demo (llamaría a un servidor arbitrario con
+  las credenciales del visitante).
+
+### Arreglado
+
+- **Nombres de archivo con acentos o espacios en las descargas**: la cabecera
+  `Content-Disposition` de los proxies de adjuntos, del export (CSV/XLSX), del export
+  de control de calidad y del backup lleva ahora `filename*=UTF-8''…` (RFC 6266) con
+  respaldo ASCII transliterado — «foto niño.jpg» llegaba mutilado en varios
+  navegadores. Helper único `Attachments::contentDisposition`, que además elimina
+  comillas y saltos de línea del nombre.
+
+> Sin cambios de esquema ni de configuración.
+
 ## [1.57.0] - 2026-09-13
 
 Segunda tanda de la revisión de septiembre: corrección de una ambigüedad
