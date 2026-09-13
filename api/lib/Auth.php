@@ -59,6 +59,14 @@ class Auth {
         $now = time();
         $exp = $now + JWT_TTL;
 
+        // Poda de restos: las sesiones caducadas por inactividad nunca se borraban (solo
+        // el logout o el tope absoluto quitan su fila) y los tokens de recuperación
+        // consumidos/caducados tampoco → crecimiento sin fin. Se hace aquí, en cada
+        // login (evento poco frecuente), con un día de margen para que las listas de
+        // sesiones no cambien bajo los pies de nadie.
+        DB::run('DELETE FROM user_sessions WHERE expires_at < (NOW() - INTERVAL 1 DAY)');
+        DB::run('DELETE FROM password_resets WHERE (used_at IS NOT NULL OR expires_at < NOW()) AND created_at < (NOW() - INTERVAL 1 DAY)');
+
         DB::run(
             'INSERT INTO user_sessions (user_id, token_id, expires_at, last_activity, ip, user_agent)
              VALUES (?, ?, FROM_UNIXTIME(?), NOW(), ?, ?)',
@@ -129,7 +137,14 @@ class Auth {
         )->fetch();
         if (!$user) return null;
 
-        DB::run('UPDATE user_sessions SET last_activity = NOW() WHERE id = ?', [$session['id']]);
+        // last_activity es informativo (lista de sesiones): se escribe como mucho una vez
+        // por minuto, no en cada petición (la tabla de envíos paginada disparaba una
+        // escritura por cada carga).
+        DB::run(
+            'UPDATE user_sessions SET last_activity = NOW()
+             WHERE id = ? AND (last_activity IS NULL OR last_activity < (NOW() - INTERVAL 60 SECOND))',
+            [$session['id']]
+        );
 
         // Sesión deslizante: renueva la cookie/JWT con la actividad (mismo jti).
         self::maybeRefresh($payload, $createdTs);
@@ -265,6 +280,36 @@ class Auth {
         return $user;
     }
 
+    // ---------- Permisos por formulario ----------
+
+    /**
+     * Caché POR PETICIÓN de la fila de user_form_permissions (usuario, formulario).
+     * Una carga de la tabla de envíos consultaba la misma fila cinco veces
+     * (requireForm, RowScope, FieldScope y dos canForm); ahora una. Vive lo que el
+     * proceso PHP (una petición): los endpoints que escriben permisos no leen después.
+     * @var array<string, array|null>
+     */
+    private static array $permCache = [];
+
+    /** Fila completa de permisos (can_*, row_filter, field_filter) o null si no hay. */
+    public static function permissionRow(int $userId, int $formId): ?array {
+        $key = $userId . ':' . $formId;
+        if (!array_key_exists($key, self::$permCache)) {
+            $row = DB::run(
+                'SELECT can_view, can_edit, can_validate, can_settings, can_sample, row_filter, field_filter
+                 FROM user_form_permissions WHERE user_id = ? AND form_id = ?',
+                [$userId, $formId]
+            )->fetch();
+            self::$permCache[$key] = $row ?: null;
+        }
+        return self::$permCache[$key];
+    }
+
+    /** Vacía la caché de permisos (tests que escriben la tabla y releen en el mismo proceso). */
+    public static function resetCache(): void {
+        self::$permCache = [];
+    }
+
     /**
      * ¿El usuario tiene la capacidad ('view'|'edit'|'validate'|'settings'|'sample')
      * sobre un formulario? Los admin tienen acceso total. 'sample' (editar el plan de
@@ -285,11 +330,8 @@ class Auth {
         };
         if ($col === null) return false;
 
-        $row = DB::run(
-            "SELECT $col AS c FROM user_form_permissions WHERE user_id = ? AND form_id = ?",
-            [$user['id'], $formId]
-        )->fetch();
-        return $row && (int) $row['c'] === 1;
+        $row = self::permissionRow((int) $user['id'], $formId);
+        return $row !== null && (int) $row[$col] === 1;
     }
 
     /** Exige una capacidad sobre un formulario; corta con 403 si no la tiene. */

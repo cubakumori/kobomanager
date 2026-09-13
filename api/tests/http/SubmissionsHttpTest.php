@@ -46,6 +46,34 @@ final class SubmissionsHttpTest extends HttpTestCase
         @unlink($jar);
     }
 
+    public function testSameUidInTwoFormsIsDisambiguatedByFormHint(): void
+    {
+        // Desde 1.52.0 el uid es único POR formulario: el mismo uid puede vivir en dos
+        // formularios. Sin pista, el endpoint toma la primera fila (aquí, la del
+        // formulario al que el viewer NO tiene acceso → 403); con `?form=` acierta.
+        $uid = $this->seedUser('viewer', 'v@test.local', 'Secret123!');
+        $accId = $this->seedAccount();
+        $formA = $this->seedForm($accId);
+        $formB = $this->seedForm($accId);
+        $this->seedSubmission($formA, 'dup', ['_id' => 1, 'name' => 'A']);
+        $this->seedSubmission($formB, 'dup', ['_id' => 2, 'name' => 'B']);
+        $this->grant($uid, $formB, view: true, validate: true);
+        $jar = $this->login('v@test.local', 'Secret123!');
+
+        $this->assertSame(403, $this->request('GET', 'submissions/dup', null, $jar)['status']);
+        $res = $this->request('GET', "submissions/dup?form=$formB", null, $jar);
+        $this->assertSame(200, $res['status'], $res['raw']);
+        $this->assertSame('B', $res['json']['data']['data']['name']);
+        $this->assertSame($formB, $res['json']['data']['form']['id']);
+
+        // La revisión con pista escribe en el formulario correcto (y solo en él).
+        $res = $this->request('POST', "submissions/dup/review?form=$formB", ['status' => 'approved'], $jar);
+        $this->assertSame(201, $res['status'], $res['raw']);
+        $this->assertSame('approved', DB::run('SELECT review_status FROM submissions_cache WHERE form_id = ?', [$formB])->fetch()['review_status']);
+        $this->assertSame('pending', DB::run('SELECT review_status FROM submissions_cache WHERE form_id = ?', [$formA])->fetch()['review_status']);
+        @unlink($jar);
+    }
+
     public function testFieldScopeHidesColumnInListAndDetail(): void
     {
         $uid = $this->seedUser('viewer', 'v@test.local', 'Secret123!');

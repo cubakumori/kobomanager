@@ -13,6 +13,8 @@ final class SettingsTest extends DbTestCase
     public function testSetAndGetRoundTripJson(): void
     {
         Settings::set('mi_clave', ['a' => 1, 'b' => true]);
+        // La memoria por petición se mantiene al día con set(); una escritura A MANO
+        // en la tabla exige resetCache() para verse (documentado en DbTestCase).
         $this->assertSame(['a' => 1, 'b' => true], Settings::get('mi_clave'));
     }
 

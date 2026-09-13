@@ -63,7 +63,7 @@ const attByField = computed(() => {
 
 // URL del proxy autenticado del backend (mismo origen → la cookie viaja sola).
 function attUrl(att) {
-  return `/api/v1/submissions/${route.params.subId}/attachments/${att.uid}`
+  return `/api/v1/submissions/${route.params.subId}/attachments/${att.uid}?form=${route.params.id}`
 }
 
 // --- edición ---
@@ -103,7 +103,8 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const { data } = await api.get(`/submissions/${route.params.subId}`)
+    // `form` acota el uid al formulario mostrado (el uid es único por formulario).
+    const { data } = await api.get(`/submissions/${route.params.subId}`, { params: { form: route.params.id } })
     sub.value = data.data
     schema.value = data.data.schema ?? null
     labelMode.value = data.data.label_mode ?? 'raw'
@@ -115,7 +116,7 @@ async function load() {
     editHistory.value = []
     if (data.data.can_edit) {
       try {
-        const h = await api.get(`/submissions/${route.params.subId}/history`)
+        const h = await api.get(`/submissions/${route.params.subId}/history`, { params: { form: route.params.id } })
         editHistory.value = h.data.data.edits ?? []
       } catch { /* silencioso: el historial es secundario */ }
     }
@@ -145,7 +146,7 @@ async function saveEdit() {
   saving.value = true
   editError.value = ''
   try {
-    const { data } = await api.put(`/submissions/${route.params.subId}`, { data: changed })
+    const { data } = await api.put(`/submissions/${route.params.subId}`, { data: changed }, { params: { form: route.params.id } })
     editing.value = false
     // Editar en Kobo crea una versión nueva con un _uuid distinto; el backend ya
     // migró la caché y las revisiones a ese uid. Navegamos al nuevo uid (el watch
@@ -167,7 +168,7 @@ async function submitReview(status) {
   reviewing.value = true
   reviewError.value = ''
   try {
-    await api.post(`/submissions/${route.params.subId}/review`, { status, comment: comment.value })
+    await api.post(`/submissions/${route.params.subId}/review`, { status, comment: comment.value }, { params: { form: route.params.id } })
     comment.value = ''
     await load()
   } catch (e) {

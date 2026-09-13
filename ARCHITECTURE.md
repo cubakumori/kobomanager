@@ -64,6 +64,9 @@ to HTTP statuses in one table; the frontend maps codes → localized messages (`
   signature + expiry **and** that the `jti` row still exists **and** the user is active — so
   deleting the row (logout / admin remote revoke / self‑service / deactivation) invalidates the
   token.
+- **Session hygiene.** `last_activity` is written at most once a minute per session (not
+  on every request); each login prunes sessions expired for more than a day and consumed
+  or expired password‑reset tokens.
 - **Sliding session.** On each request, if the token is close to expiry
   (`SESSION_REFRESH_THRESHOLD`) `currentUser()` re‑issues it **keeping the same `jti`** (so
   invalidation still works) and pushes `user_sessions.expires_at` forward by the idle TTL,
@@ -107,7 +110,12 @@ to HTTP statuses in one table; the frontend maps codes → localized messages (`
   `GET /forms` exposes a `favorite` flag per form. Both are pure preferences — access control
   is untouched.
 - Guards: `require()`, `requireAdmin()`, and per‑form `canForm($user,$id,$cap)` /
-  `requireForm(...)` where `cap ∈ {view,edit,validate,settings,sample}` (admins bypass). `settings`
+  `requireForm(...)` where `cap ∈ {view,edit,validate,settings,sample}` (admins bypass).
+  The `(user, form)` permissions row is read **once per request** (`Auth::permissionRow`,
+  a static per‑process cache) and shared by `canForm`, `RowScope::ruleForUser` and
+  `FieldScope::ruleForUser`; `Settings::get` memoizes each key the same way. Both caches
+  live for the request only — `Settings::set` keeps its own in sync, `DbSnapshot::restore`
+  invalidates both, and `DbTestCase` resets them per test. `settings`
   (`user_form_permissions.can_settings`, the *Settings* checkbox in the permissions UI) lets a
   non‑admin edit that form's per‑form settings (team breakdown + quality‑control thresholds):
   `admin/forms/{id}` `GET`/`PATCH` accept it, `DELETE` stays admin‑only. `sample`
@@ -117,6 +125,12 @@ to HTTP statuses in one table; the frontend maps codes → localized messages (`
   *Sample* checks and disables *Settings*). Any extra capability implies `can_view` (enforced on
   save). The forms list and the quality endpoint expose the flags so the UI can offer the form
   card's *Settings* shortcut and the threshold link.
+
+### Submission endpoints and the `form` hint
+`submission_uid` is unique **per form** (1.52.0), so `submissions/{uid}` (detail/edit),
+`…/review`, `…/history` and `…/attachments/{attId}` accept `?form=<id>` to pin the lookup
+to the form the UI is showing; without it the first row (by id) is used, as before. The
+detail view always sends it.
 
 ### Row‑level scoping (`lib/RowScope.php`)
 A per‑(user, form) filter (`user_form_permissions.row_filter`, JSON) can restrict **which

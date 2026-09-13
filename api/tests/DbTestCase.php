@@ -14,6 +14,10 @@ abstract class DbTestCase extends TestCase
     protected function setUp(): void
     {
         DB::conn()->beginTransaction();
+        // Las memorias por petición (ajustes y permisos) no deben cruzar tests: cada
+        // test es «una petición» nueva.
+        Settings::resetCache();
+        Auth::resetCache();
     }
 
     protected function tearDown(): void

@@ -75,10 +75,7 @@ class RowScope {
         if (($user['role'] ?? '') === 'admin') {
             return null;
         }
-        $row = DB::run(
-            'SELECT row_filter FROM user_form_permissions WHERE user_id = ? AND form_id = ?',
-            [$user['id'], $formId]
-        )->fetch();
+        $row = Auth::permissionRow((int) $user['id'], $formId); // fila cacheada por petición
         if (!$row || $row['row_filter'] === null || $row['row_filter'] === '') {
             return null;
         }

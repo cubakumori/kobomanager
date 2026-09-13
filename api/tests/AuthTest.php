@@ -29,6 +29,7 @@ final class AuthTest extends DbTestCase
             'INSERT INTO user_form_permissions (user_id, form_id, can_view, can_edit, can_validate) VALUES (?, ?, 1, 0, 1)',
             [$uid, $formId]
         );
+        Auth::resetCache(); // la fila se cachea por petición; aquí la «petición» sigue
         $this->assertTrue(Auth::canForm($viewer, $formId, 'view'));
         $this->assertFalse(Auth::canForm($viewer, $formId, 'edit'));
         $this->assertTrue(Auth::canForm($viewer, $formId, 'validate'));
@@ -125,6 +126,52 @@ final class AuthTest extends DbTestCase
     {
         $row = DB::run('SELECT UNIX_TIMESTAMP(expires_at) AS e FROM user_sessions WHERE user_id = ?', [$uid])->fetch();
         return (int) $row['e'];
+    }
+
+    public function testIssuePrunesExpiredSessionsAndStaleResets(): void
+    {
+        $uid = $this->makeUser();
+        // Sesión caducada hace dos días y token de reset consumido hace dos días: basura.
+        DB::run(
+            'INSERT INTO user_sessions (user_id, token_id, expires_at, created_at)
+             VALUES (?, ?, NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 3 DAY)',
+            [$uid, 'old' . bin2hex(random_bytes(8))]
+        );
+        DB::run(
+            'INSERT INTO password_resets (user_id, token_hash, expires_at, used_at, created_at)
+             VALUES (?, ?, NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 2 DAY)',
+            [$uid, hash('sha256', 'x' . $uid)]
+        );
+        // Una caducada hace solo una hora se conserva (margen de un día).
+        DB::run(
+            'INSERT INTO user_sessions (user_id, token_id, expires_at, created_at)
+             VALUES (?, ?, NOW() - INTERVAL 1 HOUR, NOW() - INTERVAL 5 HOUR)',
+            [$uid, 'recent' . bin2hex(random_bytes(8))]
+        );
+
+        $this->issueFor($uid);
+
+        $rows = DB::run('SELECT token_id FROM user_sessions WHERE user_id = ?', [$uid])->fetchAll();
+        $ids  = array_column($rows, 'token_id');
+        $this->assertCount(2, $ids, 'la nueva + la caducada reciente');
+        $this->assertEmpty(array_filter($ids, fn($t) => str_starts_with($t, 'old')));
+        $this->assertSame(0, (int) DB::run('SELECT COUNT(*) c FROM password_resets WHERE user_id = ?', [$uid])->fetch()['c']);
+    }
+
+    public function testLastActivityIsWrittenAtMostOncePerMinute(): void
+    {
+        $uid = $this->makeUser();
+        $_COOKIE[COOKIE_NAME] = $this->issueFor($uid);
+        // Marca reciente (hace 10 s): una petición NO la reescribe.
+        DB::run('UPDATE user_sessions SET last_activity = NOW() - INTERVAL 10 SECOND WHERE user_id = ?', [$uid]);
+        $before = DB::run('SELECT last_activity FROM user_sessions WHERE user_id = ?', [$uid])->fetch()['last_activity'];
+        $this->assertNotNull(Auth::currentUser());
+        $this->assertSame($before, DB::run('SELECT last_activity FROM user_sessions WHERE user_id = ?', [$uid])->fetch()['last_activity']);
+        // Marca vieja (hace 2 min): sí se actualiza.
+        DB::run('UPDATE user_sessions SET last_activity = NOW() - INTERVAL 2 MINUTE WHERE user_id = ?', [$uid]);
+        $this->assertNotNull(Auth::currentUser());
+        $after = DB::run('SELECT UNIX_TIMESTAMP(last_activity) t FROM user_sessions WHERE user_id = ?', [$uid])->fetch()['t'];
+        $this->assertGreaterThan(time() - 30, (int) $after);
     }
 
     public function testSlidingSessionExtendsWhenNearExpiry(): void

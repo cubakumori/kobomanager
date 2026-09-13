@@ -57,19 +57,40 @@ class Settings {
     public const FIELD_TRUNCATE_MIN = 8;
     public const FIELD_TRUNCATE_MAX = 120;
 
+    /**
+     * Memoria POR PETICIÓN de los valores leídos (clave → valor crudo de BD o el
+     * centinela de «no existe»). Una petición típica consulta 4-8 ajustes, cada uno
+     * en su getter; antes cada getter era una consulta. `set()` mantiene la caché al
+     * día; `resetCache()` la vacía (tests que escriben la tabla a mano).
+     * @var array<string, mixed>
+     */
+    private static array $cache = [];
+    private const MISSING = "\0missing";
+
     public static function get(string $key, mixed $default = null): mixed {
-        $row = DB::run('SELECT `value` FROM settings WHERE `key` = ?', [$key])->fetch();
-        if (!$row) return $default;
-        $decoded = json_decode($row['value'], true);
-        return $decoded === null && $row['value'] !== 'null' ? $row['value'] : $decoded;
+        if (!array_key_exists($key, self::$cache)) {
+            $row = DB::run('SELECT `value` FROM settings WHERE `key` = ?', [$key])->fetch();
+            self::$cache[$key] = $row ? $row['value'] : self::MISSING;
+        }
+        $raw = self::$cache[$key];
+        if ($raw === self::MISSING) return $default;
+        $decoded = json_decode((string) $raw, true);
+        return $decoded === null && $raw !== 'null' ? $raw : $decoded;
     }
 
     public static function set(string $key, mixed $value): void {
+        $json = json_encode($value, JSON_UNESCAPED_UNICODE);
         DB::run(
             'INSERT INTO settings (`key`, `value`) VALUES (?, ?)
              ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)',
-            [$key, json_encode($value, JSON_UNESCAPED_UNICODE)]
+            [$key, $json]
         );
+        self::$cache[$key] = $json;
+    }
+
+    /** Vacía la memoria por petición (tests). */
+    public static function resetCache(): void {
+        self::$cache = [];
     }
 
     /** Lista de estados a sincronizar; siempre devuelve al menos ['deployed']. */

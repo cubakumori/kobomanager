@@ -31,10 +31,7 @@ class FieldScope {
         if (($user['role'] ?? '') === 'admin') {
             return null;
         }
-        $row = DB::run(
-            'SELECT field_filter FROM user_form_permissions WHERE user_id = ? AND form_id = ?',
-            [$user['id'], $formId]
-        )->fetch();
+        $row = Auth::permissionRow((int) $user['id'], $formId); // fila cacheada por petición
         if (!$row || $row['field_filter'] === null || $row['field_filter'] === '') {
             return null;
         }

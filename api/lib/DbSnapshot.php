@@ -112,6 +112,12 @@ class DbSnapshot {
             }
             $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
             $pdo->commit();
+            // La restauración reescribe `settings` y `user_form_permissions` por debajo de
+            // las memorias por petición: invalidarlas para que quien lea después en este
+            // mismo proceso (cron de la demo, tests) vea el estado restaurado. Los cron
+            // cargan solo las libs que usan: se invalida lo que esté cargado.
+            if (class_exists('Settings', false)) Settings::resetCache();
+            if (class_exists('Auth', false)) Auth::resetCache();
             return ['statements' => count($stmts), 'rows' => $rows];
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) {

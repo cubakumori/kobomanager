@@ -10,13 +10,22 @@ $user = Auth::require();
 $uid  = (string) Request::param('id');
 $method = Request::method();
 
+// `?form=<id>`: el uid es único solo POR FORMULARIO (1.52.0), así que un mismo uid
+// puede existir en dos formularios (proyecto clonado, uid de respaldo numérico entre
+// cuentas). Sin la pista se toma la primera fila (comportamiento anterior); con ella
+// la búsqueda queda acotada al formulario que la UI está mostrando.
+$formHint = (int) ($_GET['form'] ?? 0);
+$formSql  = $formHint > 0 ? ' AND sc.form_id = ?' : '';
+$formP    = $formHint > 0 ? [$formHint] : [];
+
 $sub = DB::run(
-    'SELECT sc.id, sc.submission_uid, sc.json_payload, sc.submitted_at, sc.last_synced_at,
+    "SELECT sc.id, sc.submission_uid, sc.json_payload, sc.submitted_at, sc.last_synced_at,
             f.id AS form_id, f.name AS form_name, f.kobo_asset_uid, f.kobo_account_id, f.schema_json, f.deployment_status
      FROM submissions_cache sc
      JOIN forms f ON f.id = sc.form_id
-     WHERE sc.submission_uid = ?',
-    [$uid]
+     WHERE sc.submission_uid = ?$formSql
+     ORDER BY sc.id LIMIT 1",
+    array_merge([$uid], $formP)
 )->fetch();
 
 if (!$sub) {

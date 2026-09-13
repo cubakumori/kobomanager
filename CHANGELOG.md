@@ -4,6 +4,42 @@ Todos los cambios notables de KoboManager. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.57.0] - 2026-09-13
+
+Segunda tanda de la revisión de septiembre: corrección de una ambigüedad
+introducida en 1.52.0 y optimizaciones de bajo riesgo.
+
+### Arreglado
+
+- **Los endpoints de un envío aceptan `?form=<id>` para acotar el uid al formulario.**
+  Desde 1.52.0 el `submission_uid` es único solo POR formulario, pero el detalle
+  (`GET`/`PUT submissions/{uid}`), la revisión, el historial y el proxy de adjuntos lo
+  buscaban a secas y tomaban la primera fila: con un uid presente en dos formularios
+  (proyecto clonado, uid de respaldo numérico entre cuentas) el usuario caía en una
+  fila arbitraria — un 403 en un envío al que sí tenía acceso o, peor, una revisión
+  aplicada al envío del OTRO formulario y empujada al asset equivocado en Kobo. La
+  vista de detalle, que ya conoce el formulario por la ruta, manda ahora la pista en
+  las cinco llamadas; sin pista se conserva el comportamiento anterior (primera fila,
+  orden estable por id). Test HTTP con el mismo uid en dos formularios.
+- **Las sesiones caducadas por inactividad y los tokens de recuperación consumidos se
+  purgan** (en cada login, con un día de margen). Antes solo el logout o el tope
+  absoluto borraban la fila de `user_sessions`; las que expiraban por inactividad se
+  quedaban para siempre, igual que los `password_resets` usados.
+
+### Cambiado
+
+- **`last_activity` se escribe como mucho una vez por minuto** por sesión, no en cada
+  petición autenticada (la tabla de envíos paginada disparaba una escritura por carga).
+- **Menos consultas por petición**: la fila de `user_form_permissions` de (usuario,
+  formulario) se lee UNA vez por petición (`Auth::permissionRow`) y la comparten
+  `canForm`, `RowScope::ruleForUser` y `FieldScope::ruleForUser` — la tabla de envíos
+  hacía cinco lecturas de la misma fila; y `Settings::get` memoriza cada clave leída
+  (una petición típica consulta 4-8 ajustes, cada uno era una consulta). Ambas memorias
+  viven lo que la petición; `set()` las mantiene al día y una restauración de snapshot
+  (demo/backup) las invalida.
+
+> Sin cambios de esquema ni de configuración.
+
 ## [1.56.0] - 2026-09-13
 
 Primera tanda de la revisión de septiembre: endurecimiento de autenticación y del

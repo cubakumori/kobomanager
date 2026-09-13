@@ -17,12 +17,21 @@ if (Request::method() !== 'GET') {
     ErrorResponse::send('VALIDATION_ERROR', 'Método no permitido', 405);
 }
 
+// `?form=<id>`: el uid es único solo POR FORMULARIO (1.52.0), así que un mismo uid
+// puede existir en dos formularios (proyecto clonado, uid de respaldo numérico entre
+// cuentas). Sin la pista se toma la primera fila (comportamiento anterior); con ella
+// la búsqueda queda acotada al formulario que la UI está mostrando.
+$formHint = (int) ($_GET['form'] ?? 0);
+$formSql  = $formHint > 0 ? ' AND sc.form_id = ?' : '';
+$formP    = $formHint > 0 ? [$formHint] : [];
+
 $sub = DB::run(
-    'SELECT sc.json_payload, f.id AS form_id, f.kobo_account_id
+    "SELECT sc.json_payload, f.id AS form_id, f.kobo_account_id
      FROM submissions_cache sc
      JOIN forms f ON f.id = sc.form_id
-     WHERE sc.submission_uid = ?',
-    [$uid]
+     WHERE sc.submission_uid = ?$formSql
+     ORDER BY sc.id LIMIT 1",
+    array_merge([$uid], $formP)
 )->fetch();
 
 if (!$sub) {
